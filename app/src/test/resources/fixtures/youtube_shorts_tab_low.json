@@ -1,0 +1,35 @@
+{
+  "packageName": "com.google.android.youtube",
+  "nodes": [
+    {
+      "className": "android.view.View",
+      "viewIdResourceName": null,
+      "contentDescriptionSignals": [],
+      "isClickable": false,
+      "isScrollable": false,
+      "isVisibleToUser": true,
+      "left": 0,
+      "top": 0,
+      "right": 1080,
+      "bottom": 2200,
+      "width": 1080,
+      "height": 2200,
+      "depth": 0
+    },
+    {
+      "className": "android.view.View",
+      "viewIdResourceName": "com.google.android.youtube:id/bottom_bar_shorts",
+      "contentDescriptionSignals": ["shorts"],
+      "isClickable": true,
+      "isScrollable": false,
+      "isVisibleToUser": true,
+      "left": 300,
+      "top": 2060,
+      "right": 440,
+      "bottom": 2160,
+      "width": 140,
+      "height": 100,
+      "depth": 3
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+Shorts Blocker Kids Debug Build
+
+git commit hash: unavailable: not a git repository
+build date: 2026-05-20T12:22:41Z
+versionName: 0.1.0
+versionCode: 1
+minSdk: 26
+targetSdk: 36
+permissions list: com.shortsblockerkids.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+APK SHA-256 checksum: 735425ce690dc610b57497091b01aa13eae91073dbdc53c651dcd414ff8b0f5b
+
+emulator runtime notes:
+- AVD: ShortsBlocker_Pixel_API35
+- Emulator install verified on API 35 in Phase 1E
+- Current shell may require sg kvm until re-login picks up kvm group membership
+
+build commands used:
+- ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
+- cp app/build/outputs/apk/debug/app-debug.apk dist/ShortsBlockerKids-debug.apk
+- sha256sum dist/ShortsBlockerKids-debug.apk > dist/ShortsBlockerKids-debug.apk.sha256

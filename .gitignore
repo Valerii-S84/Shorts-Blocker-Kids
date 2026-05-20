@@ -1,0 +1,54 @@
+# Gradle / Android build outputs
+.gradle/
+.kotlin/
+build/
+**/build/
+
+# Local Android SDK configuration
+local.properties
+
+# IDE files
+.idea/
+*.iml
+
+# APK / bundle outputs
+*.apk
+*.ap_
+*.aab
+*.aar
+*.apk.sha256
+*.aab.sha256
+dist/*.apk
+dist/*.aab
+dist/*.apk.sha256
+dist/*.aab.sha256
+
+# Signing keys and certificates
+*.jks
+*.keystore
+*.p12
+*.pem
+*.key
+*.der
+
+# Secrets and environment files
+.env
+.env.*
+*.env
+*secret*
+*credentials*
+
+# Logs and temporary files
+*.log
+*.tmp
+*.swp
+.DS_Store
+Thumbs.db
+
+# Kotlin / Java compiler artifacts
+*.class
+*.dex
+
+# Android generated folders
+captures/
+outputs/

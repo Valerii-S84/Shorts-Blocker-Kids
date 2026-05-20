@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Shorts Blocker Kids</string>
+    <string name="accessibility_service_label">Shorts Blocker Kids Protection</string>
+    <string name="accessibility_service_description">Detects YouTube Shorts locally when protection is enabled and closes the blocking screen after you leave YouTube.</string>
+    <string name="blocking_overlay_title">Shorts blocked</string>
+    <string name="blocking_overlay_message">Parent PIN is required to allow Shorts or change protection.</string>
+    <string name="blocking_overlay_exit_shorts">Exit Shorts</string>
+    <string name="blocking_overlay_enter_pin">Enter PIN</string>
+</resources>

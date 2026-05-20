@@ -1,0 +1,80 @@
+{
+  "packageName": "com.google.android.youtube",
+  "nodes": [
+    {
+      "className": "android.view.View",
+      "viewIdResourceName": null,
+      "contentDescriptionSignals": [],
+      "isClickable": false,
+      "isScrollable": false,
+      "isVisibleToUser": true,
+      "left": 0,
+      "top": 0,
+      "right": 1080,
+      "bottom": 2200,
+      "width": 1080,
+      "height": 2200,
+      "depth": 0
+    },
+    {
+      "className": "androidx.recyclerview.widget.RecyclerView",
+      "viewIdResourceName": "com.google.android.youtube:id/shorts_container",
+      "contentDescriptionSignals": ["shorts"],
+      "isClickable": true,
+      "isScrollable": true,
+      "isVisibleToUser": true,
+      "left": 0,
+      "top": -140,
+      "right": 1080,
+      "bottom": 2140,
+      "width": 1080,
+      "height": 2280,
+      "depth": 2
+    },
+    {
+      "className": "android.view.View",
+      "viewIdResourceName": null,
+      "contentDescriptionSignals": ["like"],
+      "isClickable": true,
+      "isScrollable": false,
+      "isVisibleToUser": true,
+      "left": 930,
+      "top": 720,
+      "right": 1050,
+      "bottom": 840,
+      "width": 120,
+      "height": 120,
+      "depth": 5
+    },
+    {
+      "className": "android.view.View",
+      "viewIdResourceName": null,
+      "contentDescriptionSignals": ["comments"],
+      "isClickable": true,
+      "isScrollable": false,
+      "isVisibleToUser": true,
+      "left": 930,
+      "top": 1090,
+      "right": 1050,
+      "bottom": 1210,
+      "width": 120,
+      "height": 120,
+      "depth": 5
+    },
+    {
+      "className": "android.view.View",
+      "viewIdResourceName": null,
+      "contentDescriptionSignals": ["share"],
+      "isClickable": true,
+      "isScrollable": false,
+      "isVisibleToUser": true,
+      "left": 930,
+      "top": 1460,
+      "right": 1050,
+      "bottom": 1580,
+      "width": 120,
+      "height": 120,
+      "depth": 5
+    }
+  ]
+}

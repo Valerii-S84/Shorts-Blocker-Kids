@@ -1,0 +1,50 @@
+{
+  "packageName": "com.google.android.youtube",
+  "nodes": [
+    {
+      "className": "android.view.View",
+      "viewIdResourceName": null,
+      "contentDescriptionSignals": [],
+      "isClickable": false,
+      "isScrollable": false,
+      "isVisibleToUser": true,
+      "left": 0,
+      "top": 0,
+      "right": 1080,
+      "bottom": 2200,
+      "width": 1080,
+      "height": 2200,
+      "depth": 0
+    },
+    {
+      "className": "android.widget.EditText",
+      "viewIdResourceName": "com.google.android.youtube:id/search_edit_text",
+      "contentDescriptionSignals": [],
+      "isClickable": true,
+      "isScrollable": false,
+      "isVisibleToUser": true,
+      "left": 80,
+      "top": 120,
+      "right": 1000,
+      "bottom": 220,
+      "width": 920,
+      "height": 100,
+      "depth": 3
+    },
+    {
+      "className": "androidx.recyclerview.widget.RecyclerView",
+      "viewIdResourceName": "com.google.android.youtube:id/search_results",
+      "contentDescriptionSignals": [],
+      "isClickable": false,
+      "isScrollable": true,
+      "isVisibleToUser": true,
+      "left": 0,
+      "top": 260,
+      "right": 1080,
+      "bottom": 2050,
+      "width": 1080,
+      "height": 1790,
+      "depth": 2
+    }
+  ]
+}

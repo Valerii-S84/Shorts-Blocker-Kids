@@ -1,0 +1,80 @@
+{
+  "packageName": "com.google.android.youtube",
+  "nodes": [
+    {
+      "className": "android.view.View",
+      "viewIdResourceName": null,
+      "contentDescriptionSignals": [],
+      "isClickable": false,
+      "isScrollable": false,
+      "isVisibleToUser": true,
+      "left": 0,
+      "top": 0,
+      "right": 1080,
+      "bottom": 2200,
+      "width": 1080,
+      "height": 2200,
+      "depth": 0
+    },
+    {
+      "className": "android.view.View",
+      "viewIdResourceName": "com.google.android.youtube:id/watch_player",
+      "contentDescriptionSignals": [],
+      "isClickable": true,
+      "isScrollable": false,
+      "isVisibleToUser": true,
+      "left": 0,
+      "top": 0,
+      "right": 1080,
+      "bottom": 650,
+      "width": 1080,
+      "height": 650,
+      "depth": 2
+    },
+    {
+      "className": "android.view.View",
+      "viewIdResourceName": null,
+      "contentDescriptionSignals": ["like"],
+      "isClickable": true,
+      "isScrollable": false,
+      "isVisibleToUser": true,
+      "left": 40,
+      "top": 900,
+      "right": 160,
+      "bottom": 1020,
+      "width": 120,
+      "height": 120,
+      "depth": 4
+    },
+    {
+      "className": "android.view.View",
+      "viewIdResourceName": null,
+      "contentDescriptionSignals": ["comments"],
+      "isClickable": true,
+      "isScrollable": false,
+      "isVisibleToUser": true,
+      "left": 460,
+      "top": 900,
+      "right": 580,
+      "bottom": 1020,
+      "width": 120,
+      "height": 120,
+      "depth": 4
+    },
+    {
+      "className": "android.view.View",
+      "viewIdResourceName": null,
+      "contentDescriptionSignals": ["share"],
+      "isClickable": true,
+      "isScrollable": false,
+      "isVisibleToUser": true,
+      "left": 620,
+      "top": 900,
+      "right": 740,
+      "bottom": 1020,
+      "width": 120,
+      "height": 120,
+      "depth": 4
+    }
+  ]
+}
