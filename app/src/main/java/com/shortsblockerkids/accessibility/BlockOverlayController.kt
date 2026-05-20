@@ -22,9 +22,13 @@ import kotlin.math.roundToInt
 class BlockOverlayController(
     private val service: AccessibilityService,
     private val onOverlayDismissed: () -> Unit = {},
+    private val onPinEntryRequested: () -> Unit = {},
 ) {
     private val windowManager = service.getSystemService(WindowManager::class.java)
     private var overlayView: View? = null
+
+    val isOverlayVisible: Boolean
+        get() = overlayView != null
 
     fun showBlockedOverlay(): Boolean {
         if (overlayView != null) {
@@ -154,6 +158,7 @@ class BlockOverlayController(
                     strokeColor = BRAND_COLOR,
                 )
             setOnClickListener {
+                onPinEntryRequested()
                 openAppForPinEntry()
                 dismissOverlay()
             }

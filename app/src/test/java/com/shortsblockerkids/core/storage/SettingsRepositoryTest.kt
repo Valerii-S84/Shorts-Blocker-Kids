@@ -162,6 +162,59 @@ class SettingsRepositoryTest {
             assertEquals(PinVerificationResult.Success, repository.verifyPin("4826"))
         }
 
+    @Test
+    fun correctPinCanUnlockBlockingFlow() =
+        runBlocking {
+            val repository = createRepository("correct-pin-unlock")
+
+            repository.savePin("4826")
+
+            assertEquals(PinVerificationResult.Success, repository.verifyPin("4826"))
+        }
+
+    @Test
+    fun incorrectPinDoesNotUnlockBlockingFlow() =
+        runBlocking {
+            val repository = createRepository("incorrect-pin-unlock")
+
+            repository.savePin("4826")
+
+            assertTrue(repository.verifyPin("4827") is PinVerificationResult.Failure)
+        }
+
+    @Test
+    fun emptyPinDoesNotUnlockBlockingFlow() =
+        runBlocking {
+            val repository = createRepository("empty-pin-unlock")
+
+            repository.savePin("4826")
+
+            assertTrue(repository.verifyPin("") is PinVerificationResult.Failure)
+        }
+
+    @Test
+    fun partialPinDoesNotUnlockBlockingFlow() =
+        runBlocking {
+            val repository = createRepository("partial-pin-unlock")
+
+            repository.savePin("4826")
+
+            assertTrue(repository.verifyPin("482") is PinVerificationResult.Failure)
+        }
+
+    @Test
+    fun appRestartDoesNotBreakPinState() =
+        runBlocking {
+            val firstRepository = createRepository("pin-restart")
+            firstRepository.savePin("4826")
+            cancelOpenStores()
+
+            val restartedRepository = createRepository("pin-restart")
+
+            assertEquals(PinVerificationResult.Success, restartedRepository.verifyPin("4826"))
+            assertTrue(restartedRepository.verifyPin("4827") is PinVerificationResult.Failure)
+        }
+
     private fun createRepository(name: String): SettingsRepository {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         scopes += scope

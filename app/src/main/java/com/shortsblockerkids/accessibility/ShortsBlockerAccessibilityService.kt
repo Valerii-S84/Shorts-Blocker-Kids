@@ -30,6 +30,7 @@ class ShortsBlockerAccessibilityService : AccessibilityService() {
                     BlockOverlayController(
                         service = this,
                         onOverlayDismissed = blockingDecisionController::onOverlayDismissed,
+                        onPinEntryRequested = blockingDecisionController::onPinEntryRequested,
                     ),
                 debugLogger = DebugAccessibilityLogger(),
                 debugSnapshotStore =

@@ -20,7 +20,19 @@ class AccessibilityEventRouter(
         rootProvider: () -> AccessibilityNodeInfo?,
     ) {
         val packageName = event.packageName?.toString()
+        val nowMillis = System.currentTimeMillis()
         if (packageName != YouTubeShortsDetector.YOUTUBE_PACKAGE) {
+            if (
+                blockOverlayController.isOverlayVisible ||
+                blockingDecisionController.shouldIgnoreNonYouTubeEvent(nowMillis)
+            ) {
+                debugLogger.logIgnoredEvent(
+                    packageName = packageName,
+                    eventType = event.eventType,
+                    reason = "blocking ui active",
+                )
+                return
+            }
             dismissBlockingState()
             return
         }
@@ -43,7 +55,6 @@ class AccessibilityEventRouter(
             return
         }
 
-        val nowMillis = System.currentTimeMillis()
         val settings = settingsProvider()
         val isProtectionActive = settings.canProtect(nowMillis)
         val isDebugSnapshotPending = RuntimeProtectionState.isDebugSnapshotPending()
@@ -116,7 +127,9 @@ class AccessibilityEventRouter(
         when (decision) {
             BlockingDecision.ShowOverlay -> {
                 if (!blockOverlayController.showBlockedOverlay()) {
-                    blockingDecisionController.onOverlayDismissed()
+                    if (!blockOverlayController.isOverlayVisible) {
+                        blockingDecisionController.onOverlayDismissed()
+                    }
                 }
             }
             BlockingDecision.DismissOverlay -> blockOverlayController.dismissOverlay()

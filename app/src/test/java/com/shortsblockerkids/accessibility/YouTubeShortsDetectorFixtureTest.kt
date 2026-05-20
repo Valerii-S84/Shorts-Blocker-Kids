@@ -17,6 +17,13 @@ class YouTubeShortsDetectorFixtureTest {
     }
 
     @Test
+    fun youtubeHomeFeedIsNotBlocked() {
+        val result = detectFixture("youtube_home.json")
+
+        assertFalse(result.shouldBlock)
+    }
+
+    @Test
     fun normalVideoFixtureIsNotBlocked() {
         val result = detectFixture("youtube_normal_video.json")
 
@@ -25,11 +32,25 @@ class YouTubeShortsDetectorFixtureTest {
     }
 
     @Test
+    fun normalYouTubeVideosRemainAllowed() {
+        val result = detectFixture("youtube_normal_video.json")
+
+        assertFalse(result.shouldBlock)
+    }
+
+    @Test
     fun searchFixtureIsNotBlocked() {
         val result = detectFixture("youtube_search.json")
 
         assertFalse(result.shouldBlock)
         assertTrue(result.confidence == Confidence.NONE || result.confidence == Confidence.LOW)
+    }
+
+    @Test
+    fun youtubeSearchResultsAreNotBlocked() {
+        val result = detectFixture("youtube_search.json")
+
+        assertFalse(result.shouldBlock)
     }
 
     @Test
@@ -65,6 +86,31 @@ class YouTubeShortsDetectorFixtureTest {
         assertTrue(result.matchedSignals.contains(DetectorSignal.REEL_CONTAINER.id))
         assertTrue(result.matchedSignals.contains(DetectorSignal.ACTION_RAIL.id))
         assertTrue(result.matchedSignals.contains(DetectorSignal.VERTICAL_FULLSCREEN.id))
+    }
+
+    @Test
+    fun shortsRemainBlocked() {
+        val result = detectFixture("youtube_shorts_reel_high.json")
+
+        assertTrue(result.shouldBlock)
+    }
+
+    @Test
+    fun switchingFromNormalVideoToShortsTriggersBlockerDecisionInput() {
+        val normal = detectFixture("youtube_normal_video.json")
+        val shorts = detectFixture("youtube_shorts_reel_high.json")
+
+        assertFalse(normal.shouldBlock)
+        assertTrue(shorts.shouldBlock)
+    }
+
+    @Test
+    fun switchingFromShortsBackToNormalVideoDoesNotKeepDetectorBlocked() {
+        val shorts = detectFixture("youtube_shorts_reel_high.json")
+        val normal = detectFixture("youtube_normal_video.json")
+
+        assertTrue(shorts.shouldBlock)
+        assertFalse(normal.shouldBlock)
     }
 
     @Test

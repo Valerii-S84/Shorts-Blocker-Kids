@@ -3,9 +3,11 @@ package com.shortsblockerkids.accessibility
 class BlockingDecisionController(
     private val blockCooldownMs: Long = DEFAULT_BLOCK_COOLDOWN_MS,
     private val detectionDebounceMs: Long = DEFAULT_DETECTION_DEBOUNCE_MS,
+    private val pinEntryLaunchGraceMs: Long = DEFAULT_PIN_ENTRY_LAUNCH_GRACE_MS,
 ) {
     private var lastHighDetectionAtMillis: Long? = null
     private var lastBlockAtMillis: Long? = null
+    private var pinEntryRequestedAtMillis: Long? = null
     private var overlayVisible = false
 
     fun evaluate(
@@ -16,6 +18,7 @@ class BlockingDecisionController(
     ): BlockingDecision {
         if (!isInYouTube || !isProtectionActive) {
             lastHighDetectionAtMillis = null
+            pinEntryRequestedAtMillis = null
             overlayVisible = false
             return BlockingDecision.DismissOverlay
         }
@@ -24,7 +27,7 @@ class BlockingDecisionController(
             return BlockingDecision.Ignore
         }
 
-        if (overlayVisible || isWithinCooldown(nowMillis)) {
+        if (overlayVisible || isPinEntryLaunchGraceActive(nowMillis) || isWithinCooldown(nowMillis)) {
             return BlockingDecision.Ignore
         }
 
@@ -43,9 +46,16 @@ class BlockingDecisionController(
         overlayVisible = false
     }
 
+    fun onPinEntryRequested(nowMillis: Long = System.currentTimeMillis()) {
+        pinEntryRequestedAtMillis = nowMillis
+    }
+
+    fun shouldIgnoreNonYouTubeEvent(nowMillis: Long): Boolean = overlayVisible || isPinEntryLaunchGraceActive(nowMillis)
+
     fun reset() {
         lastHighDetectionAtMillis = null
         lastBlockAtMillis = null
+        pinEntryRequestedAtMillis = null
         overlayVisible = false
     }
 
@@ -59,9 +69,15 @@ class BlockingDecisionController(
         return nowMillis - lastHighDetectionAt < detectionDebounceMs
     }
 
+    private fun isPinEntryLaunchGraceActive(nowMillis: Long): Boolean {
+        val requestedAt = pinEntryRequestedAtMillis ?: return false
+        return nowMillis - requestedAt < pinEntryLaunchGraceMs
+    }
+
     companion object {
         const val DEFAULT_BLOCK_COOLDOWN_MS = 1_200L
         const val DEFAULT_DETECTION_DEBOUNCE_MS = 500L
+        const val DEFAULT_PIN_ENTRY_LAUNCH_GRACE_MS = 5_000L
     }
 }
 

@@ -46,6 +46,32 @@ class YouTubeShortsDetectorTest {
     }
 
     @Test
+    fun blocksShortsScreenIdentifierWithFullscreenActionRail() {
+        val result =
+            detector.detect(
+                packageName = YouTubeShortsDetector.YOUTUBE_PACKAGE,
+                snapshot = shortsUrlOrScreenSnapshot(),
+            )
+
+        assertTrue(result.shouldBlock)
+        assertEquals(Confidence.HIGH, result.confidence)
+        assertTrue(result.matchedSignals.contains(DetectorSignal.SHORTS_IDENTIFIER.id))
+        assertTrue(result.matchedSignals.contains(DetectorSignal.REEL_CONTAINER.id))
+        assertTrue(result.matchedSignals.contains(DetectorSignal.ACTION_RAIL.id))
+    }
+
+    @Test
+    fun youtubeChannelPageDoesNotBlock() {
+        val result =
+            detector.detect(
+                packageName = YouTubeShortsDetector.YOUTUBE_PACKAGE,
+                snapshot = channelPageSnapshot(),
+            )
+
+        assertFalse(result.shouldBlock)
+    }
+
+    @Test
     fun blocksReelContainerWithActionRailWithoutShortsText() {
         val result =
             detector.detect(
@@ -110,6 +136,47 @@ class YouTubeShortsDetectorTest {
                     node(contentDescriptionSignals = setOf("like"), left = 930, top = 780),
                     node(contentDescriptionSignals = setOf("comments"), left = 930, top = 1110),
                     node(contentDescriptionSignals = setOf("share"), left = 930, top = 1440),
+                ),
+        )
+
+    private fun shortsUrlOrScreenSnapshot(): AccessibilityTreeSnapshot =
+        AccessibilityTreeSnapshot(
+            nodes =
+                listOf(
+                    node(width = 1080, height = 2200, right = 1080, bottom = 2200, depth = 0),
+                    node(
+                        viewIdResourceName = "com.google.android.youtube:id/shorts_watch",
+                        width = 1080,
+                        height = 2100,
+                        right = 1080,
+                        bottom = 2100,
+                        depth = 2,
+                        isScrollable = true,
+                    ),
+                    node(
+                        viewIdResourceName = "com.google.android.youtube:id/reel_player_page",
+                        width = 1080,
+                        height = 2100,
+                        right = 1080,
+                        bottom = 2100,
+                        depth = 3,
+                    ),
+                    node(contentDescriptionSignals = setOf("like"), left = 930, top = 780),
+                    node(contentDescriptionSignals = setOf("comments"), left = 930, top = 1110),
+                    node(contentDescriptionSignals = setOf("share"), left = 930, top = 1440),
+                ),
+        )
+
+    private fun channelPageSnapshot(): AccessibilityTreeSnapshot =
+        AccessibilityTreeSnapshot(
+            nodes =
+                listOf(
+                    node(width = 1080, height = 2200, right = 1080, bottom = 2200, depth = 0),
+                    node(contentDescriptionSignals = setOf("subscribe"), left = 40, top = 540),
+                    node(contentDescriptionSignals = setOf("videos"), left = 120, top = 760),
+                    node(contentDescriptionSignals = setOf("playlists"), left = 320, top = 760),
+                    node(contentDescriptionSignals = setOf("shorts"), left = 520, top = 760),
+                    node(contentDescriptionSignals = setOf("community"), left = 720, top = 760),
                 ),
         )
 
