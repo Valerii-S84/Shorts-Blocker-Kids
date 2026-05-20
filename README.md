@@ -28,7 +28,24 @@ ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew :app:assembleRelease
 
 The debug APK is written under `app/build/outputs/apk/debug/`.
 
-The release build is for local verification only. Release signing and Google Play publishing are out of scope for this repository state.
+The release APK is unsigned unless release signing values are provided.
+
+Release signing can be configured through environment variables, Gradle properties, or an untracked root `keystore.properties` file:
+
+```properties
+SBK_RELEASE_STORE_FILE=/absolute/path/to/release.jks
+SBK_RELEASE_STORE_PASSWORD=...
+SBK_RELEASE_KEY_ALIAS=...
+SBK_RELEASE_KEY_PASSWORD=...
+```
+
+Do not commit keystores or `keystore.properties`.
+
+Current release decisions:
+
+- `versionName = 0.1.0` and `versionCode = 1` are intentionally kept for the first controlled release candidate line.
+- `isMinifyEnabled = false` is intentionally kept until release-device regression coverage is complete for the AccessibilityService detector path.
+- Google Play publishing remains out of scope for this repository state.
 
 ## Test And Lint
 

@@ -24,6 +24,7 @@ dist/*.apk.sha256
 dist/*.aab.sha256
 
 # Signing keys and certificates
+keystore.properties
 *.jks
 *.keystore
 *.p12

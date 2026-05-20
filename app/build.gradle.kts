@@ -1,8 +1,33 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ktlint)
 }
+
+val releaseSigningProperties = Properties()
+val releaseSigningPropertiesFile = rootProject.file("keystore.properties")
+if (releaseSigningPropertiesFile.isFile) {
+    releaseSigningPropertiesFile.inputStream().use(releaseSigningProperties::load)
+}
+
+fun releaseSigningValue(name: String): String? =
+    providers.environmentVariable(name).orNull
+        ?: providers.gradleProperty(name).orNull
+        ?: releaseSigningProperties.getProperty(name)
+
+val releaseStoreFile = releaseSigningValue("SBK_RELEASE_STORE_FILE")
+val releaseStorePassword = releaseSigningValue("SBK_RELEASE_STORE_PASSWORD")
+val releaseKeyAlias = releaseSigningValue("SBK_RELEASE_KEY_ALIAS")
+val releaseKeyPassword = releaseSigningValue("SBK_RELEASE_KEY_PASSWORD")
+val isReleaseSigningConfigured =
+    listOf(
+        releaseStoreFile,
+        releaseStorePassword,
+        releaseKeyAlias,
+        releaseKeyPassword,
+    ).all { !it.isNullOrBlank() }
 
 android {
     namespace = "com.shortsblockerkids"
@@ -23,6 +48,17 @@ android {
         buildConfig = true
     }
 
+    signingConfigs {
+        if (isReleaseSigningConfigured) {
+            create("release") {
+                storeFile = rootProject.file(releaseStoreFile!!)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
@@ -32,6 +68,9 @@ android {
         }
 
         release {
+            if (isReleaseSigningConfigured) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             isDebuggable = false
             isMinifyEnabled = false
             buildConfigField("boolean", "ACCESSIBILITY_DEBUG_TOOLS_ENABLED", "false")
