@@ -10,8 +10,8 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.shortsblockerkids.core.entitlement.FreeTestPolicy
 import com.shortsblockerkids.core.model.ProtectionMode
-import com.shortsblockerkids.core.model.SubscriptionState
 import com.shortsblockerkids.core.security.PinHasher
 import com.shortsblockerkids.core.security.PinRateLimiter
 import com.shortsblockerkids.core.security.PinVerificationResult
@@ -44,6 +44,17 @@ class SettingsRepository(
     suspend fun setProtectionEnabled(enabled: Boolean) {
         dataStore.edit { preferences ->
             preferences[KEY_PROTECTION_ENABLED] = enabled
+        }
+    }
+
+    suspend fun recordSuccessfulProtectionActivation(nowMillis: Long = System.currentTimeMillis()) {
+        dataStore.edit { preferences ->
+            preferences[KEY_PROTECTION_ENABLED] = true
+            preferences[KEY_FREE_TEST_DURATION_DAYS] =
+                preferences[KEY_FREE_TEST_DURATION_DAYS] ?: FreeTestPolicy.DEFAULT_DURATION_DAYS
+            if (preferences[KEY_FREE_TEST_STARTED_AT] == null) {
+                preferences[KEY_FREE_TEST_STARTED_AT] = nowMillis
+            }
         }
     }
 
@@ -82,16 +93,6 @@ class SettingsRepository(
             if (allowUntil <= nowMillis) {
                 preferences.remove(KEY_TEMPORARY_ALLOW_UNTIL)
             }
-        }
-    }
-
-    suspend fun setCachedEntitlement(
-        state: SubscriptionState,
-        checkedAtMillis: Long?,
-    ) {
-        dataStore.edit { preferences ->
-            preferences[KEY_SUBSCRIPTION_STATE_CACHED] = state.name
-            preferences.setNullableLong(KEY_LAST_BILLING_CHECK_AT, checkedAtMillis)
         }
     }
 
@@ -168,12 +169,9 @@ class SettingsRepository(
             accessibilityDisclosureAccepted = this[KEY_ACCESSIBILITY_DISCLOSURE_ACCEPTED] ?: false,
             selectedMode = enumValueOrDefault(this[KEY_SELECTED_MODE], ProtectionMode.BLOCK_SHORTS),
             temporaryAllowUntil = this[KEY_TEMPORARY_ALLOW_UNTIL],
-            subscriptionStateCached =
-                enumValueOrDefault(
-                    this[KEY_SUBSCRIPTION_STATE_CACHED],
-                    SubscriptionState.UNKNOWN,
-                ),
-            lastBillingCheckAt = this[KEY_LAST_BILLING_CHECK_AT],
+            freeTestStartedAt = this[KEY_FREE_TEST_STARTED_AT],
+            freeTestDurationDays =
+                this[KEY_FREE_TEST_DURATION_DAYS] ?: FreeTestPolicy.DEFAULT_DURATION_DAYS,
             pinHash = this[KEY_PIN_HASH],
             pinSalt = this[KEY_PIN_SALT],
             pinHashVersion = this[KEY_PIN_HASH_VERSION] ?: PinHasher.CURRENT_VERSION,
@@ -205,8 +203,8 @@ class SettingsRepository(
             )
         private val KEY_SELECTED_MODE = stringPreferencesKey("selectedMode")
         private val KEY_TEMPORARY_ALLOW_UNTIL = longPreferencesKey("temporaryAllowUntil")
-        private val KEY_SUBSCRIPTION_STATE_CACHED = stringPreferencesKey("subscriptionStateCached")
-        private val KEY_LAST_BILLING_CHECK_AT = longPreferencesKey("lastBillingCheckAt")
+        private val KEY_FREE_TEST_STARTED_AT = longPreferencesKey("free_test_started_at")
+        private val KEY_FREE_TEST_DURATION_DAYS = intPreferencesKey("free_test_duration_days")
         private val KEY_PIN_HASH = stringPreferencesKey("pinHash")
         private val KEY_PIN_SALT = stringPreferencesKey("pinSalt")
         private val KEY_PIN_HASH_VERSION = intPreferencesKey("pinHashVersion")

@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun EnableAccessibilityScreen(
+    isAccessibilityServiceEnabled: Boolean,
     onOpenAccessibilitySettings: () -> Unit,
     onEnabled: () -> Unit,
     modifier: Modifier = Modifier,
@@ -44,6 +45,22 @@ fun EnableAccessibilityScreen(
                     "3. Turn the service on.\n" +
                     "4. Return to this app.",
             style = MaterialTheme.typography.bodyLarge,
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text =
+                if (isAccessibilityServiceEnabled) {
+                    "Protection permission enabled"
+                } else {
+                    "Protection permission missing"
+                },
+            style = MaterialTheme.typography.bodyMedium,
+            color =
+                if (isAccessibilityServiceEnabled) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.error
+                },
         )
         Spacer(modifier = Modifier.height(32.dp))
         Button(

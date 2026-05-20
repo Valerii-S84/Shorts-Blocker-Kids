@@ -1,16 +1,16 @@
 package com.shortsblockerkids.core.storage
 
-import com.shortsblockerkids.core.billing.EntitlementResolver
+import com.shortsblockerkids.core.entitlement.FreeTestPolicy
+import com.shortsblockerkids.core.model.EntitlementState
 import com.shortsblockerkids.core.model.ProtectionMode
-import com.shortsblockerkids.core.model.SubscriptionState
 
 data class AppSettings(
     val protectionEnabled: Boolean = true,
     val accessibilityDisclosureAccepted: Boolean = false,
     val selectedMode: ProtectionMode = ProtectionMode.BLOCK_SHORTS,
     val temporaryAllowUntil: Long? = null,
-    val subscriptionStateCached: SubscriptionState = SubscriptionState.UNKNOWN,
-    val lastBillingCheckAt: Long? = null,
+    val freeTestStartedAt: Long? = null,
+    val freeTestDurationDays: Int = FreeTestPolicy.DEFAULT_DURATION_DAYS,
     val pinHash: String? = null,
     val pinSalt: String? = null,
     val pinHashVersion: Int = 1,
@@ -32,11 +32,27 @@ data class AppSettings(
         return allowUntil <= nowMillis
     }
 
+    fun freeTestState(nowMillis: Long): EntitlementState {
+        val startedAt = freeTestStartedAt ?: return EntitlementState.FREE_TEST_NOT_STARTED
+        return if (FreeTestPolicy.isActive(startedAt, freeTestDurationDays, nowMillis)) {
+            EntitlementState.FREE_TEST_ACTIVE
+        } else {
+            EntitlementState.FREE_TEST_EXPIRED
+        }
+    }
+
+    fun freeTestDaysRemaining(nowMillis: Long): Int? =
+        FreeTestPolicy.daysRemaining(
+            startedAtMillis = freeTestStartedAt,
+            durationDays = freeTestDurationDays,
+            nowMillis = nowMillis,
+        )
+
     fun canProtect(nowMillis: Long): Boolean =
         protectionEnabled &&
             accessibilityDisclosureAccepted &&
             selectedMode == ProtectionMode.BLOCK_SHORTS &&
-            EntitlementResolver.canUseProtection(subscriptionStateCached) &&
+            freeTestState(nowMillis) == EntitlementState.FREE_TEST_ACTIVE &&
             isPinCreated &&
             !isTemporarilyAllowed(nowMillis)
 }

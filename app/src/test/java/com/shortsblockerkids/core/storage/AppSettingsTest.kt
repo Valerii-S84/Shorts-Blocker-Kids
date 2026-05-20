@@ -1,18 +1,32 @@
 package com.shortsblockerkids.core.storage
 
-import com.shortsblockerkids.core.model.SubscriptionState
+import com.shortsblockerkids.core.entitlement.FreeTestPolicy
+import com.shortsblockerkids.core.model.EntitlementState
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class AppSettingsTest {
     @Test
-    fun canProtectOnlyWhenLocalSetupIsComplete() {
+    fun freeTestDoesNotStartOnFirstAppOpen() {
+        val settings = AppSettings()
+
+        assertEquals(
+            EntitlementState.FREE_TEST_NOT_STARTED,
+            settings.freeTestState(nowMillis = 1_000L),
+        )
+        assertEquals(null, settings.freeTestDaysRemaining(nowMillis = 1_000L))
+        assertFalse(settings.canProtect(nowMillis = 1_000L))
+    }
+
+    @Test
+    fun canProtectOnlyWhenLocalSetupAndFreeTestAreActive() {
         val settings =
             AppSettings(
                 protectionEnabled = true,
                 accessibilityDisclosureAccepted = true,
-                subscriptionStateCached = SubscriptionState.ACTIVE,
+                freeTestStartedAt = TEST_STARTED_AT,
                 pinHash = "hash",
                 pinSalt = "salt",
             )
@@ -26,30 +40,36 @@ class AppSettingsTest {
     }
 
     @Test
-    fun expiredOrOnHoldSubscriptionDisablesProtection() {
+    fun freeTestIsActiveOnDayOne() {
         val settings =
-            AppSettings(
-                protectionEnabled = true,
-                accessibilityDisclosureAccepted = true,
-                pinHash = "hash",
-                pinSalt = "salt",
+            activeSettings(
+                freeTestStartedAt = TEST_STARTED_AT,
             )
 
-        assertFalse(
-            settings
-                .copy(subscriptionStateCached = SubscriptionState.EXPIRED)
-                .canProtect(nowMillis = 1_000L),
+        assertEquals(
+            EntitlementState.FREE_TEST_ACTIVE,
+            settings.freeTestState(nowMillis = ONE_DAY),
         )
-        assertFalse(
-            settings
-                .copy(subscriptionStateCached = SubscriptionState.ON_HOLD)
-                .canProtect(nowMillis = 1_000L),
-        )
-        assertTrue(
-            settings
-                .copy(subscriptionStateCached = SubscriptionState.ACTIVE)
-                .canProtect(nowMillis = 1_000L),
-        )
+        assertTrue(settings.canProtect(nowMillis = ONE_DAY))
+    }
+
+    @Test
+    fun freeTestIsActiveOnDayTwentyBeforeExpiryTime() {
+        val settings = activeSettings(freeTestStartedAt = TEST_STARTED_AT)
+        val beforeExpiry = TWENTY_DAYS - 1L
+
+        assertEquals(EntitlementState.FREE_TEST_ACTIVE, settings.freeTestState(beforeExpiry))
+        assertEquals(1, settings.freeTestDaysRemaining(beforeExpiry))
+        assertTrue(settings.canProtect(nowMillis = beforeExpiry))
+    }
+
+    @Test
+    fun freeTestExpiresAfterTwentyDays() {
+        val settings = activeSettings(freeTestStartedAt = TEST_STARTED_AT)
+
+        assertEquals(EntitlementState.FREE_TEST_EXPIRED, settings.freeTestState(TWENTY_DAYS))
+        assertEquals(0, settings.freeTestDaysRemaining(TWENTY_DAYS))
+        assertFalse(settings.canProtect(nowMillis = TWENTY_DAYS))
     }
 
     @Test
@@ -58,7 +78,7 @@ class AppSettingsTest {
             AppSettings(
                 protectionEnabled = true,
                 accessibilityDisclosureAccepted = true,
-                subscriptionStateCached = SubscriptionState.ACTIVE,
+                freeTestStartedAt = TEST_STARTED_AT,
                 temporaryAllowUntil = 2_000L,
                 pinHash = "hash",
                 pinSalt = "salt",
@@ -66,5 +86,21 @@ class AppSettingsTest {
 
         assertFalse(settings.canProtect(nowMillis = 1_500L))
         assertTrue(settings.canProtect(nowMillis = 2_500L))
+    }
+
+    private fun activeSettings(freeTestStartedAt: Long): AppSettings =
+        AppSettings(
+            protectionEnabled = true,
+            accessibilityDisclosureAccepted = true,
+            freeTestStartedAt = freeTestStartedAt,
+            freeTestDurationDays = FreeTestPolicy.DEFAULT_DURATION_DAYS,
+            pinHash = "hash",
+            pinSalt = "salt",
+        )
+
+    private companion object {
+        const val TEST_STARTED_AT = 0L
+        const val ONE_DAY = 24L * 60L * 60L * 1_000L
+        const val TWENTY_DAYS = FreeTestPolicy.DEFAULT_DURATION_DAYS * ONE_DAY
     }
 }

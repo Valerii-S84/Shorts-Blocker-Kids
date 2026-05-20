@@ -1,7 +1,7 @@
 package com.shortsblockerkids.core.storage
 
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
-import com.shortsblockerkids.core.model.SubscriptionState
+import com.shortsblockerkids.core.entitlement.FreeTestPolicy
 import com.shortsblockerkids.core.security.PinVerificationResult
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -46,17 +46,48 @@ class SettingsRepositoryTest {
         }
 
     @Test
+    fun freeTestStartsOnlyAfterProtectionActivation() =
+        runBlocking {
+            val repository = createRepository("free-test-start")
+
+            assertEquals(null, repository.readSettings().first().freeTestStartedAt)
+
+            repository.savePin("4826")
+            repository.setDisclosureAccepted(true)
+            repository.setProtectionEnabled(true)
+
+            assertEquals(null, repository.readSettings().first().freeTestStartedAt)
+
+            repository.recordSuccessfulProtectionActivation(nowMillis = 5_000L)
+            val settings = repository.readSettings().first()
+
+            assertEquals(5_000L, settings.freeTestStartedAt)
+            assertEquals(FreeTestPolicy.DEFAULT_DURATION_DAYS, settings.freeTestDurationDays)
+        }
+
+    @Test
+    fun appRestartDoesNotResetFreeTestTimer() =
+        runBlocking {
+            val firstRepository = createRepository("free-test-restart")
+            firstRepository.recordSuccessfulProtectionActivation(nowMillis = 5_000L)
+            cancelOpenStores()
+
+            val restartedRepository = createRepository("free-test-restart")
+            restartedRepository.recordSuccessfulProtectionActivation(nowMillis = 10_000L)
+            val settings = restartedRepository.readSettings().first()
+
+            assertEquals(5_000L, settings.freeTestStartedAt)
+            assertEquals(FreeTestPolicy.DEFAULT_DURATION_DAYS, settings.freeTestDurationDays)
+        }
+
+    @Test
     fun persistsProtectionStateAndTemporaryAllowExpiry() =
         runBlocking {
             val repository = createRepository("settings")
 
             repository.savePin("4826")
             repository.setDisclosureAccepted(true)
-            repository.setProtectionEnabled(true)
-            repository.setCachedEntitlement(
-                state = SubscriptionState.ACTIVE,
-                checkedAtMillis = 1_000L,
-            )
+            repository.recordSuccessfulProtectionActivation(nowMillis = 1_000L)
             repository.setTemporaryAllowUntil(2_000L)
 
             val allowedSettings = repository.readSettings().first()
@@ -90,11 +121,7 @@ class SettingsRepositoryTest {
 
             repository.savePin("4826")
             repository.setDisclosureAccepted(true)
-            repository.setProtectionEnabled(true)
-            repository.setCachedEntitlement(
-                state = SubscriptionState.ACTIVE,
-                checkedAtMillis = 1_000L,
-            )
+            repository.recordSuccessfulProtectionActivation(nowMillis = 1_000L)
             repository.setTemporaryAllowUntil(2_000L)
 
             repository.clearExpiredTemporaryAllow(nowMillis = 2_500L)
@@ -125,18 +152,14 @@ class SettingsRepositoryTest {
         }
 
     @Test
-    fun cachesSubscriptionEntitlementState() =
+    fun pinRemainsRequiredForSettingsAccess() =
         runBlocking {
-            val repository = createRepository("entitlement")
+            val repository = createRepository("settings-pin")
 
-            repository.setCachedEntitlement(
-                state = SubscriptionState.ACTIVE,
-                checkedAtMillis = 5_000L,
-            )
-            val settings = repository.readSettings().first()
+            repository.savePin("4826")
 
-            assertEquals(SubscriptionState.ACTIVE, settings.subscriptionStateCached)
-            assertEquals(5_000L, settings.lastBillingCheckAt)
+            assertTrue(repository.verifyPin("0000") is PinVerificationResult.Failure)
+            assertEquals(PinVerificationResult.Success, repository.verifyPin("4826"))
         }
 
     private fun createRepository(name: String): SettingsRepository {
@@ -148,5 +171,10 @@ class SettingsRepositoryTest {
                 produceFile = { File(temporaryFolder.root, "$name.preferences_pb") },
             )
         return SettingsRepository(dataStore)
+    }
+
+    private fun cancelOpenStores() {
+        scopes.forEach { it.cancel() }
+        scopes.clear()
     }
 }

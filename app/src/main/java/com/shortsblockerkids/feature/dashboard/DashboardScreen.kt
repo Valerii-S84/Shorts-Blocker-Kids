@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -19,7 +18,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.shortsblockerkids.core.model.SubscriptionState
+import com.shortsblockerkids.core.billing.BillingAvailability
+import com.shortsblockerkids.core.entitlement.LocalEntitlementResolver
+import com.shortsblockerkids.core.model.EntitlementState
 import com.shortsblockerkids.core.storage.AppSettings
 
 @Composable
@@ -27,22 +28,22 @@ fun DashboardScreen(
     settings: AppSettings,
     isAccessibilityServiceEnabled: Boolean,
     lastDetectorResult: String?,
-    billingMessage: String?,
     onOpenDetectorPlayground: (() -> Unit)?,
     onProtectionChanged: (Boolean) -> Unit,
     onOpenAccessibilitySettings: () -> Unit,
-    onStartMonthlySubscription: () -> Unit,
-    onStartYearlySubscription: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val nowMillis = System.currentTimeMillis()
+    val freeTestState = settings.freeTestState(nowMillis)
+    val entitlementState =
+        LocalEntitlementResolver.resolve(
+            settings = settings,
+            isProtectionPermissionGranted = isAccessibilityServiceEnabled,
+            nowMillis = nowMillis,
+        )
     val isProtectionActive =
-        settings.canProtect(System.currentTimeMillis()) && isAccessibilityServiceEnabled
-    val runtimeStatus =
-        if (isProtectionActive) {
-            "active"
-        } else {
-            "inactive"
-        }
+        entitlementState == EntitlementState.PROTECTION_ACTIVE
+    val isProtectionLocked = entitlementState == EntitlementState.PROTECTION_LOCKED
 
     Column(
         modifier =
@@ -65,46 +66,46 @@ fun DashboardScreen(
             ) {
                 ProtectionRow(
                     label = "YouTube Shorts Protection",
-                    value = if (settings.protectionEnabled) "ON" else "OFF",
+                    value = protectionSwitchLabel(settings, isProtectionLocked),
                     control = {
                         Switch(
-                            checked = settings.protectionEnabled,
+                            checked = settings.protectionEnabled && !isProtectionLocked,
                             onCheckedChange = onProtectionChanged,
+                            enabled = !isProtectionLocked,
                         )
                     },
                 )
                 StatusRow("PIN", if (settings.isPinCreated) "created" else "not created")
                 StatusRow(
-                    "Accessibility Service",
-                    if (isAccessibilityServiceEnabled) "enabled" else "disabled",
+                    "Free test",
+                    freeTestState.dashboardLabel(),
                 )
-                StatusRow("Protection status", runtimeStatus)
-                StatusRow("Subscription", settings.subscriptionStateCached.dashboardLabel())
-                if (settings.subscriptionStateCached == SubscriptionState.EXPIRED) {
-                    Text(
-                        text = "Subscription ended. Shorts blocking is paused until access is active.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.error,
-                    )
+                settings.freeTestDaysRemaining(nowMillis)?.let { daysRemaining ->
+                    StatusRow("Days remaining", "$daysRemaining days remaining")
                 }
-                if (settings.subscriptionStateCached == SubscriptionState.ON_HOLD) {
-                    Text(
-                        text = "Subscription is on hold. Update Google Play billing to resume protection.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.error,
-                    )
+                StatusRow(
+                    "Protection permission",
+                    if (isAccessibilityServiceEnabled) {
+                        "enabled"
+                    } else {
+                        "Protection permission missing"
+                    },
+                )
+                StatusRow("Protection status", entitlementState.protectionLabel())
+                if (freeTestState == EntitlementState.FREE_TEST_EXPIRED) {
+                    ErrorText("Free test period ended. ${BillingAvailability.DEFERRED_MESSAGE}")
+                }
+                if (!isAccessibilityServiceEnabled) {
+                    ErrorText("Protection permission missing")
                 }
                 if (!isProtectionActive) {
                     val inactiveMessage =
                         protectionInactiveMessage(
                             settings = settings,
                             isAccessibilityServiceEnabled = isAccessibilityServiceEnabled,
+                            nowMillis = nowMillis,
                         )
-                    Text(
-                        text = inactiveMessage,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.error,
-                    )
+                    ErrorText(inactiveMessage)
                 }
                 Text(
                     text =
@@ -117,27 +118,6 @@ fun DashboardScreen(
                 if (lastDetectorResult != null) {
                     StatusRow("Last detector result", lastDetectorResult)
                 }
-                if (billingMessage != null) {
-                    StatusRow("Billing", billingMessage)
-                }
-            }
-        }
-        Spacer(modifier = Modifier.height(24.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            OutlinedButton(
-                onClick = onStartMonthlySubscription,
-                modifier = Modifier.weight(1f),
-            ) {
-                Text("Monthly")
-            }
-            OutlinedButton(
-                onClick = onStartYearlySubscription,
-                modifier = Modifier.weight(1f),
-            ) {
-                Text("Yearly")
             }
         }
         Spacer(modifier = Modifier.height(12.dp))
@@ -162,7 +142,12 @@ fun DashboardScreen(
 private fun protectionInactiveMessage(
     settings: AppSettings,
     isAccessibilityServiceEnabled: Boolean,
+    nowMillis: Long,
 ): String {
+    if (settings.freeTestState(nowMillis) == EntitlementState.FREE_TEST_EXPIRED) {
+        return "Free test expired"
+    }
+
     if (!settings.protectionEnabled) {
         return "Protection inactive. Turn Protection ON to block Shorts."
     }
@@ -171,35 +156,57 @@ private fun protectionInactiveMessage(
         return "Protection inactive. Enable Accessibility Service."
     }
 
-    if (settings.isTemporarilyAllowed(System.currentTimeMillis())) {
+    if (settings.isTemporarilyAllowed(nowMillis)) {
         return "Protection inactive during temporary allow."
     }
 
-    if (settings.subscriptionStateCached == SubscriptionState.EXPIRED) {
-        return "Protection inactive. Subscription ended."
-    }
-
-    if (settings.subscriptionStateCached == SubscriptionState.ON_HOLD) {
-        return "Protection inactive. Subscription is on hold."
-    }
-
-    if (settings.subscriptionStateCached == SubscriptionState.UNKNOWN) {
-        return "Protection inactive. Subscription status is still checking."
+    if (settings.freeTestState(nowMillis) == EntitlementState.FREE_TEST_NOT_STARTED) {
+        return "Free test has not started. Enable protection permission to start " +
+            "the 20-day test."
     }
 
     return "Protection inactive. Complete setup to block Shorts."
 }
 
-private fun SubscriptionState.dashboardLabel(): String =
+private fun EntitlementState.dashboardLabel(): String =
     when (this) {
-        SubscriptionState.UNKNOWN -> "checking"
-        SubscriptionState.TRIAL -> "trial"
-        SubscriptionState.ACTIVE -> "active"
-        SubscriptionState.GRACE_PERIOD -> "grace period"
-        SubscriptionState.ON_HOLD -> "on hold"
-        SubscriptionState.CANCELED_BUT_ACTIVE_UNTIL_END -> "active until paid period ends"
-        SubscriptionState.EXPIRED -> "expired"
+        EntitlementState.FREE_TEST_NOT_STARTED -> "not started"
+        EntitlementState.FREE_TEST_ACTIVE -> "Free test active"
+        EntitlementState.FREE_TEST_EXPIRED -> "Free test expired"
+        EntitlementState.PROTECTION_PERMISSION_MISSING -> "Protection permission missing"
+        EntitlementState.PROTECTION_ACTIVE -> "Protection active"
+        EntitlementState.PROTECTION_LOCKED -> "Protection locked"
     }
+
+private fun EntitlementState.protectionLabel(): String =
+    when (this) {
+        EntitlementState.PROTECTION_ACTIVE -> "Protection active"
+        EntitlementState.PROTECTION_PERMISSION_MISSING -> "Protection permission missing"
+        EntitlementState.PROTECTION_LOCKED -> "Protection locked"
+        EntitlementState.FREE_TEST_ACTIVE -> "inactive"
+        EntitlementState.FREE_TEST_NOT_STARTED -> "not started"
+        EntitlementState.FREE_TEST_EXPIRED -> "Free test expired"
+    }
+
+private fun protectionSwitchLabel(
+    settings: AppSettings,
+    isProtectionLocked: Boolean,
+): String {
+    if (isProtectionLocked) {
+        return "LOCKED"
+    }
+
+    return if (settings.protectionEnabled) "ON" else "OFF"
+}
+
+@Composable
+private fun ErrorText(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.error,
+    )
+}
 
 @Composable
 private fun StatusRow(

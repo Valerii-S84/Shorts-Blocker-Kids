@@ -19,8 +19,6 @@ import androidx.compose.ui.Modifier
 import com.shortsblockerkids.BuildConfig
 import com.shortsblockerkids.accessibility.AccessibilityServiceStatus
 import com.shortsblockerkids.accessibility.RuntimeProtectionState
-import com.shortsblockerkids.core.billing.BillingClientGateway
-import com.shortsblockerkids.core.billing.BillingProductIds
 import com.shortsblockerkids.core.storage.AppSettings
 import com.shortsblockerkids.core.storage.SettingsRepository
 import com.shortsblockerkids.feature.blocking.TemporaryAllowScreen
@@ -42,37 +40,19 @@ import kotlinx.coroutines.runBlocking
 
 class MainActivity : ComponentActivity() {
     private lateinit var settingsRepository: SettingsRepository
-    private lateinit var billingClientGateway: BillingClientGateway
     private val activityScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val settingsState = mutableStateOf(AppSettings())
     private val accessibilityEnabledState = mutableStateOf(false)
     private val lastDetectorResultState = mutableStateOf<String?>(null)
     private val temporaryAllowRequestState = mutableStateOf(false)
-    private val billingMessageState = mutableStateOf<String?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         settingsRepository = SettingsRepository(this)
-        billingClientGateway =
-            BillingClientGateway(
-                context = this,
-                onEntitlementChanged = { state ->
-                    activityScope.launch {
-                        settingsRepository.setCachedEntitlement(
-                            state = state,
-                            checkedAtMillis = System.currentTimeMillis(),
-                        )
-                    }
-                },
-                onBillingMessage = { message ->
-                    billingMessageState.value = message
-                },
-            )
         temporaryAllowRequestState.value = intent.isTemporaryAllowRequest()
         loadInitialSettings()
         observeSettings()
         refreshState()
-        billingClientGateway.start()
 
         setContent {
             ShortsBlockerKidsTheme {
@@ -81,17 +61,10 @@ class MainActivity : ComponentActivity() {
                         settings = settingsState.value,
                         isAccessibilityServiceEnabled = accessibilityEnabledState.value,
                         lastDetectorResult = lastDetectorResultState.value,
-                        billingMessage = billingMessageState.value,
                         isTemporaryAllowRequested = temporaryAllowRequestState.value,
                         repository = settingsRepository,
                         onOpenAccessibilitySettings = ::openAccessibilitySettings,
                         onStateChanged = ::refreshState,
-                        onStartMonthlySubscription = {
-                            launchSubscriptionPurchase(BillingProductIds.MONTHLY_SUBSCRIPTION)
-                        },
-                        onStartYearlySubscription = {
-                            launchSubscriptionPurchase(BillingProductIds.YEARLY_SUBSCRIPTION)
-                        },
                         onTemporaryAllowRequestConsumed = {
                             temporaryAllowRequestState.value = false
                         },
@@ -115,15 +88,9 @@ class MainActivity : ComponentActivity() {
         if (::settingsRepository.isInitialized) {
             refreshState()
         }
-        if (::billingClientGateway.isInitialized) {
-            billingClientGateway.refreshBillingState()
-        }
     }
 
     override fun onDestroy() {
-        if (::billingClientGateway.isInitialized) {
-            billingClientGateway.endConnection()
-        }
         activityScope.cancel()
         super.onDestroy()
     }
@@ -159,10 +126,6 @@ class MainActivity : ComponentActivity() {
         startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
     }
 
-    private fun launchSubscriptionPurchase(productId: String) {
-        billingClientGateway.launchSubscriptionPurchase(this, productId)
-    }
-
     private fun Intent?.isTemporaryAllowRequest(): Boolean = this?.getBooleanExtra(EXTRA_OPEN_TEMPORARY_ALLOW_PIN, false) == true
 
     companion object {
@@ -175,13 +138,10 @@ private fun ShortsBlockerKidsApp(
     settings: AppSettings,
     isAccessibilityServiceEnabled: Boolean,
     lastDetectorResult: String?,
-    billingMessage: String?,
     isTemporaryAllowRequested: Boolean,
     repository: SettingsRepository,
     onOpenAccessibilitySettings: () -> Unit,
     onStateChanged: () -> Unit,
-    onStartMonthlySubscription: () -> Unit,
-    onStartYearlySubscription: () -> Unit,
     onTemporaryAllowRequestConsumed: () -> Unit,
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -211,6 +171,23 @@ private fun ShortsBlockerKidsApp(
             isUnlocked = false
             screen = AppScreen.PinEntry
             onTemporaryAllowRequestConsumed()
+        }
+    }
+
+    LaunchedEffect(
+        screen,
+        isAccessibilityServiceEnabled,
+        settings.freeTestStartedAt,
+        settings.protectionEnabled,
+        settings.accessibilityDisclosureAccepted,
+        settings.isPinCreated,
+    ) {
+        if (
+            screen == AppScreen.Dashboard &&
+            settings.shouldRecordProtectionActivation(isAccessibilityServiceEnabled)
+        ) {
+            repository.recordSuccessfulProtectionActivation()
+            onStateChanged()
         }
     }
 
@@ -268,10 +245,17 @@ private fun ShortsBlockerKidsApp(
 
             AppScreen.EnableAccessibility ->
                 EnableAccessibilityScreen(
+                    isAccessibilityServiceEnabled = isAccessibilityServiceEnabled,
                     onOpenAccessibilitySettings = onOpenAccessibilitySettings,
                     onEnabled = {
                         onStateChanged()
-                        screen = AppScreen.Dashboard
+                        if (isAccessibilityServiceEnabled) {
+                            coroutineScope.launch {
+                                repository.recordSuccessfulProtectionActivation()
+                                onStateChanged()
+                                screen = AppScreen.Dashboard
+                            }
+                        }
                     },
                 )
 
@@ -280,7 +264,6 @@ private fun ShortsBlockerKidsApp(
                     settings = settings,
                     isAccessibilityServiceEnabled = isAccessibilityServiceEnabled,
                     lastDetectorResult = lastDetectorResult,
-                    billingMessage = billingMessage,
                     onOpenDetectorPlayground =
                         if (BuildConfig.ACCESSIBILITY_DEBUG_TOOLS_ENABLED) {
                             { screen = AppScreen.DetectorPlayground }
@@ -290,7 +273,11 @@ private fun ShortsBlockerKidsApp(
                     onProtectionChanged = { enabled ->
                         if (enabled) {
                             coroutineScope.launch {
-                                repository.setProtectionEnabled(true)
+                                if (isAccessibilityServiceEnabled) {
+                                    repository.recordSuccessfulProtectionActivation()
+                                } else {
+                                    repository.setProtectionEnabled(true)
+                                }
                                 onStateChanged()
                             }
                         } else {
@@ -301,8 +288,6 @@ private fun ShortsBlockerKidsApp(
                         }
                     },
                     onOpenAccessibilitySettings = onOpenAccessibilitySettings,
-                    onStartMonthlySubscription = onStartMonthlySubscription,
-                    onStartYearlySubscription = onStartYearlySubscription,
                 )
 
             AppScreen.DetectorPlayground ->
@@ -355,6 +340,13 @@ private fun unlockedDestination(
         AppScreen.AccessibilityDisclosure
     }
 }
+
+private fun AppSettings.shouldRecordProtectionActivation(isAccessibilityServiceEnabled: Boolean): Boolean =
+    isAccessibilityServiceEnabled &&
+        protectionEnabled &&
+        accessibilityDisclosureAccepted &&
+        isPinCreated &&
+        freeTestStartedAt == null
 
 private enum class AppScreen {
     Welcome,
