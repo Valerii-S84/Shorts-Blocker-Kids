@@ -1,7 +1,7 @@
 # Shorts Blocker Kids — детальна дорожня карта реалізації
 
-**Версія:** 1.0  
-**Дата:** 19 травня 2026  
+**Версія:** 1.1
+**Дата:** 22 травня 2026
 **Продукт:** Shorts Blocker Kids  
 **Формат:** Android-додаток, local-only, без акаунта, без власного сервера  
 **Головна функція:** блокувати YouTube Shorts на телефоні дитини через PIN батьків і локальні правила
@@ -81,6 +81,79 @@ Shorts Blocker Kids:
 ---
 
 # Roadmap
+
+## Active Production Execution Lock
+
+**Статус зараз:** ACTIVE
+**Мета:** довести поточний продукт до production, monetization і Play Store без scope drift.
+
+До завершення цього execution track не впроваджувати інші продуктові напрями.
+
+Заборонено додавати до повного завершення production-track:
+
+```text
+- нові платформи;
+- блокування інших сервісів, крім YouTube Shorts;
+- analytics;
+- ads;
+- child profiles;
+- family accounts;
+- cloud sync;
+- remote config;
+- web dashboard;
+- learning tasks;
+- math challenges;
+- schedules;
+- TikTok/Reels blocking;
+- device-owner strong mode;
+- aggressive anti-uninstall;
+- будь-які фічі, які не потрібні для Play Store production release.
+```
+
+Дозволено робити тільки те, що прямо закриває production-track:
+
+```text
+- policy package;
+- Accessibility disclosure і consent;
+- Play Accessibility declaration;
+- review demo video;
+- Privacy Policy;
+- Data Safety;
+- target audience decision;
+- real-device blocker QA;
+- AAB/release/signing pipeline;
+- Google Play Billing і entitlement;
+- internal/closed testing;
+- production access request;
+- staged rollout;
+- hotfix loop після release.
+```
+
+Активний порядок виконання:
+
+```text
+P0. Policy package і Play review readiness.
+P1. Real-device blocker QA.
+P2. AAB release pipeline і signing.
+P3. Google Play Billing + entitlement.
+P4. Store listing, Privacy Policy, Data Safety, declarations.
+P5. Internal testing.
+P6. Closed testing 14+ днів, якщо потрібно для account type.
+P7. Production access request.
+P8. Staged rollout.
+P9. Maintenance / hotfix loop.
+```
+
+Done цього lock:
+
+```text
+- Play policy package повністю готовий;
+- blocker пройшов real-device QA;
+- monetization доведена до робочого entitlement;
+- AAB accepted in Play Console testing track;
+- closed testing / production access вимоги виконані;
+- app вийшов у production або готовий до final rollout без critical blockers.
+```
 
 ## Phase 0 — Product Lock
 
@@ -827,8 +900,9 @@ TYPE_ACCESSIBILITY_OVERLAY
    - кнопка “Вийти з Shorts”
    - кнопка “Ввести PIN”
 3. Якщо натиснути “Вийти з Shorts”:
-   - performGlobalAction(GLOBAL_ACTION_BACK)
-   - закрити overlay
+   - performGlobalAction(GLOBAL_ACTION_HOME)
+   - залишити кнопку disabled на короткий час
+   - автоматично закрити overlay після успішного HOME action
 4. Якщо ввести PIN:
    - показати temporary allow options
 ```
@@ -856,6 +930,7 @@ TYPE_ACCESSIBILITY_OVERLAY
 - overlay не зʼявляється в інших додатках;
 - overlay не зʼявляється на звичайному YouTube-відео;
 - кнопка “Вийти з Shorts” повертає з Shorts;
+- кнопка “Вийти з Shorts” не клікає YouTube UI, не шукає YouTube Home tab і не відкриває YouTube URL;
 - PIN відкриває temporary allow;
 - overlay не зависає після виходу з YouTube;
 - overlay прибирається при вимкненні protection;
@@ -988,25 +1063,27 @@ Shorts Blocker Kids працює, коли захист увімкнено і An
 
 ---
 
-## Phase 10 — Website APK Subscription Launch
+## Phase 10 — Google Play Billing Monetization
 
 **Статус зараз:** Partial  
-**Мета:** підготувати перший платний запуск через website APK distribution і Stripe subscription backend без manual license key.
+**Мета:** довести monetization до Google Play production-ready стану через Google Play Billing.
 
-### First-launch channel
+### Active launch channel
 
 ```text
-Active first-launch path:
-- website APK download;
-- Telegram ads;
-- Stripe Checkout;
-- backend entitlement;
-- app auto-activation without code entry.
-
-Deferred path:
-- Google Play release;
+Active production path:
+- Google Play Store;
+- Android App Bundle;
 - Google Play Billing;
-- Play Store monetization policy review.
+- Play-managed subscription purchase flow;
+- app entitlement state from purchase state.
+
+Deferred / frozen:
+- website APK paid launch;
+- Stripe Checkout;
+- Stripe subscription backend;
+- manual license key;
+- code entry activation.
 ```
 
 ### Бізнес-модель
@@ -1016,37 +1093,30 @@ Deferred path:
 - €2.20 / місяць
 - recurring monthly subscription
 
-Payment provider for first launch:
-- Stripe Checkout
+Payment provider for Play Store launch:
+- Google Play Billing
 
 Subscription management:
-- Stripe Customer Portal
+- Google Play subscription management screen
 ```
 
 ### Важливе рішення
 
-Google Play Billing більше не є production blocker для першого запуску.
+Якщо додаток продає digital app functionality через Google Play, треба використовувати Google Play Billing.
 
-Website APK release використовує Stripe, тому потрібен мінімальний backend:
+Website APK + Stripe не виконувати, поки Play Store production-track не доведено до кінця.
 
-```text
-- create Stripe Checkout session;
-- receive Stripe webhooks;
-- store subscription state;
-- return entitlement state to app;
-- create Stripe Customer Portal session;
-- support test mode and production mode.
-```
+Backend purchase verification бажаний для production-рівня, але не є першим implementation-кроком, поки не завершено policy package і real-device QA.
 
-Backend не отримує child data, YouTube data, browsing history, video data або app usage details.
+Backend, якщо буде доданий пізніше, не повинен отримувати child data, YouTube data, browsing history, video data або app usage details.
 
-Backend отримує тільки billing-технічні дані:
+Backend може отримувати тільки billing-технічні дані:
 
 ```text
-- install/device identifier;
+- install identifier;
 - subscription status;
 - current period end;
-- Stripe customer/subscription IDs;
+- Play purchase token / subscription product ID;
 - activation status.
 ```
 
@@ -1086,102 +1156,105 @@ EXPIRED:
 - не можна блокувати доступ до вимкнення сервісу.
 ```
 
-### Не входить у перший Stripe launch
+### Не входить у Play Store monetization track
 
 ```text
 - manual license key;
 - code entry activation;
-- Google Play Billing production gate;
 - app account system;
 - child profiles;
 - cloud rules;
 - sync;
 - analytics;
-- child/YouTube activity upload.
+- child/YouTube activity upload;
+- Stripe launch path.
 ```
 
-### Phase 10A — Google Play Billing Freeze
-
-**Статус зараз:** Partial / Deferred
-
-Done:
-
-```text
-- Play Billing app-side preparation documented as deferred;
-- Play Billing is not required for website APK launch;
-- roadmap separates website launch from future Google Play launch;
-- no Play Billing production code changes are made in this phase.
-```
-
-### Phase 10B — Website APK Distribution
+### Phase 10A — Billing Policy Lock
 
 **Статус зараз:** TODO
 
 Done:
 
 ```text
-- website APK download page exists;
-- APK signing/release process is documented;
-- website explains sideloading clearly;
-- website links Privacy Policy and Terms;
-- APK install flow is tested on real phone.
+- Google Play Billing is confirmed as active Play Store monetization path;
+- Stripe / website APK billing is explicitly deferred;
+- no alternate payment links are shown inside Play-distributed app;
+- subscription product IDs are planned;
+- entitlement rules are documented.
 ```
 
-### Phase 10C — Stripe Subscription Backend
+### Phase 10B — Play Billing App Integration
 
 **Статус зараз:** TODO
 
 Done:
 
 ```text
-- backend service exists;
-- database schema exists;
-- Stripe test mode is configured;
-- checkout session creation works;
-- entitlement status endpoint works;
-- Stripe webhook processing is idempotent;
-- production secrets are documented but not committed.
+- Play Billing dependency is added;
+- BillingClient lifecycle is implemented;
+- product details loading works;
+- purchase flow starts from parent-only screen;
+- pending/canceled/error states are handled;
+- purchase acknowledgement is implemented;
+- restore purchases works;
+- Manage subscription link opens Google Play subscription management.
 ```
 
-### Phase 10D — Automatic App Activation Without License Key
+### Phase 10C — Entitlement Integration
 
 **Статус зараз:** TODO
 
 Done:
 
 ```text
-- app generates local install_id;
-- app starts Stripe Checkout inside app via browser/custom tab;
-- Stripe success return triggers entitlement refresh;
-- app polls backend entitlement;
-- active entitlement unlocks protection automatically;
-- no manual license key or code entry exists.
+- active subscription enables protection;
+- expired subscription blocks protection feature but never blocks access to settings;
+- canceled-but-active subscription remains active until period end;
+- payment problem state is visible to parent;
+- local cached entitlement has conservative expiry;
+- free test / paid entitlement precedence is documented and tested.
 ```
 
-### Phase 10E — Subscription Management And Cancellation
+### Phase 10D — Optional Backend Verification
+
+**Статус зараз:** Deferred
+
+Done:
+
+```text
+- backend requirement is decided before production rollout;
+- if implemented, purchase verification happens on secure backend;
+- backend stores only billing technical data;
+- real-time subscription lifecycle handling is documented;
+- no child/YouTube activity is uploaded.
+```
+
+### Phase 10E — Billing QA
 
 **Статус зараз:** TODO
 
 Done:
 
 ```text
-- app has Manage subscription button;
-- button opens Stripe Customer Portal;
-- cancel-at-period-end keeps access until current_period_end;
+- license tester purchase works;
+- subscription renewal/cancel/expire paths are tested;
+- pending purchase is tested if available;
+- restore purchases is tested after reinstall;
+- Manage subscription path is tested;
 - expired/unpaid state locks protection;
-- restore via email magic link is documented and implemented;
-- offline grace behavior is tested.
+- app never directs Play users to non-Play payment.
 ```
 
 ### Google Play policy note
 
-Якщо додаток пізніше розповсюджується через Google Play і продає цифровий subscription access всередині app, Google Play Billing rules треба переглянути заново до релізу.
+Якщо колись буде окремий website APK distribution, його треба планувати як окремий track після Play Store production і не змішувати з Play-distributed billing UX.
 
 ---
 
 ## Phase 11 — Privacy, Policy, Google Play Compliance
 
-**Статус зараз:** TODO  
+**Статус зараз:** TODO / P0
 **Мета:** підготувати додаток так, щоб Google Play review не виглядав як лотерея.
 
 ### AccessibilityService policy checklist
@@ -1198,6 +1271,23 @@ Done:
 - short review video;
 - app description, яка чесно описує Accessibility use.
 ```
+
+### Review demo video
+
+Відео для Play review має показати:
+
+```text
+1. Відкриття додатку.
+2. Prominent Accessibility disclosure і повний текст disclosure.
+3. Consent flow: користувач погоджується і переходить до Android Accessibility settings.
+4. Grant permission flow: увімкнення Shorts Blocker Kids service.
+5. Decline/no-consent flow або повторний показ disclosure перед permission.
+6. Core feature: YouTube Shorts відкрито → blocker overlay показано.
+7. Exit to phone home: натиснуто кнопку → Android HOME action → overlay auto-dismiss.
+8. Parent PIN / temporary allow flow.
+```
+
+Якщо поведінка AccessibilityService не очевидна з UI, додати voice-over або captions.
 
 ### Не ставити isAccessibilityTool=true
 
@@ -1551,26 +1641,27 @@ Other apps:
 ## A. Рекомендований порядок задач для розробника
 
 ```text
-1. Create Android project
-2. Add Compose + Material 3
-3. Add basic navigation
-4. Add PIN setup
-5. Add DataStore settings
-6. Add Accessibility disclosure
-7. Add AccessibilityService skeleton
-8. Filter YouTube package
-9. Build debug tree scanner
-10. Build Shorts detector v1
-11. Add overlay block screen
-12. Add PIN unlock inside overlay
-13. Add temporary allow
-14. Add dashboard status
-15. Add Play Billing
-16. Add privacy/policy screens
-17. Add release cleanup
-18. Run device test matrix
-19. Run closed testing
-20. Submit to Google Play
+Current implementation priority:
+
+1. Freeze scope under Active Production Execution Lock.
+2. Finish Accessibility disclosure / consent UX.
+3. Prepare Play Accessibility declaration answers.
+4. Record review demo video script and final video.
+5. Finalize Privacy Policy and in-app privacy link.
+6. Finalize Data Safety answers.
+7. Decide target audience before store listing.
+8. Run real-device blocker QA matrix.
+9. Build AAB release pipeline and signing/upload-key flow.
+10. Add Google Play Billing.
+11. Integrate billing entitlement into protection state.
+12. Add subscription management / restore flow.
+13. Run billing QA with license testers.
+14. Prepare store listing assets and reviewer notes.
+15. Upload AAB to internal testing.
+16. Run closed testing 14+ days if account requires it.
+17. Apply for production access if required.
+18. Run staged production rollout.
+19. Maintain hotfix loop for YouTube UI changes.
 ```
 
 ---
@@ -1769,16 +1860,17 @@ YouTube може змінити IDs/layout.
 Ризик:
 
 ```text
-Локальна перевірка entitlement менш захищена від обходу, ніж серверна.
+Локальна перевірка entitlement менш захищена від обходу, ніж secure backend verification.
 ```
 
 Рішення:
 
 ```text
-- для v1 прийняти local-only модель;
-- використовувати Play Billing правильно;
-- кешувати entitlement;
-- не додавати власний сервер тільки заради billing на старті.
+- використовувати Google Play Billing для Play-distributed app;
+- acknowledge purchases;
+- мати conservative cached entitlement;
+- до production rollout окремо вирішити, чи потрібен backend verification;
+- якщо backend додається, не передавати child/YouTube activity data.
 ```
 
 ---
@@ -1877,6 +1969,9 @@ YouTube Shorts відкрився → Shorts заблоковано.
 
 13. Google Play — App testing requirements for new personal developer accounts  
     https://support.google.com/googleplay/android-developer/answer/14151465
+
+14. Android Developers — Android App Bundle
+    https://developer.android.com/guide/app-bundle
 
 ---
 

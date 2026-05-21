@@ -1,109 +1,72 @@
 # Shorts Blocker Kids — Phase 10 Billing Checklist
 
-Status: Partial. First-launch billing path is website APK distribution with Stripe subscription backend. Google Play Billing is deferred.
+Status: Partial. Active production monetization path is Google Play Store + Android App Bundle + Google Play Billing. Website APK + Stripe is deferred until the Play Store production track is complete.
 
-## Phase 10A — Play Billing Freeze
+## Execution Lock
 
-- [x] Google Play Billing app-side preparation is documented as Partial / Deferred.
-- [x] Google Play Billing is not a production blocker for website APK launch.
-- [x] Website APK + Stripe is the active first-launch billing path.
-- [x] First-launch subscription price is `€2.20/month`.
-- [x] No backend code is implemented in Phase 10A.
-- [x] No Android Stripe UI is implemented in Phase 10A.
-- [x] No production code is changed in Phase 10A.
+- [x] Google Play Billing is the active monetization path for Play Store distribution.
+- [x] Website APK + Stripe is not part of the current production execution track.
+- [x] No alternate payment links are allowed inside a Play-distributed app.
+- [x] No manual license key or code entry activation is allowed in the Play Store track.
+- [x] Billing work must wait until P0 policy package and real-device blocker QA are not blocked.
 
-Deferred Play Billing notes:
+## Phase 10A — Billing Policy Lock
 
-- Existing Play Billing code can remain for later reuse.
-- Do not require Play Console products, Play Billing test purchases, or Play reviewer paid flow for website APK launch.
-- If the app is later distributed through Google Play and sells digital subscription access inside the app, Google Play Billing policy must be reviewed again before release.
+- [ ] Confirm final product type: recurring subscription.
+- [ ] Confirm first subscription price: `€2.20/month`.
+- [ ] Choose final Play product ID.
+- [ ] Document entitlement rules for active, canceled, expired, pending, past_due, and unpaid states.
+- [ ] Confirm no ads monetization in v1.
+- [ ] Confirm no non-Play payment CTA in Play-distributed app.
 
-## Phase 10B — Website APK Distribution Checklist
+## Phase 10B — Play Console Product Setup
 
-- [ ] Website has APK download page.
-- [ ] Website explains APK install/sideloading steps clearly.
-- [ ] Website explains `€2.20/month` subscription before install/payment.
-- [ ] Website links Privacy Policy.
-- [ ] Website links Terms and subscription cancellation info.
-- [ ] APK release signing process is documented.
-- [ ] APK checksum is published on the download page.
-- [ ] APK install is tested on a real Android phone.
-- [ ] First app launch explains local Shorts blocking, parent PIN, and subscription price.
-- [ ] No Play Store-specific billing language blocks website launch.
+- [ ] Play Console app exists.
+- [ ] Play App Signing / upload key flow is configured.
+- [ ] Android App Bundle upload path is tested.
+- [ ] Subscription product is created in Play Console.
+- [ ] Base plan is configured.
+- [ ] License testers are configured.
+- [ ] Test payment flow is available to testers.
 
-## Phase 10C — Stripe Backend Production Checklist
+## Phase 10C — App-Side Play Billing Integration
 
-- [ ] Backend service exists.
-- [ ] Database schema exists.
-- [ ] Stripe test mode is configured.
-- [ ] Stripe production mode is documented.
-- [ ] `POST /billing/checkout-session` creates Stripe Checkout sessions.
-- [ ] `POST /billing/webhook/stripe` verifies Stripe webhook signatures.
-- [ ] Webhook processing is idempotent by Stripe event ID.
-- [ ] `GET /entitlement/status?install_id=...` returns app entitlement state.
-- [ ] `POST /billing/customer-portal` creates Stripe Customer Portal sessions.
-- [ ] Backend supports active subscription state.
-- [ ] Backend supports cancel-at-period-end state.
-- [ ] Backend supports expired/canceled state.
-- [ ] Backend supports past_due/unpaid state.
-- [ ] Backend supports Stripe test and production mode separation.
-- [ ] Backend logs contain no child data, YouTube data, browsing history, video data, app usage details, or accessibility tree dumps.
+- [ ] Play Billing dependency is added.
+- [ ] BillingClient lifecycle is implemented.
+- [ ] Product details loading works.
+- [ ] Purchase flow starts only from a parent-controlled screen.
+- [ ] Purchase success is handled.
+- [ ] Purchase canceled is handled.
+- [ ] Purchase pending is handled if available for the product type.
+- [ ] Billing unavailable state is handled.
+- [ ] Purchase acknowledgement is implemented.
+- [ ] Restore purchases works after reinstall.
+- [ ] Manage subscription opens Google Play subscription management.
 
-Required Stripe events:
+## Phase 10D — Entitlement Integration
 
-- [ ] `checkout.session.completed`
-- [ ] `customer.subscription.created`
-- [ ] `customer.subscription.updated`
-- [ ] `customer.subscription.deleted`
-- [ ] `invoice.payment_succeeded`
-- [ ] `invoice.payment_failed`
+- [ ] Active subscription enables protection.
+- [ ] Canceled-but-active subscription keeps protection until period end.
+- [ ] Expired subscription disables paid protection.
+- [ ] Expired subscription never blocks parent access to settings.
+- [ ] Payment problem state is visible to parent.
+- [ ] Local cached entitlement is conservative.
+- [ ] Free test / paid entitlement precedence is documented.
+- [ ] Unit tests cover entitlement decisions.
+- [ ] Manual tests cover purchase, restore, cancel, expire, and payment problem states.
 
-Required secrets/env vars:
+## Phase 10E — Optional Backend Verification Decision
 
-- [ ] `STRIPE_SECRET_KEY`
-- [ ] `STRIPE_WEBHOOK_SECRET`
-- [ ] `STRIPE_PRICE_MONTHLY_EUR_220`
-- [ ] `STRIPE_CUSTOMER_PORTAL_RETURN_URL`
-- [ ] `STRIPE_CHECKOUT_SUCCESS_URL`
-- [ ] `STRIPE_CHECKOUT_CANCEL_URL`
-- [ ] `DATABASE_URL`
-- [ ] `APP_LINK_HOST`
-- [ ] `BACKEND_PUBLIC_BASE_URL`
-- [ ] `ENVIRONMENT`
-
-## Phase 10D — Automatic App Activation Checklist
-
-- [ ] App generates local `install_id`.
-- [ ] App generates local `install_secret`.
-- [ ] App starts payment inside the app.
-- [ ] Stripe Checkout opens in browser/custom tab.
-- [ ] Stripe success redirect returns to app App Link or website fallback.
-- [ ] Redirect is not trusted as proof of payment.
-- [ ] App polls backend entitlement after payment.
-- [ ] Webhook-activated entitlement unlocks protection automatically.
-- [ ] No manual license key screen exists.
-- [ ] No code entry activation exists.
-- [ ] Protection logic stays local after entitlement is cached.
-- [ ] Backend receives only billing technical data.
-
-## Phase 10E — Subscription Management Checklist
-
-- [ ] App has `Manage subscription` button.
-- [ ] Manage button opens Stripe Customer Portal.
-- [ ] Parent can cancel subscription through Customer Portal.
-- [ ] Cancel-at-period-end keeps protection until `current_period_end`.
-- [ ] Expired subscription locks protection.
-- [ ] Failed payment shows payment problem state.
-- [ ] Restore subscription uses email magic link.
-- [ ] Restore flow has no manual license key.
-- [ ] Offline grace lasts 72 hours after last successful active entitlement check.
-- [ ] Offline grace never extends beyond `current_period_end + 24h`.
+- [ ] Decide whether backend verification is required before production rollout.
+- [ ] If backend is added, it verifies purchase tokens with Google Play Developer API.
+- [ ] If backend is added, it stores only billing technical data.
+- [ ] If backend is added, it does not receive child data, YouTube data, browsing history, video data, app usage details, or accessibility tree dumps.
+- [ ] If backend is deferred, residual fraud risk is documented.
 
 ## Current Evidence
 
-- Roadmap separates website Stripe launch from future Google Play launch.
-- Phase 10 website Stripe plan exists in `docs/SHORTS_BLOCKER_PHASE_10_WEBSITE_STRIPE_PLAN.md`.
-- Play Billing is deferred as first-launch production blocker.
-- Backend is not implemented yet.
-- Android Stripe UI is not implemented yet.
-- Website APK page is not implemented yet.
+- Main roadmap now locks production work to Play Store / AAB / Google Play Billing.
+- Website APK + Stripe plan exists only as a deferred reference.
+- Backend is not implemented.
+- App-side Play Billing is not implemented.
+- Billing cannot be considered production-ready until policy, QA, Play product setup, app integration, and entitlement tests are complete.

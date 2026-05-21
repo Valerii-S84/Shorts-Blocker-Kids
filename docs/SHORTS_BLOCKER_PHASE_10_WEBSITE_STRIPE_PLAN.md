@@ -1,10 +1,18 @@
-# Shorts Blocker Kids — Phase 10 Website + Stripe Plan
+# Shorts Blocker Kids — Deferred Website + Stripe Plan
 
-Status: planning document for first website APK launch.
+Status: Deferred / frozen. This document is retained as a reference only. Do not implement this path until the Play Store production execution track is complete.
+
+Important: every section below is inactive historical planning material. It is not an implementation task list for the current production track.
 
 ## Decision
 
-First production launch uses:
+Current production execution track uses:
+
+- Google Play Store;
+- Android App Bundle;
+- Google Play Billing.
+
+The website APK + Stripe path is deferred and must not be implemented during the active Play Store production track:
 
 - website APK download;
 - Telegram ads;
@@ -13,9 +21,9 @@ First production launch uses:
 - backend entitlement;
 - automatic app activation without license key.
 
-Google Play Billing is deferred. It remains relevant only for a later Google Play release and must be reviewed again before Play Store distribution.
+Before this path can become active later, it requires a separate explicit decision, policy review, security review, and implementation plan.
 
-## Product Constraints
+## Deferred Product Constraints
 
 - No manual license key.
 - No code entry activation.
@@ -30,7 +38,7 @@ Google Play Billing is deferred. It remains relevant only for a later Google Pla
 - Restore uses email magic link, not manual key/code entry.
 - Offline grace is 72 hours and cannot go beyond `current_period_end + 24h`.
 
-## Price
+## Deferred Price
 
 ```text
 Product: Shorts Blocker Kids
@@ -41,7 +49,7 @@ Provider: Stripe
 Checkout mode: subscription
 ```
 
-## Exact User Flow
+## Deferred Exact User Flow
 
 1. Parent downloads APK from the website.
 2. Parent installs APK on the child phone.
@@ -67,7 +75,7 @@ Checkout mode: subscription
 18. Protection becomes available.
 19. If payment fails or entitlement is inactive, protection stays locked.
 
-## Screen States
+## Deferred Screen States
 
 1. Welcome screen.
 2. Parent PIN setup.
@@ -82,9 +90,9 @@ Checkout mode: subscription
 
 No manual license key screen is allowed.
 
-## Android App Responsibilities
+## Deferred Android App Responsibilities
 
-The app must:
+If this path is explicitly reactivated later, the app would need to:
 
 - generate and persist `install_id`;
 - generate and persist `install_secret`;
