@@ -7,6 +7,7 @@ import android.graphics.Color
 import android.graphics.PixelFormat
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
+import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.view.Gravity
@@ -211,19 +212,46 @@ class BlockOverlayController(
         }
 
         isYouTubeHomeNavigationInProgress = true
-        val navigationStarted = openYouTubeHome() || service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)
-        if (!navigationStarted) {
-            isYouTubeHomeNavigationInProgress = false
-            button.isEnabled = true
+        service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)
+        mainHandler.postDelayed(
+            { continueYouTubeHomeNavigation(button, attempt = 0) },
+            YOUTUBE_HOME_NAVIGATION_RETRY_DELAY_MS,
+        )
+    }
+
+    private fun continueYouTubeHomeNavigation(
+        button: Button,
+        attempt: Int,
+    ) {
+        if (openYouTubeHome()) {
+            completeYouTubeHomeNavigation()
             return
         }
 
+        if (attempt >= MAX_YOUTUBE_HOME_NAVIGATION_ATTEMPTS) {
+            if (openYouTubeHomeIntent()) {
+                completeYouTubeHomeNavigation()
+            } else {
+                isYouTubeHomeNavigationInProgress = false
+                button.isEnabled = true
+            }
+            return
+        }
+
+        service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)
+        mainHandler.postDelayed(
+            { continueYouTubeHomeNavigation(button, attempt + 1) },
+            YOUTUBE_HOME_NAVIGATION_RETRY_DELAY_MS,
+        )
+    }
+
+    private fun completeYouTubeHomeNavigation() {
         mainHandler.postDelayed(
             {
                 dismissOverlay()
                 onShortsCloseCompleted()
             },
-            YOUTUBE_HOME_NAVIGATION_DELAY_MS,
+            YOUTUBE_HOME_NAVIGATION_COMPLETE_DELAY_MS,
         )
     }
 
@@ -231,6 +259,18 @@ class BlockOverlayController(
         val root = findYouTubeRoot() ?: return false
         val homeNode = root.findHomeNode() ?: return false
         return homeNode.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+    }
+
+    private fun openYouTubeHomeIntent(): Boolean {
+        val intent =
+            Intent(Intent.ACTION_VIEW, Uri.parse(YOUTUBE_HOME_URI)).apply {
+                setPackage(YouTubeShortsDetector.YOUTUBE_PACKAGE)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            }
+        return runCatching {
+            service.startActivity(intent)
+            true
+        }.getOrDefault(false)
     }
 
     private fun findYouTubeRoot(): AccessibilityNodeInfo? =
@@ -258,6 +298,10 @@ class BlockOverlayController(
     }
 
     private fun AccessibilityNodeInfo.isYouTubeHomeNode(): Boolean {
+        if (viewIdResourceName?.endsWith("/bottom_bar_home") == true) {
+            return true
+        }
+
         val label = contentDescription?.toString() ?: text?.toString() ?: return false
         val normalized = label.lowercase(Locale.ROOT)
         return YOUTUBE_HOME_LABELS.any { homeLabel -> normalized.contains(homeLabel) }
@@ -342,7 +386,10 @@ class BlockOverlayController(
     companion object {
         private val OVERLAY_BACKGROUND_COLOR = Color.rgb(248, 249, 252)
         private val BRAND_COLOR = Color.rgb(36, 87, 166)
-        private const val YOUTUBE_HOME_NAVIGATION_DELAY_MS = 250L
+        private const val MAX_YOUTUBE_HOME_NAVIGATION_ATTEMPTS = 3
+        private const val YOUTUBE_HOME_NAVIGATION_RETRY_DELAY_MS = 450L
+        private const val YOUTUBE_HOME_NAVIGATION_COMPLETE_DELAY_MS = 500L
+        private const val YOUTUBE_HOME_URI = "https://www.youtube.com/"
         private val YOUTUBE_HOME_LABELS = setOf("home", "головна", "главная", "startseite")
     }
 }
