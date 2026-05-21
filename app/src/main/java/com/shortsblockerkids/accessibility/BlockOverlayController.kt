@@ -7,6 +7,8 @@ import android.graphics.Color
 import android.graphics.PixelFormat
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
+import android.os.Handler
+import android.os.Looper
 import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
@@ -26,11 +28,16 @@ class BlockOverlayController(
     private val onShortsCloseCompleted: () -> Unit = {},
 ) {
     private val windowManager = service.getSystemService(WindowManager::class.java)
+    private val mainHandler = Handler(Looper.getMainLooper())
     private val phoneHomeExitController =
         PhoneHomeExitController(
             phoneHomeAction =
                 PhoneHomeAction {
                     service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME)
+                },
+            delayedActionScheduler =
+                DelayedActionScheduler { delayMillis, action ->
+                    mainHandler.postDelayed({ action() }, delayMillis)
                 },
             onExitCompleted = {
                 dismissOverlay()
