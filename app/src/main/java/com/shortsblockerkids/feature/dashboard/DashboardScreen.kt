@@ -27,8 +27,6 @@ import com.shortsblockerkids.core.storage.AppSettings
 fun DashboardScreen(
     settings: AppSettings,
     isAccessibilityServiceEnabled: Boolean,
-    lastDetectorResult: String?,
-    onOpenDetectorPlayground: (() -> Unit)?,
     onProtectionChanged: (Boolean) -> Unit,
     onOpenAccessibilitySettings: () -> Unit,
     modifier: Modifier = Modifier,
@@ -115,9 +113,6 @@ fun DashboardScreen(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.secondary,
                 )
-                if (lastDetectorResult != null) {
-                    StatusRow("Last detector result", lastDetectorResult)
-                }
             }
         }
         Spacer(modifier = Modifier.height(12.dp))
@@ -126,15 +121,6 @@ fun DashboardScreen(
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text("Open Accessibility Settings")
-        }
-        if (onOpenDetectorPlayground != null) {
-            Spacer(modifier = Modifier.height(12.dp))
-            Button(
-                onClick = onOpenDetectorPlayground,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text("Detector Playground")
-            }
         }
     }
 }

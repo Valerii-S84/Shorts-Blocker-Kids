@@ -16,14 +16,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.shortsblockerkids.BuildConfig
 import com.shortsblockerkids.accessibility.AccessibilityServiceStatus
-import com.shortsblockerkids.accessibility.RuntimeProtectionState
 import com.shortsblockerkids.core.storage.AppSettings
 import com.shortsblockerkids.core.storage.SettingsRepository
 import com.shortsblockerkids.feature.blocking.TemporaryAllowScreen
 import com.shortsblockerkids.feature.dashboard.DashboardScreen
-import com.shortsblockerkids.feature.debug.DetectorPlaygroundScreen
 import com.shortsblockerkids.feature.onboarding.AccessibilityDisclosureScreen
 import com.shortsblockerkids.feature.onboarding.EnableAccessibilityScreen
 import com.shortsblockerkids.feature.onboarding.WelcomeScreen
@@ -43,7 +40,6 @@ class MainActivity : ComponentActivity() {
     private val activityScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val settingsState = mutableStateOf(AppSettings())
     private val accessibilityEnabledState = mutableStateOf(false)
-    private val lastDetectorResultState = mutableStateOf<String?>(null)
     private val temporaryAllowRequestState = mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -60,7 +56,6 @@ class MainActivity : ComponentActivity() {
                     ShortsBlockerKidsApp(
                         settings = settingsState.value,
                         isAccessibilityServiceEnabled = accessibilityEnabledState.value,
-                        lastDetectorResult = lastDetectorResultState.value,
                         isTemporaryAllowRequested = temporaryAllowRequestState.value,
                         repository = settingsRepository,
                         onOpenAccessibilitySettings = ::openAccessibilitySettings,
@@ -119,7 +114,6 @@ class MainActivity : ComponentActivity() {
 
     private fun refreshState() {
         accessibilityEnabledState.value = AccessibilityServiceStatus.isEnabled(this)
-        lastDetectorResultState.value = RuntimeProtectionState.lastDetectorResultText()
     }
 
     private fun openAccessibilitySettings() {
@@ -137,7 +131,6 @@ class MainActivity : ComponentActivity() {
 private fun ShortsBlockerKidsApp(
     settings: AppSettings,
     isAccessibilityServiceEnabled: Boolean,
-    lastDetectorResult: String?,
     isTemporaryAllowRequested: Boolean,
     repository: SettingsRepository,
     onOpenAccessibilitySettings: () -> Unit,
@@ -263,13 +256,6 @@ private fun ShortsBlockerKidsApp(
                 DashboardScreen(
                     settings = settings,
                     isAccessibilityServiceEnabled = isAccessibilityServiceEnabled,
-                    lastDetectorResult = lastDetectorResult,
-                    onOpenDetectorPlayground =
-                        if (BuildConfig.ACCESSIBILITY_DEBUG_TOOLS_ENABLED) {
-                            { screen = AppScreen.DetectorPlayground }
-                        } else {
-                            null
-                        },
                     onProtectionChanged = { enabled ->
                         if (enabled) {
                             coroutineScope.launch {
@@ -288,14 +274,6 @@ private fun ShortsBlockerKidsApp(
                         }
                     },
                     onOpenAccessibilitySettings = onOpenAccessibilitySettings,
-                )
-
-            AppScreen.DetectorPlayground ->
-                DetectorPlaygroundScreen(
-                    onBack = {
-                        onStateChanged()
-                        screen = AppScreen.Dashboard
-                    },
                 )
 
             AppScreen.TemporaryAllow ->
@@ -355,6 +333,5 @@ private enum class AppScreen {
     AccessibilityDisclosure,
     EnableAccessibility,
     Dashboard,
-    DetectorPlayground,
     TemporaryAllow,
 }

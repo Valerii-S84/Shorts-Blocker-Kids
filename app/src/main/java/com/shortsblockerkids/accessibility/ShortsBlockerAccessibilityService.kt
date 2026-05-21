@@ -31,6 +31,11 @@ class ShortsBlockerAccessibilityService : AccessibilityService() {
                         service = this,
                         onOverlayDismissed = blockingDecisionController::onOverlayDismissed,
                         onPinEntryRequested = blockingDecisionController::onPinEntryRequested,
+                        onShortsCloseCompleted = {
+                            if (::eventRouter.isInitialized) {
+                                eventRouter.dismissBlockingState()
+                            }
+                        },
                     ),
                 debugLogger = DebugAccessibilityLogger(),
                 debugSnapshotStore =
