@@ -7,13 +7,9 @@ import android.graphics.Color
 import android.graphics.PixelFormat
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
-import android.net.Uri
-import android.os.Handler
-import android.os.Looper
 import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
-import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.LinearLayout
@@ -21,7 +17,6 @@ import android.widget.ScrollView
 import android.widget.TextView
 import com.shortsblockerkids.MainActivity
 import com.shortsblockerkids.R
-import java.util.Locale
 import kotlin.math.roundToInt
 
 class BlockOverlayController(
@@ -31,9 +26,18 @@ class BlockOverlayController(
     private val onShortsCloseCompleted: () -> Unit = {},
 ) {
     private val windowManager = service.getSystemService(WindowManager::class.java)
-    private val mainHandler = Handler(Looper.getMainLooper())
+    private val phoneHomeExitController =
+        PhoneHomeExitController(
+            phoneHomeAction =
+                PhoneHomeAction {
+                    service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME)
+                },
+            onExitCompleted = {
+                dismissOverlay()
+                onShortsCloseCompleted()
+            },
+        )
     private var overlayView: View? = null
-    private var isYouTubeHomeNavigationInProgress = false
 
     val isOverlayVisible: Boolean
         get() = overlayView != null
@@ -66,7 +70,6 @@ class BlockOverlayController(
     fun dismissOverlay() {
         val view = overlayView
         overlayView = null
-        isYouTubeHomeNavigationInProgress = false
         if (view == null) {
             return
         }
@@ -155,7 +158,7 @@ class BlockOverlayController(
         ).apply {
             setOnClickListener {
                 isEnabled = false
-                closeShorts(this)
+                exitToPhoneHome(this)
             }
         }
 
@@ -206,116 +209,10 @@ class BlockOverlayController(
         service.startActivity(intent)
     }
 
-    private fun closeShorts(button: Button) {
-        if (isYouTubeHomeNavigationInProgress) {
-            return
+    private fun exitToPhoneHome(button: Button) {
+        if (!phoneHomeExitController.exitToPhoneHome()) {
+            button.isEnabled = true
         }
-
-        isYouTubeHomeNavigationInProgress = true
-        service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)
-        mainHandler.postDelayed(
-            { continueYouTubeHomeNavigation(button, attempt = 0) },
-            YOUTUBE_HOME_NAVIGATION_RETRY_DELAY_MS,
-        )
-    }
-
-    private fun continueYouTubeHomeNavigation(
-        button: Button,
-        attempt: Int,
-    ) {
-        if (openYouTubeHome()) {
-            completeYouTubeHomeNavigation()
-            return
-        }
-
-        if (attempt >= MAX_YOUTUBE_HOME_NAVIGATION_ATTEMPTS) {
-            if (openYouTubeHomeIntent()) {
-                completeYouTubeHomeNavigation()
-            } else {
-                isYouTubeHomeNavigationInProgress = false
-                button.isEnabled = true
-            }
-            return
-        }
-
-        service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)
-        mainHandler.postDelayed(
-            { continueYouTubeHomeNavigation(button, attempt + 1) },
-            YOUTUBE_HOME_NAVIGATION_RETRY_DELAY_MS,
-        )
-    }
-
-    private fun completeYouTubeHomeNavigation() {
-        mainHandler.postDelayed(
-            {
-                dismissOverlay()
-                onShortsCloseCompleted()
-            },
-            YOUTUBE_HOME_NAVIGATION_COMPLETE_DELAY_MS,
-        )
-    }
-
-    private fun openYouTubeHome(): Boolean {
-        val root = findYouTubeRoot() ?: return false
-        val homeNode = root.findHomeNode() ?: return false
-        return homeNode.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-    }
-
-    private fun openYouTubeHomeIntent(): Boolean {
-        val intent =
-            Intent(Intent.ACTION_VIEW, Uri.parse(YOUTUBE_HOME_URI)).apply {
-                setPackage(YouTubeShortsDetector.YOUTUBE_PACKAGE)
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-            }
-        return runCatching {
-            service.startActivity(intent)
-            true
-        }.getOrDefault(false)
-    }
-
-    private fun findYouTubeRoot(): AccessibilityNodeInfo? =
-        service.windows
-            .asSequence()
-            .mapNotNull { window -> window.root }
-            .firstOrNull { root -> root.packageName?.toString() == YouTubeShortsDetector.YOUTUBE_PACKAGE }
-            ?: service.rootInActiveWindow?.takeIf { root ->
-                root.packageName?.toString() == YouTubeShortsDetector.YOUTUBE_PACKAGE
-            }
-
-    private fun AccessibilityNodeInfo.findHomeNode(): AccessibilityNodeInfo? {
-        if (isVisibleToUser && isYouTubeHomeNode()) {
-            return findClickableTarget()
-        }
-
-        for (index in 0 until childCount) {
-            val match = getChild(index)?.findHomeNode()
-            if (match != null) {
-                return match
-            }
-        }
-
-        return null
-    }
-
-    private fun AccessibilityNodeInfo.isYouTubeHomeNode(): Boolean {
-        if (viewIdResourceName?.endsWith("/bottom_bar_home") == true) {
-            return true
-        }
-
-        val label = contentDescription?.toString() ?: text?.toString() ?: return false
-        val normalized = label.lowercase(Locale.ROOT)
-        return YOUTUBE_HOME_LABELS.any { homeLabel -> normalized.contains(homeLabel) }
-    }
-
-    private fun AccessibilityNodeInfo.findClickableTarget(): AccessibilityNodeInfo? {
-        var current: AccessibilityNodeInfo? = this
-        while (current != null) {
-            if (current.isClickable) {
-                return current
-            }
-            current = current.parent
-        }
-        return null
     }
 
     private fun frameMatchParent(): FrameLayout.LayoutParams =
@@ -386,10 +283,5 @@ class BlockOverlayController(
     companion object {
         private val OVERLAY_BACKGROUND_COLOR = Color.rgb(248, 249, 252)
         private val BRAND_COLOR = Color.rgb(36, 87, 166)
-        private const val MAX_YOUTUBE_HOME_NAVIGATION_ATTEMPTS = 3
-        private const val YOUTUBE_HOME_NAVIGATION_RETRY_DELAY_MS = 450L
-        private const val YOUTUBE_HOME_NAVIGATION_COMPLETE_DELAY_MS = 500L
-        private const val YOUTUBE_HOME_URI = "https://www.youtube.com/"
-        private val YOUTUBE_HOME_LABELS = setOf("home", "головна", "главная", "startseite")
     }
 }

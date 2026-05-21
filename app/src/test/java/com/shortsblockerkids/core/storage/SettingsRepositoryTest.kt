@@ -99,18 +99,25 @@ class SettingsRepositoryTest {
         }
 
     @Test
-    fun storesTemporaryAllowForFiveTenAndFifteenMinutes() =
+    fun validPinTemporaryAllowSelectionStoresExpiryForFiveTenAndFifteenMinutes() =
         runBlocking {
             val repository = createRepository("allow-durations")
             val nowMillis = 1_000L
+            repository.savePin("4826")
+            repository.setDisclosureAccepted(true)
+            repository.recordSuccessfulProtectionActivation(nowMillis = nowMillis)
+
+            assertEquals(PinVerificationResult.Success, repository.verifyPin("4826"))
 
             listOf(5, 10, 15).forEach { minutes ->
                 repository.setTemporaryAllowForMinutes(minutes, nowMillis)
+                val settings = repository.readSettings().first()
 
                 assertEquals(
                     nowMillis + minutes * 60_000L,
-                    repository.readSettings().first().temporaryAllowUntil,
+                    settings.temporaryAllowUntil,
                 )
+                assertFalse(settings.canProtect(nowMillis = nowMillis + 1L))
             }
         }
 
@@ -180,6 +187,21 @@ class SettingsRepositoryTest {
             repository.savePin("4826")
 
             assertTrue(repository.verifyPin("4827") is PinVerificationResult.Failure)
+        }
+
+    @Test
+    fun incorrectPinDoesNotSaveTemporaryAllowOrDisableBlocking() =
+        runBlocking {
+            val repository = createRepository("incorrect-pin-no-allow")
+            repository.savePin("4826")
+            repository.setDisclosureAccepted(true)
+            repository.recordSuccessfulProtectionActivation(nowMillis = 1_000L)
+
+            assertTrue(repository.verifyPin("4827") is PinVerificationResult.Failure)
+            val settings = repository.readSettings().first()
+
+            assertEquals(null, settings.temporaryAllowUntil)
+            assertTrue(settings.canProtect(nowMillis = 1_500L))
         }
 
     @Test

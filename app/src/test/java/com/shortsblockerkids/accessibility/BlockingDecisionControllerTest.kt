@@ -339,6 +339,20 @@ class BlockingDecisionControllerTest {
     }
 
     @Test
+    fun reopeningShortsAfterPhoneHomeExitCanBlockAgain() {
+        val controller =
+            BlockingDecisionController(
+                blockCooldownMs = 0L,
+                detectionDebounceMs = 0L,
+            )
+
+        assertEquals(BlockingDecision.ShowOverlay, controller.evaluateHigh(nowMillis = 1_000L))
+        controller.reset()
+
+        assertEquals(BlockingDecision.ShowOverlay, controller.evaluateHigh(nowMillis = 1_500L))
+    }
+
+    @Test
     fun temporaryAllowDismissesOverlayState() {
         val controller = BlockingDecisionController()
 
@@ -353,6 +367,27 @@ class BlockingDecisionControllerTest {
             ),
         )
         assertEquals(BlockingDecision.ShowOverlay, controller.evaluateHigh(nowMillis = 3_000L))
+    }
+
+    @Test
+    fun expiredTemporaryAllowBlocksShortsAgain() {
+        val controller =
+            BlockingDecisionController(
+                blockCooldownMs = 0L,
+                detectionDebounceMs = 0L,
+            )
+
+        assertEquals(BlockingDecision.ShowOverlay, controller.evaluateHigh(nowMillis = 1_000L))
+        assertEquals(
+            BlockingDecision.DismissOverlay,
+            controller.evaluate(
+                isInYouTube = true,
+                isProtectionActive = false,
+                result = DetectionResult.None,
+                nowMillis = 1_500L,
+            ),
+        )
+        assertEquals(BlockingDecision.ShowOverlay, controller.evaluateHigh(nowMillis = 2_500L))
     }
 
     private fun BlockingDecisionController.evaluateHigh(nowMillis: Long): BlockingDecision =

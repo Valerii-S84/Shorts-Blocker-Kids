@@ -19,6 +19,8 @@ import androidx.compose.ui.Modifier
 import com.shortsblockerkids.accessibility.AccessibilityServiceStatus
 import com.shortsblockerkids.core.storage.AppSettings
 import com.shortsblockerkids.core.storage.SettingsRepository
+import com.shortsblockerkids.feature.blocking.TemporaryAllowCompletion
+import com.shortsblockerkids.feature.blocking.TemporaryAllowFlowController
 import com.shortsblockerkids.feature.blocking.TemporaryAllowScreen
 import com.shortsblockerkids.feature.dashboard.DashboardScreen
 import com.shortsblockerkids.feature.onboarding.AccessibilityDisclosureScreen
@@ -60,6 +62,7 @@ class MainActivity : ComponentActivity() {
                         repository = settingsRepository,
                         onOpenAccessibilitySettings = ::openAccessibilitySettings,
                         onStateChanged = ::refreshState,
+                        onTemporaryAllowFlowClosed = ::closeTemporaryAllowRequest,
                         onTemporaryAllowRequestConsumed = {
                             temporaryAllowRequestState.value = false
                         },
@@ -120,6 +123,10 @@ class MainActivity : ComponentActivity() {
         startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
     }
 
+    private fun closeTemporaryAllowRequest() {
+        finishAndRemoveTask()
+    }
+
     private fun Intent?.isTemporaryAllowRequest(): Boolean = this?.getBooleanExtra(EXTRA_OPEN_TEMPORARY_ALLOW_PIN, false) == true
 
     companion object {
@@ -135,9 +142,14 @@ private fun ShortsBlockerKidsApp(
     repository: SettingsRepository,
     onOpenAccessibilitySettings: () -> Unit,
     onStateChanged: () -> Unit,
+    onTemporaryAllowFlowClosed: () -> Unit,
     onTemporaryAllowRequestConsumed: () -> Unit,
 ) {
     val coroutineScope = rememberCoroutineScope()
+    val temporaryAllowFlowController =
+        TemporaryAllowFlowController { minutes ->
+            repository.setTemporaryAllowForMinutes(minutes)
+        }
     var screen by rememberSaveable {
         mutableStateOf(initialScreen(settings))
     }
@@ -280,16 +292,24 @@ private fun ShortsBlockerKidsApp(
                 TemporaryAllowScreen(
                     onDurationSelected = { minutes ->
                         coroutineScope.launch {
-                            repository.setTemporaryAllowForMinutes(minutes)
+                            val completion = temporaryAllowFlowController.selectDuration(minutes)
                             pendingTemporaryAllow = false
                             pendingProtectionDisable = false
-                            screen = AppScreen.Dashboard
+                            onStateChanged()
+                            handleTemporaryAllowCompletion(
+                                completion = completion,
+                                onTemporaryAllowFlowClosed = onTemporaryAllowFlowClosed,
+                            )
                         }
                     },
                     onCancel = {
+                        val completion = temporaryAllowFlowController.cancel()
                         pendingTemporaryAllow = false
                         pendingProtectionDisable = false
-                        screen = AppScreen.Dashboard
+                        handleTemporaryAllowCompletion(
+                            completion = completion,
+                            onTemporaryAllowFlowClosed = onTemporaryAllowFlowClosed,
+                        )
                     },
                 )
         }
@@ -316,6 +336,15 @@ private fun unlockedDestination(
         AppScreen.Dashboard
     } else {
         AppScreen.AccessibilityDisclosure
+    }
+}
+
+private fun handleTemporaryAllowCompletion(
+    completion: TemporaryAllowCompletion,
+    onTemporaryAllowFlowClosed: () -> Unit,
+) {
+    when (completion) {
+        TemporaryAllowCompletion.ReturnToForegroundApp -> onTemporaryAllowFlowClosed()
     }
 }
 
