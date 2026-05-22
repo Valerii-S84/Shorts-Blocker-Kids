@@ -148,6 +148,12 @@ permission is added.
 
 ## Privacy Policy Draft
 
+Standalone draft:
+
+```text
+docs/SHORTS_BLOCKER_PRIVACY_POLICY_DRAFT.md
+```
+
 The hosted Privacy Policy must be public, active, non-PDF, non-geofenced, and
 must include the developer or company name plus a privacy contact.
 

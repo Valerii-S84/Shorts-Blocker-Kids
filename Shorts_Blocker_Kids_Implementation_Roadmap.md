@@ -1172,7 +1172,7 @@ EXPIRED:
 
 ### Phase 10A — Billing Policy Lock
 
-**Статус зараз:** TODO
+**Статус зараз:** DONE
 
 Done:
 
@@ -1180,7 +1180,7 @@ Done:
 - Google Play Billing is confirmed as active Play Store monetization path;
 - Stripe / website APK billing is explicitly deferred;
 - no alternate payment links are shown inside Play-distributed app;
-- subscription product IDs are planned;
+- subscription product ID is planned as shorts_blocker_kids_monthly;
 - entitlement rules are documented.
 ```
 

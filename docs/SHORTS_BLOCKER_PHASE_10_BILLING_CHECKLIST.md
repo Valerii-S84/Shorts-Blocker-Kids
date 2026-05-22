@@ -12,12 +12,34 @@ Status: Partial. Active production monetization path is Google Play Store + Andr
 
 ## Phase 10A — Billing Policy Lock
 
-- [ ] Confirm final product type: recurring subscription.
-- [ ] Confirm first subscription price: `€2.20/month`.
-- [ ] Choose final Play product ID.
-- [ ] Document entitlement rules for active, canceled, expired, pending, past_due, and unpaid states.
-- [ ] Confirm no ads monetization in v1.
-- [ ] Confirm no non-Play payment CTA in Play-distributed app.
+- [x] Confirm final product type: recurring subscription.
+- [x] Confirm first subscription price: `€2.20/month`.
+- [x] Choose planned Play product ID: `shorts_blocker_kids_monthly`.
+- [x] Document entitlement rules for active, canceled, expired, pending, past_due, and unpaid states.
+- [x] Confirm no ads monetization in v1.
+- [x] Confirm no non-Play payment CTA in Play-distributed app.
+
+Notes:
+
+- Product ID is planned for Play Console setup. If Play Console rejects it or a
+  different naming convention is chosen there, update this checklist before
+  app-side Billing integration.
+- The Play-distributed app must not show website, Stripe, manual license key,
+  code entry, or external payment CTAs.
+- No ads monetization is planned for v1.
+
+## Entitlement Rules
+
+| State | Protection behavior | Parent settings access | Notes |
+|---|---|---|---|
+| `UNKNOWN` | Do not newly enable paid protection unless free test is active. | Allowed. | Show a billing unavailable / restore-needed state when Billing is implemented. |
+| `ACTIVE` | Protection can run. | Allowed. | Purchase must be acknowledged. |
+| `CANCELED_BUT_ACTIVE_UNTIL_END` | Protection can run until paid-through end. | Allowed. | Show active-until date when available. |
+| `PENDING` | Paid protection not unlocked yet unless free test is active. | Allowed. | Show pending purchase state. |
+| `PAST_DUE` | Keep protection only during a conservative grace window. | Allowed. | Show payment problem. |
+| `UNPAID` | Paid protection locked after grace. | Allowed. | Never block parent settings access. |
+| `EXPIRED` | Paid protection locked. | Allowed. | Offer restore / subscribe when Billing is implemented. |
+| `OFFLINE_GRACE` | Protection can run temporarily from cached active entitlement. | Allowed. | Must not exceed documented grace limits. |
 
 ## Phase 10B — Play Console Product Setup
 
@@ -67,6 +89,8 @@ Status: Partial. Active production monetization path is Google Play Store + Andr
 
 - Main roadmap now locks production work to Play Store / AAB / Google Play Billing.
 - Website APK + Stripe plan exists only as a deferred reference.
+- Billing policy lock is documented for subscription, price, planned product ID,
+  and entitlement behavior.
 - Backend is not implemented.
 - App-side Play Billing is not implemented.
 - Billing cannot be considered production-ready until policy, QA, Play product setup, app integration, and entitlement tests are complete.
