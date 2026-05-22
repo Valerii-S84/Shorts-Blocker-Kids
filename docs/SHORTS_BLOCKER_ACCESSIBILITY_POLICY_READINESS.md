@@ -1,6 +1,7 @@
 # Shorts Blocker Kids Accessibility Policy Readiness
 
-Status: Draft package for Play review preparation.
+Status: Partial. Repository-side Play review package is prepared; external
+Play Console submission and demo video URL are pending.
 
 ## Scope
 
@@ -8,6 +9,25 @@ This document covers the AccessibilityService policy package for the current
 local-only Android app. It does not cover Billing, Stripe, backend, analytics,
 ads, profiles, cloud sync, schedules, TikTok/Reels blocking, or device-owner
 mode.
+
+## Official Policy Sources Checked
+
+- Google Play AccessibilityService API policy:
+  <https://support.google.com/googleplay/android-developer/answer/10964491>
+- Google Play Permissions and APIs that Access Sensitive Information:
+  <https://support.google.com/googleplay/android-developer/answer/9888170>
+- Google Play User Data policy:
+  <https://support.google.com/googleplay/android-developer/answer/9888076>
+- Google Play Data safety guidance:
+  <https://support.google.com/googleplay/android-developer/answer/10787469>
+
+Current interpretation:
+
+- Do not set `isAccessibilityTool=true`.
+- Keep the separate in-app prominent Accessibility disclosure.
+- Require affirmative consent before opening Android Accessibility settings.
+- Document AccessibilityService use in the Google Play listing.
+- Keep Data Safety and Privacy Policy consistent with the shipped build.
 
 ## In-App Prominent Disclosure
 
@@ -130,10 +150,33 @@ For the current local-only app:
 - `app/src/test/java/com/shortsblockerkids/feature/onboarding/AccessibilityPermissionFlowTest.kt`
   covers disclosure-before-permission, decline, consent gating, and setup bypass
   prevention.
+- `docs/SHORTS_BLOCKER_REAL_DEVICE_SMOKE_REPORT.md` records user-confirmed
+  real-device smoke success across five devices.
+- `docs/SHORTS_BLOCKER_PLAY_POLICY_PACKAGE.md` contains Play Console draft
+  answers, demo video script, Data Safety direction, Privacy Policy draft, store
+  listing draft, and reviewer instructions.
+
+## Real-Device Smoke Evidence
+
+On May 22, 2026, the product owner reported this flow passed on five real
+devices:
+
+- install;
+- parent PIN setup and PIN entry;
+- Accessibility Service enablement;
+- normal YouTube videos are not blocked;
+- YouTube Shorts are blocked immediately;
+- exit to phone home works;
+- parent PIN temporary allow works for 5, 10, and 15 minutes.
+
+No problems were observed in that smoke pass.
 
 ## Not Yet Completed Outside The Repo
 
 - Final hosted Privacy Policy URL.
+- Public privacy contact and final developer / publisher entity name.
 - Final Play Console Data Safety form submission.
 - Final Play Console Accessibility declaration submission.
 - Recorded and uploaded Play review demo video.
+- Store screenshots and feature graphic.
+- Final target audience and content rating answers.

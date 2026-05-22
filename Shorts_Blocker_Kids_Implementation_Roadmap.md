@@ -1065,7 +1065,7 @@ Shorts Blocker Kids працює, коли захист увімкнено і An
 
 ## Phase 10 — Google Play Billing Monetization
 
-**Статус зараз:** Partial  
+**Статус зараз:** Partial
 **Мета:** довести monetization до Google Play production-ready стану через Google Play Billing.
 
 ### Active launch channel
@@ -1254,8 +1254,21 @@ Done:
 
 ## Phase 11 — Privacy, Policy, Google Play Compliance
 
-**Статус зараз:** TODO / P0
+**Статус зараз:** Partial / P0
 **Мета:** підготувати додаток так, щоб Google Play review не виглядав як лотерея.
+
+Поточний факт:
+
+```text
+- repo-side Play policy package prepared;
+- Accessibility declaration draft prepared;
+- Data Safety draft prepared for the current local-only build;
+- Privacy Policy draft prepared;
+- store listing draft prepared;
+- reviewer instructions prepared;
+- external Play Console submission, hosted Privacy Policy URL, privacy contact,
+  demo video URL, screenshots, target audience, and content rating remain pending.
+```
 
 ### AccessibilityService policy checklist
 
@@ -1368,8 +1381,23 @@ No account. No app server. Parent PIN and local rules.
 
 ## Phase 12 — Testing Matrix
 
-**Статус зараз:** TODO  
+**Статус зараз:** Partial
 **Мета:** довести, що простий додаток працює стабільно на реальних пристроях.
+
+Поточний факт:
+
+```text
+User-confirmed real-device smoke QA passed on five devices:
+- app installs;
+- PIN works;
+- Accessibility Service can be enabled;
+- normal YouTube videos are not blocked;
+- YouTube Shorts are blocked immediately;
+- exit to phone home works;
+- PIN temporary allow works for 5, 10, and 15 minutes.
+
+Detailed device model / Android version / YouTube version matrix is still pending.
+```
 
 ### Мінімальний набір пристроїв
 

@@ -1,6 +1,22 @@
 # Shorts Blocker Kids — Phase 5 Accessibility Service Manual Checklist
 
-Status: manual checklist prepared; device execution required.
+Status: real-device smoke passed by user report on five devices; detailed
+device matrix still pending.
+
+## Smoke Result
+
+On May 22, 2026, the product owner reported that this flow passed on five real
+devices:
+
+- install;
+- parent PIN setup and PIN entry;
+- Accessibility Service enablement;
+- normal YouTube videos are not blocked;
+- YouTube Shorts are blocked immediately;
+- exit to phone home works;
+- parent PIN temporary allow works for 5, 10, and 15 minutes.
+
+No problems were observed in that smoke pass.
 
 ## Preconditions
 
