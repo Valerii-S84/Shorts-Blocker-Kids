@@ -39,8 +39,8 @@ ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew \
 Result:
 
 ```text
-BUILD SUCCESSFUL in 29s
-122 actionable tasks: 8 executed, 114 up-to-date
+BUILD SUCCESSFUL in 2m 7s
+122 actionable tasks: 38 executed, 84 up-to-date
 ```
 
 ## Test Result
@@ -60,9 +60,9 @@ app/build/outputs/apk/debug/app-debug.apk         12M
 SHA-256:
 
 ```text
-20ce523f75f2fa5b3a73fbc0f43fef4aa77d7d567994024e7ebfec345dc3d8a3  app/build/outputs/bundle/release/app-release.aab
-18292ac73e97e9d1c5bfa56ccfbcc7862ae5853b61a10545281e3f083eab9069  app/build/outputs/apk/release/app-release.apk
-6df1c7a88d62740149c14480619fb7040a01dca39c4833e84487955fc0a304fd  app/build/outputs/apk/debug/app-debug.apk
+971ea64d13c1b77028c1dc686485d7871b93720657d12acd9038751d2d6ad944  app/build/outputs/bundle/release/app-release.aab
+116e8115dd42f5155f28e565a77b87d34c10130c70727b0e3195b79a10c5620e  app/build/outputs/apk/release/app-release.apk
+c38d511b00441b6cbe616303f5fb5333ef279fa725ca6c68a8106f17abfd761f  app/build/outputs/apk/debug/app-debug.apk
 ```
 
 ## Release Manifest Checks

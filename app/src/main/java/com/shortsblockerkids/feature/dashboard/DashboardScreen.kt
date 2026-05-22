@@ -8,9 +8,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,6 +32,7 @@ fun DashboardScreen(
     isAccessibilityServiceEnabled: Boolean,
     onProtectionChanged: (Boolean) -> Unit,
     onOpenAccessibilitySettings: () -> Unit,
+    onOpenPrivacyPolicy: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val nowMillis = System.currentTimeMillis()
@@ -47,6 +51,7 @@ fun DashboardScreen(
         modifier =
             modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(24.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.Start,
@@ -127,6 +132,13 @@ fun DashboardScreen(
                     "Review Accessibility Disclosure"
                 },
             )
+        }
+        Spacer(modifier = Modifier.height(12.dp))
+        OutlinedButton(
+            onClick = onOpenPrivacyPolicy,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text("Privacy Policy")
         }
     }
 }

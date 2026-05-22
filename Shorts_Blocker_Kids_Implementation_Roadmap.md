@@ -1274,6 +1274,7 @@ Done:
 - Accessibility declaration draft prepared;
 - Data Safety draft prepared for the current local-only build;
 - Privacy Policy draft prepared;
+- in-app Privacy Policy screen added;
 - store listing draft prepared;
 - reviewer instructions prepared;
 - external Play Console submission, hosted Privacy Policy URL, privacy contact,

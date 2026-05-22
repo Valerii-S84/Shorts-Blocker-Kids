@@ -150,6 +150,8 @@ For the current local-only app:
 - `app/src/test/java/com/shortsblockerkids/feature/onboarding/AccessibilityPermissionFlowTest.kt`
   covers disclosure-before-permission, decline, consent gating, and setup bypass
   prevention.
+- `app/src/main/java/com/shortsblockerkids/feature/privacy/PrivacyPolicyScreen.kt`
+  makes the current local privacy policy text available inside the app.
 - `docs/SHORTS_BLOCKER_REAL_DEVICE_SMOKE_REPORT.md` records user-confirmed
   real-device smoke success across five devices.
 - `docs/SHORTS_BLOCKER_PLAY_POLICY_PACKAGE.md` contains Play Console draft

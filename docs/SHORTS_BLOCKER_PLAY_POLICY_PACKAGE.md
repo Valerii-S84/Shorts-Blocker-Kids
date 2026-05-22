@@ -20,6 +20,7 @@ This package is for the current Shorts Blocker Kids build:
 - No video, audio, screen recording, comment, URL, or message collection.
 - No `INTERNET` permission in the current manifest.
 - Google Play Billing is not implemented in the current app.
+- Privacy Policy text is available in the app from the dashboard.
 
 ## Official Policy Sources Checked
 

@@ -32,6 +32,7 @@ import com.shortsblockerkids.feature.onboarding.EnableAccessibilityScreen
 import com.shortsblockerkids.feature.onboarding.WelcomeScreen
 import com.shortsblockerkids.feature.pin.PinEntryScreen
 import com.shortsblockerkids.feature.pin.PinSetupScreen
+import com.shortsblockerkids.feature.privacy.PrivacyPolicyScreen
 import com.shortsblockerkids.ui.theme.ShortsBlockerKidsTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -318,6 +319,16 @@ private fun ShortsBlockerKidsApp(
                             }
                         }
                     },
+                    onOpenPrivacyPolicy = {
+                        screen = AppScreen.PrivacyPolicy
+                    },
+                )
+
+            AppScreen.PrivacyPolicy ->
+                PrivacyPolicyScreen(
+                    onBack = {
+                        screen = AppScreen.Dashboard
+                    },
                 )
 
             AppScreen.TemporaryAllow ->
@@ -395,5 +406,6 @@ private enum class AppScreen {
     AccessibilityDisclosure,
     EnableAccessibility,
     Dashboard,
+    PrivacyPolicy,
     TemporaryAllow,
 }
