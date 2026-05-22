@@ -144,6 +144,16 @@ P8. Staged rollout.
 P9. Maintenance / hotfix loop.
 ```
 
+Поточний production-track факт:
+
+```text
+- P1 real-device blocker smoke QA passed by user report on five devices;
+- P2 local AAB release pipeline passes and produces app-release.aab;
+- Play Console upload, Play App Signing acceptance, Privacy Policy URL,
+  Data Safety, Accessibility declaration, demo video, and Billing integration
+  remain pending.
+```
+
 Done цього lock:
 
 ```text

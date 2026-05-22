@@ -24,9 +24,11 @@ Adjust `ANDROID_HOME` if the SDK is installed elsewhere.
 ```bash
 ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew :app:assembleDebug
 ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew :app:assembleRelease
+ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew :app:bundleRelease
 ```
 
 The debug APK is written under `app/build/outputs/apk/debug/`.
+The release AAB is written under `app/build/outputs/bundle/release/`.
 
 The release APK is unsigned unless release signing values are provided.
 
@@ -59,6 +61,12 @@ Full local foundation check:
 
 ```bash
 ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew :app:ktlintCheck :app:assembleDebug :app:assembleRelease :app:testDebugUnitTest :app:lintDebug
+```
+
+Full local release readiness check:
+
+```bash
+ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew :app:ktlintCheck :app:assembleDebug :app:assembleRelease :app:bundleRelease :app:testDebugUnitTest :app:lintDebug :app:lintRelease
 ```
 
 ## Install On A Device

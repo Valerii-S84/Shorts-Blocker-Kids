@@ -187,6 +187,7 @@ Release command target:
 ```bash
 ANDROID_HOME=/home/serputko/Android/Sdk gradle clean \
   :app:assembleRelease \
+  :app:bundleRelease \
   :app:lintRelease \
   :app:ktlintCheck \
   :app:assembleDebug \
@@ -194,8 +195,11 @@ ANDROID_HOME=/home/serputko/Android/Sdk gradle clean \
   :app:lintDebug
 ```
 
-AAB command must be added to the final release checklist when bundle packaging
-is configured.
+For Shorts Blocker Kids, local `:app:bundleRelease` is configured and produces:
+
+```text
+app/build/outputs/bundle/release/app-release.aab
+```
 
 ## Internal Testing
 
