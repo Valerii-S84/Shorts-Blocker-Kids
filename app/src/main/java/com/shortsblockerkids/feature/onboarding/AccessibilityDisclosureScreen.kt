@@ -7,8 +7,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -19,12 +22,14 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun AccessibilityDisclosureScreen(
     onAccept: () -> Unit,
+    onDecline: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
         modifier =
             modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(24.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.Start,
@@ -37,14 +42,15 @@ fun AccessibilityDisclosureScreen(
         Spacer(modifier = Modifier.height(16.dp))
         Text(
             text =
-                "Shorts Blocker Kids uses Android Accessibility Service only to detect " +
-                    "when YouTube Shorts is open and show a blocking screen.\n\n" +
-                    "The app does not read messages.\n" +
-                    "The app does not record the screen.\n" +
-                    "The app does not record audio.\n" +
-                    "The app does not save YouTube watch history.\n" +
-                    "The app does not send data to our server.\n" +
-                    "Rules stay locally on this phone.\n\n" +
+                "Shorts Blocker Kids uses Android Accessibility Service to detect when " +
+                    "YouTube Shorts is open and show a blocking overlay.\n\n" +
+                    "When Shorts is blocked, the parent PIN can temporarily allow access. " +
+                    "Without the parent PIN, the blocking overlay stays active while Shorts " +
+                    "is open.\n\n" +
+                    "The app does not collect or send child data, YouTube history, video " +
+                    "data, screen recordings, audio, messages, location, contacts, or " +
+                    "browsing history. There is no app server, account, analytics, or ads. " +
+                    "Rules and PIN protection stay locally on this phone.\n\n" +
                     "Blocking works when Protection is ON and Android Accessibility " +
                     "Service is active. If that permission is turned off or the app is " +
                     "removed, blocking stops.",
@@ -55,7 +61,14 @@ fun AccessibilityDisclosureScreen(
             onClick = onAccept,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text("I understand and want to enable protection")
+            Text("I agree and continue")
+        }
+        Spacer(modifier = Modifier.height(12.dp))
+        OutlinedButton(
+            onClick = onDecline,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text("Not now")
         }
     }
 }

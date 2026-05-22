@@ -120,7 +120,13 @@ fun DashboardScreen(
             onClick = onOpenAccessibilitySettings,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text("Open Accessibility Settings")
+            Text(
+                if (settings.accessibilityDisclosureAccepted) {
+                    "Open Accessibility Settings"
+                } else {
+                    "Review Accessibility Disclosure"
+                },
+            )
         }
     }
 }

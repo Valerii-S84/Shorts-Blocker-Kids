@@ -23,7 +23,11 @@ import com.shortsblockerkids.feature.blocking.TemporaryAllowCompletion
 import com.shortsblockerkids.feature.blocking.TemporaryAllowFlowController
 import com.shortsblockerkids.feature.blocking.TemporaryAllowScreen
 import com.shortsblockerkids.feature.dashboard.DashboardScreen
+import com.shortsblockerkids.feature.onboarding.AccessibilityDisclosureDecision
 import com.shortsblockerkids.feature.onboarding.AccessibilityDisclosureScreen
+import com.shortsblockerkids.feature.onboarding.AccessibilityPermissionFlow
+import com.shortsblockerkids.feature.onboarding.AccessibilitySettingsRequest
+import com.shortsblockerkids.feature.onboarding.AccessibilitySetupDestination
 import com.shortsblockerkids.feature.onboarding.EnableAccessibilityScreen
 import com.shortsblockerkids.feature.onboarding.WelcomeScreen
 import com.shortsblockerkids.feature.pin.PinEntryScreen
@@ -210,7 +214,10 @@ private fun ShortsBlockerKidsApp(
                             repository.savePin(pin)
                             isUnlocked = true
                             onStateChanged()
-                            screen = AppScreen.AccessibilityDisclosure
+                            screen =
+                                AccessibilityPermissionFlow
+                                    .destinationAfterPinCreated()
+                                    .toAppScreen()
                         }
                     },
                 )
@@ -243,8 +250,19 @@ private fun ShortsBlockerKidsApp(
                         coroutineScope.launch {
                             repository.acceptAccessibilityDisclosure()
                             onStateChanged()
-                            screen = AppScreen.EnableAccessibility
+                            screen =
+                                AccessibilityPermissionFlow
+                                    .destinationAfterDisclosure(
+                                        AccessibilityDisclosureDecision.Accepted,
+                                    ).toAppScreen()
                         }
+                    },
+                    onDecline = {
+                        screen =
+                            AccessibilityPermissionFlow
+                                .destinationAfterDisclosure(
+                                    AccessibilityDisclosureDecision.Declined,
+                                ).toAppScreen()
                     },
                 )
 
@@ -285,7 +303,21 @@ private fun ShortsBlockerKidsApp(
                             screen = AppScreen.PinEntry
                         }
                     },
-                    onOpenAccessibilitySettings = onOpenAccessibilitySettings,
+                    onOpenAccessibilitySettings = {
+                        when (
+                            AccessibilityPermissionFlow.settingsRequest(
+                                settings.accessibilityDisclosureAccepted,
+                            )
+                        ) {
+                            AccessibilitySettingsRequest.ShowDisclosure -> {
+                                screen = AppScreen.AccessibilityDisclosure
+                            }
+
+                            AccessibilitySettingsRequest.OpenSystemSettings -> {
+                                onOpenAccessibilitySettings()
+                            }
+                        }
+                    },
                 )
 
             AppScreen.TemporaryAllow ->
@@ -327,17 +359,18 @@ private fun initialScreen(settings: AppSettings): AppScreen {
 private fun unlockedDestination(
     settings: AppSettings,
     pendingTemporaryAllow: Boolean,
-): AppScreen {
-    if (pendingTemporaryAllow) {
-        return AppScreen.TemporaryAllow
-    }
+): AppScreen =
+    AccessibilityPermissionFlow
+        .destinationAfterParentUnlock(settings, pendingTemporaryAllow)
+        .toAppScreen()
 
-    return if (settings.accessibilityDisclosureAccepted) {
-        AppScreen.Dashboard
-    } else {
-        AppScreen.AccessibilityDisclosure
+private fun AccessibilitySetupDestination.toAppScreen(): AppScreen =
+    when (this) {
+        AccessibilitySetupDestination.Disclosure -> AppScreen.AccessibilityDisclosure
+        AccessibilitySetupDestination.EnableAccessibility -> AppScreen.EnableAccessibility
+        AccessibilitySetupDestination.Dashboard -> AppScreen.Dashboard
+        AccessibilitySetupDestination.TemporaryAllow -> AppScreen.TemporaryAllow
     }
-}
 
 private fun handleTemporaryAllowCompletion(
     completion: TemporaryAllowCompletion,
