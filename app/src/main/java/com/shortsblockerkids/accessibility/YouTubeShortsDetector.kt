@@ -2,12 +2,15 @@ package com.shortsblockerkids.accessibility
 
 import java.util.Locale
 
-class YouTubeShortsDetector : ShortsDetector {
+class YouTubeShortsDetector : ShortVideoDetector {
+    override val platform: SupportedPlatform = SupportedPlatform.YOUTUBE_SHORTS
+    override val supportedPackages: Set<String> = setOf(YOUTUBE_PACKAGE)
+
     override fun detect(
         packageName: String?,
         snapshot: AccessibilityTreeSnapshot,
     ): DetectionResult {
-        if (packageName != YOUTUBE_PACKAGE) {
+        if (packageName !in supportedPackages) {
             return DetectionResult.None
         }
 

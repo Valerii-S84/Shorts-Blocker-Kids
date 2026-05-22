@@ -1,6 +1,9 @@
 package com.shortsblockerkids.accessibility
 
-interface ShortsDetector {
+interface ShortVideoDetector {
+    val platform: SupportedPlatform
+    val supportedPackages: Set<String>
+
     fun detect(
         packageName: String?,
         snapshot: AccessibilityTreeSnapshot,

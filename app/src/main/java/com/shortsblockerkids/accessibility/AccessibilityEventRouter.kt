@@ -9,7 +9,7 @@ class AccessibilityEventRouter(
     private val settingsProvider: () -> AppSettings,
     private val eventPolicy: AccessibilityEventPolicy,
     private val treeScanner: AccessibilityTreeScanner,
-    private val detector: ShortsDetector,
+    private val detectionEngine: ShortVideoDetectionEngine,
     private val blockingDecisionController: BlockingDecisionController,
     private val blockOverlayController: BlockOverlayController,
     private val debugLogger: DebugAccessibilityLogger,
@@ -21,7 +21,7 @@ class AccessibilityEventRouter(
     ) {
         val packageName = event.packageName?.toString()
         val nowMillis = System.currentTimeMillis()
-        if (packageName != YouTubeShortsDetector.YOUTUBE_PACKAGE) {
+        if (!detectionEngine.supportsPackage(packageName)) {
             if (
                 blockOverlayController.isOverlayVisible ||
                 blockingDecisionController.shouldIgnoreNonYouTubeEvent(nowMillis)
@@ -36,6 +36,7 @@ class AccessibilityEventRouter(
             dismissBlockingState()
             return
         }
+        val supportedPackageName = packageName ?: return
 
         if (RuntimeProtectionState.consumeDebugOverlayRequest()) {
             val decision =
@@ -81,15 +82,15 @@ class AccessibilityEventRouter(
         if (RuntimeProtectionState.consumeDebugSnapshotRequest()) {
             debugSnapshotStore
                 .save(
-                    packageName = packageName,
+                    packageName = supportedPackageName,
                     eventType = eventTypeToString(event.eventType),
                     snapshot = snapshot,
                     nowMillis = nowMillis,
                 )?.let(RuntimeProtectionState::recordDebugSnapshot)
         }
-        val result = detector.detect(packageName, snapshot)
+        val result = detectionEngine.detect(supportedPackageName, snapshot)
         RuntimeProtectionState.recordDetectorResult(
-            packageName = packageName,
+            packageName = supportedPackageName,
             eventType = event.eventType,
             result = result,
             snapshot = snapshot,

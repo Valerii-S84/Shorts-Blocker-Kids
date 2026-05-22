@@ -24,7 +24,7 @@ class ShortsBlockerAccessibilityService : AccessibilityService() {
                 settingsProvider = { latestSettings },
                 eventPolicy = AccessibilityEventPolicy(),
                 treeScanner = AccessibilityTreeScanner(),
-                detector = YouTubeShortsDetector(),
+                detectionEngine = ShortVideoDetectionEngine.youtubeOnly(),
                 blockingDecisionController = blockingDecisionController,
                 blockOverlayController =
                     BlockOverlayController(
