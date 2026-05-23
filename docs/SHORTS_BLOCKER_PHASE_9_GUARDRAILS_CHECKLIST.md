@@ -27,7 +27,9 @@ Status: manual checklist prepared; device execution required.
 4. Confirm uninstall is not blocked by hidden or deceptive behavior.
 5. Confirm Device Owner is not required.
 6. Confirm no persistent notification was added for this phase.
-7. Confirm the manifest does not request `INTERNET`, `SYSTEM_ALERT_WINDOW`, or `POST_NOTIFICATIONS`.
+7. Confirm `INTERNET` and `ACCESS_NETWORK_STATE` are present only through the
+   Google Play Billing SDK, and confirm the manifest does not request
+   `SYSTEM_ALERT_WINDOW` or `POST_NOTIFICATIONS`.
 
 ## Result Recording
 

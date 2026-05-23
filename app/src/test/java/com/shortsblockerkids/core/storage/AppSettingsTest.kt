@@ -73,6 +73,34 @@ class AppSettingsTest {
     }
 
     @Test
+    fun activeBillingEntitlementCanProtectAfterFreeTestExpires() {
+        val settings =
+            activeSettings(freeTestStartedAt = TEST_STARTED_AT)
+                .copy(
+                    billingSubscriptionActive = true,
+                    billingLastVerifiedAt = TWENTY_DAYS,
+                )
+
+        assertEquals(EntitlementState.FREE_TEST_EXPIRED, settings.freeTestState(TWENTY_DAYS))
+        assertTrue(settings.hasBillingEntitlement(nowMillis = TWENTY_DAYS))
+        assertTrue(settings.canProtect(nowMillis = TWENTY_DAYS))
+    }
+
+    @Test
+    fun staleBillingEntitlementDoesNotProtectAfterGrace() {
+        val settings =
+            activeSettings(freeTestStartedAt = TEST_STARTED_AT)
+                .copy(
+                    billingSubscriptionActive = true,
+                    billingLastVerifiedAt = TWENTY_DAYS,
+                )
+        val afterGrace = TWENTY_DAYS + 72L * 60L * 60L * 1_000L + 1L
+
+        assertFalse(settings.hasBillingEntitlement(nowMillis = afterGrace))
+        assertFalse(settings.canProtect(nowMillis = afterGrace))
+    }
+
+    @Test
     fun temporaryAllowDisablesProtectionUntilItExpires() {
         val settings =
             AppSettings(

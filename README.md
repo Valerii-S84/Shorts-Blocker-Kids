@@ -2,7 +2,13 @@
 
 Shorts Blocker Kids is a local-only Android app for blocking YouTube Shorts on a child's phone with a parent PIN and Android Accessibility Service.
 
-The app has no account system, no app backend, no analytics, and no `INTERNET` permission in the current Android manifest.
+The app has no account system, no app backend, and no analytics. Google Play
+Billing adds `com.android.vending.BILLING`, `android.permission.INTERNET`, and
+`android.permission.ACCESS_NETWORK_STATE` through the Billing SDK.
+
+Subscriptions are handled through Google Play Billing. There are no website,
+Stripe, manual license key, or external payment flows in the Play-distributed
+app.
 
 ## Requirements
 

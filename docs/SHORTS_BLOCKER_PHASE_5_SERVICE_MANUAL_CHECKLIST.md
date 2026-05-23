@@ -41,7 +41,8 @@ No problems were observed in that smoke pass.
 
 ## Privacy Checks
 
-- Confirm the manifest does not request `INTERNET`.
+- Confirm `INTERNET` and `ACCESS_NETWORK_STATE` are present only through the
+  Google Play Billing SDK and not used for a custom backend, analytics, or ads.
 - Confirm non-YouTube events only dismiss/reset the overlay state and do not scan accessibility trees.
 - Confirm debug detector output is unavailable in release builds.
 - Confirm no YouTube titles, URLs, comments, account names, messages, screen recordings, or audio are stored.

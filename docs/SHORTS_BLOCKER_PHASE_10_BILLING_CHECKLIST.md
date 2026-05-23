@@ -53,28 +53,47 @@ Notes:
 
 ## Phase 10C — App-Side Play Billing Integration
 
-- [ ] Play Billing dependency is added.
-- [ ] BillingClient lifecycle is implemented.
-- [ ] Product details loading works.
-- [ ] Purchase flow starts only from a parent-controlled screen.
-- [ ] Purchase success is handled.
-- [ ] Purchase canceled is handled.
-- [ ] Purchase pending is handled if available for the product type.
-- [ ] Billing unavailable state is handled.
-- [ ] Purchase acknowledgement is implemented.
-- [ ] Restore purchases works after reinstall.
-- [ ] Manage subscription opens Google Play subscription management.
+- [x] Play Billing dependency is added.
+- [x] BillingClient lifecycle is implemented.
+- [x] Product details loading is implemented.
+- [x] Purchase flow starts only from a parent-controlled screen.
+- [x] Purchase success is handled.
+- [x] Purchase canceled is handled.
+- [x] Purchase pending is handled if available for the product type.
+- [x] Billing unavailable state is handled.
+- [x] Purchase acknowledgement is implemented.
+- [x] Restore purchases is implemented.
+- [x] Manage subscription opens Google Play subscription management.
+
+Implementation evidence:
+
+- `com.android.billingclient:billing-ktx:9.0.0` is declared through the Gradle
+  version catalog.
+- `PlayBillingRepository` owns a single BillingClient connection, product
+  loading, purchase launch, purchase updates, purchase acknowledgement, restore,
+  and manage-subscription intent.
+- Dashboard billing actions are parent-controlled because dashboard access
+  requires the parent PIN after initial setup.
+- Pending purchases do not unlock protection until purchase state is
+  `PURCHASED`.
+
+Pending verification:
+
+- Play Console subscription product must exist before product details can load
+  in a real Play build.
+- License tester purchase, restore, cancel, expire, pending, and payment issue
+  flows still require Play Console testing.
 
 ## Phase 10D — Entitlement Integration
 
-- [ ] Active subscription enables protection.
+- [x] Active subscription enables protection.
 - [ ] Canceled-but-active subscription keeps protection until period end.
-- [ ] Expired subscription disables paid protection.
-- [ ] Expired subscription never blocks parent access to settings.
-- [ ] Payment problem state is visible to parent.
-- [ ] Local cached entitlement is conservative.
-- [ ] Free test / paid entitlement precedence is documented.
-- [ ] Unit tests cover entitlement decisions.
+- [x] Expired subscription disables paid protection after a successful restore/query reports no active purchase.
+- [x] Expired subscription never blocks parent access to settings.
+- [x] Payment problem state is visible to parent as Billing unavailable / restore / purchase failure messaging.
+- [x] Local cached entitlement is conservative.
+- [x] Free test / paid entitlement precedence is documented.
+- [x] Unit tests cover entitlement decisions.
 - [ ] Manual tests cover purchase, restore, cancel, expire, and payment problem states.
 
 ## Phase 10E — Optional Backend Verification Decision
@@ -91,6 +110,8 @@ Notes:
 - Website APK + Stripe plan exists only as a deferred reference.
 - Billing policy lock is documented for subscription, price, planned product ID,
   and entitlement behavior.
+- App-side Play Billing SDK integration is implemented.
 - Backend is not implemented.
-- App-side Play Billing is not implemented.
-- Billing cannot be considered production-ready until policy, QA, Play product setup, app integration, and entitlement tests are complete.
+- Billing cannot be considered production-ready until Play product setup,
+  license tester QA, subscription lifecycle QA, and optional backend verification
+  decision are complete.

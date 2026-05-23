@@ -427,7 +427,8 @@ accessibility/
 - є чиста пакетна структура;
 - є CI-перевірка build/test;
 - немає зайвих permissions;
-- немає INTERNET permission без чіткої потреби;
+- немає INTERNET permission без чіткої потреби; поточна чітка потреба — Google
+  Play Billing SDK;
 - README пояснює, як зібрати і запустити додаток;
 - код не копіює GPL-репозиторії без правової перевірки.
 ```
@@ -1196,34 +1197,47 @@ Done:
 
 ### Phase 10B — Play Billing App Integration
 
-**Статус зараз:** TODO
+**Статус зараз:** Partial
 
 Done:
 
 ```text
 - Play Billing dependency is added;
 - BillingClient lifecycle is implemented;
-- product details loading works;
+- product details loading is implemented;
 - purchase flow starts from parent-only screen;
 - pending/canceled/error states are handled;
 - purchase acknowledgement is implemented;
-- restore purchases works;
+- restore purchases is implemented;
 - Manage subscription link opens Google Play subscription management.
+```
+
+Pending:
+
+```text
+- Play Console subscription product must exist before product details can load in real Play build;
+- license tester purchase / restore / cancel / expire / pending / payment issue flows remain unverified.
 ```
 
 ### Phase 10C — Entitlement Integration
 
-**Статус зараз:** TODO
+**Статус зараз:** Partial
 
 Done:
 
 ```text
 - active subscription enables protection;
 - expired subscription blocks protection feature but never blocks access to settings;
-- canceled-but-active subscription remains active until period end;
 - payment problem state is visible to parent;
-- local cached entitlement has conservative expiry;
+- local cached entitlement has conservative 72-hour expiry;
 - free test / paid entitlement precedence is documented and tested.
+```
+
+Pending:
+
+```text
+- canceled-but-active behavior still needs Play tester validation;
+- subscription lifecycle QA is still required.
 ```
 
 ### Phase 10D — Optional Backend Verification
@@ -1691,16 +1705,15 @@ Current implementation priority:
 7. Decide target audience before store listing.
 8. Run real-device blocker QA matrix.
 9. Build AAB release pipeline and signing/upload-key flow.
-10. Add Google Play Billing.
-11. Integrate billing entitlement into protection state.
-12. Add subscription management / restore flow.
-13. Run billing QA with license testers.
-14. Prepare store listing assets and reviewer notes.
-15. Upload AAB to internal testing.
-16. Run closed testing 14+ days if account requires it.
-17. Apply for production access if required.
-18. Run staged production rollout.
-19. Maintain hotfix loop for YouTube UI changes.
+10. Verify Google Play Billing with license testers.
+11. Validate subscription management / restore flow through Play.
+12. Decide whether backend purchase verification is required before production.
+13. Prepare store listing assets and reviewer notes.
+14. Upload AAB to internal testing.
+15. Run closed testing 14+ days if account requires it.
+16. Apply for production access if required.
+17. Run staged production rollout.
+18. Maintain hotfix loop for YouTube UI changes.
 ```
 
 ---

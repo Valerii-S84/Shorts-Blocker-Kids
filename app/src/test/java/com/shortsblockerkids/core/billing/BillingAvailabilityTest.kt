@@ -1,13 +1,14 @@
 package com.shortsblockerkids.core.billing
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class BillingAvailabilityTest {
     @Test
-    fun billingRemainsDisabledAndDeferred() {
-        assertFalse(BillingAvailability.BILLING_ENABLED)
-        assertEquals("Subscription will be available soon.", BillingAvailability.DEFERRED_MESSAGE)
+    fun billingUsesGooglePlaySubscriptionProduct() {
+        assertTrue(BillingAvailability.BILLING_ENABLED)
+        assertEquals("shorts_blocker_kids_monthly", BillingAvailability.MONTHLY_SUBSCRIPTION_PRODUCT_ID)
+        assertEquals("Subscription is managed by Google Play.", BillingAvailability.DEFERRED_MESSAGE)
     }
 }

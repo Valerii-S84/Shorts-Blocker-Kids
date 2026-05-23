@@ -148,7 +148,9 @@ screen recordings, audio, location, contacts, or browsing history.
    - Add TikTok, Instagram Reels, and Facebook Reels detectors behind QA gates.
    - Reuse shared overlay, PIN, temporary allow, and local settings.
 3. Backend + billing:
-   - Add Google Play Billing.
+   - Maintain the app-side Google Play Billing integration.
+   - Verify Play Billing purchase, restore, cancel, expire, pending, and payment
+     issue flows with license testers.
    - Add backend purchase verification if approved for production.
    - Add Real-time Developer Notifications processing.
 4. Local full verification:

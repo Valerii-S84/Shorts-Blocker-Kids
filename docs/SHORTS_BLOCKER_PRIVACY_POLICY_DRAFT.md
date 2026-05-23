@@ -44,16 +44,20 @@ The current app has:
 - no ads;
 - no account system;
 - no backend;
-- no cloud sync;
-- no `INTERNET` permission.
+- no cloud sync.
+
+Google Play Billing adds `android.permission.INTERNET` and
+`android.permission.ACCESS_NETWORK_STATE` through the Billing SDK. The app does
+not use a custom backend, analytics, ads, account, or cloud sync network flow.
 
 ## Payments
 
-Google Play Billing is not implemented in the current app.
+Subscriptions are handled through Google Play Billing. Google Play may process
+payment and subscription data under Google Play terms.
 
-If Google Play Billing is added in a future release, Google may process payment
-and subscription data under Google Play terms. This policy and the Google Play
-Data Safety form must be updated before that release.
+Shorts Blocker Kids stores only local subscription entitlement status and the
+last local verification timestamp. The app does not store payment card data,
+order IDs, billing addresses, or payment account details.
 
 ## Limitations
 

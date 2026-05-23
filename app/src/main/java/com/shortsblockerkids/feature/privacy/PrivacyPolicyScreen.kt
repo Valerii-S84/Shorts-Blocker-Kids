@@ -65,9 +65,9 @@ fun PrivacyPolicyScreen(
         PrivacySection(
             title = "Payments",
             body =
-                "Google Play Billing is not implemented in the current app. If " +
-                    "subscriptions are added later, payment data is handled by " +
-                    "Google Play under Google Play terms.",
+                "Subscriptions are handled through Google Play Billing. Payment " +
+                    "data is processed by Google Play under Google Play terms. " +
+                    "This app stores only local subscription entitlement status.",
         )
         PrivacySection(
             title = "Limitations",

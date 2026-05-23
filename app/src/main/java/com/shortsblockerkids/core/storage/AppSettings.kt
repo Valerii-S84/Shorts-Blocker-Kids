@@ -1,5 +1,6 @@
 package com.shortsblockerkids.core.storage
 
+import com.shortsblockerkids.core.billing.BillingAvailability
 import com.shortsblockerkids.core.entitlement.FreeTestPolicy
 import com.shortsblockerkids.core.model.EntitlementState
 import com.shortsblockerkids.core.model.ProtectionMode
@@ -11,6 +12,8 @@ data class AppSettings(
     val temporaryAllowUntil: Long? = null,
     val freeTestStartedAt: Long? = null,
     val freeTestDurationDays: Int = FreeTestPolicy.DEFAULT_DURATION_DAYS,
+    val billingSubscriptionActive: Boolean = false,
+    val billingLastVerifiedAt: Long? = null,
     val pinHash: String? = null,
     val pinSalt: String? = null,
     val pinHashVersion: Int = 1,
@@ -48,11 +51,21 @@ data class AppSettings(
             nowMillis = nowMillis,
         )
 
+    fun hasBillingEntitlement(nowMillis: Long): Boolean {
+        val verifiedAt = billingLastVerifiedAt ?: return false
+        return billingSubscriptionActive &&
+            nowMillis - verifiedAt <= BillingAvailability.OFFLINE_GRACE_MILLIS
+    }
+
+    fun hasProtectionEntitlement(nowMillis: Long): Boolean =
+        freeTestState(nowMillis) == EntitlementState.FREE_TEST_ACTIVE ||
+            hasBillingEntitlement(nowMillis)
+
     fun canProtect(nowMillis: Long): Boolean =
         protectionEnabled &&
             accessibilityDisclosureAccepted &&
             selectedMode == ProtectionMode.BLOCK_SHORTS &&
-            freeTestState(nowMillis) == EntitlementState.FREE_TEST_ACTIVE &&
+            hasProtectionEntitlement(nowMillis) &&
             isPinCreated &&
             !isTemporarilyAllowed(nowMillis)
 }

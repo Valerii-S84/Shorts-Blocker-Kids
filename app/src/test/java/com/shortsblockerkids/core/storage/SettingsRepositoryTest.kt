@@ -99,6 +99,26 @@ class SettingsRepositoryTest {
         }
 
     @Test
+    fun persistsBillingEntitlementSnapshot() =
+        runBlocking {
+            val repository = createRepository("billing")
+
+            repository.updateBillingEntitlement(isActive = true, checkedAtMillis = 4_000L)
+            val activeSettings = repository.readSettings().first()
+
+            assertTrue(activeSettings.billingSubscriptionActive)
+            assertEquals(4_000L, activeSettings.billingLastVerifiedAt)
+            assertTrue(activeSettings.hasBillingEntitlement(nowMillis = 4_000L))
+
+            repository.updateBillingEntitlement(isActive = false, checkedAtMillis = 5_000L)
+            val inactiveSettings = repository.readSettings().first()
+
+            assertFalse(inactiveSettings.billingSubscriptionActive)
+            assertEquals(5_000L, inactiveSettings.billingLastVerifiedAt)
+            assertFalse(inactiveSettings.hasBillingEntitlement(nowMillis = 5_000L))
+        }
+
+    @Test
     fun validPinTemporaryAllowSelectionStoresExpiryForFiveTenAndFifteenMinutes() =
         runBlocking {
             val repository = createRepository("allow-durations")

@@ -9,7 +9,11 @@ object LocalEntitlementResolver {
         isProtectionPermissionGranted: Boolean,
         nowMillis: Long,
     ): EntitlementState {
-        if (settings.freeTestState(nowMillis) == EntitlementState.FREE_TEST_EXPIRED) {
+        val hasBillingEntitlement = settings.hasBillingEntitlement(nowMillis)
+        if (
+            settings.freeTestState(nowMillis) == EntitlementState.FREE_TEST_EXPIRED &&
+            !hasBillingEntitlement
+        ) {
             return EntitlementState.PROTECTION_LOCKED
         }
 
@@ -19,6 +23,10 @@ object LocalEntitlementResolver {
 
         if (settings.canProtect(nowMillis)) {
             return EntitlementState.PROTECTION_ACTIVE
+        }
+
+        if (hasBillingEntitlement) {
+            return EntitlementState.SUBSCRIPTION_ACTIVE
         }
 
         return settings.freeTestState(nowMillis)

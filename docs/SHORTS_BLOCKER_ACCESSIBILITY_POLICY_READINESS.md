@@ -6,9 +6,9 @@ Play Console submission and demo video URL are pending.
 ## Scope
 
 This document covers the AccessibilityService policy package for the current
-local-only Android app. It does not cover Billing, Stripe, backend, analytics,
-ads, profiles, cloud sync, schedules, TikTok/Reels blocking, or device-owner
-mode.
+local-only Android app. Google Play Billing is integrated for subscription
+entitlement, but this document does not cover Stripe, backend, analytics, ads,
+profiles, cloud sync, schedules, TikTok/Reels blocking, or device-owner mode.
 
 ## Official Policy Sources Checked
 
@@ -117,8 +117,9 @@ The Privacy Policy should state:
 - The app does not collect or send child data, YouTube history, video data,
   screen recordings, audio, messages, location, contacts, or browsing history.
 - The app does not use analytics or ads in the current release.
-- If Google Play Billing is added later, Google may process payment data under
-  Google Play terms; the app must document the Billing behavior separately.
+- Google Play Billing may process payment and subscription data under Google
+  Play terms; the app stores only local subscription entitlement status and the
+  last local verification timestamp.
 
 ## Data Safety Notes
 
@@ -133,8 +134,8 @@ For the current local-only app:
 - Device storage: local settings and PIN hash metadata stay on the device.
 - Network: the app should not declare `INTERNET` unless a future approved scope
   explicitly requires it.
-- Billing: not implemented in the current app. Revisit Data Safety before any
-  Play Billing release.
+- Billing: Google Play Billing is integrated. Revisit Data Safety before any
+  backend purchase verification or additional billing data handling.
 
 ## Current Repo Evidence
 

@@ -18,8 +18,13 @@ This package is for the current Shorts Blocker Kids build:
 - No ads.
 - No watch history storage.
 - No video, audio, screen recording, comment, URL, or message collection.
-- No `INTERNET` permission in the current manifest.
-- Google Play Billing is not implemented in the current app.
+- Google Play Billing is integrated for the planned monthly subscription.
+- The Billing SDK adds `com.android.vending.BILLING`,
+  `android.permission.INTERNET`, and
+  `android.permission.ACCESS_NETWORK_STATE`; the app has no custom backend,
+  analytics, ads, or account network flow.
+- The app stores only local subscription entitlement status and last local
+  verification timestamp.
 - Privacy Policy text is available in the app from the dashboard.
 
 ## Official Policy Sources Checked
@@ -125,7 +130,9 @@ Current answer direction for the app itself:
 - Data sharing: No user data shared by the app.
 - Location: not collected.
 - Personal info: not collected.
-- Financial info: not collected by this app in the current build.
+- Financial info: payment data is processed by Google Play; this app does not
+  collect payment card data, order IDs, billing addresses, or payment account
+  details.
 - Health and fitness: not collected.
 - Messages: not collected.
 - Photos and videos: not collected.
@@ -143,9 +150,8 @@ Current answer direction for the app itself:
 - Data deletion: no account data exists on a server. Local settings and PIN
   metadata can be removed by clearing app data or uninstalling the app.
 
-Revisit this section before release if Google Play Billing, backend purchase
-verification, crash reporting, analytics, support forms, or any network
-permission is added.
+Revisit this section before release if backend purchase verification, crash
+reporting, analytics, support forms, or any custom app network flow is added.
 
 ## Privacy Policy Draft
 
@@ -187,9 +193,9 @@ Accessibility tree dumps.
 The current app has no analytics, no ads, no account system, no backend, and no
 cloud sync.
 
-If Google Play Billing is added in a future release, Google may process payment
-and subscription data under Google Play terms. This policy and the Google Play
-Data Safety form must be updated before that release.
+Subscriptions are handled through Google Play Billing. Google Play may process
+payment and subscription data under Google Play terms. This app stores only
+local subscription entitlement status and the last local verification timestamp.
 
 Blocking works only when Protection is ON and Android Accessibility Service is
 active. If that permission is turned off or the app is removed, blocking stops.

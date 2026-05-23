@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.shortsblockerkids.core.billing.BillingAvailability
+import com.shortsblockerkids.core.billing.BillingUiState
 import com.shortsblockerkids.core.entitlement.LocalEntitlementResolver
 import com.shortsblockerkids.core.model.EntitlementState
 import com.shortsblockerkids.core.storage.AppSettings
@@ -30,7 +31,11 @@ import com.shortsblockerkids.core.storage.AppSettings
 fun DashboardScreen(
     settings: AppSettings,
     isAccessibilityServiceEnabled: Boolean,
+    billingUiState: BillingUiState,
     onProtectionChanged: (Boolean) -> Unit,
+    onSubscribe: () -> Unit,
+    onRestorePurchases: () -> Unit,
+    onManageSubscription: () -> Unit,
     onOpenAccessibilitySettings: () -> Unit,
     onOpenPrivacyPolicy: () -> Unit,
     modifier: Modifier = Modifier,
@@ -46,6 +51,7 @@ fun DashboardScreen(
     val isProtectionActive =
         entitlementState == EntitlementState.PROTECTION_ACTIVE
     val isProtectionLocked = entitlementState == EntitlementState.PROTECTION_LOCKED
+    val hasBillingEntitlement = settings.hasBillingEntitlement(nowMillis)
 
     Column(
         modifier =
@@ -87,6 +93,10 @@ fun DashboardScreen(
                     StatusRow("Days remaining", "$daysRemaining days remaining")
                 }
                 StatusRow(
+                    "Subscription",
+                    billingStatusLabel(settings, billingUiState, nowMillis),
+                )
+                StatusRow(
                     "Protection permission",
                     if (isAccessibilityServiceEnabled) {
                         "enabled"
@@ -95,7 +105,7 @@ fun DashboardScreen(
                     },
                 )
                 StatusRow("Protection status", entitlementState.protectionLabel())
-                if (freeTestState == EntitlementState.FREE_TEST_EXPIRED) {
+                if (freeTestState == EntitlementState.FREE_TEST_EXPIRED && !hasBillingEntitlement) {
                     ErrorText("Free test period ended. ${BillingAvailability.DEFERRED_MESSAGE}")
                 }
                 if (!isAccessibilityServiceEnabled) {
@@ -107,6 +117,7 @@ fun DashboardScreen(
                             settings = settings,
                             isAccessibilityServiceEnabled = isAccessibilityServiceEnabled,
                             nowMillis = nowMillis,
+                            hasBillingEntitlement = hasBillingEntitlement,
                         )
                     ErrorText(inactiveMessage)
                 }
@@ -120,6 +131,14 @@ fun DashboardScreen(
                 )
             }
         }
+        Spacer(modifier = Modifier.height(12.dp))
+        BillingActions(
+            billingUiState = billingUiState,
+            hasBillingEntitlement = hasBillingEntitlement,
+            onSubscribe = onSubscribe,
+            onRestorePurchases = onRestorePurchases,
+            onManageSubscription = onManageSubscription,
+        )
         Spacer(modifier = Modifier.height(12.dp))
         Button(
             onClick = onOpenAccessibilitySettings,
@@ -147,8 +166,12 @@ private fun protectionInactiveMessage(
     settings: AppSettings,
     isAccessibilityServiceEnabled: Boolean,
     nowMillis: Long,
+    hasBillingEntitlement: Boolean,
 ): String {
-    if (settings.freeTestState(nowMillis) == EntitlementState.FREE_TEST_EXPIRED) {
+    if (
+        settings.freeTestState(nowMillis) == EntitlementState.FREE_TEST_EXPIRED &&
+        !hasBillingEntitlement
+    ) {
         return "Free test expired"
     }
 
@@ -177,6 +200,7 @@ private fun EntitlementState.dashboardLabel(): String =
         EntitlementState.FREE_TEST_NOT_STARTED -> "not started"
         EntitlementState.FREE_TEST_ACTIVE -> "Free test active"
         EntitlementState.FREE_TEST_EXPIRED -> "Free test expired"
+        EntitlementState.SUBSCRIPTION_ACTIVE -> "Subscription active"
         EntitlementState.PROTECTION_PERMISSION_MISSING -> "Protection permission missing"
         EntitlementState.PROTECTION_ACTIVE -> "Protection active"
         EntitlementState.PROTECTION_LOCKED -> "Protection locked"
@@ -190,6 +214,7 @@ private fun EntitlementState.protectionLabel(): String =
         EntitlementState.FREE_TEST_ACTIVE -> "inactive"
         EntitlementState.FREE_TEST_NOT_STARTED -> "not started"
         EntitlementState.FREE_TEST_EXPIRED -> "Free test expired"
+        EntitlementState.SUBSCRIPTION_ACTIVE -> "inactive"
     }
 
 private fun protectionSwitchLabel(
@@ -203,6 +228,18 @@ private fun protectionSwitchLabel(
     return if (settings.protectionEnabled) "ON" else "OFF"
 }
 
+private fun billingStatusLabel(
+    settings: AppSettings,
+    billingUiState: BillingUiState,
+    nowMillis: Long,
+): String =
+    when {
+        settings.hasBillingEntitlement(nowMillis) -> "active"
+        billingUiState.isPurchaseInProgress -> "purchase in progress"
+        billingUiState.productPrice != null -> "available: ${billingUiState.productPrice}"
+        else -> billingUiState.statusMessage
+    }
+
 @Composable
 private fun ErrorText(text: String) {
     Text(
@@ -210,6 +247,56 @@ private fun ErrorText(text: String) {
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.error,
     )
+}
+
+@Composable
+private fun BillingActions(
+    billingUiState: BillingUiState,
+    hasBillingEntitlement: Boolean,
+    onSubscribe: () -> Unit,
+    onRestorePurchases: () -> Unit,
+    onManageSubscription: () -> Unit,
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = "Google Play subscription",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                text = billingUiState.statusMessage,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.secondary,
+            )
+            if (hasBillingEntitlement) {
+                OutlinedButton(
+                    onClick = onManageSubscription,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("Manage subscription")
+                }
+            } else {
+                Button(
+                    onClick = onSubscribe,
+                    enabled = billingUiState.canStartPurchase && !billingUiState.isPurchaseInProgress,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("Subscribe with Google Play")
+                }
+            }
+            OutlinedButton(
+                onClick = onRestorePurchases,
+                enabled = !billingUiState.isLoading && !billingUiState.isPurchaseInProgress,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Restore purchases")
+            }
+        }
+    }
 }
 
 @Composable

@@ -58,6 +58,16 @@ class SettingsRepository(
         }
     }
 
+    suspend fun updateBillingEntitlement(
+        isActive: Boolean,
+        checkedAtMillis: Long = System.currentTimeMillis(),
+    ) {
+        dataStore.edit { preferences ->
+            preferences[KEY_BILLING_SUBSCRIPTION_ACTIVE] = isActive
+            preferences[KEY_BILLING_LAST_VERIFIED_AT] = checkedAtMillis
+        }
+    }
+
     suspend fun setDisclosureAccepted(accepted: Boolean) {
         dataStore.edit { preferences ->
             preferences[KEY_ACCESSIBILITY_DISCLOSURE_ACCEPTED] = accepted
@@ -172,6 +182,8 @@ class SettingsRepository(
             freeTestStartedAt = this[KEY_FREE_TEST_STARTED_AT],
             freeTestDurationDays =
                 this[KEY_FREE_TEST_DURATION_DAYS] ?: FreeTestPolicy.DEFAULT_DURATION_DAYS,
+            billingSubscriptionActive = this[KEY_BILLING_SUBSCRIPTION_ACTIVE] ?: false,
+            billingLastVerifiedAt = this[KEY_BILLING_LAST_VERIFIED_AT],
             pinHash = this[KEY_PIN_HASH],
             pinSalt = this[KEY_PIN_SALT],
             pinHashVersion = this[KEY_PIN_HASH_VERSION] ?: PinHasher.CURRENT_VERSION,
@@ -205,6 +217,9 @@ class SettingsRepository(
         private val KEY_TEMPORARY_ALLOW_UNTIL = longPreferencesKey("temporaryAllowUntil")
         private val KEY_FREE_TEST_STARTED_AT = longPreferencesKey("free_test_started_at")
         private val KEY_FREE_TEST_DURATION_DAYS = intPreferencesKey("free_test_duration_days")
+        private val KEY_BILLING_SUBSCRIPTION_ACTIVE =
+            booleanPreferencesKey("billing_subscription_active")
+        private val KEY_BILLING_LAST_VERIFIED_AT = longPreferencesKey("billing_last_verified_at")
         private val KEY_PIN_HASH = stringPreferencesKey("pinHash")
         private val KEY_PIN_SALT = stringPreferencesKey("pinSalt")
         private val KEY_PIN_HASH_VERSION = intPreferencesKey("pinHashVersion")

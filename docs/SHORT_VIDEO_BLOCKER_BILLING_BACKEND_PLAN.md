@@ -1,8 +1,8 @@
 # Short Video Blocker Billing And Backend Plan
 
-Status: Planning. Billing and backend are not implemented in the current app.
-This document defines the target production architecture for a Play Store
-subscription product.
+Status: Partial. App-side Google Play Billing is implemented locally; backend
+purchase verification is not implemented. This document defines the target
+production hardening architecture for a Play Store subscription product.
 
 ## Goals
 
@@ -30,14 +30,15 @@ subscription product.
 
 App-side components:
 
-- Billing client lifecycle.
-- Product details loading.
-- Parent-controlled purchase screen.
-- Purchase flow.
-- Purchase acknowledgement.
-- Restore purchases.
-- Manage subscription entry to Google Play.
-- Local entitlement cache.
+- Billing client lifecycle. Implemented locally.
+- Product details loading. Implemented locally.
+- Parent-controlled purchase screen. Implemented locally.
+- Purchase flow. Implemented locally.
+- Purchase acknowledgement. Implemented locally.
+- Restore purchases. Implemented locally.
+- Manage subscription entry to Google Play. Implemented locally.
+- Local entitlement cache. Implemented locally.
+- Play Console license-tester lifecycle verification. Pending.
 
 Backend components:
 
@@ -278,11 +279,12 @@ App-to-backend payloads must not include:
    - entitlement state rules;
    - offline grace rules.
 2. App-side Play Billing:
-   - product details;
-   - purchase;
-   - acknowledgement;
-   - restore;
-   - manage subscription.
+   - product details: implemented locally;
+   - purchase: implemented locally;
+   - acknowledgement: implemented locally;
+   - restore: implemented locally;
+   - manage subscription: implemented locally;
+   - license tester lifecycle QA: pending.
 3. Backend skeleton:
    - health endpoint;
    - purchase verification endpoint;

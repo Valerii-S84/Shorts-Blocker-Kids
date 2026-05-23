@@ -120,8 +120,9 @@ Manual setup:
 
 Manual privacy checks:
 
-- No `INTERNET` permission before backend/billing phase unless explicitly
-  approved.
+- `INTERNET` and `ACCESS_NETWORK_STATE` are allowed only for the explicitly
+  approved Google Play Billing SDK integration unless a later backend/network
+  scope is approved.
 - No camera permission.
 - No microphone permission.
 - No location permission.

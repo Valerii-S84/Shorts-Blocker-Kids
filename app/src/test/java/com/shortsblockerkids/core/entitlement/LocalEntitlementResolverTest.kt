@@ -48,6 +48,45 @@ class LocalEntitlementResolverTest {
         assertEquals(EntitlementState.PROTECTION_LOCKED, state)
     }
 
+    @Test
+    fun activeSubscriptionKeepsProtectionAvailableAfterFreeTestExpiry() {
+        val settings =
+            activeSettings()
+                .copy(
+                    billingSubscriptionActive = true,
+                    billingLastVerifiedAt = FreeTestPolicy.DEFAULT_DURATION_DAYS * ONE_DAY,
+                )
+
+        val state =
+            LocalEntitlementResolver.resolve(
+                settings = settings,
+                isProtectionPermissionGranted = true,
+                nowMillis = FreeTestPolicy.DEFAULT_DURATION_DAYS * ONE_DAY,
+            )
+
+        assertEquals(EntitlementState.PROTECTION_ACTIVE, state)
+    }
+
+    @Test
+    fun subscriptionActiveButProtectionOffIsReportedAsEntitledNotActive() {
+        val settings =
+            activeSettings()
+                .copy(
+                    protectionEnabled = false,
+                    billingSubscriptionActive = true,
+                    billingLastVerifiedAt = FreeTestPolicy.DEFAULT_DURATION_DAYS * ONE_DAY,
+                )
+
+        val state =
+            LocalEntitlementResolver.resolve(
+                settings = settings,
+                isProtectionPermissionGranted = true,
+                nowMillis = FreeTestPolicy.DEFAULT_DURATION_DAYS * ONE_DAY,
+            )
+
+        assertEquals(EntitlementState.SUBSCRIPTION_ACTIVE, state)
+    }
+
     private fun activeSettings(): AppSettings =
         AppSettings(
             protectionEnabled = true,

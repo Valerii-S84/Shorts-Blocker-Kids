@@ -34,11 +34,17 @@ app/build/outputs/bundle/release/app-release.aab
 
 From the merged debug manifest:
 
+- `com.android.vending.BILLING`
 - `com.shortsblockerkids.debug.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`
+- `android.permission.ACCESS_NETWORK_STATE`
+- `android.permission.INTERNET`
 
 From the merged release manifest:
 
+- `com.android.vending.BILLING`
 - `com.shortsblockerkids.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`
+- `android.permission.ACCESS_NETWORK_STATE`
+- `android.permission.INTERNET`
 
 Notes:
 
@@ -47,7 +53,9 @@ Notes:
 
 ## Privacy Confirmation
 
-- No `INTERNET` permission.
+- `android.permission.INTERNET` and
+  `android.permission.ACCESS_NETWORK_STATE` are present through the Google Play
+  Billing SDK only.
 - No `CAMERA` permission.
 - No `RECORD_AUDIO` / microphone permission.
 - No location permission.
@@ -55,11 +63,13 @@ Notes:
 - No SMS permission.
 - No watch history storage.
 - No account system.
-- No backend.
+- No app backend or custom app network API.
 - No cloud sync.
 - No analytics.
 - No ads.
-- No billing.
+- Google Play Billing is integrated for subscriptions.
+- The app stores local subscription entitlement status and last local
+  verification timestamp.
 - No language/content analysis.
 - No video/audio analysis.
 - No raw accessibility tree logging in release code paths.

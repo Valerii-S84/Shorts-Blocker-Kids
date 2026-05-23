@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
@@ -17,6 +18,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.shortsblockerkids.accessibility.AccessibilityServiceStatus
+import com.shortsblockerkids.core.billing.BillingUiState
+import com.shortsblockerkids.core.billing.PlayBillingRepository
 import com.shortsblockerkids.core.storage.AppSettings
 import com.shortsblockerkids.core.storage.SettingsRepository
 import com.shortsblockerkids.feature.blocking.TemporaryAllowCompletion
@@ -44,6 +47,7 @@ import kotlinx.coroutines.runBlocking
 
 class MainActivity : ComponentActivity() {
     private lateinit var settingsRepository: SettingsRepository
+    private lateinit var billingRepository: PlayBillingRepository
     private val activityScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val settingsState = mutableStateOf(AppSettings())
     private val accessibilityEnabledState = mutableStateOf(false)
@@ -52,6 +56,18 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         settingsRepository = SettingsRepository(this)
+        billingRepository =
+            PlayBillingRepository(
+                context = this,
+                onEntitlementChanged = { snapshot ->
+                    activityScope.launch {
+                        settingsRepository.updateBillingEntitlement(
+                            isActive = snapshot.isActive,
+                            checkedAtMillis = snapshot.checkedAtMillis,
+                        )
+                    }
+                },
+            )
         temporaryAllowRequestState.value = intent.isTemporaryAllowRequest()
         loadInitialSettings()
         observeSettings()
@@ -60,11 +76,22 @@ class MainActivity : ComponentActivity() {
         setContent {
             ShortsBlockerKidsTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
+                    val billingUiState by billingRepository.uiState.collectAsState()
                     ShortsBlockerKidsApp(
                         settings = settingsState.value,
                         isAccessibilityServiceEnabled = accessibilityEnabledState.value,
                         isTemporaryAllowRequested = temporaryAllowRequestState.value,
+                        billingUiState = billingUiState,
                         repository = settingsRepository,
+                        onSubscribe = {
+                            billingRepository.launchPurchase(this@MainActivity)
+                        },
+                        onRestorePurchases = {
+                            billingRepository.refreshPurchases()
+                        },
+                        onManageSubscription = {
+                            billingRepository.openManageSubscription(this@MainActivity)
+                        },
                         onOpenAccessibilitySettings = ::openAccessibilitySettings,
                         onStateChanged = ::refreshState,
                         onTemporaryAllowFlowClosed = ::closeTemporaryAllowRequest,
@@ -91,9 +118,15 @@ class MainActivity : ComponentActivity() {
         if (::settingsRepository.isInitialized) {
             refreshState()
         }
+        if (::billingRepository.isInitialized) {
+            billingRepository.start()
+        }
     }
 
     override fun onDestroy() {
+        if (::billingRepository.isInitialized) {
+            billingRepository.stop()
+        }
         activityScope.cancel()
         super.onDestroy()
     }
@@ -144,7 +177,11 @@ private fun ShortsBlockerKidsApp(
     settings: AppSettings,
     isAccessibilityServiceEnabled: Boolean,
     isTemporaryAllowRequested: Boolean,
+    billingUiState: BillingUiState,
     repository: SettingsRepository,
+    onSubscribe: () -> Unit,
+    onRestorePurchases: () -> Unit,
+    onManageSubscription: () -> Unit,
     onOpenAccessibilitySettings: () -> Unit,
     onStateChanged: () -> Unit,
     onTemporaryAllowFlowClosed: () -> Unit,
@@ -287,6 +324,7 @@ private fun ShortsBlockerKidsApp(
                 DashboardScreen(
                     settings = settings,
                     isAccessibilityServiceEnabled = isAccessibilityServiceEnabled,
+                    billingUiState = billingUiState,
                     onProtectionChanged = { enabled ->
                         if (enabled) {
                             coroutineScope.launch {
@@ -304,6 +342,9 @@ private fun ShortsBlockerKidsApp(
                             screen = AppScreen.PinEntry
                         }
                     },
+                    onSubscribe = onSubscribe,
+                    onRestorePurchases = onRestorePurchases,
+                    onManageSubscription = onManageSubscription,
                     onOpenAccessibilitySettings = {
                         when (
                             AccessibilityPermissionFlow.settingsRequest(

@@ -114,6 +114,7 @@ dependencies {
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.datastore.preferences)
+    implementation(libs.google.play.billing.ktx)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
 

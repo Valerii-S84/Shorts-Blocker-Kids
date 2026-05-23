@@ -51,7 +51,8 @@ No problems were observed in that smoke pass.
 
 ## Privacy And Permission Checks
 
-1. Confirm the manifest does not request `INTERNET`.
+1. Confirm `INTERNET` and `ACCESS_NETWORK_STATE` are present only through the
+   Google Play Billing SDK and not used for a custom backend, analytics, or ads.
 2. Confirm the manifest does not request `SYSTEM_ALERT_WINDOW`.
 3. Confirm non-YouTube events only dismiss/reset the blocking state and do not scan accessibility trees.
 4. Confirm no YouTube titles, URLs, comments, account names, messages, screen recordings, or audio are stored.

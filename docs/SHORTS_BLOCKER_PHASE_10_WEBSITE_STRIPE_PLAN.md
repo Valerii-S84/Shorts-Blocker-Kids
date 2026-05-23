@@ -401,7 +401,8 @@ Before production:
 
 - Keep existing Play Billing code if useful.
 - Disable it from first production flow later through app config/build flag.
-- Mark Google Play Billing as deferred in roadmap.
+- If this deferred website path is explicitly reactivated later, mark Google
+  Play Billing as deferred for that separate non-Play distribution track.
 
 ### Phase B — Backend Billing Skeleton
 
