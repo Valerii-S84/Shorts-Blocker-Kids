@@ -66,6 +66,8 @@ Notes:
 - [x] Purchase acknowledgement is implemented.
 - [x] Restore purchases is implemented.
 - [x] Manage subscription opens Google Play subscription management.
+- [x] Subscription card discloses price when loaded, monthly auto-renewal,
+  post-free-test requirement, and Google Play manage/cancel path.
 
 Implementation evidence:
 
@@ -78,6 +80,8 @@ Implementation evidence:
   requires the parent PIN after initial setup.
 - Pending purchases do not unlock protection until purchase state is
   `PURCHASED`.
+- Subscription terms are visible before the app launches the Google Play
+  purchase flow.
 
 Pending verification:
 

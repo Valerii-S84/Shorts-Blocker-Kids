@@ -19,6 +19,9 @@ This package is for the current Shorts Blocker Kids build:
 - No watch history storage.
 - No video, audio, screen recording, comment, URL, or message collection.
 - Google Play Billing is integrated for the planned monthly subscription.
+- The in-app subscription card explains monthly auto-renewing Google Play
+  billing, the post-free-test requirement, and the Google Play manage/cancel
+  path before launching purchase.
 - The Billing SDK adds `com.android.vending.BILLING`,
   `android.permission.INTERNET`, and
   `android.permission.ACCESS_NETWORK_STATE`; the app has no custom backend,

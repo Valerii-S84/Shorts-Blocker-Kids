@@ -94,7 +94,7 @@ into app logic.
 
 | ID | Scenario | Steps | Expected result |
 |---|---|---|---|
-| BIL-01 | Product details load | Open dashboard after installing the internal test build. | Subscription row shows Google Play product availability and price; subscribe button is enabled. |
+| BIL-01 | Product details load | Open dashboard after installing the internal test build. | Subscription row shows Google Play product availability, price, monthly auto-renewal terms, manage/cancel text, and an enabled subscribe button. |
 | BIL-02 | Billing unavailable | Test on a device/account where Play Billing cannot load the product, or before product activation. | App shows a recoverable Billing unavailable/product unavailable state and does not crash. |
 | BIL-03 | Purchase approved | Tap `Subscribe with Google Play` and use a test payment method that approves. | Purchase completes, app acknowledges it, subscription becomes active, and protection can run after free-test expiry. |
 | BIL-04 | Purchase canceled | Start purchase and cancel the Play purchase sheet. | No paid entitlement is granted; dashboard remains usable; restore remains available. |
@@ -128,7 +128,7 @@ For every required scenario, record:
 
 ```text
 app/build/outputs/bundle/release/app-release.aab
-SHA-256: db8d41f2157638b6990b900743eebe5f39e18fabfd3353661f91fa456dff1de2
+SHA-256: f41fd59be8ce9c24ac6f391365830b0b06be03c5d7c7f6586ae5716f6e07afb1
 ```
 
 If the AAB is rebuilt, update the hash here before testing.

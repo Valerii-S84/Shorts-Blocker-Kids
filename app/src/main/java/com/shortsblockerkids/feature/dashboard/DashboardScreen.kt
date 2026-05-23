@@ -272,6 +272,11 @@ private fun BillingActions(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.secondary,
             )
+            Text(
+                text = billingTermsText(billingUiState),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.secondary,
+            )
             if (hasBillingEntitlement) {
                 OutlinedButton(
                     onClick = onManageSubscription,
@@ -297,6 +302,16 @@ private fun BillingActions(
             }
         }
     }
+}
+
+private fun billingTermsText(billingUiState: BillingUiState): String {
+    val price =
+        billingUiState.productPrice?.let { loadedPrice ->
+            "Monthly auto-renewing subscription: $loadedPrice"
+        } ?: "Monthly auto-renewing subscription"
+
+    return "$price. Required after the free test to keep Shorts blocking active. " +
+        "Charged by Google Play; manage or cancel anytime in Google Play."
 }
 
 @Composable
