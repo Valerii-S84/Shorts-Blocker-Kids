@@ -128,7 +128,7 @@ For every required scenario, record:
 
 ```text
 app/build/outputs/bundle/release/app-release.aab
-SHA-256: f41fd59be8ce9c24ac6f391365830b0b06be03c5d7c7f6586ae5716f6e07afb1
+SHA-256: 632e68aa891d258a293989dab93fc454a37ad7c4417748a24a0a016b1694baab
 ```
 
 If the AAB is rebuilt, update the hash here before testing.

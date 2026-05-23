@@ -68,6 +68,9 @@ Notes:
 - [x] Manage subscription opens Google Play subscription management.
 - [x] Subscription card discloses price when loaded, monthly auto-renewal,
   post-free-test requirement, and Google Play manage/cancel path.
+- [x] Subscription status/terms copy is covered by unit tests.
+- [x] Manage subscription failure is handled without crashing if no activity can
+  open the Google Play subscription URL.
 
 Implementation evidence:
 
@@ -82,6 +85,8 @@ Implementation evidence:
   `PURCHASED`.
 - Subscription terms are visible before the app launches the Google Play
   purchase flow.
+- Billing UI copy is centralized in `BillingCopy` and covered by
+  `BillingCopyTest`.
 
 Pending verification:
 

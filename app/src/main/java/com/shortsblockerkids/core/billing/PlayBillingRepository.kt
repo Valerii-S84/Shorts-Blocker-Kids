@@ -1,6 +1,7 @@
 package com.shortsblockerkids.core.billing
 
 import android.app.Activity
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -114,7 +115,10 @@ class PlayBillingRepository(
         val offerToken = subscriptionOfferToken
         if (!billingClient.isReady || details == null || offerToken == null) {
             _uiState.update {
-                it.copy(statusMessage = "Subscription is not ready yet. Try restore first.")
+                it.copy(
+                    statusMessage =
+                        "Subscription is not ready yet. Check Google Play or restore purchases.",
+                )
             }
             start()
             return
@@ -152,7 +156,16 @@ class PlayBillingRepository(
                 .appendQueryParameter("sku", BillingAvailability.MONTHLY_SUBSCRIPTION_PRODUCT_ID)
                 .appendQueryParameter("package", activity.packageName)
                 .build()
-        activity.startActivity(Intent(Intent.ACTION_VIEW, uri))
+        try {
+            activity.startActivity(Intent(Intent.ACTION_VIEW, uri))
+        } catch (_: ActivityNotFoundException) {
+            _uiState.update {
+                it.copy(
+                    statusMessage =
+                        "Could not open Google Play subscription management on this device.",
+                )
+            }
+        }
     }
 
     override fun onPurchasesUpdated(

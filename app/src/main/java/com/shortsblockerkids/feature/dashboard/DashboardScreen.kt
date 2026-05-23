@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.shortsblockerkids.core.billing.BillingAvailability
+import com.shortsblockerkids.core.billing.BillingCopy
 import com.shortsblockerkids.core.billing.BillingUiState
 import com.shortsblockerkids.core.entitlement.LocalEntitlementResolver
 import com.shortsblockerkids.core.model.EntitlementState
@@ -94,7 +95,10 @@ fun DashboardScreen(
                 }
                 StatusRow(
                     "Subscription",
-                    billingStatusLabel(settings, billingUiState, nowMillis),
+                    BillingCopy.subscriptionStatusLabel(
+                        hasBillingEntitlement = settings.hasBillingEntitlement(nowMillis),
+                        billingUiState = billingUiState,
+                    ),
                 )
                 StatusRow(
                     "Protection permission",
@@ -228,18 +232,6 @@ private fun protectionSwitchLabel(
     return if (settings.protectionEnabled) "ON" else "OFF"
 }
 
-private fun billingStatusLabel(
-    settings: AppSettings,
-    billingUiState: BillingUiState,
-    nowMillis: Long,
-): String =
-    when {
-        settings.hasBillingEntitlement(nowMillis) -> "active"
-        billingUiState.isPurchaseInProgress -> "purchase in progress"
-        billingUiState.productPrice != null -> "available: ${billingUiState.productPrice}"
-        else -> billingUiState.statusMessage
-    }
-
 @Composable
 private fun ErrorText(text: String) {
     Text(
@@ -273,7 +265,7 @@ private fun BillingActions(
                 color = MaterialTheme.colorScheme.secondary,
             )
             Text(
-                text = billingTermsText(billingUiState),
+                text = BillingCopy.subscriptionTermsText(billingUiState.productPrice),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.secondary,
             )
@@ -302,16 +294,6 @@ private fun BillingActions(
             }
         }
     }
-}
-
-private fun billingTermsText(billingUiState: BillingUiState): String {
-    val price =
-        billingUiState.productPrice?.let { loadedPrice ->
-            "Monthly auto-renewing subscription: $loadedPrice"
-        } ?: "Monthly auto-renewing subscription"
-
-    return "$price. Required after the free test to keep Shorts blocking active. " +
-        "Charged by Google Play; manage or cancel anytime in Google Play."
 }
 
 @Composable
