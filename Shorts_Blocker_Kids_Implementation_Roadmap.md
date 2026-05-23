@@ -1216,7 +1216,8 @@ Pending:
 
 ```text
 - Play Console subscription product must exist before product details can load in real Play build;
-- license tester purchase / restore / cancel / expire / pending / payment issue flows remain unverified.
+- license tester purchase / restore / cancel / expire / pending / payment issue flows remain unverified;
+- Play Billing internal test runbook is prepared in docs/SHORTS_BLOCKER_PLAY_BILLING_INTERNAL_TEST_RUNBOOK.md.
 ```
 
 ### Phase 10C — Entitlement Integration
@@ -1256,9 +1257,16 @@ Done:
 
 ### Phase 10E — Billing QA
 
-**Статус зараз:** TODO
+**Статус зараз:** Partial
 
-Done:
+Prepared:
+
+```text
+- Play Billing internal test runbook is prepared;
+- required BIL-01..BIL-12 evidence matrix is defined.
+```
+
+Pending:
 
 ```text
 - license tester purchase works;

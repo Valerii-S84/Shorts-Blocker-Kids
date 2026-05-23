@@ -50,6 +50,8 @@ Notes:
 - [ ] Base plan is configured.
 - [ ] License testers are configured.
 - [ ] Test payment flow is available to testers.
+- [x] Internal test runbook is prepared:
+  `docs/SHORTS_BLOCKER_PLAY_BILLING_INTERNAL_TEST_RUNBOOK.md`.
 
 ## Phase 10C — App-Side Play Billing Integration
 
@@ -83,6 +85,7 @@ Pending verification:
   in a real Play build.
 - License tester purchase, restore, cancel, expire, pending, and payment issue
   flows still require Play Console testing.
+- Execute `docs/SHORTS_BLOCKER_PLAY_BILLING_INTERNAL_TEST_RUNBOOK.md`.
 
 ## Phase 10D — Entitlement Integration
 
@@ -111,6 +114,7 @@ Pending verification:
 - Billing policy lock is documented for subscription, price, planned product ID,
   and entitlement behavior.
 - App-side Play Billing SDK integration is implemented.
+- Play Billing internal test runbook is prepared.
 - Backend is not implemented.
 - Billing cannot be considered production-ready until Play product setup,
   license tester QA, subscription lifecycle QA, and optional backend verification

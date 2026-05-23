@@ -185,6 +185,12 @@ For every app:
 
 ## Billing Test Matrix
 
+Detailed execution runbook:
+
+```text
+docs/SHORTS_BLOCKER_PLAY_BILLING_INTERNAL_TEST_RUNBOOK.md
+```
+
 Play Console setup:
 
 - License tester configured.
