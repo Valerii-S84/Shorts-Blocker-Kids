@@ -322,6 +322,23 @@ class BlockingDecisionControllerTest {
     }
 
     @Test
+    fun disabledServiceStateDoesNotBlockAndClearsVisibleOverlay() {
+        val controller = BlockingDecisionController()
+
+        assertEquals(BlockingDecision.ShowOverlay, controller.evaluateHigh(nowMillis = 1_000L))
+        assertEquals(
+            BlockingDecision.DismissOverlay,
+            controller.evaluate(
+                isInSupportedApp = true,
+                isProtectionActive = false,
+                result = highResult(),
+                nowMillis = 1_100L,
+            ),
+        )
+        assertFalse(controller.shouldIgnoreUnsupportedPackageEvent(nowMillis = 1_200L))
+    }
+
+    @Test
     fun youtubeExitDismissesOverlayState() {
         val controller = BlockingDecisionController()
 

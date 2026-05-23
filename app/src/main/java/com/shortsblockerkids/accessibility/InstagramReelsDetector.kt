@@ -32,7 +32,13 @@ class InstagramReelsDetector : ShortVideoDetector {
 
         val confidence =
             when {
-                hasVerticalFullscreen && hasActionRail && (hasReelsIdentifier || hasReelContainer) -> {
+                isHighConfidenceReels(
+                    hasReelsIdentifier = hasReelsIdentifier,
+                    hasReelContainer = hasReelContainer,
+                    hasActionRail = hasActionRail,
+                    hasVerticalFullscreen = hasVerticalFullscreen,
+                    hasRepeatedVerticalFeed = hasRepeatedVerticalFeed,
+                ) -> {
                     Confidence.HIGH
                 }
                 score >= 5 && hasReelsIdentifier -> Confidence.MEDIUM
@@ -169,6 +175,20 @@ class InstagramReelsDetector : ShortVideoDetector {
         return matched
     }
 
+    private fun isHighConfidenceReels(
+        hasReelsIdentifier: Boolean,
+        hasReelContainer: Boolean,
+        hasActionRail: Boolean,
+        hasVerticalFullscreen: Boolean,
+        hasRepeatedVerticalFeed: Boolean,
+    ): Boolean {
+        if (!hasActionRail || !hasVerticalFullscreen || !hasReelContainer) {
+            return false
+        }
+
+        return hasReelsIdentifier || hasRepeatedVerticalFeed
+    }
+
     private fun String?.containsAny(vararg needles: String): Boolean {
         val normalized = this?.lowercase(Locale.US) ?: return false
         return needles.any { normalized.contains(it) }
@@ -184,6 +204,20 @@ class InstagramReelsDetector : ShortVideoDetector {
 
         private val reelsSignals = setOf("reel", "reels")
         private val instagramActionSignals =
-            setOf("like", "comments", "comment", "share", "send", "save", "audio", "more")
+            setOf(
+                "like",
+                "me gusta",
+                "comments",
+                "comment",
+                "comentar",
+                "share",
+                "compartir",
+                "send",
+                "enviar",
+                "save",
+                "guardar",
+                "audio",
+                "more",
+            )
     }
 }

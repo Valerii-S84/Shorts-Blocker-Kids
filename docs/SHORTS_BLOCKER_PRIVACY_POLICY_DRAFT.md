@@ -9,18 +9,26 @@ Effective date: May 22, 2026
 
 Shorts Blocker Kids is a parental digital wellbeing app that helps parents
 block supported short-video surfaces on a child's Android phone. Current
-app-side support covers YouTube Shorts, TikTok, Instagram Reels, and Facebook
-Reels.
+app-side support is:
+
+| Platform | Status |
+|---|---|
+| YouTube Shorts | supported |
+| TikTok main `com.zhiliaoapp.musically` | supported by code; needs real-device QA |
+| TikTok regional `com.ss.android.ugc.trill` | not supported |
+| Instagram Reels | supported by code; needs real-device QA |
+| Facebook Reels | supported by code; needs real-device QA |
+| Facebook Lite `com.facebook.lite` | not supported |
 
 The app works locally on the device. It does not require an account and does
 not use an app server in the current release.
 
 ## Accessibility Service
 
-Shorts Blocker Kids uses Android AccessibilityService to detect when the
-supported short-video surfaces are open. When YouTube Shorts, TikTok,
-Instagram Reels, or Facebook Reels is detected and protection is enabled, the
-app shows a blocking overlay. A parent PIN can temporarily allow access.
+Shorts Blocker Kids uses Android AccessibilityService to detect when supported
+short-video surfaces are open. When a supported surface is detected and
+protection is enabled, the app shows a blocking overlay. A parent PIN can
+temporarily allow access.
 
 AccessibilityService is used only for the app's blocking function. Detection
 runs locally on the device.

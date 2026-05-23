@@ -71,10 +71,12 @@ Core feature:
 
 ```text
 Shorts Blocker Kids is a parental digital wellbeing app. It uses Android
-AccessibilityService to detect when YouTube Shorts, TikTok, Instagram Reels, or
-Facebook Reels is open on the child's phone. When a supported short-video
-surface is detected and protection is enabled, the app shows a blocking overlay.
-A parent PIN can temporarily allow access.
+AccessibilityService to detect supported short-video surfaces on the child's
+phone. YouTube Shorts is supported. TikTok main, Instagram Reels, and Facebook
+Reels have code-level detectors and still need real-device QA. TikTok regional
+package com.ss.android.ugc.trill and Facebook Lite are not supported. When a
+supported short-video surface is detected and protection is enabled, the app
+shows a blocking overlay. A parent PIN can temporarily allow access.
 ```
 
 Why AccessibilityService is needed:
@@ -116,8 +118,8 @@ designed as a disability support tool and should not set isAccessibilityTool=tru
 9. Return to the app and show protection status.
 10. Open a normal YouTube video and show that it is not blocked.
 11. Open YouTube Shorts and show that the blocking overlay appears.
-12. Open TikTok, Instagram Reels, and Facebook Reels and show that the blocking
-    overlay appears for each supported surface.
+12. Run and record the TikTok main, Instagram Reels, and Facebook Reels
+    real-device QA scenarios before claiming full support for those surfaces.
 13. Tap `Exit to phone home` and show that the device returns to the home
     screen.
 14. Open a supported short-video surface again.
@@ -185,10 +187,13 @@ block supported short-video surfaces on a child's Android phone.
 The app works locally on the device. It does not require an account and does
 not use an app server in the current release.
 
-Shorts Blocker Kids uses Android AccessibilityService to detect when the
-supported short-video surfaces are open. When YouTube Shorts, TikTok,
-Instagram Reels, or Facebook Reels is detected and protection is enabled, the
-app shows a blocking overlay. A parent PIN can temporarily allow access.
+Shorts Blocker Kids uses Android AccessibilityService to detect when supported
+short-video surfaces are open. YouTube Shorts is supported. TikTok main,
+Instagram Reels, and Facebook Reels have code-level detectors and still need
+real-device QA. TikTok regional package com.ss.android.ugc.trill and Facebook
+Lite are not supported. When a supported short-video surface is detected and
+protection is enabled, the app shows a blocking overlay. A parent PIN can
+temporarily allow access.
 
 The app stores protection settings and parent PIN hash metadata locally on the
 device. The parent PIN is not stored as plain text.
@@ -231,12 +236,16 @@ Shorts Blocker Kids helps parents block supported short-video surfaces on a
 child's Android phone.
 
 Set a parent PIN, enable protection, and turn on the Android Accessibility
-Service. When YouTube Shorts, TikTok, Instagram Reels, or Facebook Reels is
-detected, Shorts Blocker Kids shows a blocking screen. A parent can temporarily
-allow access with the PIN.
+Service. YouTube Shorts is supported. TikTok main, Instagram Reels, and
+Facebook Reels have code-level detectors and still need real-device QA. TikTok
+regional package com.ss.android.ugc.trill and Facebook Lite are not supported.
+When a supported short-video surface is detected, Shorts Blocker Kids shows a
+blocking screen. A parent can temporarily allow access with the PIN.
 
 What the app does:
-- blocks YouTube Shorts, TikTok, Instagram Reels, and Facebook Reels;
+- blocks YouTube Shorts;
+- includes code-level detectors for TikTok main, Instagram Reels, and Facebook
+  Reels that still require real-device QA before full support is claimed;
 - keeps normal YouTube videos and non-target app screens available;
 - uses a parent PIN for protection changes and temporary allow;
 - stores rules locally on the phone.
@@ -272,8 +281,8 @@ To test:
 8. Return to the app and confirm Protection is ON.
 9. Open YouTube and play a normal video; it should not be blocked.
 10. Open YouTube Shorts; the blocking overlay should appear.
-11. Open TikTok, Instagram Reels, or Facebook Reels; the blocking overlay should
-    appear on the protected short-video surface.
+11. For TikTok main, Instagram Reels, and Facebook Reels, run the real-device
+    QA scenarios before claiming full support.
 12. Tap Exit to phone home to leave the blocked surface.
 13. Open a supported short-video surface again, tap Enter PIN, enter the parent
     PIN, and choose 5, 10, or 15 minutes for temporary allow.

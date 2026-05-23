@@ -47,6 +47,28 @@ class ShortVideoDetectionEngineTest {
     }
 
     @Test
+    fun packageForPlatformWithoutRegisteredDetectorIsIgnored() {
+        val engine = ShortVideoDetectionEngine(listOf(YouTubeShortsDetector()))
+        val fixture = DetectorFixtureLoader.load("tiktok_feed_high.json")
+
+        val result = engine.detect(fixture.packageName, fixture.snapshot)
+
+        assertFalse(engine.supportsPackage(fixture.packageName))
+        assertEquals(DetectionResult.None, result)
+    }
+
+    @Test
+    fun packageForRegisteredPlatformCanBlock() {
+        val engine = ShortVideoDetectionEngine(listOf(TikTokShortVideoDetector()))
+        val fixture = DetectorFixtureLoader.load("tiktok_feed_high.json")
+
+        val result = engine.detect(fixture.packageName, fixture.snapshot)
+
+        assertTrue(engine.supportsPackage(fixture.packageName))
+        assertTrue(result.shouldBlock)
+    }
+
+    @Test
     fun routesToTheMatchingDetectorWhenMultipleDetectorsAreRegistered() {
         val youtubeDetector =
             RecordingDetector(

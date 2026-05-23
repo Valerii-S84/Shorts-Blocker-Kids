@@ -212,10 +212,13 @@ class YouTubeShortsDetector : ShortVideoDetector {
         private val shortsActionSignals =
             setOf(
                 "like",
+                "me gusta",
                 "dislike",
                 "comment",
                 "comments",
+                "comentar",
                 "share",
+                "compartir",
                 "remix",
                 "subscribe",
             )

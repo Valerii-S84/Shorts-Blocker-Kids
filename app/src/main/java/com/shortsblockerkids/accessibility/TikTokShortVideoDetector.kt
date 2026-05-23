@@ -197,9 +197,12 @@ class TikTokShortVideoDetector : ShortVideoDetector {
             return false
         }
 
-        return hasFeedIdentifier ||
-            hasShortVideoContainer ||
-            (hasNavigationContext && hasRepeatedVerticalFeed)
+        if (!hasShortVideoContainer) {
+            return false
+        }
+
+        val hasStructuralFeedContext = hasNavigationContext && hasRepeatedVerticalFeed
+        return hasFeedIdentifier || hasStructuralFeedContext
     }
 
     private fun String?.containsAny(vararg needles: String): Boolean {
@@ -215,8 +218,23 @@ class TikTokShortVideoDetector : ShortVideoDetector {
     companion object {
         const val TIKTOK_PACKAGE = "com.zhiliaoapp.musically"
 
-        private val tiktokFeedSignals = setOf("for you", "following")
-        private val tiktokNavigationSignals = setOf("home", "friends", "inbox", "profile")
-        private val tiktokActionSignals = setOf("like", "comments", "comment", "share", "save", "more", "follow")
+        private val tiktokFeedSignals = setOf("for you", "para ti", "following", "siguiendo")
+        private val tiktokNavigationSignals =
+            setOf("home", "inicio", "friends", "amigos", "inbox", "bandeja", "profile", "perfil")
+        private val tiktokActionSignals =
+            setOf(
+                "like",
+                "me gusta",
+                "comments",
+                "comment",
+                "comentar",
+                "share",
+                "compartir",
+                "save",
+                "guardar",
+                "more",
+                "follow",
+                "seguir",
+            )
     }
 }

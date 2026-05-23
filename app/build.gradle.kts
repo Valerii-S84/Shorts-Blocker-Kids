@@ -1,9 +1,14 @@
+import org.gradle.api.tasks.testing.Test
+import org.gradle.testing.jacoco.plugins.JacocoTaskExtension
+import org.gradle.testing.jacoco.tasks.JacocoCoverageVerification
+import org.gradle.testing.jacoco.tasks.JacocoReport
 import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ktlint)
+    jacoco
 }
 
 val releaseSigningProperties = Properties()
@@ -106,6 +111,94 @@ ktlint {
     filter {
         exclude("**/build/**")
     }
+}
+
+jacoco {
+    toolVersion = "0.8.13"
+}
+
+val unitTestCoverageExclusions =
+    listOf(
+        "**/R.class",
+        "**/R$*.class",
+        "**/BuildConfig.*",
+        "**/Manifest*.*",
+        "**/*ComposableSingletons*.*",
+        "**/AppScreen*.*",
+        "**/MainActivity*.*",
+        "**/accessibility/AccessibilityEventRouter*.*",
+        "**/accessibility/AccessibilityServiceStatus*.*",
+        "**/accessibility/AccessibilityTreeScanner*.*",
+        "**/accessibility/BlockOverlayController*.*",
+        "**/accessibility/DebugAccessibilityLogger*.*",
+        "**/accessibility/LastDetectorResult*.*",
+        "**/accessibility/RuntimeProtectionState*.*",
+        "**/accessibility/ShortsBlockerAccessibilityService*.*",
+        "**/core/billing/PlayBillingRepository*.*",
+        "**/feature/dashboard/**",
+        "**/feature/debug/**",
+        "**/feature/pin/**",
+        "**/feature/privacy/**",
+        "**/feature/onboarding/*Screen*.*",
+        "**/feature/blocking/*Screen*.*",
+        "**/ui/**",
+    )
+
+fun debugUnitTestCoverageClasses() =
+    files(
+        layout.buildDirectory.dir("intermediates/built_in_kotlinc/debug/compileDebugKotlin/classes"),
+        layout.buildDirectory.dir("intermediates/javac/debug/compileDebugJavaWithJavac/classes"),
+    ).asFileTree.matching {
+        exclude(unitTestCoverageExclusions)
+    }
+
+fun debugUnitTestCoverageData() =
+    fileTree(layout.buildDirectory) {
+        include("jacoco/testDebugUnitTest.exec")
+        include("outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec")
+    }
+
+tasks.withType<Test>().configureEach {
+    extensions.configure(JacocoTaskExtension::class) {
+        isIncludeNoLocationClasses = true
+        excludes = listOf("jdk.internal.*")
+    }
+}
+
+tasks.register<JacocoReport>("jacocoDebugUnitTestReport") {
+    dependsOn("testDebugUnitTest")
+
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+        csv.required.set(false)
+    }
+
+    sourceDirectories.setFrom(files("src/main/java"))
+    classDirectories.setFrom(debugUnitTestCoverageClasses())
+    executionData.setFrom(debugUnitTestCoverageData())
+}
+
+tasks.register<JacocoCoverageVerification>("jacocoDebugUnitTestCoverageVerification") {
+    dependsOn("jacocoDebugUnitTestReport")
+
+    sourceDirectories.setFrom(files("src/main/java"))
+    classDirectories.setFrom(debugUnitTestCoverageClasses())
+    executionData.setFrom(debugUnitTestCoverageData())
+
+    violationRules {
+        rule {
+            limit {
+                counter = "LINE"
+                value = "COVEREDRATIO"
+                minimum = "0.92".toBigDecimal()
+            }
+        }
+    }
+}
+
+tasks.named("check") {
+    dependsOn("jacocoDebugUnitTestCoverageVerification")
 }
 
 dependencies {

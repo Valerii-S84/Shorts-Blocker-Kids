@@ -21,7 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.shortsblockerkids.accessibility.SupportedPlatform
+import com.shortsblockerkids.accessibility.PlatformSupportMatrix
 import com.shortsblockerkids.core.billing.BillingAvailability
 import com.shortsblockerkids.core.billing.BillingCopy
 import com.shortsblockerkids.core.billing.BillingUiState
@@ -86,7 +86,8 @@ fun DashboardScreen(
                         )
                     },
                 )
-                StatusRow("Protected platforms", protectedPlatformsLabel())
+                StatusRow("Platform support", PlatformSupportMatrix.protectedSummary())
+                StatusRow("Not supported", PlatformSupportMatrix.unsupportedSummary())
                 StatusRow("PIN", if (settings.isPinCreated) "created" else "not created")
                 StatusRow(
                     "Free test",
@@ -130,9 +131,10 @@ fun DashboardScreen(
                 Text(
                     text =
                         "Shorts Blocker Kids works when Protection is ON and Android " +
-                            "Accessibility Service is active. It protects only the listed " +
-                            "platforms. If that permission is turned off or the app is " +
-                            "removed, blocking stops.",
+                            "Accessibility Service is active. YouTube Shorts is verified in " +
+                            "code. TikTok main, Instagram Reels, and Facebook Reels have " +
+                            "code-level detectors and still need real-device QA. If the " +
+                            "permission is turned off or the app is removed, blocking stops.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.secondary,
                 )
@@ -201,11 +203,6 @@ private fun protectionInactiveMessage(
 
     return "Protection inactive. Complete setup to block short videos."
 }
-
-private fun protectedPlatformsLabel(): String =
-    SupportedPlatform.PROTECTED_PLATFORMS.joinToString { platform ->
-        platform.displayName
-    }
 
 private fun EntitlementState.dashboardLabel(): String =
     when (this) {

@@ -45,9 +45,12 @@ fun PrivacyPolicyScreen(
         PrivacySection(
             title = "Accessibility Service",
             body =
-                "The app uses Android Accessibility Service to detect when " +
-                    "YouTube Shorts, TikTok, Instagram Reels, or Facebook Reels is open " +
-                    "and show a blocking overlay when protection is enabled.",
+                "The app uses Android Accessibility Service to detect supported " +
+                    "short-video surfaces and show a blocking overlay when protection " +
+                    "is enabled. YouTube Shorts is supported. TikTok main, Instagram " +
+                    "Reels, and Facebook Reels have code-level detectors and still need " +
+                    "real-device QA. TikTok regional package com.ss.android.ugc.trill " +
+                    "and Facebook Lite are not supported.",
         )
         PrivacySection(
             title = "Local data",

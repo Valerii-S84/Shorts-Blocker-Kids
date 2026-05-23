@@ -32,7 +32,13 @@ class FacebookReelsDetector : ShortVideoDetector {
 
         val confidence =
             when {
-                hasVerticalFullscreen && hasActionRail && (hasReelsIdentifier || hasReelContainer) -> {
+                isHighConfidenceReels(
+                    hasReelsIdentifier = hasReelsIdentifier,
+                    hasReelContainer = hasReelContainer,
+                    hasActionRail = hasActionRail,
+                    hasVerticalFullscreen = hasVerticalFullscreen,
+                    hasRepeatedVerticalFeed = hasRepeatedVerticalFeed,
+                ) -> {
                     Confidence.HIGH
                 }
                 score >= 5 && hasReelsIdentifier -> Confidence.MEDIUM
@@ -162,6 +168,20 @@ class FacebookReelsDetector : ShortVideoDetector {
         return matched
     }
 
+    private fun isHighConfidenceReels(
+        hasReelsIdentifier: Boolean,
+        hasReelContainer: Boolean,
+        hasActionRail: Boolean,
+        hasVerticalFullscreen: Boolean,
+        hasRepeatedVerticalFeed: Boolean,
+    ): Boolean {
+        if (!hasActionRail || !hasVerticalFullscreen || !hasReelContainer) {
+            return false
+        }
+
+        return hasReelsIdentifier || hasRepeatedVerticalFeed
+    }
+
     private fun String?.containsAny(vararg needles: String): Boolean {
         val normalized = this?.lowercase(Locale.US) ?: return false
         return needles.any { normalized.contains(it) }
@@ -176,6 +196,16 @@ class FacebookReelsDetector : ShortVideoDetector {
         const val FACEBOOK_PACKAGE = "com.facebook.katana"
 
         private val reelsSignals = setOf("reel", "reels")
-        private val facebookActionSignals = setOf("like", "comments", "comment", "share", "more")
+        private val facebookActionSignals =
+            setOf(
+                "like",
+                "me gusta",
+                "comments",
+                "comment",
+                "comentar",
+                "share",
+                "compartir",
+                "more",
+            )
     }
 }

@@ -2,8 +2,16 @@
 
 Shorts Blocker Kids is a local-only Android app for blocking supported
 short-video surfaces on a child's phone with a parent PIN and Android
-Accessibility Service. Current app-side detector support covers YouTube Shorts,
-TikTok primary package, Instagram Reels, and Facebook Reels.
+Accessibility Service. Current platform support is intentionally narrow:
+
+| Platform | Status |
+|---|---|
+| YouTube Shorts | supported |
+| TikTok main `com.zhiliaoapp.musically` | supported by code; needs real-device QA |
+| TikTok regional `com.ss.android.ugc.trill` | not supported |
+| Instagram Reels | supported by code; needs real-device QA |
+| Facebook Reels | supported by code; needs real-device QA |
+| Facebook Lite `com.facebook.lite` | not supported |
 
 The app has no account system, no app backend, and no analytics. Google Play
 Billing adds `com.android.vending.BILLING`, `android.permission.INTERNET`, and
@@ -62,6 +70,7 @@ Current release decisions:
 
 ```bash
 ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew :app:testDebugUnitTest
+ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew :app:jacocoDebugUnitTestReport :app:jacocoDebugUnitTestCoverageVerification
 ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew :app:lintDebug
 ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew :app:ktlintCheck
 ```
@@ -69,13 +78,13 @@ ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew :app:ktlintCheck
 Full local foundation check:
 
 ```bash
-ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew :app:ktlintCheck :app:assembleDebug :app:assembleRelease :app:testDebugUnitTest :app:lintDebug
+ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew :app:ktlintCheck :app:assembleDebug :app:assembleRelease :app:testDebugUnitTest :app:jacocoDebugUnitTestCoverageVerification :app:lintDebug
 ```
 
 Full local release readiness check:
 
 ```bash
-ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew :app:ktlintCheck :app:assembleDebug :app:assembleRelease :app:bundleRelease :app:testDebugUnitTest :app:lintDebug :app:lintRelease
+ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew :app:ktlintCheck :app:assembleDebug :app:assembleRelease :app:bundleRelease :app:testDebugUnitTest :app:jacocoDebugUnitTestCoverageVerification :app:lintDebug :app:lintRelease
 ```
 
 ## Install On A Device

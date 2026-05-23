@@ -1,9 +1,19 @@
 # Short Video Blocker Test Plan
 
-Status: Active test plan. The app-side detector registry now includes YouTube
-Shorts, TikTok primary package, Instagram Reels, and Facebook Reels. Fixture
-unit tests exist for these supported surfaces, and real-device QA is still
-required before production.
+Status: Active test plan. The current support matrix is:
+
+| Platform | Status |
+|---|---|
+| YouTube Shorts | supported |
+| TikTok main `com.zhiliaoapp.musically` | supported by code; needs real-device QA |
+| TikTok regional `com.ss.android.ugc.trill` | not supported |
+| Instagram Reels | supported by code; needs real-device QA |
+| Facebook Reels | supported by code; needs real-device QA |
+| Facebook Lite `com.facebook.lite` | not supported |
+
+Fixture unit tests exist for the supported and code-supported surfaces, and
+real-device QA is still required before production for TikTok main, Instagram
+Reels, and Facebook Reels.
 
 ## Test Goals
 
@@ -245,8 +255,9 @@ Facebook package `com.facebook.katana`:
 Cross-platform checks:
 
 - Dashboard lists exactly the protected platforms shipped in the build.
-- Accessibility disclosure names YouTube Shorts, TikTok, Instagram Reels, and
-  Facebook Reels.
+- Accessibility disclosure names YouTube Shorts as supported, marks TikTok main,
+  Instagram Reels, and Facebook Reels as code-supported pending real-device QA,
+  and states that TikTok regional and Facebook Lite are not supported.
 - Disabling AccessibilityService stops blocking in every target app.
 - No raw Accessibility tree, video title, URL, account name, message, or watch
   history is stored or exported.

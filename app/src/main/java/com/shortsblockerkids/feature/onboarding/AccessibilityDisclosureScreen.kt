@@ -43,8 +43,11 @@ fun AccessibilityDisclosureScreen(
         Text(
             text =
                 "Shorts Blocker Kids uses Android Accessibility Service to detect when " +
-                    "YouTube Shorts, TikTok, Instagram Reels, or Facebook Reels is open " +
-                    "and show a blocking overlay.\n\n" +
+                    "supported short-video surfaces are open and show a blocking overlay. " +
+                    "YouTube Shorts is supported. TikTok main, Instagram Reels, and " +
+                    "Facebook Reels have code-level detectors and still need real-device " +
+                    "QA. TikTok regional package com.ss.android.ugc.trill and Facebook " +
+                    "Lite are not supported.\n\n" +
                     "When short videos are blocked, the parent PIN can temporarily allow " +
                     "access. Without the parent PIN, the blocking overlay stays active " +
                     "while a protected short-video surface is open.\n\n" +

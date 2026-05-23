@@ -35,8 +35,10 @@ Before opening Android Accessibility settings, the app must show a prominent
 disclosure that says:
 
 - Shorts Blocker Kids uses Android Accessibility Service.
-- The service detects when YouTube Shorts, TikTok, Instagram Reels, or
-  Facebook Reels is open.
+- The service detects supported short-video surfaces. YouTube Shorts is
+  supported. TikTok main, Instagram Reels, and Facebook Reels have code-level
+  detectors and still need real-device QA. TikTok regional package
+  `com.ss.android.ugc.trill` and Facebook Lite are not supported.
 - The app shows a blocking overlay when protected short-video surfaces are
   blocked.
 - Parent PIN is used for temporary allow access.
@@ -55,10 +57,12 @@ Recommended declaration wording:
 
 ```text
 Shorts Blocker Kids is a parental digital wellbeing app. It uses Android
-AccessibilityService to detect when YouTube Shorts, TikTok, Instagram Reels, or
-Facebook Reels is open on the child's phone. When a supported short-video
-surface is detected and protection is enabled, the app shows a blocking overlay.
-A parent PIN can temporarily allow access.
+AccessibilityService to detect supported short-video surfaces on the child's
+phone. YouTube Shorts is supported. TikTok main, Instagram Reels, and Facebook
+Reels have code-level detectors and still need real-device QA. TikTok regional
+package com.ss.android.ugc.trill and Facebook Lite are not supported. When a
+supported short-video surface is detected and protection is enabled, the app
+shows a blocking overlay. A parent PIN can temporarily allow access.
 ```
 
 Why AccessibilityService is required:
@@ -98,8 +102,8 @@ wellbeing and screen-control tool.
 7. In Android Accessibility settings, enable `Shorts Blocker Kids Protection`.
 8. Return to the app and show protection status.
 9. Open YouTube Shorts and show the blocking overlay.
-10. Open TikTok, Instagram Reels, and Facebook Reels and show the blocking
-    overlay for each supported surface.
+10. For TikTok main, Instagram Reels, and Facebook Reels, run and record the
+    real-device QA scenarios before claiming full support.
 11. Tap the parent PIN action.
 12. Enter the parent PIN and select a temporary allow duration.
 13. Return to a supported short-video surface and show that temporary allow works.
@@ -165,20 +169,20 @@ For the current local-only app:
 
 ## Real-Device Smoke Evidence
 
-On May 22, 2026, the product owner reported this flow passed on five real
-devices:
+On May 22, 2026, the product owner reported this YouTube-focused flow passed on
+five real devices:
 
 - install;
 - parent PIN setup and PIN entry;
 - Accessibility Service enablement;
-- normal YouTube videos and non-target TikTok/Instagram/Facebook screens are not
-  blocked;
-- YouTube Shorts, TikTok feed, Instagram Reels, and Facebook Reels are blocked
-  immediately;
+- normal YouTube videos are not blocked;
+- YouTube Shorts are blocked immediately;
 - exit to phone home works;
 - parent PIN temporary allow works for 5, 10, and 15 minutes.
 
-No problems were observed in that smoke pass.
+No problems were observed in that smoke pass. TikTok main, Instagram Reels, and
+Facebook Reels still require separate real-device QA before full support is
+claimed.
 
 ## Not Yet Completed Outside The Repo
 
