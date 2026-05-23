@@ -101,6 +101,19 @@ class AppSettingsTest {
     }
 
     @Test
+    fun futureBillingVerificationTimestampDoesNotProtect() {
+        val settings =
+            activeSettings(freeTestStartedAt = TEST_STARTED_AT)
+                .copy(
+                    billingSubscriptionActive = true,
+                    billingLastVerifiedAt = TWENTY_DAYS + 1L,
+                )
+
+        assertFalse(settings.hasBillingEntitlement(nowMillis = TWENTY_DAYS))
+        assertFalse(settings.canProtect(nowMillis = TWENTY_DAYS))
+    }
+
+    @Test
     fun temporaryAllowDisablesProtectionUntilItExpires() {
         val settings =
             AppSettings(

@@ -53,6 +53,9 @@ data class AppSettings(
 
     fun hasBillingEntitlement(nowMillis: Long): Boolean {
         val verifiedAt = billingLastVerifiedAt ?: return false
+        if (verifiedAt > nowMillis) {
+            return false
+        }
         return billingSubscriptionActive &&
             nowMillis - verifiedAt <= BillingAvailability.OFFLINE_GRACE_MILLIS
     }

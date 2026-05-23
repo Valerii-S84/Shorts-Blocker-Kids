@@ -108,6 +108,8 @@ Pending verification:
 - [x] Expired subscription never blocks parent access to settings.
 - [x] Payment problem state is visible to parent as Billing unavailable / restore / purchase failure messaging.
 - [x] Local cached entitlement is conservative.
+- [x] Future billing verification timestamps are ignored instead of extending
+  entitlement.
 - [x] Free test / paid entitlement precedence is documented.
 - [x] Unit tests cover entitlement decisions.
 - [ ] Manual tests cover purchase, restore, cancel, expire, and payment problem states.
