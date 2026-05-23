@@ -37,7 +37,7 @@ fun WelcomeScreen(
         Spacer(modifier = Modifier.height(16.dp))
         Text(
             text =
-                "Blocks YouTube Shorts on a child’s phone.\n" +
+                "Blocks supported short-video surfaces on a child’s phone.\n" +
                     "No account. No server. Parent PIN only.",
             style = MaterialTheme.typography.bodyLarge,
         )

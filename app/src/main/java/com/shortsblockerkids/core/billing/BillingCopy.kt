@@ -7,7 +7,7 @@ object BillingCopy {
                 "Monthly auto-renewing subscription: $loadedPrice"
             } ?: "Monthly auto-renewing subscription"
 
-        return "$price. Required after the free test to keep Shorts blocking active. " +
+        return "$price. Required after the free test to keep short-video blocking active. " +
             "Charged by Google Play; manage or cancel anytime in Google Play."
     }
 

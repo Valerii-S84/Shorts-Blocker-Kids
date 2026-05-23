@@ -8,7 +8,7 @@ Play Console submission and demo video URL are pending.
 This document covers the AccessibilityService policy package for the current
 local-only Android app. Google Play Billing is integrated for subscription
 entitlement, but this document does not cover Stripe, backend, analytics, ads,
-profiles, cloud sync, schedules, TikTok/Reels blocking, or device-owner mode.
+profiles, cloud sync, schedules, or device-owner mode.
 
 ## Official Policy Sources Checked
 
@@ -35,10 +35,12 @@ Before opening Android Accessibility settings, the app must show a prominent
 disclosure that says:
 
 - Shorts Blocker Kids uses Android Accessibility Service.
-- The service detects when YouTube Shorts is open.
-- The app shows a blocking overlay when Shorts is blocked.
+- The service detects when YouTube Shorts, TikTok, Instagram Reels, or
+  Facebook Reels is open.
+- The app shows a blocking overlay when protected short-video surfaces are
+  blocked.
 - Parent PIN is used for temporary allow access.
-- The app does not collect or send child data, YouTube history, video data,
+- The app does not collect or send child data, watch history, video data,
   screen recordings, audio, messages, location, contacts, or browsing history.
 - There is no app server, account, analytics, or ads in the current app.
 - Rules and PIN protection stay locally on the phone.
@@ -53,24 +55,25 @@ Recommended declaration wording:
 
 ```text
 Shorts Blocker Kids is a parental digital wellbeing app. It uses Android
-AccessibilityService to detect when the YouTube app is showing YouTube Shorts
-on the child's phone. When Shorts is detected and protection is enabled, the app
-shows a blocking overlay. A parent PIN can temporarily allow access.
+AccessibilityService to detect when YouTube Shorts, TikTok, Instagram Reels, or
+Facebook Reels is open on the child's phone. When a supported short-video
+surface is detected and protection is enabled, the app shows a blocking overlay.
+A parent PIN can temporarily allow access.
 ```
 
 Why AccessibilityService is required:
 
 ```text
-Android does not provide a normal app API for detecting the YouTube Shorts UI.
-AccessibilityService is used locally to inspect YouTube UI state only when the
-YouTube package is active, so the app can detect Shorts and show the blocking
-overlay.
+Android does not provide a normal app API for detecting these short-video
+surfaces across supported apps. AccessibilityService is used locally only while
+a supported package is active, so the app can inspect UI state, detect the
+protected surface, and show the blocking overlay.
 ```
 
 Data access and handling:
 
 ```text
-The app does not collect, transmit, sell, or share child data, YouTube history,
+The app does not collect, transmit, sell, or share child data, watch history,
 video data, screen recordings, audio, messages, location, contacts, or browsing
 history. The app has no backend, no account system, no analytics, and no ads.
 Settings and PIN hash metadata are stored locally on the device.
@@ -94,11 +97,12 @@ wellbeing and screen-control tool.
 6. Tap `Open Settings`.
 7. In Android Accessibility settings, enable `Shorts Blocker Kids Protection`.
 8. Return to the app and show protection status.
-9. Open YouTube Shorts.
-10. Show the blocking overlay.
+9. Open YouTube Shorts and show the blocking overlay.
+10. Open TikTok, Instagram Reels, and Facebook Reels and show the blocking
+    overlay for each supported surface.
 11. Tap the parent PIN action.
 12. Enter the parent PIN and select a temporary allow duration.
-13. Return to YouTube and show that temporary allow works.
+13. Return to a supported short-video surface and show that temporary allow works.
 14. Wait or explain that temporary allow expires and blocking resumes.
 
 If the Android Accessibility settings screen or overlay behavior is not obvious
@@ -112,9 +116,9 @@ The Privacy Policy should state:
 - The app has no account system and no app server.
 - Protection rules are stored on the device.
 - Parent PIN is stored as hash and salt metadata, not plain text.
-- The app uses AccessibilityService to detect YouTube Shorts locally and show a
-  blocking overlay.
-- The app does not collect or send child data, YouTube history, video data,
+- The app uses AccessibilityService to detect supported short-video surfaces
+  locally and show a blocking overlay.
+- The app does not collect or send child data, watch history, video data,
   screen recordings, audio, messages, location, contacts, or browsing history.
 - The app does not use analytics or ads in the current release.
 - Google Play Billing may process payment and subscription data under Google
@@ -125,12 +129,12 @@ The Privacy Policy should state:
 
 For the current local-only app:
 
-- Data collection by this app: no collection for child data, YouTube activity,
+- Data collection by this app: no collection for child data, supported app
+  activity, video data, screen recordings, audio, messages, location, contacts, or
+  browsing history.
+- Data sharing by this app: no sharing for child data, supported app activity,
   video data, screen recordings, audio, messages, location, contacts, or
   browsing history.
-- Data sharing by this app: no sharing for child data, YouTube activity, video
-  data, screen recordings, audio, messages, location, contacts, or browsing
-  history.
 - Device storage: local settings and PIN hash metadata stay on the device.
 - Network: the app should not declare `INTERNET` unless a future approved scope
   explicitly requires it.
@@ -167,8 +171,10 @@ devices:
 - install;
 - parent PIN setup and PIN entry;
 - Accessibility Service enablement;
-- normal YouTube videos are not blocked;
-- YouTube Shorts are blocked immediately;
+- normal YouTube videos and non-target TikTok/Instagram/Facebook screens are not
+  blocked;
+- YouTube Shorts, TikTok feed, Instagram Reels, and Facebook Reels are blocked
+  immediately;
 - exit to phone home works;
 - parent PIN temporary allow works for 5, 10, and 15 minutes.
 

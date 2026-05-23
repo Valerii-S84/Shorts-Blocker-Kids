@@ -75,14 +75,27 @@ class AccessibilityTreeScanner {
         private val knownContentSignals =
             setOf(
                 "shorts",
+                "reel",
+                "reels",
+                "for you",
+                "following",
+                "friends",
                 "like",
                 "dislike",
                 "comment",
                 "comments",
                 "share",
+                "send",
+                "save",
+                "audio",
+                "more",
                 "remix",
                 "subscribe",
+                "follow",
                 "home",
+                "inbox",
+                "profile",
+                "search",
                 "subscriptions",
             )
     }

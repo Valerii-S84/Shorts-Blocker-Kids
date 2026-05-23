@@ -8,7 +8,9 @@ Effective date: May 22, 2026
 ## Overview
 
 Shorts Blocker Kids is a parental digital wellbeing app that helps parents
-block YouTube Shorts on a child's Android phone.
+block supported short-video surfaces on a child's Android phone. Current
+app-side support covers YouTube Shorts, TikTok, Instagram Reels, and Facebook
+Reels.
 
 The app works locally on the device. It does not require an account and does
 not use an app server in the current release.
@@ -16,9 +18,9 @@ not use an app server in the current release.
 ## Accessibility Service
 
 Shorts Blocker Kids uses Android AccessibilityService to detect when the
-YouTube app is showing YouTube Shorts. When Shorts is detected and protection is
-enabled, the app shows a blocking overlay. A parent PIN can temporarily allow
-access.
+supported short-video surfaces are open. When YouTube Shorts, TikTok,
+Instagram Reels, or Facebook Reels is detected and protection is enabled, the
+app shows a blocking overlay. A parent PIN can temporarily allow access.
 
 AccessibilityService is used only for the app's blocking function. Detection
 runs locally on the device.
@@ -28,15 +30,15 @@ runs locally on the device.
 Shorts Blocker Kids stores protection settings and parent PIN hash metadata
 locally on the device. The parent PIN is not stored as plain text.
 
-The app does not store YouTube watch history, video titles, URLs, comments,
-account names, messages, screen recordings, audio, location, contacts, browsing
-history, or raw Accessibility tree dumps.
+The app does not store watch history, video titles, URLs, comments, account
+names, messages, screen recordings, audio, location, contacts, browsing history,
+or raw Accessibility tree dumps.
 
 ## Data Collection And Sharing
 
 Shorts Blocker Kids does not collect, transmit, sell, or share child data,
-YouTube activity, video data, screen recordings, audio, messages, location,
-contacts, or browsing history.
+supported app activity, video data, screen recordings, audio, messages,
+location, contacts, or browsing history.
 
 The current app has:
 

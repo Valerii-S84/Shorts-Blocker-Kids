@@ -24,7 +24,7 @@ class AccessibilityEventRouter(
         if (!detectionEngine.supportsPackage(packageName)) {
             if (
                 blockOverlayController.isOverlayVisible ||
-                blockingDecisionController.shouldIgnoreNonYouTubeEvent(nowMillis)
+                blockingDecisionController.shouldIgnoreUnsupportedPackageEvent(nowMillis)
             ) {
                 debugLogger.logIgnoredEvent(
                     packageName = packageName,
@@ -41,7 +41,7 @@ class AccessibilityEventRouter(
         if (RuntimeProtectionState.consumeDebugOverlayRequest()) {
             val decision =
                 blockingDecisionController.evaluate(
-                    isInYouTube = true,
+                    isInSupportedApp = true,
                     isProtectionActive = true,
                     result =
                         DetectionResult(
@@ -62,7 +62,7 @@ class AccessibilityEventRouter(
         if (!isProtectionActive && !isDebugSnapshotPending) {
             val decision =
                 blockingDecisionController.evaluate(
-                    isInYouTube = true,
+                    isInSupportedApp = true,
                     isProtectionActive = false,
                     result = DetectionResult.None,
                     nowMillis = nowMillis,
@@ -105,7 +105,7 @@ class AccessibilityEventRouter(
 
         val decision =
             blockingDecisionController.evaluate(
-                isInYouTube = true,
+                isInSupportedApp = true,
                 isProtectionActive = isProtectionActive,
                 result = result,
                 nowMillis = nowMillis,

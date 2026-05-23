@@ -11,12 +11,12 @@ class BlockingDecisionController(
     private var overlayVisible = false
 
     fun evaluate(
-        isInYouTube: Boolean,
+        isInSupportedApp: Boolean,
         isProtectionActive: Boolean,
         result: DetectionResult,
         nowMillis: Long,
     ): BlockingDecision {
-        if (!isInYouTube || !isProtectionActive) {
+        if (!isInSupportedApp || !isProtectionActive) {
             lastHighDetectionAtMillis = null
             pinEntryRequestedAtMillis = null
             overlayVisible = false
@@ -50,7 +50,7 @@ class BlockingDecisionController(
         pinEntryRequestedAtMillis = nowMillis
     }
 
-    fun shouldIgnoreNonYouTubeEvent(nowMillis: Long): Boolean = overlayVisible || isPinEntryLaunchGraceActive(nowMillis)
+    fun shouldIgnoreUnsupportedPackageEvent(nowMillis: Long): Boolean = overlayVisible || isPinEntryLaunchGraceActive(nowMillis)
 
     fun reset() {
         lastHighDetectionAtMillis = null

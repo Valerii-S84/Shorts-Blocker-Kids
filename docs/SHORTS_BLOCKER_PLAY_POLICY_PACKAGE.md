@@ -7,10 +7,12 @@ submission, hosted Privacy Policy URL, and demo video URL are pending.
 
 This package is for the current Shorts Blocker Kids build:
 
-- Android app for blocking YouTube Shorts only.
+- Android app for blocking supported short-video surfaces.
 - Local-only rules and parent PIN.
-- Android Accessibility Service detects YouTube Shorts when YouTube is active.
-- Blocking overlay appears when Shorts is detected and protection is enabled.
+- Android Accessibility Service detects YouTube Shorts, TikTok, Instagram
+  Reels, and Facebook Reels when the corresponding supported app is active.
+- Blocking overlay appears when a supported short-video surface is detected and
+  protection is enabled.
 - Parent PIN can temporarily allow access for 5, 10, or 15 minutes.
 - No account system.
 - No app backend.
@@ -69,18 +71,19 @@ Core feature:
 
 ```text
 Shorts Blocker Kids is a parental digital wellbeing app. It uses Android
-AccessibilityService to detect when the YouTube app is showing YouTube Shorts
-on the child's phone. When Shorts is detected and protection is enabled, the app
-shows a blocking overlay. A parent PIN can temporarily allow access.
+AccessibilityService to detect when YouTube Shorts, TikTok, Instagram Reels, or
+Facebook Reels is open on the child's phone. When a supported short-video
+surface is detected and protection is enabled, the app shows a blocking overlay.
+A parent PIN can temporarily allow access.
 ```
 
 Why AccessibilityService is needed:
 
 ```text
-Android does not provide a normal app API that tells this app when the YouTube
-Shorts surface is open. AccessibilityService is used locally only while the
-YouTube package is active so the app can inspect YouTube UI state, detect
-Shorts, and show the blocking overlay.
+Android does not provide a normal app API that tells this app when these
+short-video surfaces are open across supported apps. AccessibilityService is
+used locally only while a supported package is active so the app can inspect UI
+state, detect the protected surface, and show the blocking overlay.
 ```
 
 Data collection or sharing through AccessibilityService:
@@ -88,7 +91,7 @@ Data collection or sharing through AccessibilityService:
 ```text
 No. Shorts Blocker Kids does not collect or share personal or sensitive data
 using AccessibilityService. Detection runs locally on the device. The app does
-not collect or send child data, YouTube history, video data, video titles, URLs,
+not collect or send child data, watch history, video data, video titles, URLs,
 account names, comments, messages, screen recordings, audio, location,
 contacts, or browsing history.
 ```
@@ -113,14 +116,16 @@ designed as a disability support tool and should not set isAccessibilityTool=tru
 9. Return to the app and show protection status.
 10. Open a normal YouTube video and show that it is not blocked.
 11. Open YouTube Shorts and show that the blocking overlay appears.
-12. Tap `Exit to phone home` and show that the device returns to the home
+12. Open TikTok, Instagram Reels, and Facebook Reels and show that the blocking
+    overlay appears for each supported surface.
+13. Tap `Exit to phone home` and show that the device returns to the home
     screen.
-13. Open YouTube Shorts again.
-14. Tap `Enter PIN`.
-15. Enter the parent PIN.
-16. Select 5 minutes and show temporary allow behavior.
-17. Repeat or briefly show the 10 and 15 minute options.
-18. End by showing the dashboard status and the honest limitation text.
+14. Open a supported short-video surface again.
+15. Tap `Enter PIN`.
+16. Enter the parent PIN.
+17. Select 5 minutes and show temporary allow behavior.
+18. Repeat or briefly show the 10 and 15 minute options.
+19. End by showing the dashboard status and the honest limitation text.
 
 Add captions if the system Accessibility settings flow or overlay behavior is
 not obvious in the recording.
@@ -143,7 +148,7 @@ Current answer direction for the app itself:
 - Files and docs: not collected.
 - Calendar: not collected.
 - Contacts: not collected.
-- App activity: no YouTube watch history, video titles, URLs, or browsing
+- App activity: no watch history, video titles, URLs, or browsing
   history collected.
 - Web browsing: not collected.
 - App info and performance: no analytics or crash SDK is currently integrated.
@@ -175,22 +180,22 @@ Draft text:
 Effective date: May 22, 2026
 
 Shorts Blocker Kids is a parental digital wellbeing app that helps parents
-block YouTube Shorts on a child's Android phone.
+block supported short-video surfaces on a child's Android phone.
 
 The app works locally on the device. It does not require an account and does
 not use an app server in the current release.
 
 Shorts Blocker Kids uses Android AccessibilityService to detect when the
-YouTube app is showing YouTube Shorts. When Shorts is detected and protection is
-enabled, the app shows a blocking overlay. A parent PIN can temporarily allow
-access.
+supported short-video surfaces are open. When YouTube Shorts, TikTok,
+Instagram Reels, or Facebook Reels is detected and protection is enabled, the
+app shows a blocking overlay. A parent PIN can temporarily allow access.
 
 The app stores protection settings and parent PIN hash metadata locally on the
 device. The parent PIN is not stored as plain text.
 
 Shorts Blocker Kids does not collect, transmit, sell, or share child data,
-YouTube watch history, video titles, URLs, account names, comments, messages,
-screen recordings, audio, location, contacts, browsing history, or raw
+watch history, video titles, URLs, account names, comments, messages, screen
+recordings, audio, location, contacts, browsing history, or raw
 Accessibility tree dumps.
 
 The current app has no analytics, no ads, no account system, no backend, and no
@@ -215,22 +220,24 @@ Developer / publisher: TODO before submission - add the Play listing entity.
 Short description:
 
 ```text
-Block YouTube Shorts on a child's Android phone with a parent PIN.
+Block supported short-video surfaces on a child's Android phone with a parent
+PIN.
 ```
 
 Full description:
 
 ```text
-Shorts Blocker Kids helps parents block YouTube Shorts on a child's Android
-phone.
+Shorts Blocker Kids helps parents block supported short-video surfaces on a
+child's Android phone.
 
 Set a parent PIN, enable protection, and turn on the Android Accessibility
-Service. When YouTube Shorts is detected, Shorts Blocker Kids shows a blocking
-screen. A parent can temporarily allow access with the PIN.
+Service. When YouTube Shorts, TikTok, Instagram Reels, or Facebook Reels is
+detected, Shorts Blocker Kids shows a blocking screen. A parent can temporarily
+allow access with the PIN.
 
 What the app does:
-- blocks YouTube Shorts;
-- keeps normal YouTube videos available;
+- blocks YouTube Shorts, TikTok, Instagram Reels, and Facebook Reels;
+- keeps normal YouTube videos and non-target app screens available;
 - uses a parent PIN for protection changes and temporary allow;
 - stores rules locally on the phone.
 
@@ -239,7 +246,7 @@ Privacy:
 - no app server;
 - no analytics;
 - no ads;
-- no YouTube watch history storage;
+- no watch history storage;
 - no video, audio, screen recording, messages, location, contacts, or browsing
   history collection.
 
@@ -265,9 +272,11 @@ To test:
 8. Return to the app and confirm Protection is ON.
 9. Open YouTube and play a normal video; it should not be blocked.
 10. Open YouTube Shorts; the blocking overlay should appear.
-11. Tap Exit to phone home to leave Shorts.
-12. Open Shorts again, tap Enter PIN, enter the parent PIN, and choose 5, 10,
-    or 15 minutes for temporary allow.
+11. Open TikTok, Instagram Reels, or Facebook Reels; the blocking overlay should
+    appear on the protected short-video surface.
+12. Tap Exit to phone home to leave the blocked surface.
+13. Open a supported short-video surface again, tap Enter PIN, enter the parent
+    PIN, and choose 5, 10, or 15 minutes for temporary allow.
 ```
 
 ## External Submission Blockers

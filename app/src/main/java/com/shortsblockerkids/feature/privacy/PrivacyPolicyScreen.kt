@@ -46,8 +46,8 @@ fun PrivacyPolicyScreen(
             title = "Accessibility Service",
             body =
                 "The app uses Android Accessibility Service to detect when " +
-                    "YouTube Shorts is open and show a blocking overlay when " +
-                    "protection is enabled.",
+                    "YouTube Shorts, TikTok, Instagram Reels, or Facebook Reels is open " +
+                    "and show a blocking overlay when protection is enabled.",
         )
         PrivacySection(
             title = "Local data",
@@ -58,9 +58,9 @@ fun PrivacyPolicyScreen(
         PrivacySection(
             title = "Data collection",
             body =
-                "The app does not collect or send child data, YouTube history, " +
-                    "video data, screen recordings, audio, messages, location, " +
-                    "contacts, or browsing history.",
+                "The app does not collect or send child data, watch history, video data, " +
+                    "screen recordings, audio, messages, location, contacts, or browsing " +
+                    "history.",
         )
         PrivacySection(
             title = "Payments",

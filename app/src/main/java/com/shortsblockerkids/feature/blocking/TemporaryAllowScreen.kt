@@ -32,13 +32,13 @@ fun TemporaryAllowScreen(
         horizontalAlignment = Alignment.Start,
     ) {
         Text(
-            text = "Allow Shorts",
+            text = "Allow short videos",
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "Allow Shorts on this phone for:",
+            text = "Allow protected short-video apps on this phone for:",
             style = MaterialTheme.typography.bodyLarge,
         )
         Spacer(modifier = Modifier.height(24.dp))

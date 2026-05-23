@@ -1,8 +1,8 @@
 # Short Video Blocker Detection Strategy
 
-Status: Planning. This document describes target detection strategy. Only
-YouTube Shorts detection exists in the current app; TikTok, Instagram Reels,
-and Facebook Reels detection must be implemented and verified later.
+Status: Active app-side strategy. YouTube Shorts, TikTok primary package,
+Instagram Reels, and Facebook Reels detectors are implemented with fixture unit
+tests. Real-device QA is still required before production readiness is claimed.
 
 ## Detection Principles
 
@@ -21,14 +21,14 @@ and Facebook Reels detection must be implemented and verified later.
 
 Primary target package names:
 
-| Platform | Package name | Planned blocking target |
+| Platform | Package name | Blocking target |
 |---|---|---|
 | YouTube | `com.google.android.youtube` | YouTube Shorts |
-| TikTok | `com.zhiliaoapp.musically` | TikTok short-video feed or app-level fallback |
-| TikTok regional variant | `com.ss.android.ugc.trill` | TikTok short-video feed or app-level fallback, if present in target market |
+| TikTok | `com.zhiliaoapp.musically` | TikTok primary short-video feed |
+| TikTok regional variant | `com.ss.android.ugc.trill` | Not enabled; requires separate regional QA |
 | Instagram | `com.instagram.android` | Instagram Reels |
 | Facebook | `com.facebook.katana` | Facebook Reels |
-| Facebook Lite | `com.facebook.lite` | Optional, only after separate QA |
+| Facebook Lite | `com.facebook.lite` | Not enabled; requires separate Lite QA |
 
 The initial production target should focus on the primary package names. Any
 regional or Lite package must be separately tested before being enabled.
@@ -89,7 +89,9 @@ Risks:
 
 Current status:
 
-- Not implemented.
+- Implemented for primary package `com.zhiliaoapp.musically`.
+- Regional package `com.ss.android.ugc.trill` is not enabled.
+- Real-device QA is pending.
 
 Target packages:
 
@@ -99,10 +101,9 @@ Target packages:
 Preferred strategy:
 
 - Detect TikTok foreground package.
-- Attempt to identify the primary short-video feed using UI tree structure,
-  bottom navigation, video player controls, and stable content descriptions.
-- Treat feed-specific detection as required before claiming precise TikTok feed
-  blocking.
+- Identify the primary short-video feed using UI tree structure, bottom
+  navigation, video player controls, and stable content descriptions.
+- Do not use app-level TikTok blocking in the current implementation.
 
 Likely signals to investigate:
 
@@ -115,12 +116,9 @@ Likely signals to investigate:
 
 Fallback behavior:
 
-- If reliable feed-specific detection is not feasible, the product may choose
-  app-level TikTok blocking.
-- App-level TikTok blocking must be disclosed as TikTok usage blocking, not
-  short-video feed-only blocking.
-- If neither feed-specific detection nor app-level fallback is approved, TikTok
-  support must remain disabled.
+- If high-confidence feed-specific signals are absent, do not block.
+- App-level TikTok blocking is not enabled and would require a separate product
+  decision plus disclosure updates.
 
 Risks:
 
@@ -134,7 +132,8 @@ Risks:
 
 Current status:
 
-- Not implemented.
+- Implemented for package `com.instagram.android`.
+- Real-device QA is pending.
 
 Target package:
 
@@ -176,7 +175,9 @@ Risks:
 
 Current status:
 
-- Not implemented.
+- Implemented for package `com.facebook.katana`.
+- Facebook Lite is not enabled.
+- Real-device QA is pending.
 
 Target package:
 

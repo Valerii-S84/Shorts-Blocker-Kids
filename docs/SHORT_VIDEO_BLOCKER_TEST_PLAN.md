@@ -1,7 +1,9 @@
 # Short Video Blocker Test Plan
 
-Status: Planning. This document defines required tests for the full Short Video
-Blocker product. It does not run tests or implement new app support.
+Status: Active test plan. The app-side detector registry now includes YouTube
+Shorts, TikTok primary package, Instagram Reels, and Facebook Reels. Fixture
+unit tests exist for these supported surfaces, and real-device QA is still
+required before production.
 
 ## Test Goals
 
@@ -182,6 +184,72 @@ For every app:
 - Confirm overlay dismisses after leaving app.
 - Confirm AccessibilityService disable stops blocking and dashboard explains
   inactive protection.
+
+## TikTok / Reels Manual QA Checklist
+
+Record before each run:
+
+- Device model and Android version.
+- Shorts Blocker Kids build variant and version code.
+- Target app package and version name.
+- Whether Protection is ON, AccessibilityService is enabled, and temporary
+  allow is inactive before the scenario starts.
+
+TikTok primary package `com.zhiliaoapp.musically`:
+
+- Open the primary For You feed; expected result: blocking overlay appears.
+- Swipe to the next feed item; expected result: blocking remains active without
+  stacked overlays or flicker.
+- Tap `Exit to phone home`; expected result: phone home opens and overlay clears.
+- Reopen TikTok feed, enter parent PIN, choose 5 minute temporary allow; expected
+  result: feed remains allowed until expiry.
+- After temporary allow expires, reopen the primary feed; expected result:
+  blocking overlay appears again.
+- Open Profile; expected result: no blocking overlay.
+- Open Inbox/messages; expected result: no blocking overlay.
+- Open Search; expected result: no blocking overlay.
+- Open Settings; expected result: no blocking overlay.
+- Confirm regional package `com.ss.android.ugc.trill` is not claimed as covered
+  unless a separate regional QA run and code change explicitly enable it.
+
+Instagram package `com.instagram.android`:
+
+- Open Reels tab; expected result: blocking overlay appears.
+- Open a Reel from feed; expected result: blocking overlay appears.
+- Swipe between Reels; expected result: blocking remains active without stacked
+  overlays or flicker.
+- Tap `Exit to phone home`; expected result: phone home opens and overlay clears.
+- Reopen Reels, enter parent PIN, choose 10 minute temporary allow; expected
+  result: Reels remains allowed until expiry.
+- Open normal feed; expected result: no blocking overlay.
+- Open Profile; expected result: no blocking overlay.
+- Open Messages; expected result: no blocking overlay.
+- Open Stories; expected result: no blocking overlay.
+
+Facebook package `com.facebook.katana`:
+
+- Open Reels surface; expected result: blocking overlay appears.
+- Open Reels embedded from feed; expected result: blocking overlay appears.
+- Swipe between Reels; expected result: blocking remains active without stacked
+  overlays or flicker.
+- Tap `Exit to phone home`; expected result: phone home opens and overlay clears.
+- Reopen Reels, enter parent PIN, choose 15 minute temporary allow; expected
+  result: Reels remains allowed until expiry.
+- Open normal feed; expected result: no blocking overlay.
+- Open Groups; expected result: no blocking overlay.
+- Open Marketplace; expected result: no blocking overlay.
+- Open Profile; expected result: no blocking overlay.
+- Confirm Facebook Lite `com.facebook.lite` is not claimed as covered unless a
+  separate Lite QA run and code change explicitly enable it.
+
+Cross-platform checks:
+
+- Dashboard lists exactly the protected platforms shipped in the build.
+- Accessibility disclosure names YouTube Shorts, TikTok, Instagram Reels, and
+  Facebook Reels.
+- Disabling AccessibilityService stops blocking in every target app.
+- No raw Accessibility tree, video title, URL, account name, message, or watch
+  history is stored or exported.
 
 ## Billing Test Matrix
 

@@ -3,6 +3,8 @@ package com.shortsblockerkids.accessibility
 class ShortVideoDetectionEngine(
     detectors: List<ShortVideoDetector>,
 ) {
+    val supportedPlatforms: List<SupportedPlatform> = detectors.map { it.platform }
+
     private val detectorPackagePairs =
         detectors.flatMap { detector ->
             detector.supportedPackages.map { packageName -> packageName to detector }
@@ -37,6 +39,17 @@ class ShortVideoDetectionEngine(
     }
 
     companion object {
+        fun production(): ShortVideoDetectionEngine =
+            ShortVideoDetectionEngine(
+                detectors =
+                    listOf(
+                        YouTubeShortsDetector(),
+                        TikTokShortVideoDetector(),
+                        InstagramReelsDetector(),
+                        FacebookReelsDetector(),
+                    ),
+            )
+
         fun youtubeOnly(): ShortVideoDetectionEngine =
             ShortVideoDetectionEngine(
                 detectors = listOf(YouTubeShortsDetector()),

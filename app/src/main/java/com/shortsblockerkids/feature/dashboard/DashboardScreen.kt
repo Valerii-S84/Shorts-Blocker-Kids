@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.shortsblockerkids.accessibility.SupportedPlatform
 import com.shortsblockerkids.core.billing.BillingAvailability
 import com.shortsblockerkids.core.billing.BillingCopy
 import com.shortsblockerkids.core.billing.BillingUiState
@@ -64,7 +65,7 @@ fun DashboardScreen(
         horizontalAlignment = Alignment.Start,
     ) {
         Text(
-            text = "YouTube Shorts Protection",
+            text = "Short Video Protection",
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
         )
@@ -75,7 +76,7 @@ fun DashboardScreen(
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 ProtectionRow(
-                    label = "YouTube Shorts Protection",
+                    label = "Short Video Protection",
                     value = protectionSwitchLabel(settings, isProtectionLocked),
                     control = {
                         Switch(
@@ -85,6 +86,7 @@ fun DashboardScreen(
                         )
                     },
                 )
+                StatusRow("Protected platforms", protectedPlatformsLabel())
                 StatusRow("PIN", if (settings.isPinCreated) "created" else "not created")
                 StatusRow(
                     "Free test",
@@ -128,8 +130,9 @@ fun DashboardScreen(
                 Text(
                     text =
                         "Shorts Blocker Kids works when Protection is ON and Android " +
-                            "Accessibility Service is active. If that permission is turned off " +
-                            "or the app is removed, blocking stops.",
+                            "Accessibility Service is active. It protects only the listed " +
+                            "platforms. If that permission is turned off or the app is " +
+                            "removed, blocking stops.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.secondary,
                 )
@@ -180,7 +183,7 @@ private fun protectionInactiveMessage(
     }
 
     if (!settings.protectionEnabled) {
-        return "Protection inactive. Turn Protection ON to block Shorts."
+        return "Protection inactive. Turn Protection ON to block short videos."
     }
 
     if (!isAccessibilityServiceEnabled) {
@@ -196,8 +199,13 @@ private fun protectionInactiveMessage(
             "the 20-day test."
     }
 
-    return "Protection inactive. Complete setup to block Shorts."
+    return "Protection inactive. Complete setup to block short videos."
 }
+
+private fun protectedPlatformsLabel(): String =
+    SupportedPlatform.PROTECTED_PLATFORMS.joinToString { platform ->
+        platform.displayName
+    }
 
 private fun EntitlementState.dashboardLabel(): String =
     when (this) {

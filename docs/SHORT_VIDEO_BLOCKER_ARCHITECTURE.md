@@ -1,8 +1,8 @@
 # Short Video Blocker Architecture
 
-Status: Planning. This document describes target architecture and migration
-rules. It does not implement TikTok, Instagram Reels, Facebook Reels, backend,
-or billing.
+Status: Active app-side architecture. The local detector registry now includes
+YouTube Shorts, TikTok primary package, Instagram Reels, and Facebook Reels.
+Backend/cloud/analytics integrations remain out of scope.
 
 ## Architecture Goals
 
@@ -104,22 +104,25 @@ YouTube Shorts detector:
 
 TikTok detector:
 
-- Detects TikTok app package.
-- Attempts feed-specific detection from UI structure and stable labels.
-- If feed-specific detection is unreliable, product may choose app-level TikTok
-  blocking as a clearly disclosed fallback.
+- Detects primary TikTok app package `com.zhiliaoapp.musically`.
+- Uses feed-specific detection from UI structure, stable labels, and action rail
+  signals.
+- Does not enable app-level TikTok blocking.
+- Does not enable regional package `com.ss.android.ugc.trill` without separate
+  QA and code change.
 
 Instagram Reels detector:
 
-- Detects Instagram package.
+- Detects Instagram package `com.instagram.android`.
 - Matches Reels tab, Reels viewer, reel containers, player controls, and
   package-specific view IDs where stable.
 
 Facebook Reels detector:
 
-- Detects Facebook package.
+- Detects Facebook package `com.facebook.katana`.
 - Matches Reels surfaces, viewer labels, player controls, and package-specific
   view IDs where stable.
+- Does not enable Facebook Lite without separate QA and code change.
 
 ## Shared Overlay
 

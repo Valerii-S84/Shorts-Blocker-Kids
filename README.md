@@ -1,6 +1,9 @@
 # Shorts Blocker Kids
 
-Shorts Blocker Kids is a local-only Android app for blocking YouTube Shorts on a child's phone with a parent PIN and Android Accessibility Service.
+Shorts Blocker Kids is a local-only Android app for blocking supported
+short-video surfaces on a child's phone with a parent PIN and Android
+Accessibility Service. Current app-side detector support covers YouTube Shorts,
+TikTok primary package, Instagram Reels, and Facebook Reels.
 
 The app has no account system, no app backend, and no analytics. Google Play
 Billing adds `com.android.vending.BILLING`, `android.permission.INTERNET`, and
@@ -99,5 +102,6 @@ After installing, enable the Accessibility Service manually in Android settings.
 
 ## Known Limitation
 
-Shorts blocking works when Protection is ON and Android Accessibility Service is active.
-If the system permission is turned off or the app is removed, blocking stops.
+Short-video blocking works when Protection is ON and Android Accessibility
+Service is active. If the system permission is turned off or the app is removed,
+blocking stops.

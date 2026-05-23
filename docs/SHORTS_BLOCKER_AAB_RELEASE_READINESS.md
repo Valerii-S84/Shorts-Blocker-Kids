@@ -39,14 +39,14 @@ ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew \
 Result:
 
 ```text
-BUILD SUCCESSFUL in 1m 40s
-122 actionable tasks: 34 executed, 88 up-to-date
+BUILD SUCCESSFUL in 2m 5s
+122 actionable tasks: 38 executed, 2 from cache, 82 up-to-date
 ```
 
 ## Test Result
 
 ```text
-tests=112 failures=0 errors=0 skipped=0
+tests=121 failures=0 errors=0 skipped=0
 ```
 
 ## Build Outputs
@@ -60,9 +60,9 @@ app/build/outputs/apk/debug/app-debug.apk         13M
 SHA-256:
 
 ```text
-f17a1e678ae5623e5ef5083b51733a1def79df7b3e9e8ceccfc54fae3a304230  app/build/outputs/bundle/release/app-release.aab
-5c731b7f81d0ec73891dfd167420a7cb3cd6f980383ca918b25f6a07b4a27fdd  app/build/outputs/apk/release/app-release.apk
-bcb019977a86acad9fc05897dd32292f144b00c5a1d429c4332d0dc9622fd748  app/build/outputs/apk/debug/app-debug.apk
+658b5bf57d249c83239fa9ba1b49951b84a95375e507858086523dfe3f081920  app/build/outputs/bundle/release/app-release.aab
+b180737f029acbd5ade21cd08f01e6f42f92f97c4f198465a21102ee066b1bb1  app/build/outputs/apk/release/app-release.apk
+c261d2d0843c9587245434793471664dc1124b8e9c31bf2da962a83962dd84b8  app/build/outputs/apk/debug/app-debug.apk
 ```
 
 ## Release Manifest Checks
@@ -109,6 +109,8 @@ ACCESSIBILITY_DEBUG_TOOLS_ENABLED = false
 - Release minification remains disabled until final release-device regression
   coverage is complete for the AccessibilityService detector path.
 - Google Play Billing is integrated for the planned monthly subscription.
+- App-side detector support includes YouTube Shorts, TikTok primary package,
+  Instagram Reels, and Facebook Reels.
 - The app still has no backend, analytics, ads, or account system.
 - `android.permission.INTERNET` and `android.permission.ACCESS_NETWORK_STATE`
   are present through the Google Play Billing SDK; there is no custom backend or

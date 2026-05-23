@@ -43,14 +43,15 @@ fun AccessibilityDisclosureScreen(
         Text(
             text =
                 "Shorts Blocker Kids uses Android Accessibility Service to detect when " +
-                    "YouTube Shorts is open and show a blocking overlay.\n\n" +
-                    "When Shorts is blocked, the parent PIN can temporarily allow access. " +
-                    "Without the parent PIN, the blocking overlay stays active while Shorts " +
-                    "is open.\n\n" +
-                    "The app does not collect or send child data, YouTube history, video " +
-                    "data, screen recordings, audio, messages, location, contacts, or " +
-                    "browsing history. There is no app server, account, analytics, or ads. " +
-                    "Rules and PIN protection stay locally on this phone.\n\n" +
+                    "YouTube Shorts, TikTok, Instagram Reels, or Facebook Reels is open " +
+                    "and show a blocking overlay.\n\n" +
+                    "When short videos are blocked, the parent PIN can temporarily allow " +
+                    "access. Without the parent PIN, the blocking overlay stays active " +
+                    "while a protected short-video surface is open.\n\n" +
+                    "The app does not collect or send child data, watch history, video data, " +
+                    "screen recordings, audio, messages, location, contacts, or browsing " +
+                    "history. There is no app server, account, analytics, or ads. Rules and " +
+                    "PIN protection stay locally on this phone.\n\n" +
                     "Blocking works when Protection is ON and Android Accessibility " +
                     "Service is active. If that permission is turned off or the app is " +
                     "removed, blocking stops.",

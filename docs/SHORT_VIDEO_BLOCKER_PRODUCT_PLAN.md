@@ -1,8 +1,8 @@
 # Short Video Blocker Product Plan
 
-Status: Planning. This document defines the target product. It does not claim
-that TikTok, Instagram Reels, Facebook Reels, backend, or billing support is
-implemented today.
+Status: Active product plan. App-side support now includes YouTube Shorts,
+TikTok primary package, Instagram Reels, Facebook Reels, and Google Play
+Billing. Real-device TikTok/Reels QA and external Play readiness remain pending.
 
 ## Product Definition
 
@@ -40,14 +40,15 @@ Target supported apps:
 
 Each supported app must be added only after detector QA proves the app can be
 blocked with acceptable false-positive and false-negative risk on real devices.
+Current TikTok/Reels support is app-side and fixture-tested; production
+readiness still requires that real-device QA.
 
 ## What Is Blocked
 
 Planned blocked surfaces:
 
 - YouTube Shorts surfaces in `com.google.android.youtube`.
-- TikTok short-video feed or, if reliable feed-specific detection is not
-  possible, TikTok app usage as a documented fallback.
+- TikTok primary short-video feed in `com.zhiliaoapp.musically`.
 - Instagram Reels surfaces in `com.instagram.android`.
 - Facebook Reels surfaces in `com.facebook.katana`.
 
@@ -79,6 +80,9 @@ product must either:
 
 - block only high-confidence detected short-video screens; or
 - document a wider app-level TikTok blocking fallback and disclose it clearly.
+
+Current implementation uses high-confidence detected short-video screens and
+does not enable app-level TikTok blocking.
 
 ## Parent UX
 
@@ -145,7 +149,7 @@ screen recordings, audio, location, contacts, or browsing history.
 2. Local Android implementation:
    - Preserve current YouTube blocker logic.
    - Add detector abstraction.
-   - Add TikTok, Instagram Reels, and Facebook Reels detectors behind QA gates.
+   - Add TikTok, Instagram Reels, and Facebook Reels detectors.
    - Reuse shared overlay, PIN, temporary allow, and local settings.
 3. Backend + billing:
    - Maintain the app-side Google Play Billing integration.

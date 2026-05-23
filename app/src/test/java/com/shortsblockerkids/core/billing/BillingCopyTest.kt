@@ -8,7 +8,7 @@ class BillingCopyTest {
     fun subscriptionTermsIncludeLoadedPriceAndGooglePlayCancellationPath() {
         assertEquals(
             "Monthly auto-renewing subscription: EUR 2.20. " +
-                "Required after the free test to keep Shorts blocking active. " +
+                "Required after the free test to keep short-video blocking active. " +
                 "Charged by Google Play; manage or cancel anytime in Google Play.",
             BillingCopy.subscriptionTermsText("EUR 2.20"),
         )
@@ -18,7 +18,7 @@ class BillingCopyTest {
     fun subscriptionTermsRemainExplicitBeforePriceLoads() {
         assertEquals(
             "Monthly auto-renewing subscription. " +
-                "Required after the free test to keep Shorts blocking active. " +
+                "Required after the free test to keep short-video blocking active. " +
                 "Charged by Google Play; manage or cancel anytime in Google Play.",
             BillingCopy.subscriptionTermsText(null),
         )

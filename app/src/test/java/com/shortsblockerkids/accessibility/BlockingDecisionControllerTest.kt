@@ -12,14 +12,14 @@ class BlockingDecisionControllerTest {
 
         val lowDecision =
             controller.evaluate(
-                isInYouTube = true,
+                isInSupportedApp = true,
                 isProtectionActive = true,
                 result = DetectionResult(false, Confidence.LOW, emptyList()),
                 nowMillis = 1_000L,
             )
         val highDecision =
             controller.evaluate(
-                isInYouTube = true,
+                isInSupportedApp = true,
                 isProtectionActive = true,
                 result = DetectionResult(true, Confidence.HIGH, listOf("test")),
                 nowMillis = 2_000L,
@@ -35,7 +35,7 @@ class BlockingDecisionControllerTest {
 
         val decision =
             controller.evaluate(
-                isInYouTube = true,
+                isInSupportedApp = true,
                 isProtectionActive = true,
                 result = DetectionResult.None,
                 nowMillis = 1_000L,
@@ -50,7 +50,7 @@ class BlockingDecisionControllerTest {
 
         assertEquals(BlockingDecision.ShowOverlay, controller.evaluateHigh(nowMillis = 1_000L))
         assertEquals(BlockingDecision.Ignore, controller.evaluateHigh(nowMillis = 2_500L))
-        assertTrue(controller.shouldIgnoreNonYouTubeEvent(nowMillis = 2_600L))
+        assertTrue(controller.shouldIgnoreUnsupportedPackageEvent(nowMillis = 2_600L))
     }
 
     @Test
@@ -129,7 +129,7 @@ class BlockingDecisionControllerTest {
 
         assertEquals(BlockingDecision.ShowOverlay, controller.evaluateHigh(nowMillis = 1_000L))
 
-        assertTrue(controller.shouldIgnoreNonYouTubeEvent(nowMillis = 1_100L))
+        assertTrue(controller.shouldIgnoreUnsupportedPackageEvent(nowMillis = 1_100L))
         assertEquals(BlockingDecision.Ignore, controller.evaluateHigh(nowMillis = 3_000L))
     }
 
@@ -146,7 +146,7 @@ class BlockingDecisionControllerTest {
         controller.onPinEntryRequested(nowMillis = 1_100L)
         controller.onOverlayDismissed()
 
-        assertTrue(controller.shouldIgnoreNonYouTubeEvent(nowMillis = 1_200L))
+        assertTrue(controller.shouldIgnoreUnsupportedPackageEvent(nowMillis = 1_200L))
         assertEquals(BlockingDecision.Ignore, controller.evaluateHigh(nowMillis = 2_000L))
         assertEquals(BlockingDecision.Ignore, controller.evaluateHigh(nowMillis = 6_000L))
     }
@@ -185,7 +185,7 @@ class BlockingDecisionControllerTest {
         controller.onPinEntryRequested(nowMillis = 1_100L)
         controller.onOverlayDismissed()
 
-        assertFalse(controller.shouldIgnoreNonYouTubeEvent(nowMillis = 6_200L))
+        assertFalse(controller.shouldIgnoreUnsupportedPackageEvent(nowMillis = 6_200L))
         assertEquals(BlockingDecision.ShowOverlay, controller.evaluateHigh(nowMillis = 6_200L))
     }
 
@@ -236,7 +236,7 @@ class BlockingDecisionControllerTest {
         assertEquals(BlockingDecision.ShowOverlay, controller.evaluateHigh(nowMillis = 1_000L))
         controller.reset()
 
-        assertFalse(controller.shouldIgnoreNonYouTubeEvent(nowMillis = 1_100L))
+        assertFalse(controller.shouldIgnoreUnsupportedPackageEvent(nowMillis = 1_100L))
         assertEquals(BlockingDecision.ShowOverlay, controller.evaluateHigh(nowMillis = 3_000L))
     }
 
@@ -260,7 +260,7 @@ class BlockingDecisionControllerTest {
 
         assertEquals(BlockingDecision.ShowOverlay, controller.evaluateHigh(nowMillis = 1_000L))
         repeat(10) { index ->
-            assertTrue(controller.shouldIgnoreNonYouTubeEvent(nowMillis = 1_100L + index * 50L))
+            assertTrue(controller.shouldIgnoreUnsupportedPackageEvent(nowMillis = 1_100L + index * 50L))
             assertEquals(BlockingDecision.Ignore, controller.evaluateHigh(nowMillis = 1_150L + index * 50L))
         }
     }
@@ -272,7 +272,7 @@ class BlockingDecisionControllerTest {
         assertEquals(
             BlockingDecision.DismissOverlay,
             controller.evaluate(
-                isInYouTube = false,
+                isInSupportedApp = false,
                 isProtectionActive = true,
                 result = highResult(),
                 nowMillis = 1_000L,
@@ -295,7 +295,7 @@ class BlockingDecisionControllerTest {
         assertEquals(
             BlockingDecision.DismissOverlay,
             controller.evaluate(
-                isInYouTube = true,
+                isInSupportedApp = true,
                 isProtectionActive = false,
                 result = DetectionResult.None,
                 nowMillis = 2_000L,
@@ -312,7 +312,7 @@ class BlockingDecisionControllerTest {
         assertEquals(
             BlockingDecision.DismissOverlay,
             controller.evaluate(
-                isInYouTube = true,
+                isInSupportedApp = true,
                 isProtectionActive = false,
                 result = DetectionResult.None,
                 nowMillis = 1_100L,
@@ -329,7 +329,7 @@ class BlockingDecisionControllerTest {
         assertEquals(
             BlockingDecision.DismissOverlay,
             controller.evaluate(
-                isInYouTube = false,
+                isInSupportedApp = false,
                 isProtectionActive = true,
                 result = DetectionResult.None,
                 nowMillis = 1_100L,
@@ -360,7 +360,7 @@ class BlockingDecisionControllerTest {
         assertEquals(
             BlockingDecision.DismissOverlay,
             controller.evaluate(
-                isInYouTube = true,
+                isInSupportedApp = true,
                 isProtectionActive = false,
                 result = DetectionResult.None,
                 nowMillis = 1_100L,
@@ -381,7 +381,7 @@ class BlockingDecisionControllerTest {
         assertEquals(
             BlockingDecision.DismissOverlay,
             controller.evaluate(
-                isInYouTube = true,
+                isInSupportedApp = true,
                 isProtectionActive = false,
                 result = DetectionResult.None,
                 nowMillis = 1_500L,
@@ -392,7 +392,7 @@ class BlockingDecisionControllerTest {
 
     private fun BlockingDecisionController.evaluateHigh(nowMillis: Long): BlockingDecision =
         evaluate(
-            isInYouTube = true,
+            isInSupportedApp = true,
             isProtectionActive = true,
             result = highResult(),
             nowMillis = nowMillis,
