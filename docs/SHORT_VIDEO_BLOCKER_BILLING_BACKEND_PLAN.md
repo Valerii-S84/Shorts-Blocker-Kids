@@ -4,6 +4,12 @@ Status: Partial. App-side Google Play Billing is implemented locally; backend
 purchase verification is not implemented. This document defines the target
 production hardening architecture for a Play Store subscription product.
 
+Current production decision document:
+
+```text
+docs/SHORTS_BLOCKER_BILLING_BACKEND_DECISION.md
+```
+
 ## Goals
 
 - Use Google Play Billing for Play-distributed app purchases.

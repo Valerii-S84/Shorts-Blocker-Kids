@@ -1244,16 +1244,25 @@ Pending:
 
 ### Phase 10D — Optional Backend Verification
 
-**Статус зараз:** Deferred
+**Статус зараз:** Open decision
 
 Done:
 
 ```text
-- backend requirement is decided before production rollout;
-- if implemented, purchase verification happens on secure backend;
-- backend stores only billing technical data;
-- real-time subscription lifecycle handling is documented;
+- backend decision document is prepared;
+- if implemented, purchase verification must happen on secure backend;
+- backend may store only billing technical data;
+- real-time subscription lifecycle handling requirement is documented;
 - no child/YouTube activity is uploaded.
+```
+
+Pending:
+
+```text
+- choose backend before production or explicitly accept residual client-side
+  verification risk for v1;
+- if backend is deferred, document accepted fraud/lifecycle risk;
+- if backend is added, implement purchase verification and RTDN.
 ```
 
 ### Phase 10E — Billing QA

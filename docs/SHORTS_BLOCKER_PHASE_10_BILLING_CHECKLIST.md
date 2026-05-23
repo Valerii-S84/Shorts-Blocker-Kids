@@ -117,6 +117,8 @@ Pending verification:
 ## Phase 10E — Optional Backend Verification Decision
 
 - [ ] Decide whether backend verification is required before production rollout.
+- [x] Backend decision document is prepared:
+  `docs/SHORTS_BLOCKER_BILLING_BACKEND_DECISION.md`.
 - [ ] If backend is added, it verifies purchase tokens with Google Play Developer API.
 - [ ] If backend is added, it stores only billing technical data.
 - [ ] If backend is added, it does not receive child data, YouTube data, browsing history, video data, app usage details, or accessibility tree dumps.
@@ -131,6 +133,7 @@ Pending verification:
 - App-side Play Billing SDK integration is implemented.
 - Play Billing internal test runbook is prepared.
 - Play Console billing configuration sheet is prepared.
+- Backend verification decision document is prepared.
 - Backend is not implemented.
 - Billing cannot be considered production-ready until Play product setup,
   license tester QA, subscription lifecycle QA, and optional backend verification
