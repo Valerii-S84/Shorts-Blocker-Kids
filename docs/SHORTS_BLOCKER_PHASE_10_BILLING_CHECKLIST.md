@@ -52,6 +52,8 @@ Notes:
 - [ ] Test payment flow is available to testers.
 - [x] Internal test runbook is prepared:
   `docs/SHORTS_BLOCKER_PLAY_BILLING_INTERNAL_TEST_RUNBOOK.md`.
+- [x] Play Console billing configuration sheet is prepared:
+  `docs/SHORTS_BLOCKER_PLAY_CONSOLE_BILLING_CONFIG.md`.
 
 ## Phase 10C — App-Side Play Billing Integration
 
@@ -95,6 +97,8 @@ Pending verification:
 - License tester purchase, restore, cancel, expire, pending, and payment issue
   flows still require Play Console testing.
 - Execute `docs/SHORTS_BLOCKER_PLAY_BILLING_INTERNAL_TEST_RUNBOOK.md`.
+- Enter and verify `docs/SHORTS_BLOCKER_PLAY_CONSOLE_BILLING_CONFIG.md` in Play
+  Console.
 
 ## Phase 10D — Entitlement Integration
 
@@ -124,6 +128,7 @@ Pending verification:
   and entitlement behavior.
 - App-side Play Billing SDK integration is implemented.
 - Play Billing internal test runbook is prepared.
+- Play Console billing configuration sheet is prepared.
 - Backend is not implemented.
 - Billing cannot be considered production-ready until Play product setup,
   license tester QA, subscription lifecycle QA, and optional backend verification

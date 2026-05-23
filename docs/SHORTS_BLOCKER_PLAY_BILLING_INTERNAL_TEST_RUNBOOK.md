@@ -20,6 +20,9 @@ It covers:
 It does not cover backend purchase verification or Real-time Developer
 Notifications. Those remain a separate production hardening decision.
 
+Use `docs/SHORTS_BLOCKER_PLAY_CONSOLE_BILLING_CONFIG.md` as the exact product
+configuration sheet before running this test plan.
+
 ## Official Sources Checked
 
 - Android Developers: test Google Play Billing Library integration:

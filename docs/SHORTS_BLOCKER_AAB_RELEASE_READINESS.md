@@ -127,5 +127,7 @@ ACCESSIBILITY_DEBUG_TOOLS_ENABLED = false
 - Add store screenshots and feature graphic.
 - Execute `docs/SHORTS_BLOCKER_PLAY_BILLING_INTERNAL_TEST_RUNBOOK.md` after the
   subscription product and internal testing track are active.
+- Use `docs/SHORTS_BLOCKER_PLAY_CONSOLE_BILLING_CONFIG.md` for the exact
+  subscription product/base-plan values.
 - Run final smoke QA on the exact AAB-derived install from Play internal
   testing.
