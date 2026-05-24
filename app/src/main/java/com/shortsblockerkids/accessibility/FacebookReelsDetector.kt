@@ -196,17 +196,35 @@ class FacebookReelsDetector : ShortVideoDetector {
     companion object {
         const val FACEBOOK_PACKAGE = "com.facebook.katana"
 
-        private val reelsSignals = setOf("reel", "reels")
+        private val reelsSignals = setOf("reel", "reels", "рілс", "рилс")
         private val facebookActionSignals =
             setOf(
                 "like",
                 "me gusta",
+                "gefällt mir",
+                "подобається",
+                "нравится",
                 "comments",
                 "comment",
                 "comentar",
+                "kommentieren",
+                "коментар",
+                "коментарі",
+                "коментувати",
+                "комментарий",
+                "комментарии",
+                "комментировать",
                 "share",
                 "compartir",
+                "teilen",
+                "поділитися",
+                "поширити",
+                "поделиться",
                 "more",
+                "mehr",
+                "більше",
+                "еще",
+                "ещё",
             )
     }
 }

@@ -122,12 +122,20 @@ class ShortVideoBlockerEmulatorE2eTest {
     }
 
     @Test
-    fun normalToShortBlocksAndShortToNormalDismissesOverlay() {
+    fun normalToShortKeepsOverlayStableUntilExplicitExit() {
         launchFixture(FixturePlatform.YOUTUBE, "normal_video")
         assertNoOverlay()
 
         tapText("SHORTS")
         assertOverlayVisible()
+        assertLastDetectorPackage(FixturePlatform.YOUTUBE, "confidence=HIGH")
+
+        launchFixture(FixturePlatform.YOUTUBE, "normal_video")
+        assertOverlayVisible()
+        assertLastDetectorPackage(FixturePlatform.YOUTUBE, "confidence=HIGH")
+
+        tapText(OVERLAY_EXIT)
+        assertNoOverlay(timeoutMs = 4_000L)
 
         launchFixture(FixturePlatform.YOUTUBE, "normal_video")
         assertNoOverlay()
@@ -276,6 +284,7 @@ class ShortVideoBlockerEmulatorE2eTest {
             settingsRepository.setProtectionEnabled(false)
         }
         assertNoOverlay(timeoutMs = 3_000L)
+        pressHome()
         runBlocking {
             settingsRepository.setProtectionEnabled(true)
             settingsRepository.recordSuccessfulProtectionActivation()

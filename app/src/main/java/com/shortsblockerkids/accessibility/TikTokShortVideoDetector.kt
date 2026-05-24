@@ -219,23 +219,80 @@ class TikTokShortVideoDetector : ShortVideoDetector {
     companion object {
         const val TIKTOK_PACKAGE = "com.zhiliaoapp.musically"
 
-        private val tiktokFeedSignals = setOf("for you", "para ti", "following", "siguiendo")
+        private val tiktokFeedSignals =
+            setOf(
+                "for you",
+                "para ti",
+                "following",
+                "siguiendo",
+                "für dich",
+                "для вас",
+                "рекомендації",
+                "рекомендации",
+                "підписки",
+                "подписки",
+            )
         private val tiktokNavigationSignals =
-            setOf("home", "inicio", "friends", "amigos", "inbox", "bandeja", "profile", "perfil")
+            setOf(
+                "home",
+                "inicio",
+                "startseite",
+                "головна",
+                "главная",
+                "friends",
+                "amigos",
+                "freunde",
+                "друзі",
+                "друзья",
+                "inbox",
+                "bandeja",
+                "posteingang",
+                "вхідні",
+                "входящие",
+                "profile",
+                "perfil",
+                "profil",
+                "профіль",
+                "профиль",
+            )
         private val tiktokActionSignals =
             setOf(
                 "like",
                 "me gusta",
+                "gefällt mir",
+                "подобається",
+                "нравится",
                 "comments",
                 "comment",
                 "comentar",
+                "kommentieren",
+                "коментар",
+                "коментарі",
+                "коментувати",
+                "комментарий",
+                "комментарии",
+                "комментировать",
                 "share",
                 "compartir",
+                "teilen",
+                "поділитися",
+                "поширити",
+                "поделиться",
                 "save",
                 "guardar",
+                "speichern",
+                "зберегти",
+                "сохранить",
                 "more",
+                "mehr",
+                "більше",
+                "еще",
+                "ещё",
                 "follow",
                 "seguir",
+                "folgen",
+                "стежити",
+                "подписаться",
             )
     }
 }

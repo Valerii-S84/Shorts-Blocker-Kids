@@ -38,6 +38,15 @@ class AccessibilityEventRouter(
         }
         val supportedPackageName = packageName ?: return
 
+        if (blockOverlayController.isOverlayVisible) {
+            debugLogger.logIgnoredEvent(
+                packageName = packageName,
+                eventType = event.eventType,
+                reason = "blocking overlay visible",
+            )
+            return
+        }
+
         if (RuntimeProtectionState.consumeDebugOverlayRequest()) {
             val decision =
                 blockingDecisionController.evaluate(

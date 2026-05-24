@@ -128,6 +128,39 @@ class ShortVideoDetectorContractTest {
     }
 
     @Test
+    fun cyrillicInterfaceSignalsBlockOnlyWithShortVideoStructure() {
+        platformCases.forEach { platformCase ->
+            val result =
+                platformCase.detector.detect(
+                    packageName = platformCase.packageName,
+                    snapshot =
+                        shortVideoSnapshot(
+                            platformCase = platformCase,
+                            explicitSignal = platformCase.cyrillicExplicitSignal,
+                            actionSignals = cyrillicActionSignals,
+                            navigationSignals = platformCase.cyrillicNavigationSignals,
+                        ),
+                )
+
+            assertTrue(platformCase.name, result.shouldBlock)
+        }
+    }
+
+    @Test
+    fun instagramReelsIdentifierWithFullscreenActionRailBlocksWithoutStableContainerId() {
+        instagramPlatformCases.forEach { platformCase ->
+            val result =
+                platformCase.detector.detect(
+                    packageName = platformCase.packageName,
+                    snapshot = reelsIdentifierWithoutContainerSnapshot(platformCase),
+                )
+
+            assertEquals(platformCase.name, Confidence.HIGH, result.confidence)
+            assertTrue(platformCase.name, result.shouldBlock)
+        }
+    }
+
+    @Test
     fun alternateActionButtonNamesStillBlockWhenStructureIsPresent() {
         platformCases.forEach { platformCase ->
             val result =
@@ -286,6 +319,30 @@ class ShortVideoDetectorContractTest {
                 ),
         )
 
+    private fun reelsIdentifierWithoutContainerSnapshot(platformCase: PlatformCase): AccessibilityTreeSnapshot =
+        AccessibilityTreeSnapshot(
+            nodes =
+                listOf(
+                    rootNode(),
+                    node(
+                        className = "android.widget.FrameLayout",
+                        viewIdResourceName = "${platformCase.packageName}:id/fullscreen_video_root",
+                        isScrollable = true,
+                        left = 0,
+                        top = 0,
+                        right = SCREEN_WIDTH,
+                        bottom = SHORT_VIDEO_BOTTOM,
+                        width = SCREEN_WIDTH,
+                        height = SHORT_VIDEO_BOTTOM,
+                        depth = 2,
+                    ),
+                    node(contentDescriptionSignals = setOf(platformCase.explicitSignal), left = 430, top = 40),
+                    node(contentDescriptionSignals = setOf("like"), left = ACTION_RAIL_LEFT, top = 730),
+                    node(contentDescriptionSignals = setOf("comment"), left = ACTION_RAIL_LEFT, top = 1_080),
+                    node(contentDescriptionSignals = setOf("share"), left = ACTION_RAIL_LEFT, top = 1_430),
+                ),
+        )
+
     private fun falsePositiveWorkflowSnapshot(
         platformCase: PlatformCase,
         surface: FalsePositiveSurface,
@@ -388,6 +445,8 @@ class ShortVideoDetectorContractTest {
         val alternateActionSignals: List<String> = primaryActionSignals,
         val navigationSignals: List<String> = emptyList(),
         val localizedNavigationSignals: List<String> = navigationSignals,
+        val cyrillicExplicitSignal: String = explicitSignal,
+        val cyrillicNavigationSignals: List<String> = navigationSignals,
         val falsePositiveSurfaces: List<FalsePositiveSurface>,
     )
 
@@ -405,6 +464,7 @@ class ShortVideoDetectorContractTest {
         const val UNKNOWN_PACKAGE = "com.example.unknown"
 
         val localizedActionSignals = listOf("me gusta", "comentar", "compartir")
+        val cyrillicActionSignals = listOf("подобається", "коментувати", "поділитися")
 
         val platformCases =
             listOf(
@@ -434,9 +494,11 @@ class ShortVideoDetectorContractTest {
                     genericVideoViewId = "com.zhiliaoapp.musically:id/video_player",
                     explicitSignal = "for you",
                     localizedExplicitSignal = "para ti",
+                    cyrillicExplicitSignal = "для вас",
                     alternateActionSignals = listOf("save", "more", "follow"),
                     navigationSignals = listOf("home", "friends", "inbox", "profile"),
                     localizedNavigationSignals = listOf("inicio", "amigos", "bandeja", "perfil"),
+                    cyrillicNavigationSignals = listOf("головна", "друзі", "вхідні", "профіль"),
                     falsePositiveSurfaces =
                         listOf(
                             FalsePositiveSurface("comments", "com.zhiliaoapp.musically:id/comment_panel"),
@@ -454,6 +516,7 @@ class ShortVideoDetectorContractTest {
                     normalFeedViewId = "com.instagram.android:id/feed_recycler",
                     genericVideoViewId = "com.instagram.android:id/video_player",
                     explicitSignal = "reels",
+                    cyrillicExplicitSignal = "рілс",
                     alternateActionSignals = listOf("send", "save", "more"),
                     falsePositiveSurfaces =
                         listOf(
@@ -472,6 +535,7 @@ class ShortVideoDetectorContractTest {
                     normalFeedViewId = "com.facebook.katana:id/news_feed",
                     genericVideoViewId = "com.facebook.katana:id/video_player",
                     explicitSignal = "reels",
+                    cyrillicExplicitSignal = "рілс",
                     alternateActionSignals = listOf("like", "comments", "more"),
                     falsePositiveSurfaces =
                         listOf(
@@ -483,5 +547,10 @@ class ShortVideoDetectorContractTest {
                         ),
                 ),
             )
+
+        val instagramPlatformCases =
+            platformCases.filter { platformCase ->
+                platformCase.detector is InstagramReelsDetector
+            }
     }
 }

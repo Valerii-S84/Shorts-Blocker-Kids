@@ -45,12 +45,12 @@ class BlockingDecisionControllerTest {
     }
 
     @Test
-    fun normalSupportedScreenDismissesVisibleOverlayAndAllowsImmediateReblock() {
+    fun ambiguousSupportedScreenKeepsVisibleOverlayStable() {
         val controller = BlockingDecisionController()
 
         assertEquals(BlockingDecision.ShowOverlay, controller.evaluateHigh(nowMillis = 1_000L))
         assertEquals(
-            BlockingDecision.DismissOverlay,
+            BlockingDecision.Ignore,
             controller.evaluate(
                 isInSupportedApp = true,
                 isProtectionActive = true,
@@ -58,7 +58,8 @@ class BlockingDecisionControllerTest {
                 nowMillis = 1_100L,
             ),
         )
-        assertEquals(BlockingDecision.ShowOverlay, controller.evaluateHigh(nowMillis = 1_150L))
+        assertTrue(controller.shouldIgnoreUnsupportedPackageEvent(nowMillis = 1_150L))
+        assertEquals(BlockingDecision.Ignore, controller.evaluateHigh(nowMillis = 1_200L))
     }
 
     @Test

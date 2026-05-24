@@ -8,7 +8,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 class ShortsBlockerAccessibilityService : AccessibilityService() {
     private lateinit var eventRouter: AccessibilityEventRouter
@@ -18,6 +20,14 @@ class ShortsBlockerAccessibilityService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         val settingsRepository = SettingsRepository(this)
+        latestSettings =
+            runBlocking(Dispatchers.IO) {
+                activeSettingsFrom(
+                    settingsRepository = settingsRepository,
+                    settings = settingsRepository.readSettings().first(),
+                    nowMillis = System.currentTimeMillis(),
+                )
+            }
         val blockingDecisionController = BlockingDecisionController()
         eventRouter =
             AccessibilityEventRouter(
@@ -46,16 +56,13 @@ class ShortsBlockerAccessibilityService : AccessibilityService() {
         serviceScope.launch {
             settingsRepository.readSettings().collect { settings ->
                 val nowMillis = System.currentTimeMillis()
-                val activeSettings =
-                    if (settings.hasExpiredTemporaryAllow(nowMillis)) {
-                        settingsRepository.clearExpiredTemporaryAllow(nowMillis)
-                        settings.copy(temporaryAllowUntil = null)
-                    } else {
-                        settings
-                    }
+                val wasProtectionActive = latestSettings.canProtect(nowMillis)
+                val activeSettings = activeSettingsFrom(settingsRepository, settings, nowMillis)
                 latestSettings = activeSettings
                 if (!activeSettings.canProtect(nowMillis)) {
                     eventRouter.dismissBlockingState()
+                } else if (!wasProtectionActive) {
+                    routeCurrentWindow()
                 }
             }
         }
@@ -82,5 +89,34 @@ class ShortsBlockerAccessibilityService : AccessibilityService() {
         }
         serviceScope.cancel()
         super.onDestroy()
+    }
+
+    private suspend fun activeSettingsFrom(
+        settingsRepository: SettingsRepository,
+        settings: AppSettings,
+        nowMillis: Long,
+    ): AppSettings =
+        if (settings.hasExpiredTemporaryAllow(nowMillis)) {
+            settingsRepository.clearExpiredTemporaryAllow(nowMillis)
+            settings.copy(temporaryAllowUntil = null)
+        } else {
+            settings
+        }
+
+    @Suppress("DEPRECATION")
+    private fun routeCurrentWindow() {
+        if (!::eventRouter.isInitialized) {
+            return
+        }
+        val packageName = rootInActiveWindow?.packageName ?: return
+        val event =
+            AccessibilityEvent.obtain(AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED).apply {
+                this.packageName = packageName
+            }
+        try {
+            eventRouter.route(event) { rootInActiveWindow }
+        } finally {
+            event.recycle()
+        }
     }
 }

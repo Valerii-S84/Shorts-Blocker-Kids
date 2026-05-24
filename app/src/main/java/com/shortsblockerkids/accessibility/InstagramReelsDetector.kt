@@ -183,11 +183,11 @@ class InstagramReelsDetector : ShortVideoDetector {
         hasVerticalFullscreen: Boolean,
         hasRepeatedVerticalFeed: Boolean,
     ): Boolean {
-        if (!hasActionRail || !hasVerticalFullscreen || !hasReelContainer) {
+        if (!hasActionRail || !hasVerticalFullscreen) {
             return false
         }
 
-        return hasReelsIdentifier || hasRepeatedVerticalFeed
+        return hasReelsIdentifier || hasReelContainer && hasRepeatedVerticalFeed
     }
 
     private fun String?.containsAny(vararg needles: String): Boolean {
@@ -203,22 +203,46 @@ class InstagramReelsDetector : ShortVideoDetector {
     companion object {
         const val INSTAGRAM_PACKAGE = "com.instagram.android"
 
-        private val reelsSignals = setOf("reel", "reels")
+        private val reelsSignals = setOf("reel", "reels", "рілс", "рилс")
         private val instagramActionSignals =
             setOf(
                 "like",
                 "me gusta",
+                "gefällt mir",
+                "подобається",
+                "нравится",
                 "comments",
                 "comment",
                 "comentar",
+                "kommentieren",
+                "коментар",
+                "коментарі",
+                "коментувати",
+                "комментарий",
+                "комментарии",
+                "комментировать",
                 "share",
                 "compartir",
+                "teilen",
+                "поділитися",
+                "поширити",
+                "поделиться",
                 "send",
                 "enviar",
+                "senden",
+                "надіслати",
+                "отправить",
                 "save",
                 "guardar",
+                "speichern",
+                "зберегти",
+                "сохранить",
                 "audio",
                 "more",
+                "mehr",
+                "більше",
+                "еще",
+                "ещё",
             )
     }
 }
