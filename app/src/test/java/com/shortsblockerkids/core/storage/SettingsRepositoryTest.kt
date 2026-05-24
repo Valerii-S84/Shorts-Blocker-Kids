@@ -1,6 +1,10 @@
 package com.shortsblockerkids.core.storage
 
+import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
 import com.shortsblockerkids.core.billing.BillingEntitlementSnapshot
 import com.shortsblockerkids.core.billing.BillingEntitlementState
 import com.shortsblockerkids.core.entitlement.FreeTestPolicy
@@ -165,6 +169,22 @@ class SettingsRepositoryTest {
             assertTrue(firstInstallId.isNotBlank())
             assertEquals(firstInstallId, sameInstallId)
             assertEquals(firstInstallId, restartedInstallId)
+        }
+
+    @Test
+    fun blankBillingInstallationIdIsReplacedWithStableRandomId() =
+        runBlocking {
+            val dataStore = createDataStore("blank-billing-install")
+            dataStore.edit { preferences ->
+                preferences[stringPreferencesKey("billing_installation_id")] = " "
+            }
+            val repository = SettingsRepository(dataStore)
+
+            val installId = repository.getOrCreateBillingInstallationId()
+
+            assertTrue(installId.isNotBlank())
+            assertEquals(installId, repository.readSettings().first().billingInstallationId)
+            assertEquals(installId, repository.getOrCreateBillingInstallationId())
         }
 
     @Test
@@ -358,14 +378,17 @@ class SettingsRepositoryTest {
         }
 
     private fun createRepository(name: String): SettingsRepository {
+        val dataStore = createDataStore(name)
+        return SettingsRepository(dataStore)
+    }
+
+    private fun createDataStore(name: String): DataStore<Preferences> {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         scopes += scope
-        val dataStore =
-            PreferenceDataStoreFactory.create(
-                scope = scope,
-                produceFile = { File(temporaryFolder.root, "$name.preferences_pb") },
-            )
-        return SettingsRepository(dataStore)
+        return PreferenceDataStoreFactory.create(
+            scope = scope,
+            produceFile = { File(temporaryFolder.root, "$name.preferences_pb") },
+        )
     }
 
     private fun cancelOpenStores() {

@@ -2,7 +2,13 @@ package com.shortsblockerkids.core.billing
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.json.JSONObject
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.longOrNull
 import java.net.HttpURLConnection
 import java.net.URI
 import java.net.URLEncoder
@@ -19,13 +25,15 @@ class HttpBillingBackendClient(
                 throw IllegalStateException("Billing backend is not configured.")
             }
             val body =
-                JSONObject()
-                    .put("install_id", request.installId)
-                    .put("package_name", request.packageName)
-                    .put("product_id", request.productId)
-                    .put("purchase_token", request.purchaseToken)
-                    .put("app_version", request.appVersion)
-                    .toString()
+                JsonObject(
+                    mapOf(
+                        "install_id" to JsonPrimitive(request.installId),
+                        "package_name" to JsonPrimitive(request.packageName),
+                        "product_id" to JsonPrimitive(request.productId),
+                        "purchase_token" to JsonPrimitive(request.purchaseToken),
+                        "app_version" to JsonPrimitive(request.appVersion),
+                    ),
+                ).toString()
             val response = postJson("/billing/play/verify", body)
             parseEntitlement(response)
         }
@@ -43,7 +51,7 @@ class HttpBillingBackendClient(
     private fun postJson(
         path: String,
         body: String,
-    ): JSONObject {
+    ): JsonObject {
         val connection = openConnection(path)
         connection.requestMethod = "POST"
         connection.doOutput = true
@@ -52,7 +60,7 @@ class HttpBillingBackendClient(
         return readJson(connection)
     }
 
-    private fun getJson(path: String): JSONObject {
+    private fun getJson(path: String): JsonObject {
         val connection = openConnection(path)
         connection.requestMethod = "GET"
         return readJson(connection)
@@ -64,7 +72,7 @@ class HttpBillingBackendClient(
             readTimeout = 10_000
         }
 
-    private fun readJson(connection: HttpURLConnection): JSONObject {
+    private fun readJson(connection: HttpURLConnection): JsonObject {
         val code = connection.responseCode
         val body =
             if (code in 200..299) {
@@ -78,23 +86,25 @@ class HttpBillingBackendClient(
         if (code !in 200..299) {
             throw IllegalStateException("Billing backend returned HTTP $code.")
         }
-        return JSONObject(body)
+        return json.parseToJsonElement(body).jsonObject
     }
 
-    private fun parseEntitlement(json: JSONObject): BillingEntitlementSnapshot {
+    private fun parseEntitlement(json: JsonObject): BillingEntitlementSnapshot {
         val state =
             runCatching {
-                BillingEntitlementState.valueOf(json.optString("state", "UNKNOWN"))
+                BillingEntitlementState.valueOf(
+                    json["state"]?.jsonPrimitive?.contentOrNull ?: "UNKNOWN",
+                )
             }.getOrDefault(BillingEntitlementState.UNKNOWN)
         val checkedAtMillis =
-            json
-                .takeIf { it.has("checked_at_millis") && !it.isNull("checked_at_millis") }
-                ?.optLong("checked_at_millis")
+            json["checked_at_millis"]
+                ?.jsonPrimitive
+                ?.longOrNull
                 ?: nowMillis()
         val activeUntilMillis =
-            json
-                .takeIf { it.has("active_until_millis") && !it.isNull("active_until_millis") }
-                ?.optLong("active_until_millis")
+            json["active_until_millis"]
+                ?.jsonPrimitive
+                ?.longOrNull
         return BillingEntitlementSnapshot(
             state = state,
             checkedAtMillis = checkedAtMillis,
@@ -103,6 +113,8 @@ class HttpBillingBackendClient(
     }
 
     companion object {
+        private val json = Json { ignoreUnknownKeys = true }
+
         fun fromBaseUrl(baseUrl: String): BillingBackendClient =
             if (baseUrl.isBlank()) {
                 DisabledBillingBackendClient

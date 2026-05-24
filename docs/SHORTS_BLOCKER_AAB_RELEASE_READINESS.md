@@ -27,34 +27,34 @@ the Play internal testing track.
 
 ## May 24, 2026 Release Gate Refresh
 
-Release build command:
+Release gate command:
 
 ```bash
-ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew \
-  :app:assembleRelease \
-  :app:bundleRelease \
-  :app:lintRelease
+sg kvm -c 'set -e; cd "/mnt/c/Users/User/Desktop/Shorts Blocker Kids"; \
+  export ANDROID_HOME=/home/serputko/Android/Sdk \
+  ANDROID_SDK_ROOT=/home/serputko/Android/Sdk; \
+  ./scripts/android_start_emulator.sh; ./gradlew localQualityGate'
 ```
 
 Result:
 
 ```text
-BUILD SUCCESSFUL in 19s
-61 actionable tasks: 7 executed, 54 up-to-date
+BUILD SUCCESSFUL in 5m 32s
+331 actionable tasks: 24 executed, 307 up-to-date
 ```
 
 Release artifacts:
 
 ```text
-app/build/outputs/apk/release/app-release.apk      9,632,411 bytes
-app/build/outputs/bundle/release/app-release.aab   9,131,002 bytes
+app/build/outputs/apk/release/app-release.apk      9,649,190 bytes
+app/build/outputs/bundle/release/app-release.aab   9,148,081 bytes
 ```
 
 SHA-256:
 
 ```text
-0c33cb46074f3499ca58bfff0630b4f4bd9103105b83cdb63b503ca5be0244c3  app/build/outputs/apk/release/app-release.apk
-c508aea82a9212f193de6cdccbe2694463d1537ff7420666a5de0adca83bbc41  app/build/outputs/bundle/release/app-release.aab
+44df015f486c37ba4c7eb59d378659d3c5f0e03bff9bfb85c45a6afc47cfa521  app/build/outputs/apk/release/app-release.apk
+2fee86da1e3b423d4c20007a7bf95d7fb829e11c97559ec2865cb2a8f723d23d  app/build/outputs/bundle/release/app-release.aab
 ```
 
 APK signing verification:
@@ -105,7 +105,7 @@ Install source: app/build/outputs/apk/release/app-release.apk
 Install result: Success
 Launch package: com.shortsblockerkids
 Runtime package: versionCode=1 minSdk=26 targetSdk=36 versionName=0.1.0
-Runtime process: pid 2349
+Runtime process: pid 2372
 ```
 
 AAB-derived emulator smoke:
@@ -132,13 +132,13 @@ Local bundletool signing: debug keystore, for emulator install only
 Install target: emulator-5554
 Launch package: com.shortsblockerkids
 Runtime package: versionCode=1 minSdk=26 targetSdk=36 versionName=0.1.0
-Runtime process: pid 3217
+Runtime process: pid 3602
 ```
 
 AAB-derived `.apks` SHA-256:
 
 ```text
-b99bb40e0d01b9ab91023e4f4794cd1cb1f23a1359b7fd7b0e7a8aa0f3235c79  app/build/outputs/bundle/release/app-release-universal.apks
+5bb72e6c1575c9868f129c9094b9b8f32f85571e8cab3dee05ffaec88d7432a4  app/build/outputs/bundle/release/app-release-universal.apks
 ```
 
 Release minification decision remains unchanged:
@@ -164,43 +164,39 @@ the release gate result because `lintRelease` completed successfully.
 ## Command
 
 ```bash
-ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew \
-  :app:ktlintCheck \
-  :app:assembleDebug \
-  :app:assembleRelease \
-  :app:bundleRelease \
-  :app:testDebugUnitTest \
-  :app:lintDebug \
-  :app:lintRelease
+sg kvm -c 'set -e; cd "/mnt/c/Users/User/Desktop/Shorts Blocker Kids"; \
+  export ANDROID_HOME=/home/serputko/Android/Sdk \
+  ANDROID_SDK_ROOT=/home/serputko/Android/Sdk; \
+  ./scripts/android_start_emulator.sh; ./gradlew localQualityGate'
 ```
 
 Result:
 
 ```text
-BUILD SUCCESSFUL in 2m 5s
-122 actionable tasks: 38 executed, 2 from cache, 82 up-to-date
+BUILD SUCCESSFUL in 5m 32s
+331 actionable tasks: 24 executed, 307 up-to-date
 ```
 
 ## Test Result
 
 ```text
-tests=121 failures=0 errors=0 skipped=0
+tests=187 failures=0 errors=0 skipped=0
 ```
 
 ## Build Outputs
 
 ```text
-app/build/outputs/bundle/release/app-release.aab  8.7M
-app/build/outputs/apk/release/app-release.apk     9.2M
-app/build/outputs/apk/debug/app-debug.apk         13M
+app/build/outputs/bundle/release/app-release.aab  9,148,081 bytes
+app/build/outputs/apk/release/app-release.apk     9,649,190 bytes
+app/build/outputs/apk/debug/app-debug.apk         14,339,477 bytes
 ```
 
 SHA-256:
 
 ```text
-658b5bf57d249c83239fa9ba1b49951b84a95375e507858086523dfe3f081920  app/build/outputs/bundle/release/app-release.aab
-b180737f029acbd5ade21cd08f01e6f42f92f97c4f198465a21102ee066b1bb1  app/build/outputs/apk/release/app-release.apk
-c261d2d0843c9587245434793471664dc1124b8e9c31bf2da962a83962dd84b8  app/build/outputs/apk/debug/app-debug.apk
+2fee86da1e3b423d4c20007a7bf95d7fb829e11c97559ec2865cb2a8f723d23d  app/build/outputs/bundle/release/app-release.aab
+44df015f486c37ba4c7eb59d378659d3c5f0e03bff9bfb85c45a6afc47cfa521  app/build/outputs/apk/release/app-release.apk
+af7a10802172447eced1fc624faeca6d6ca7c2a57f09dd5cc97f39de562e5cd6  app/build/outputs/apk/debug/app-debug.apk
 ```
 
 ## Release Manifest Checks

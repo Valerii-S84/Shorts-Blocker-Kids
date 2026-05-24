@@ -136,7 +136,7 @@ For every required scenario, record:
 
 ```text
 app/build/outputs/bundle/release/app-release.aab
-SHA-256: 19fb8d23e0b7f03dbb21df28c957a8379abf887af0700264c1747532b98ea612
+SHA-256: 2fee86da1e3b423d4c20007a7bf95d7fb829e11c97559ec2865cb2a8f723d23d
 ```
 
 If the AAB is rebuilt, update the hash here before testing.

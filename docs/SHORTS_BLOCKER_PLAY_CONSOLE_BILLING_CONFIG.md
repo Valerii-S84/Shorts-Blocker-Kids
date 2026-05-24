@@ -26,7 +26,7 @@ Package name: com.shortsblockerkids
 Version name: 0.1.0
 Version code: 1
 AAB: app/build/outputs/bundle/release/app-release.aab
-AAB SHA-256: 19fb8d23e0b7f03dbb21df28c957a8379abf887af0700264c1747532b98ea612
+AAB SHA-256: 2fee86da1e3b423d4c20007a7bf95d7fb829e11c97559ec2865cb2a8f723d23d
 ```
 
 If a new AAB is built, update this file and
