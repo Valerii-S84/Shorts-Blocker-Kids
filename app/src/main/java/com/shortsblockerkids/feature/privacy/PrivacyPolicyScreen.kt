@@ -39,8 +39,8 @@ fun PrivacyPolicyScreen(
             title = "Local app",
             body =
                 "Shorts Blocker Kids works locally on this phone. It does not " +
-                    "require an account and does not use an app server in the " +
-                    "current release.",
+                    "require an account. Production subscription verification may " +
+                    "use a billing backend limited to Google Play entitlement status.",
         )
         PrivacySection(
             title = "Accessibility Service",
@@ -70,7 +70,8 @@ fun PrivacyPolicyScreen(
             body =
                 "Subscriptions are handled through Google Play Billing. Payment " +
                     "data is processed by Google Play under Google Play terms. " +
-                    "This app stores only local subscription entitlement status.",
+                    "This app stores local subscription entitlement status. Backend " +
+                    "verification, when enabled, uses only billing technical data.",
         )
         PrivacySection(
             title = "Limitations",

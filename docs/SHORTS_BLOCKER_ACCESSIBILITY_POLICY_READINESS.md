@@ -6,9 +6,9 @@ Play Console submission and demo video URL are pending.
 ## Scope
 
 This document covers the AccessibilityService policy package for the current
-local-only Android app. Google Play Billing is integrated for subscription
-entitlement, but this document does not cover Stripe, backend, analytics, ads,
-profiles, cloud sync, schedules, or device-owner mode.
+Android app. Google Play Billing and a billing-only backend verification module
+are integrated for subscription entitlement, but this document does not cover
+Stripe, analytics, ads, profiles, cloud sync, schedules, or device-owner mode.
 
 ## Official Policy Sources Checked
 
@@ -44,7 +44,8 @@ disclosure that says:
 - Parent PIN is used for temporary allow access.
 - The app does not collect or send child data, watch history, video data,
   screen recordings, audio, messages, location, contacts, or browsing history.
-- There is no app server, account, analytics, or ads in the current app.
+- There is no account system, analytics, or ads in the current app.
+- Backend behavior is limited to Google Play billing verification and RTDN.
 - Rules and PIN protection stay locally on the phone.
 
 The consent action must be separate and affirmative: `I agree and continue`.
@@ -79,8 +80,9 @@ Data access and handling:
 ```text
 The app does not collect, transmit, sell, or share child data, watch history,
 video data, screen recordings, audio, messages, location, contacts, or browsing
-history. The app has no backend, no account system, no analytics, and no ads.
-Settings and PIN hash metadata are stored locally on the device.
+history. The app has no account system, analytics, or ads. Backend behavior is
+limited to Google Play billing verification and RTDN. Settings and PIN hash
+metadata are stored locally on the device.
 ```
 
 Accessibility tool positioning:
@@ -117,7 +119,9 @@ in the recording, add captions that identify each step.
 The Privacy Policy should state:
 
 - The app works locally on the phone.
-- The app has no account system and no app server.
+- The app has no account system.
+- Backend behavior is limited to Google Play subscription verification and
+  entitlement status.
 - Protection rules are stored on the device.
 - Parent PIN is stored as hash and salt metadata, not plain text.
 - The app uses AccessibilityService to detect supported short-video surfaces
@@ -126,8 +130,9 @@ The Privacy Policy should state:
   screen recordings, audio, messages, location, contacts, or browsing history.
 - The app does not use analytics or ads in the current release.
 - Google Play Billing may process payment and subscription data under Google
-  Play terms; the app stores only local subscription entitlement status and the
-  last local verification timestamp.
+  Play terms; the app stores local subscription entitlement status and the last
+  verification timestamp. The billing backend stores only billing technical
+  entitlement data and hashed purchase tokens.
 
 ## Data Safety Notes
 
@@ -140,10 +145,10 @@ For the current local-only app:
   video data, screen recordings, audio, messages, location, contacts, or
   browsing history.
 - Device storage: local settings and PIN hash metadata stay on the device.
-- Network: the app should not declare `INTERNET` unless a future approved scope
-  explicitly requires it.
-- Billing: Google Play Billing is integrated. Revisit Data Safety before any
-  backend purchase verification or additional billing data handling.
+- Network: `INTERNET` is present for Google Play Billing and production billing
+  backend verification only.
+- Billing: Google Play Billing and billing backend verification are integrated.
+  Revisit Data Safety before any non-billing network flow is added.
 
 ## Current Repo Evidence
 

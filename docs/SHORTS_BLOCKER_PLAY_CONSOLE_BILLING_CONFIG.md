@@ -115,7 +115,7 @@ Billing test runbook: docs/SHORTS_BLOCKER_PLAY_BILLING_INTERNAL_TEST_RUNBOOK.md
 Required scenarios: BIL-01 through BIL-12
 ```
 
-Do not mark Billing production-ready until the runbook evidence is recorded.
+Do not approve Billing for production release until the runbook evidence is recorded.
 
 ## Policy Consistency Check Before Submission
 
@@ -125,6 +125,6 @@ Confirm these remain true after Play Console setup:
 - no manual license key or code entry activation;
 - no ads;
 - no analytics SDK;
-- no app backend unless separately approved;
+- billing backend is deployed only for Play purchase verification and RTDN;
 - Privacy Policy explains Google Play Billing and local entitlement storage;
 - Data Safety answers match the Billing SDK, permissions, and local data.

@@ -53,8 +53,9 @@ fun AccessibilityDisclosureScreen(
                     "while a protected short-video surface is open.\n\n" +
                     "The app does not collect or send child data, watch history, video data, " +
                     "screen recordings, audio, messages, location, contacts, or browsing " +
-                    "history. There is no app server, account, analytics, or ads. Rules and " +
-                    "PIN protection stay locally on this phone.\n\n" +
+                    "history. There is no account system, analytics, or ads. Backend behavior " +
+                    "is limited to Google Play billing verification. Rules and PIN protection " +
+                    "stay locally on this phone.\n\n" +
                     "Blocking works when Protection is ON and Android Accessibility " +
                     "Service is active. If that permission is turned off or the app is " +
                     "removed, blocking stops.",

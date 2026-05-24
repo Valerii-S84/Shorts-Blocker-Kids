@@ -1,6 +1,6 @@
 # Shorts Blocker Kids — Phase 10 Billing Checklist
 
-Status: Partial. Active production monetization path is Google Play Store + Android App Bundle + Google Play Billing. Website APK + Stripe is deferred until the Play Store production track is complete.
+Status: Partial. Active production monetization path is Google Play Store + Android App Bundle + Google Play Billing + server-side Play purchase verification. Website APK + Stripe is deferred until the Play Store production track is complete.
 
 ## Execution Lock
 
@@ -114,15 +114,26 @@ Pending verification:
 - [x] Unit tests cover entitlement decisions.
 - [ ] Manual tests cover purchase, restore, cancel, expire, and payment problem states.
 
-## Phase 10E — Optional Backend Verification Decision
+## Phase 10E — Backend Verification
 
-- [ ] Decide whether backend verification is required before production rollout.
+- [x] Decide whether backend verification is required before production rollout.
 - [x] Backend decision document is prepared:
   `docs/SHORTS_BLOCKER_BILLING_BACKEND_DECISION.md`.
-- [ ] If backend is added, it verifies purchase tokens with Google Play Developer API.
-- [ ] If backend is added, it stores only billing technical data.
-- [ ] If backend is added, it does not receive child data, YouTube data, browsing history, video data, app usage details, or accessibility tree dumps.
-- [ ] If backend is deferred, residual fraud risk is documented.
+- [x] Backend module is added under `billing-backend/`.
+- [x] Backend verification endpoint is added: `POST /billing/play/verify`.
+- [x] Entitlement status endpoint is added: `GET /entitlement/status`.
+- [x] RTDN receiver endpoint is added: `POST /billing/play/rtdn`.
+- [x] Backend verifies purchase tokens with Google Play Developer API.
+- [x] Backend stores only billing technical data.
+- [x] Backend does not receive child data, YouTube data, browsing history,
+  video data, app usage details, or accessibility tree dumps.
+- [x] Android app can opt into backend verification through
+  `SBK_BILLING_BACKEND_BASE_URL`.
+- [ ] Backend is deployed behind HTTPS with runtime credentials.
+- [ ] RTDN Pub/Sub push is configured in Play Console and pointed to deployed backend.
+- [ ] Durable production storage and backup policy are configured for entitlement records.
+- [ ] Backend rate limiting / edge protection is configured in deployment.
+- [ ] End-to-end Play tester verification is recorded against deployed backend.
 
 ## Current Evidence
 
@@ -134,7 +145,7 @@ Pending verification:
 - Play Billing internal test runbook is prepared.
 - Play Console billing configuration sheet is prepared.
 - Backend verification decision document is prepared.
-- Backend is not implemented.
-- Billing cannot be considered production-ready until Play product setup,
-  license tester QA, subscription lifecycle QA, and optional backend verification
-  decision are complete.
+- Backend verification baseline is implemented locally.
+- Billing cannot be approved for production release until Play product setup,
+  backend deployment, RTDN configuration, license tester QA, and subscription
+  lifecycle QA are complete.

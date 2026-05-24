@@ -1,6 +1,8 @@
 package com.shortsblockerkids.core.storage
 
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import com.shortsblockerkids.core.billing.BillingEntitlementSnapshot
+import com.shortsblockerkids.core.billing.BillingEntitlementState
 import com.shortsblockerkids.core.entitlement.FreeTestPolicy
 import com.shortsblockerkids.core.model.ProtectionMode
 import com.shortsblockerkids.core.security.PinVerificationResult
@@ -127,6 +129,42 @@ class SettingsRepositoryTest {
             assertFalse(inactiveSettings.billingSubscriptionActive)
             assertEquals(5_000L, inactiveSettings.billingLastVerifiedAt)
             assertFalse(inactiveSettings.hasBillingEntitlement(nowMillis = 5_000L))
+        }
+
+    @Test
+    fun persistsBackendBillingEntitlementLifecycleState() =
+        runBlocking {
+            val repository = createRepository("billing-state")
+
+            repository.updateBillingEntitlement(
+                BillingEntitlementSnapshot(
+                    state = BillingEntitlementState.CANCELED_ACTIVE,
+                    checkedAtMillis = 4_000L,
+                    activeUntilMillis = 8_000L,
+                ),
+            )
+            val settings = repository.readSettings().first()
+
+            assertTrue(settings.billingSubscriptionActive)
+            assertEquals(BillingEntitlementState.CANCELED_ACTIVE, settings.billingEntitlementState)
+            assertEquals(8_000L, settings.billingActiveUntilMillis)
+            assertTrue(settings.hasBillingEntitlement(nowMillis = 4_500L))
+        }
+
+    @Test
+    fun createsStableRandomBillingInstallationId() =
+        runBlocking {
+            val firstRepository = createRepository("billing-install")
+            val firstInstallId = firstRepository.getOrCreateBillingInstallationId()
+            val sameInstallId = firstRepository.getOrCreateBillingInstallationId()
+            cancelOpenStores()
+
+            val restartedRepository = createRepository("billing-install")
+            val restartedInstallId = restartedRepository.getOrCreateBillingInstallationId()
+
+            assertTrue(firstInstallId.isNotBlank())
+            assertEquals(firstInstallId, sameInstallId)
+            assertEquals(firstInstallId, restartedInstallId)
         }
 
     @Test

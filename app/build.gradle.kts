@@ -34,6 +34,15 @@ val isReleaseSigningConfigured =
         releaseKeyPassword,
     ).all { !it.isNullOrBlank() }
 
+fun buildConfigString(value: String): String = "\"${value.replace("\\", "\\\\").replace("\"", "\\\"")}\""
+
+val billingBackendBaseUrl =
+    providers
+        .environmentVariable("SBK_BILLING_BACKEND_BASE_URL")
+        .orElse(providers.gradleProperty("SBK_BILLING_BACKEND_BASE_URL"))
+        .orElse("")
+        .get()
+
 android {
     namespace = "com.shortsblockerkids"
     compileSdk = 36
@@ -46,6 +55,11 @@ android {
         versionName = "0.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField(
+            "String",
+            "BILLING_BACKEND_BASE_URL",
+            buildConfigString(billingBackendBaseUrl),
+        )
     }
 
     buildFeatures {

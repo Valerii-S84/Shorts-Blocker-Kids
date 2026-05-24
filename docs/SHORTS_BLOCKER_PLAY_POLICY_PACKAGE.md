@@ -15,7 +15,7 @@ This package is for the current Shorts Blocker Kids build:
   protection is enabled.
 - Parent PIN can temporarily allow access for 5, 10, or 15 minutes.
 - No account system.
-- No app backend.
+- Billing backend only for Google Play purchase verification and RTDN.
 - No analytics.
 - No ads.
 - No watch history storage.
@@ -26,10 +26,12 @@ This package is for the current Shorts Blocker Kids build:
   path before launching purchase.
 - The Billing SDK adds `com.android.vending.BILLING`,
   `android.permission.INTERNET`, and
-  `android.permission.ACCESS_NETWORK_STATE`; the app has no custom backend,
+  `android.permission.ACCESS_NETWORK_STATE`; production-configured builds may
+  also use network access for billing backend verification. The app has no
   analytics, ads, or account network flow.
-- The app stores only local subscription entitlement status and last local
-  verification timestamp.
+- The app stores local subscription entitlement status and last verification
+  timestamp. The backend stores only billing technical entitlement records and
+  hashed purchase tokens.
 - Privacy Policy text is available in the app from the dashboard.
 
 ## Official Policy Sources Checked
@@ -154,14 +156,15 @@ Current answer direction for the app itself:
   history collected.
 - Web browsing: not collected.
 - App info and performance: no analytics or crash SDK is currently integrated.
-- Device or other IDs: no app-specific tracking ID is currently collected or
-  transmitted by this app.
+- Device or other IDs: a random app installation ID may be transmitted only for
+  billing entitlement verification. It is not a hardware ID, advertising ID,
+  account name, phone number, or child identifier.
 - Account creation: no account system.
 - Data deletion: no account data exists on a server. Local settings and PIN
   metadata can be removed by clearing app data or uninstalling the app.
 
-Revisit this section before release if backend purchase verification, crash
-reporting, analytics, support forms, or any custom app network flow is added.
+Revisit this section before release if crash reporting, analytics, support
+forms, or any non-billing app network flow is added.
 
 ## Privacy Policy Draft
 
@@ -184,8 +187,10 @@ Effective date: May 22, 2026
 Shorts Blocker Kids is a parental digital wellbeing app that helps parents
 block supported short-video surfaces on a child's Android phone.
 
-The app works locally on the device. It does not require an account and does
-not use an app server in the current release.
+The app works locally on the device for protection behavior. It does not
+require an account. For production subscription verification, the app may use a
+billing backend limited to Google Play purchase verification and entitlement
+status.
 
 Shorts Blocker Kids uses Android AccessibilityService to detect when supported
 short-video surfaces are open. YouTube Shorts is supported. TikTok main,
@@ -203,12 +208,13 @@ watch history, video titles, URLs, account names, comments, messages, screen
 recordings, audio, location, contacts, browsing history, or raw
 Accessibility tree dumps.
 
-The current app has no analytics, no ads, no account system, no backend, and no
-cloud sync.
+The current app has no analytics, no ads, no account system, and no cloud sync.
 
 Subscriptions are handled through Google Play Billing. Google Play may process
-payment and subscription data under Google Play terms. This app stores only
-local subscription entitlement status and the last local verification timestamp.
+payment and subscription data under Google Play terms. This app stores local
+subscription entitlement status and the last verification timestamp. If backend
+verification is enabled, the backend stores only billing technical entitlement
+records and a hashed purchase token.
 
 Blocking works only when Protection is ON and Android Accessibility Service is
 active. If that permission is turned off or the app is removed, blocking stops.
@@ -252,7 +258,7 @@ What the app does:
 
 Privacy:
 - no account;
-- no app server;
+- billing backend only for Google Play subscription verification;
 - no analytics;
 - no ads;
 - no watch history storage;

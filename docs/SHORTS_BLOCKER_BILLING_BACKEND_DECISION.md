@@ -1,16 +1,19 @@
 # Shorts Blocker Kids Billing Backend Decision
 
-Status: Open for production decision.
+Status: Option A selected. Backend verification is required before production rollout.
 
-Date: May 23, 2026
+Date: May 24, 2026
 
 ## Decision Needed
 
-Before broad production rollout, decide whether Shorts Blocker Kids ships with:
+Before broad production rollout, Shorts Blocker Kids ships with:
 
-1. app-side Google Play Billing only; or
-2. app-side Google Play Billing plus secure backend verification and Real-time
+1. app-side Google Play Billing; plus
+2. secure backend verification and Real-time
    Developer Notifications.
+
+App-side-only Billing remains acceptable only for internal Play tester
+validation before the backend deployment is live.
 
 ## Official Sources Checked
 
@@ -25,20 +28,25 @@ Before broad production rollout, decide whether Shorts Blocker Kids ships with:
 
 ## Current Implementation
 
-The current app implements app-side Billing only:
+The current app implements:
 
 - product details loading;
 - purchase flow;
 - purchase update handling;
 - pending/cancel/error handling;
-- app-side `acknowledgePurchase()` after purchased state;
 - restore purchases through `queryPurchasesAsync`;
 - local entitlement cache with 72-hour offline grace;
-- no purchase token is stored locally;
-- no app backend exists.
+- optional backend verification through `SBK_BILLING_BACKEND_BASE_URL`;
+- backend `POST /billing/play/verify`;
+- backend `GET /entitlement/status`;
+- backend `POST /billing/play/rtdn`;
+- Google Play Developer API verification through application-default
+  credentials;
+- backend acknowledgement after verified active entitlement;
+- hashed purchase-token storage in the backend store.
 
-This is enough for internal tester validation of the app flow, but it is not the
-strongest production-grade subscription lifecycle architecture.
+The app still supports client-only Billing when no backend URL is configured so
+Play internal testing can continue before backend deployment.
 
 ## Backend Benefits
 
@@ -89,39 +97,23 @@ For Play internal testing, proceed with app-side Billing only.
 Reason:
 
 - Play Console product and license tester flows must be validated first;
-- no backend infrastructure exists in this repository;
+- Play Console product and license tester flows must be validated first;
 - the app stores only local entitlement status;
 - internal testing can validate purchase, restore, pending, cancel, and expire
   UI behavior before backend scope is opened.
 
 ## Production Decision Gate
 
-Do not mark Billing `Done` for production until one of these is explicitly
-decided:
+Do not mark Billing `Done` for production until backend deployment is verified:
 
-### Option A — Add backend before production
+### Required before production
 
-Required work:
-
-- backend service;
-- Google Play Developer API credentials;
-- purchase verification endpoint;
-- entitlement endpoint;
-- RTDN Pub/Sub receiver;
-- subscription lifecycle processor;
+- HTTPS deployment;
+- Google Play Developer API credentials stored outside the repository;
+- `GOOGLE_APPLICATION_CREDENTIALS` configured on the backend runtime;
+- `SBK_RTDN_SHARED_SECRET` configured on the backend runtime and edge;
+- Play Console RTDN Pub/Sub push configured;
+- durable entitlement storage and backup policy;
+- rate limiting / edge protection;
 - secure logging rules excluding child/app-usage data;
 - integration tests and Play tester lifecycle QA.
-
-### Option B — Defer backend for v1 production
-
-Required documentation:
-
-- residual fraud risk accepted;
-- lifecycle accuracy relies on app startup/restore queries;
-- no server-side RTDN;
-- no server-side acknowledgement;
-- local entitlement cache remains conservative;
-- support process exists for refund/revoke edge cases through Play Console.
-
-Until Option A or Option B is chosen, backend verification remains an open
-production decision.

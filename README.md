@@ -13,13 +13,20 @@ Accessibility Service. Current platform support is intentionally narrow:
 | Facebook Reels | supported by code; needs real-device QA |
 | Facebook Lite `com.facebook.lite` | not supported |
 
-The app has no account system, no app backend, and no analytics. Google Play
-Billing adds `com.android.vending.BILLING`, `android.permission.INTERNET`, and
-`android.permission.ACCESS_NETWORK_STATE` through the Billing SDK.
+The app has no account system and no analytics. Google Play Billing adds
+`com.android.vending.BILLING`, `android.permission.INTERNET`, and
+`android.permission.ACCESS_NETWORK_STATE` through the Billing SDK. A
+repository-local `billing-backend` module provides the Play purchase
+verification and RTDN baseline for production hardening.
 
 Subscriptions are handled through Google Play Billing. There are no website,
 Stripe, manual license key, or external payment flows in the Play-distributed
 app.
+
+The Android app does not call a custom billing backend unless
+`SBK_BILLING_BACKEND_BASE_URL` is supplied at build time. Without that value,
+the app keeps the existing client-side Google Play Billing flow for internal
+testing.
 
 ## Requirements
 
@@ -42,6 +49,8 @@ Adjust `ANDROID_HOME` if the SDK is installed elsewhere.
 ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew :app:assembleDebug
 ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew :app:assembleRelease
 ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew :app:bundleRelease
+./gradlew :billing-backend:test
+./gradlew :billing-backend:run
 ```
 
 The debug APK is written under `app/build/outputs/apk/debug/`.
@@ -65,6 +74,8 @@ Current release decisions:
 - `versionName = 0.1.0` and `versionCode = 1` are intentionally kept for the first controlled release candidate line.
 - `isMinifyEnabled = false` is intentionally kept until release-device regression coverage is complete for the AccessibilityService detector path.
 - Google Play publishing remains out of scope for this repository state.
+- Production billing backend credentials must be supplied through runtime
+  environment variables and must not be committed.
 
 ## Test And Lint
 
@@ -100,7 +111,7 @@ After installing, enable the Accessibility Service manually in Android settings.
 
 ## Product Boundaries
 
-- No app server
+- Billing backend only for Google Play subscription verification
 - No account
 - No cloud sync
 - No analytics
@@ -108,6 +119,26 @@ After installing, enable the Accessibility Service manually in Android settings.
 - No screen recording
 - No microphone, camera, location, contacts, or SMS permissions
 - No aggressive anti-uninstall behavior
+
+## Billing Backend
+
+Runtime configuration:
+
+```bash
+GOOGLE_APPLICATION_CREDENTIALS=/secure/path/service-account.json
+SBK_BACKEND_PORT=8080
+SBK_PACKAGE_NAME=com.shortsblockerkids
+SBK_PLAY_SUBSCRIPTION_PRODUCT_ID=shorts_blocker_kids_monthly
+SBK_BACKEND_STORE_FILE=/secure/path/billing-backend-data.json
+SBK_RTDN_SHARED_SECRET=...
+```
+
+Android release builds can opt into backend verification with:
+
+```bash
+SBK_BILLING_BACKEND_BASE_URL=https://billing.example.com \
+ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew :app:bundleRelease
+```
 
 ## Known Limitation
 

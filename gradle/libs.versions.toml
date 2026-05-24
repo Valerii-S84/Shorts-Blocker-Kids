@@ -4,9 +4,11 @@ agp = "9.2.0"
 composeMaterial3 = "1.4.0"
 composeUi = "1.11.0"
 datastore = "1.2.1"
+googleAuthLibrary = "1.47.0"
 googlePlayBilling = "9.0.0"
 androidxTestExtJunit = "1.2.1"
 androidxTestRunner = "1.6.2"
+kotlinxSerializationJson = "1.11.0"
 uiautomator = "2.3.0"
 junit = "4.13.2"
 kotlin = "2.3.20"
@@ -22,10 +24,13 @@ androidx-compose-ui = { module = "androidx.compose.ui:ui", version.ref = "compos
 androidx-compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling", version.ref = "composeUi" }
 androidx-compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview", version.ref = "composeUi" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
+google-auth-oauth2-http = { module = "com.google.auth:google-auth-library-oauth2-http", version.ref = "googleAuthLibrary" }
 google-play-billing-ktx = { module = "com.android.billingclient:billing-ktx", version.ref = "googlePlayBilling" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
 junit = { module = "junit:junit", version.ref = "junit" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintGradle" }

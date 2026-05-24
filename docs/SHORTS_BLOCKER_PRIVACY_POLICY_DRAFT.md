@@ -20,8 +20,10 @@ app-side support is:
 | Facebook Reels | supported by code; needs real-device QA |
 | Facebook Lite `com.facebook.lite` | not supported |
 
-The app works locally on the device. It does not require an account and does
-not use an app server in the current release.
+The app works locally on the device for protection behavior. It does not
+require an account. For production subscription verification, the app may use a
+billing backend limited to Google Play purchase verification and entitlement
+status.
 
 ## Accessibility Service
 
@@ -53,21 +55,36 @@ The current app has:
 - no analytics;
 - no ads;
 - no account system;
-- no backend;
 - no cloud sync.
 
 Google Play Billing adds `android.permission.INTERNET` and
 `android.permission.ACCESS_NETWORK_STATE` through the Billing SDK. The app does
-not use a custom backend, analytics, ads, account, or cloud sync network flow.
+not use analytics, ads, account, or cloud sync network flow.
+
+If backend subscription verification is enabled, the app may send only billing
+technical data to the backend:
+
+- random app installation ID;
+- app package name and app version;
+- Google Play subscription product ID;
+- Google Play purchase token;
+- entitlement verification timestamp and status.
+
+The billing backend must not receive child data, supported app activity,
+watch history, video titles, URLs, comments, account names, messages, screen
+recordings, audio, location, contacts, browsing history, or raw Accessibility
+tree dumps.
 
 ## Payments
 
 Subscriptions are handled through Google Play Billing. Google Play may process
 payment and subscription data under Google Play terms.
 
-Shorts Blocker Kids stores only local subscription entitlement status and the
-last local verification timestamp. The app does not store payment card data,
-order IDs, billing addresses, or payment account details.
+Shorts Blocker Kids stores local subscription entitlement status and the last
+verification timestamp. If backend verification is enabled, the backend stores
+minimal billing entitlement records and a hashed purchase token. The app and
+backend do not store payment card data, billing addresses, or payment account
+details.
 
 ## Limitations
 

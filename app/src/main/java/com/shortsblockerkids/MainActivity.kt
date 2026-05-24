@@ -19,6 +19,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.shortsblockerkids.accessibility.AccessibilityServiceStatus
 import com.shortsblockerkids.core.billing.BillingUiState
+import com.shortsblockerkids.core.billing.HttpBillingBackendClient
 import com.shortsblockerkids.core.billing.PlayBillingRepository
 import com.shortsblockerkids.core.storage.AppSettings
 import com.shortsblockerkids.core.storage.SettingsRepository
@@ -61,12 +62,14 @@ class MainActivity : ComponentActivity() {
                 context = this,
                 onEntitlementChanged = { snapshot ->
                     activityScope.launch {
-                        settingsRepository.updateBillingEntitlement(
-                            isActive = snapshot.isActive,
-                            checkedAtMillis = snapshot.checkedAtMillis,
-                        )
+                        settingsRepository.updateBillingEntitlement(snapshot)
                     }
                 },
+                billingBackendClient =
+                    HttpBillingBackendClient.fromBaseUrl(BuildConfig.BILLING_BACKEND_BASE_URL),
+                installId = runBlocking { settingsRepository.getOrCreateBillingInstallationId() },
+                appVersion = BuildConfig.VERSION_NAME,
+                billingScope = activityScope,
             )
         temporaryAllowRequestState.value = intent.isTemporaryAllowRequest()
         loadInitialSettings()

@@ -16,13 +16,22 @@ import com.android.billingclient.api.Purchase
 import com.android.billingclient.api.PurchasesUpdatedListener
 import com.android.billingclient.api.QueryProductDetailsParams
 import com.android.billingclient.api.QueryPurchasesParams
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 class PlayBillingRepository(
     context: Context,
     private val onEntitlementChanged: (BillingEntitlementSnapshot) -> Unit,
+    private val billingBackendClient: BillingBackendClient = DisabledBillingBackendClient,
+    private val installId: String? = null,
+    private val appVersion: String = "",
+    private val billingScope: CoroutineScope =
+        CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate),
     private val nowMillis: () -> Long = System::currentTimeMillis,
 ) : PurchasesUpdatedListener {
     private val _uiState = MutableStateFlow(BillingUiState())
@@ -43,6 +52,7 @@ class PlayBillingRepository(
     private var isConnecting = false
     private var productDetails: ProductDetails? = null
     private var subscriptionOfferToken: String? = null
+    private val packageName = context.applicationContext.packageName
 
     fun start() {
         if (billingClient.isReady) {
@@ -261,6 +271,16 @@ class PlayBillingRepository(
         val hasPending =
             subscriptionPurchases.any { it.purchaseState == Purchase.PurchaseState.PENDING }
 
+        if (billingBackendClient.isConfigured && purchased.isNotEmpty()) {
+            verifyPurchaseWithBackend(purchased.first(), hasPending)
+            return
+        }
+
+        if (billingBackendClient.isConfigured && purchased.isEmpty()) {
+            refreshEntitlementFromBackend(hasPending)
+            return
+        }
+
         purchased
             .filterNot { it.isAcknowledged }
             .forEach(::acknowledgePurchase)
@@ -284,6 +304,110 @@ class PlayBillingRepository(
         }
     }
 
+    private fun verifyPurchaseWithBackend(
+        purchase: Purchase,
+        hasPending: Boolean,
+    ) {
+        val currentInstallId = installId
+        if (currentInstallId.isNullOrBlank()) {
+            _uiState.update {
+                it.copy(statusMessage = "Billing backend verification is not ready yet.")
+            }
+            return
+        }
+
+        _uiState.update {
+            it.copy(
+                isLoading = true,
+                statusMessage = "Verifying subscription with secure backend.",
+            )
+        }
+        billingScope.launch {
+            runCatching {
+                billingBackendClient.verifyPurchase(
+                    BillingBackendPurchaseRequest(
+                        installId = currentInstallId,
+                        packageName = packageName,
+                        productId = BillingAvailability.MONTHLY_SUBSCRIPTION_PRODUCT_ID,
+                        purchaseToken = purchase.purchaseToken,
+                        appVersion = appVersion,
+                    ),
+                )
+            }.onSuccess { snapshot ->
+                onEntitlementChanged(snapshot)
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        statusMessage = snapshot.statusMessage(hasPending),
+                    )
+                }
+            }.onFailure {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        statusMessage =
+                            "Could not verify subscription with backend. Restore or try again.",
+                    )
+                }
+            }
+        }
+    }
+
+    private fun refreshEntitlementFromBackend(hasPending: Boolean) {
+        val currentInstallId = installId
+        if (currentInstallId.isNullOrBlank()) {
+            onEntitlementChanged(
+                BillingEntitlementSnapshot(
+                    state = BillingEntitlementState.EXPIRED,
+                    checkedAtMillis = nowMillis(),
+                ),
+            )
+            return
+        }
+
+        billingScope.launch {
+            runCatching {
+                billingBackendClient.refreshEntitlement(currentInstallId)
+            }.onSuccess { snapshot ->
+                if (snapshot == null) {
+                    onEntitlementChanged(
+                        BillingEntitlementSnapshot(
+                            state = BillingEntitlementState.EXPIRED,
+                            checkedAtMillis = nowMillis(),
+                        ),
+                    )
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            statusMessage =
+                                if (hasPending) {
+                                    "Purchase pending. Protection unlocks after payment completes."
+                                } else {
+                                    "No active Google Play subscription found."
+                                },
+                        )
+                    }
+                    return@onSuccess
+                }
+                onEntitlementChanged(snapshot)
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        statusMessage = snapshot.statusMessage(hasPending),
+                    )
+                }
+            }.onFailure {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        statusMessage =
+                            "Could not refresh subscription with backend. Restore or try again.",
+                    )
+                }
+            }
+        }
+    }
+
     private fun acknowledgePurchase(purchase: Purchase) {
         val params =
             AcknowledgePurchaseParams
@@ -296,6 +420,22 @@ class PlayBillingRepository(
             }
         }
     }
+
+    private fun BillingEntitlementSnapshot.statusMessage(hasPending: Boolean): String =
+        when {
+            state == BillingEntitlementState.ACTIVE -> "Subscription active."
+            state == BillingEntitlementState.CANCELED_ACTIVE ->
+                "Subscription active until the paid period ends."
+            state == BillingEntitlementState.IN_GRACE ->
+                "Subscription active during Google Play grace period."
+            state == BillingEntitlementState.PENDING || hasPending ->
+                "Purchase pending. Protection unlocks after payment completes."
+            state == BillingEntitlementState.ON_HOLD ->
+                "Payment issue. Update the subscription in Google Play."
+            state == BillingEntitlementState.REVOKED -> "Subscription revoked by Google Play."
+            state == BillingEntitlementState.EXPIRED -> "No active Google Play subscription found."
+            else -> "Subscription verification unavailable."
+        }
 
     private fun setBillingError(
         prefix: String,

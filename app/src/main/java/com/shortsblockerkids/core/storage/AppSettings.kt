@@ -1,6 +1,8 @@
 package com.shortsblockerkids.core.storage
 
 import com.shortsblockerkids.core.billing.BillingAvailability
+import com.shortsblockerkids.core.billing.BillingEntitlementState
+import com.shortsblockerkids.core.billing.allowsPaidProtection
 import com.shortsblockerkids.core.entitlement.FreeTestPolicy
 import com.shortsblockerkids.core.model.EntitlementState
 import com.shortsblockerkids.core.model.ProtectionMode
@@ -12,8 +14,11 @@ data class AppSettings(
     val temporaryAllowUntil: Long? = null,
     val freeTestStartedAt: Long? = null,
     val freeTestDurationDays: Int = FreeTestPolicy.DEFAULT_DURATION_DAYS,
+    val billingInstallationId: String? = null,
+    val billingEntitlementState: BillingEntitlementState = BillingEntitlementState.UNKNOWN,
     val billingSubscriptionActive: Boolean = false,
     val billingLastVerifiedAt: Long? = null,
+    val billingActiveUntilMillis: Long? = null,
     val pinHash: String? = null,
     val pinSalt: String? = null,
     val pinHashVersion: Int = 1,
@@ -56,8 +61,15 @@ data class AppSettings(
         if (verifiedAt > nowMillis) {
             return false
         }
-        return billingSubscriptionActive &&
-            nowMillis - verifiedAt <= BillingAvailability.OFFLINE_GRACE_MILLIS
+        val stateAllowsProtection =
+            billingEntitlementState.allowsPaidProtection() ||
+                (billingEntitlementState == BillingEntitlementState.UNKNOWN && billingSubscriptionActive)
+        if (!stateAllowsProtection) {
+            return false
+        }
+        val offlineGraceUntil = verifiedAt + BillingAvailability.OFFLINE_GRACE_MILLIS
+        val activeUntil = billingActiveUntilMillis ?: offlineGraceUntil
+        return nowMillis <= activeUntil && nowMillis <= offlineGraceUntil
     }
 
     fun hasProtectionEntitlement(nowMillis: Long): Boolean =

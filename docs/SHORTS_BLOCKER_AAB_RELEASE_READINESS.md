@@ -111,10 +111,12 @@ ACCESSIBILITY_DEBUG_TOOLS_ENABLED = false
 - Google Play Billing is integrated for the planned monthly subscription.
 - App-side detector support includes YouTube Shorts, TikTok primary package,
   Instagram Reels, and Facebook Reels.
-- The app still has no backend, analytics, ads, or account system.
+- The app still has no analytics, ads, or account system.
+- A billing backend module exists for Play purchase verification; Android builds
+  use it only when `SBK_BILLING_BACKEND_BASE_URL` is supplied.
 - `android.permission.INTERNET` and `android.permission.ACCESS_NETWORK_STATE`
-  are present through the Google Play Billing SDK; there is no custom backend or
-  analytics network flow.
+  are present through the Google Play Billing SDK and may also be used for
+  billing backend verification in production-configured builds.
 
 ## Pending Before Play Internal Testing
 
@@ -129,6 +131,7 @@ ACCESSIBILITY_DEBUG_TOOLS_ENABLED = false
 - Add store screenshots and feature graphic.
 - Execute `docs/SHORTS_BLOCKER_PLAY_BILLING_INTERNAL_TEST_RUNBOOK.md` after the
   subscription product and internal testing track are active.
+- Deploy and verify the billing backend before a production-configured AAB.
 - Use `docs/SHORTS_BLOCKER_PLAY_CONSOLE_BILLING_CONFIG.md` for the exact
   subscription product/base-plan values.
 - Run final smoke QA on the exact AAB-derived install from Play internal

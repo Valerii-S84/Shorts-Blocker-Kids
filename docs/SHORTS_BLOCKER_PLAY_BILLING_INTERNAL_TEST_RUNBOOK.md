@@ -17,8 +17,9 @@ It covers:
 - required subscription lifecycle tests;
 - evidence to capture before moving toward production rollout.
 
-It does not cover backend purchase verification or Real-time Developer
-Notifications. Those remain a separate production hardening decision.
+It covers app-side Billing behavior first. Backend purchase verification and
+Real-time Developer Notifications are now implemented locally and must be
+validated against a deployed backend before production rollout.
 
 Use `docs/SHORTS_BLOCKER_PLAY_CONSOLE_BILLING_CONFIG.md` as the exact product
 configuration sheet before running this test plan.
@@ -143,6 +144,9 @@ Billing can move from `Partial` to `Done` only when:
 - Play Console product `shorts_blocker_kids_monthly` is active;
 - internal testing AAB is installable from Play;
 - BIL-01 through BIL-12 are recorded;
+- backend verification is deployed and the app build uses
+  `SBK_BILLING_BACKEND_BASE_URL`;
+- RTDN delivery is configured and verified against the deployed backend;
 - no non-Play payment path is visible in the Play-distributed app;
 - Privacy Policy, Data Safety, and store listing copy still match the shipped
   SDKs, permissions, and payment behavior.

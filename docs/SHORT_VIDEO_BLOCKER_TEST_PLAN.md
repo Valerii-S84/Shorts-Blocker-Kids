@@ -339,11 +339,23 @@ Subscription lifecycle tests:
 
 ## Backend Verification Tests
 
-Not applicable to the current product scope. This app currently has no backend,
-cloud sync, analytics, ads, account system, or server-side entitlement endpoint.
-If a future approved task adds backend/cloud behavior, this section must be
-replaced with concrete endpoint, RTDN, privacy, and logging tests before
-production claims are made.
+Applicable to the production billing scope. The repository now includes a
+`billing-backend` module with Play purchase verification, entitlement status,
+and RTDN endpoints.
+
+Required backend tests:
+
+- `:billing-backend:test` passes.
+- `POST /billing/play/verify` verifies a Play purchase token and stores only
+  billing technical data.
+- `GET /entitlement/status` returns active, canceled-active, grace, on-hold,
+  expired, revoked, and unknown states without exposing purchase tokens.
+- `POST /billing/play/rtdn` rejects requests without the configured runtime
+  shared secret.
+- RTDN `messageId` handling is idempotent.
+- Backend logs and stored records do not include child data, app usage history,
+  accessibility tree dumps, URLs, video titles, account names, messages,
+  screen recordings, audio, location, contacts, or browsing history.
 
 ## Release Gates
 

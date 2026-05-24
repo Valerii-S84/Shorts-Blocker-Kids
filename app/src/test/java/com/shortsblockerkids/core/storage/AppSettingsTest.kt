@@ -1,5 +1,6 @@
 package com.shortsblockerkids.core.storage
 
+import com.shortsblockerkids.core.billing.BillingEntitlementState
 import com.shortsblockerkids.core.entitlement.FreeTestPolicy
 import com.shortsblockerkids.core.model.EntitlementState
 import org.junit.Assert.assertEquals
@@ -96,6 +97,35 @@ class AppSettingsTest {
     }
 
     @Test
+    fun activeBackendBillingEntitlementCanProtectAfterFreeTestExpires() {
+        val settings =
+            activeSettings(freeTestStartedAt = TEST_STARTED_AT)
+                .copy(
+                    billingEntitlementState = BillingEntitlementState.ACTIVE,
+                    billingSubscriptionActive = true,
+                    billingLastVerifiedAt = TWENTY_DAYS,
+                )
+
+        assertTrue(settings.hasBillingEntitlement(nowMillis = TWENTY_DAYS))
+        assertTrue(settings.canProtect(nowMillis = TWENTY_DAYS))
+    }
+
+    @Test
+    fun pendingBillingEntitlementDoesNotUnlockPaidProtection() {
+        val settings =
+            activeSettings(freeTestStartedAt = TEST_STARTED_AT)
+                .copy(
+                    billingEntitlementState = BillingEntitlementState.PENDING,
+                    billingSubscriptionActive = false,
+                    billingLastVerifiedAt = TWENTY_DAYS,
+                    billingActiveUntilMillis = TWENTY_DAYS + ONE_DAY,
+                )
+
+        assertFalse(settings.hasBillingEntitlement(nowMillis = TWENTY_DAYS))
+        assertFalse(settings.canProtect(nowMillis = TWENTY_DAYS))
+    }
+
+    @Test
     fun staleBillingEntitlementDoesNotProtectAfterGrace() {
         val settings =
             activeSettings(freeTestStartedAt = TEST_STARTED_AT)
@@ -120,6 +150,97 @@ class AppSettingsTest {
 
         assertFalse(settings.hasBillingEntitlement(nowMillis = TWENTY_DAYS))
         assertFalse(settings.canProtect(nowMillis = TWENTY_DAYS))
+    }
+
+    @Test
+    fun canceledActiveBillingEntitlementProtectsOnlyDuringPaidAndOfflineGraceWindows() {
+        val settings =
+            activeSettings(freeTestStartedAt = TEST_STARTED_AT)
+                .copy(
+                    billingEntitlementState = BillingEntitlementState.CANCELED_ACTIVE,
+                    billingSubscriptionActive = true,
+                    billingLastVerifiedAt = TWENTY_DAYS,
+                    billingActiveUntilMillis = TWENTY_DAYS + ONE_DAY,
+                )
+
+        assertTrue(settings.hasBillingEntitlement(nowMillis = TWENTY_DAYS + 1_000L))
+        assertFalse(settings.hasBillingEntitlement(nowMillis = TWENTY_DAYS + ONE_DAY + 1L))
+    }
+
+    @Test
+    fun canceledActiveBillingEntitlementDoesNotOutliveOfflineGrace() {
+        val settings =
+            activeSettings(freeTestStartedAt = TEST_STARTED_AT)
+                .copy(
+                    billingEntitlementState = BillingEntitlementState.CANCELED_ACTIVE,
+                    billingSubscriptionActive = true,
+                    billingLastVerifiedAt = TWENTY_DAYS,
+                    billingActiveUntilMillis = TWENTY_DAYS + 7L * ONE_DAY,
+                )
+        val afterOfflineGrace = TWENTY_DAYS + 72L * 60L * 60L * 1_000L + 1L
+
+        assertFalse(settings.hasBillingEntitlement(nowMillis = afterOfflineGrace))
+        assertFalse(settings.canProtect(nowMillis = afterOfflineGrace))
+    }
+
+    @Test
+    fun graceBillingEntitlementProtectsOnlyWithinOfflineGrace() {
+        val settings =
+            activeSettings(freeTestStartedAt = TEST_STARTED_AT)
+                .copy(
+                    billingEntitlementState = BillingEntitlementState.IN_GRACE,
+                    billingSubscriptionActive = true,
+                    billingLastVerifiedAt = TWENTY_DAYS,
+                )
+        val afterOfflineGrace = TWENTY_DAYS + 72L * 60L * 60L * 1_000L + 1L
+
+        assertTrue(settings.hasBillingEntitlement(nowMillis = TWENTY_DAYS))
+        assertTrue(settings.canProtect(nowMillis = TWENTY_DAYS))
+        assertFalse(settings.hasBillingEntitlement(nowMillis = afterOfflineGrace))
+        assertFalse(settings.canProtect(nowMillis = afterOfflineGrace))
+    }
+
+    @Test
+    fun nonPremiumBackendBillingStatesDoNotProtectAfterFreeTestExpires() {
+        val deniedStates =
+            listOf(
+                BillingEntitlementState.ON_HOLD,
+                BillingEntitlementState.EXPIRED,
+                BillingEntitlementState.REVOKED,
+                BillingEntitlementState.UNKNOWN,
+            )
+
+        deniedStates.forEach { state ->
+            val settings =
+                activeSettings(freeTestStartedAt = TEST_STARTED_AT)
+                    .copy(
+                        billingEntitlementState = state,
+                        billingSubscriptionActive = false,
+                        billingLastVerifiedAt = TWENTY_DAYS,
+                        billingActiveUntilMillis = TWENTY_DAYS + ONE_DAY,
+                    )
+
+            assertFalse("state=$state", settings.hasBillingEntitlement(nowMillis = TWENTY_DAYS))
+            assertFalse("state=$state", settings.canProtect(nowMillis = TWENTY_DAYS))
+        }
+    }
+
+    @Test
+    fun backendUnavailableUsesOnlyConservativeOfflineWindowFromLastActiveVerification() {
+        val settings =
+            activeSettings(freeTestStartedAt = TEST_STARTED_AT)
+                .copy(
+                    billingEntitlementState = BillingEntitlementState.ACTIVE,
+                    billingSubscriptionActive = true,
+                    billingLastVerifiedAt = TWENTY_DAYS,
+                )
+        val withinOfflineGrace = TWENTY_DAYS + 72L * 60L * 60L * 1_000L
+        val afterOfflineGrace = withinOfflineGrace + 1L
+
+        assertTrue(settings.hasBillingEntitlement(nowMillis = withinOfflineGrace))
+        assertTrue(settings.canProtect(nowMillis = withinOfflineGrace))
+        assertFalse(settings.hasBillingEntitlement(nowMillis = afterOfflineGrace))
+        assertFalse(settings.canProtect(nowMillis = afterOfflineGrace))
     }
 
     @Test

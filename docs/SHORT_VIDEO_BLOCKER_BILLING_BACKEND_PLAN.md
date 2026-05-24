@@ -1,8 +1,8 @@
 # Short Video Blocker Billing And Backend Plan
 
-Status: Partial. App-side Google Play Billing is implemented locally; backend
-purchase verification is not implemented. This document defines the target
-production hardening architecture for a Play Store subscription product.
+Status: Partial. App-side Google Play Billing and a repository-local backend
+verification baseline are implemented. Backend deployment, RTDN configuration,
+and Play tester lifecycle evidence remain pending.
 
 Current production decision document:
 
@@ -48,9 +48,10 @@ App-side components:
 
 Backend components:
 
-- Purchase token verification with Google Play Developer API.
-- Entitlement state service.
-- Real-time Developer Notifications receiver.
+- Purchase token verification with Google Play Developer API. Implemented in
+  `billing-backend`.
+- Entitlement state service. Implemented in `billing-backend`.
+- Real-time Developer Notifications receiver. Implemented in `billing-backend`.
 - Subscription lifecycle processor.
 - Minimal billing database.
 
@@ -292,14 +293,14 @@ App-to-backend payloads must not include:
    - manage subscription: implemented locally;
    - license tester lifecycle QA: pending.
 3. Backend skeleton:
-   - health endpoint;
-   - purchase verification endpoint;
-   - entitlement endpoint;
-   - secure config.
+   - health endpoint: implemented;
+   - purchase verification endpoint: implemented;
+   - entitlement endpoint: implemented;
+   - secure config: implemented through runtime environment variables.
 4. RTDN:
    - Pub/Sub setup;
-   - notification validation;
-   - lifecycle processor.
+   - notification validation: implemented through runtime shared secret;
+   - lifecycle processor: implemented for verified purchase-token updates.
 5. QA:
    - license testers;
    - test purchase;
