@@ -27,6 +27,7 @@ import com.shortsblockerkids.feature.blocking.TemporaryAllowCompletion
 import com.shortsblockerkids.feature.blocking.TemporaryAllowFlowController
 import com.shortsblockerkids.feature.blocking.TemporaryAllowScreen
 import com.shortsblockerkids.feature.dashboard.DashboardScreen
+import com.shortsblockerkids.feature.debug.DetectorPlaygroundScreen
 import com.shortsblockerkids.feature.onboarding.AccessibilityDisclosureDecision
 import com.shortsblockerkids.feature.onboarding.AccessibilityDisclosureScreen
 import com.shortsblockerkids.feature.onboarding.AccessibilityPermissionFlow
@@ -366,6 +367,12 @@ private fun ShortsBlockerKidsApp(
                     onOpenPrivacyPolicy = {
                         screen = AppScreen.PrivacyPolicy
                     },
+                    onOpenDebugQa =
+                        if (BuildConfig.ACCESSIBILITY_DEBUG_TOOLS_ENABLED) {
+                            { screen = AppScreen.DetectorQa }
+                        } else {
+                            null
+                        },
                 )
 
             AppScreen.PrivacyPolicy ->
@@ -397,6 +404,16 @@ private fun ShortsBlockerKidsApp(
                             completion = completion,
                             onTemporaryAllowFlowClosed = onTemporaryAllowFlowClosed,
                         )
+                    },
+                )
+
+            AppScreen.DetectorQa ->
+                DetectorPlaygroundScreen(
+                    settings = settings,
+                    isAccessibilityServiceEnabled = isAccessibilityServiceEnabled,
+                    billingUiState = billingUiState,
+                    onBack = {
+                        screen = AppScreen.Dashboard
                     },
                 )
         }
@@ -452,4 +469,5 @@ private enum class AppScreen {
     Dashboard,
     PrivacyPolicy,
     TemporaryAllow,
+    DetectorQa,
 }

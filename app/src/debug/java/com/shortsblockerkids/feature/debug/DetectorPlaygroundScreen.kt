@@ -23,19 +23,33 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.shortsblockerkids.BuildConfig
 import com.shortsblockerkids.accessibility.AccessibilityNodeSignal
 import com.shortsblockerkids.accessibility.AccessibilityTreeSnapshot
 import com.shortsblockerkids.accessibility.DetectionResult
 import com.shortsblockerkids.accessibility.RuntimeProtectionState
 import com.shortsblockerkids.accessibility.YouTubeShortsDetector
+import com.shortsblockerkids.core.billing.BillingUiState
+import com.shortsblockerkids.core.entitlement.LocalEntitlementResolver
+import com.shortsblockerkids.core.storage.AppSettings
 
 @Composable
 fun DetectorPlaygroundScreen(
+    settings: AppSettings,
+    isAccessibilityServiceEnabled: Boolean,
+    billingUiState: BillingUiState,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val detector = remember { YouTubeShortsDetector() }
     val scenarios = remember { detectorPlaygroundScenarios() }
+    val nowMillis = System.currentTimeMillis()
+    val entitlementState =
+        LocalEntitlementResolver.resolve(
+            settings = settings,
+            isProtectionPermissionGranted = isAccessibilityServiceEnabled,
+            nowMillis = nowMillis,
+        )
     var selectedResult by remember {
         mutableStateOf(
             PlaygroundResult(
@@ -59,6 +73,21 @@ fun DetectorPlaygroundScreen(
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
         )
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                QaRow("Detected package", RuntimeProtectionState.lastDetectorResultText() ?: "disabled")
+                QaRow("Protection mode", settings.selectedMode.name)
+                QaRow("Blocking decision", RuntimeProtectionState.lastBlockingDecisionText() ?: "disabled")
+                QaRow("Entitlement", entitlementState.name)
+                QaRow("Subscription state", settings.billingEntitlementState.name)
+                QaRow("Backend", if (BuildConfig.BILLING_BACKEND_BASE_URL.isBlank()) "disabled" else "enabled")
+                QaRow("Billing UI", billingUiState.statusMessage)
+                QaRow("Protection permission", if (isAccessibilityServiceEnabled) "enabled" else "missing")
+            }
+        }
         scenarios.forEach { scenario ->
             Button(
                 onClick = {
@@ -100,6 +129,18 @@ fun DetectorPlaygroundScreen(
         ) {
             Text("Capture YouTube UI Snapshot")
         }
+        Button(
+            onClick = {
+                RuntimeProtectionState.requestDebugOverlay()
+                selectedResult =
+                    selectedResult.copy(
+                        overlayMessage = "overlay requested; open YouTube to consume next event",
+                    )
+            },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text("Request Test Overlay")
+        }
         Spacer(modifier = Modifier.height(8.dp))
         Row(modifier = Modifier.fillMaxWidth()) {
             OutlinedButton(
@@ -109,6 +150,25 @@ fun DetectorPlaygroundScreen(
                 Text("Back")
             }
         }
+    }
+}
+
+@Composable
+private fun QaRow(
+    label: String,
+    value: String,
+) {
+    Column {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.SemiBold,
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.secondary,
+        )
     }
 }
 

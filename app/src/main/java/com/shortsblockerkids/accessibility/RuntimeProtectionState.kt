@@ -16,6 +16,9 @@ object RuntimeProtectionState {
     @Volatile
     private var lastDebugSnapshot: DetectorDebugSnapshot? = null
 
+    @Volatile
+    private var lastBlockingDecision: BlockingDecision? = null
+
     fun recordDetectorResult(
         packageName: String,
         eventType: Int,
@@ -42,7 +45,22 @@ object RuntimeProtectionState {
     fun clearDetectorResult() {
         if (BuildConfig.ACCESSIBILITY_DEBUG_TOOLS_ENABLED) {
             lastDetectorResult = null
+            lastBlockingDecision = null
         }
+    }
+
+    fun recordBlockingDecision(decision: BlockingDecision) {
+        if (BuildConfig.ACCESSIBILITY_DEBUG_TOOLS_ENABLED) {
+            lastBlockingDecision = decision
+        }
+    }
+
+    fun lastBlockingDecisionText(): String? {
+        if (!BuildConfig.ACCESSIBILITY_DEBUG_TOOLS_ENABLED) {
+            return null
+        }
+
+        return lastBlockingDecision?.name ?: "none"
     }
 
     fun lastDetectorResultText(): String? {

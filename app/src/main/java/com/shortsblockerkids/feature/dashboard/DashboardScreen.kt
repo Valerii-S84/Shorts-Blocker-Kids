@@ -40,6 +40,7 @@ fun DashboardScreen(
     onManageSubscription: () -> Unit,
     onOpenAccessibilitySettings: () -> Unit,
     onOpenPrivacyPolicy: () -> Unit,
+    onOpenDebugQa: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     val nowMillis = System.currentTimeMillis()
@@ -167,6 +168,15 @@ fun DashboardScreen(
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text("Privacy Policy")
+        }
+        onOpenDebugQa?.let { openDebugQa ->
+            Spacer(modifier = Modifier.height(12.dp))
+            OutlinedButton(
+                onClick = openDebugQa,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Local QA")
+            }
         }
     }
 }

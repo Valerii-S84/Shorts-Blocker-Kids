@@ -125,6 +125,7 @@ class AccessibilityEventRouter(
     }
 
     private fun handleDecision(decision: BlockingDecision) {
+        RuntimeProtectionState.recordBlockingDecision(decision)
         when (decision) {
             BlockingDecision.ShowOverlay -> {
                 if (!blockOverlayController.showBlockedOverlay()) {
