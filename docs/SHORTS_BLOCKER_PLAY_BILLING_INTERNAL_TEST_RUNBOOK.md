@@ -2,7 +2,7 @@
 
 Status: Prepared. External Play Console execution is pending.
 
-Date: May 23, 2026
+Date: May 24, 2026
 
 ## Scope
 
@@ -110,6 +110,10 @@ into app logic.
 | BIL-10 | Expired | Let the test subscription expire or use Play test lifecycle controls. | After restore/refresh reports no active purchase, paid protection locks but parent settings access remains available. |
 | BIL-11 | Payment problem | Change the subscription payment method to a failing test instrument. | App shows payment/Billing problem messaging when Play reports a problem; protection does not remain unlocked after active entitlement is gone. |
 | BIL-12 | Non-license sanity | Repeat purchase visibility with a non-license tester internal-test account. | App does not rely on license-tester-only logic; real Play purchase UX is still coherent. |
+| BIL-13 | Backend health | Start the deployed backend and call `GET /health`. | Health endpoint returns `{"status":"ok"}` without logging secrets or child data. |
+| BIL-14 | Backend offline window | With an active backend-verified entitlement, make the backend unreachable and reopen the app within 72 hours. | App uses the conservative offline entitlement window and does not require non-billing data. |
+| BIL-15 | Backend offline expired | Simulate or wait until the conservative backend offline window expires. | Paid protection no longer relies on stale backend verification. |
+| BIL-16 | RTDN lifecycle | Trigger or wait for RTDN updates for cancel, grace/account hold where available, and expiry. | Backend processes each message once and app entitlement reflects Google Play state after refresh. |
 
 ## Evidence To Record
 
@@ -132,7 +136,7 @@ For every required scenario, record:
 
 ```text
 app/build/outputs/bundle/release/app-release.aab
-SHA-256: f17a1e678ae5623e5ef5083b51733a1def79df7b3e9e8ceccfc54fae3a304230
+SHA-256: 19fb8d23e0b7f03dbb21df28c957a8379abf887af0700264c1747532b98ea612
 ```
 
 If the AAB is rebuilt, update the hash here before testing.
@@ -143,7 +147,7 @@ Billing can move from `Partial` to `Done` only when:
 
 - Play Console product `shorts_blocker_kids_monthly` is active;
 - internal testing AAB is installable from Play;
-- BIL-01 through BIL-12 are recorded;
+- BIL-01 through BIL-16 are recorded;
 - backend verification is deployed and the app build uses
   `SBK_BILLING_BACKEND_BASE_URL`;
 - RTDN delivery is configured and verified against the deployed backend;

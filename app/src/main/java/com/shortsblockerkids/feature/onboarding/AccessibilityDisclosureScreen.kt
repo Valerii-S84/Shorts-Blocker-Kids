@@ -51,11 +51,12 @@ fun AccessibilityDisclosureScreen(
                     "When short videos are blocked, the parent PIN can temporarily allow " +
                     "access. Without the parent PIN, the blocking overlay stays active " +
                     "while a protected short-video surface is open.\n\n" +
-                    "The app does not collect or send child data, watch history, video data, " +
-                    "screen recordings, audio, messages, location, contacts, or browsing " +
-                    "history. There is no account system, analytics, or ads. Backend behavior " +
-                    "is limited to Google Play billing verification. Rules and PIN protection " +
-                    "stay locally on this phone.\n\n" +
+                    "The app does not collect or send child data, supported app activity, " +
+                    "watch history, video titles, URLs, account names, comments, messages, " +
+                    "screen recordings, audio, location, contacts, browsing history, or raw " +
+                    "Accessibility tree dumps. There is no account system, analytics, or ads. " +
+                    "Backend behavior is limited to Google Play billing verification. Rules " +
+                    "and PIN protection stay locally on this phone.\n\n" +
                     "Blocking works when Protection is ON and Android Accessibility " +
                     "Service is active. If that permission is turned off or the app is " +
                     "removed, blocking stops.",

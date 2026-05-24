@@ -61,9 +61,10 @@ fun PrivacyPolicyScreen(
         PrivacySection(
             title = "Data collection",
             body =
-                "The app does not collect or send child data, watch history, video data, " +
-                    "screen recordings, audio, messages, location, contacts, or browsing " +
-                    "history.",
+                "The app does not collect or send child data, supported app activity, " +
+                    "watch history, video titles, URLs, account names, comments, messages, " +
+                    "screen recordings, audio, location, contacts, browsing history, or raw " +
+                    "Accessibility tree dumps.",
         )
         PrivacySection(
             title = "Payments",
@@ -71,7 +72,8 @@ fun PrivacyPolicyScreen(
                 "Subscriptions are handled through Google Play Billing. Payment " +
                     "data is processed by Google Play under Google Play terms. " +
                     "This app stores local subscription entitlement status. Backend " +
-                    "verification, when enabled, uses only billing technical data.",
+                    "verification, when enabled, uses only billing technical data and " +
+                    "stores hashed purchase tokens.",
         )
         PrivacySection(
             title = "Limitations",

@@ -44,6 +44,8 @@ This package is for the current Shorts Blocker Kids build:
   <https://support.google.com/googleplay/android-developer/answer/9888076>
 - Google Play Data safety guidance:
   <https://support.google.com/googleplay/android-developer/answer/10787469>
+- Google Play User Data policy:
+  <https://support.google.com/googleplay/android-developer/answer/10144311>
 - Google Play Payments policy:
   <https://support.google.com/googleplay/android-developer/answer/9858738>
 - Android Play Billing subscriptions:
@@ -136,15 +138,19 @@ not obvious in the recording.
 
 ## Data Safety Draft
 
-Current answer direction for the app itself:
+Current answer direction for the app:
 
-- Data collection: No user data collected by the app.
-- Data sharing: No user data shared by the app.
+- Data collection: yes for billing technical data only when Google Play Billing
+  and backend verification are used. No child data or supported app activity is
+  collected.
+- Data sharing: no sale or sharing of user data by the app. Google Play Billing
+  processes payments under Google Play terms.
 - Location: not collected.
 - Personal info: not collected.
 - Financial info: payment data is processed by Google Play; this app does not
   collect payment card data, order IDs, billing addresses, or payment account
-  details.
+  details. Subscription entitlement state and purchase token verification are
+  used only for app functionality.
 - Health and fitness: not collected.
 - Messages: not collected.
 - Photos and videos: not collected.
@@ -152,16 +158,18 @@ Current answer direction for the app itself:
 - Files and docs: not collected.
 - Calendar: not collected.
 - Contacts: not collected.
-- App activity: no watch history, video titles, URLs, or browsing
-  history collected.
 - Web browsing: not collected.
-- App info and performance: no analytics or crash SDK is currently integrated.
-- Device or other IDs: a random app installation ID may be transmitted only for
-  billing entitlement verification. It is not a hardware ID, advertising ID,
-  account name, phone number, or child identifier.
+- App activity: no supported app activity, watch history, video titles, URLs,
+  comments, messages, or browsing history collected.
+- Device or other IDs: declare a random app installation ID if backend
+  verification is enabled. It is not a hardware ID, advertising ID, account
+  name, phone number, or child identifier.
+- Diagnostics: no analytics or crash SDK is currently integrated.
 - Account creation: no account system.
 - Data deletion: no account data exists on a server. Local settings and PIN
   metadata can be removed by clearing app data or uninstalling the app.
+  Billing entitlement records are retained only as needed for subscription
+  verification, fraud prevention, RTDN idempotency, and entitlement support.
 
 Revisit this section before release if crash reporting, analytics, support
 forms, or any non-billing app network flow is added.
@@ -182,7 +190,7 @@ Draft text:
 ```text
 # Privacy Policy
 
-Effective date: May 22, 2026
+Effective date: May 24, 2026
 
 Shorts Blocker Kids is a parental digital wellbeing app that helps parents
 block supported short-video surfaces on a child's Android phone.
@@ -204,9 +212,9 @@ The app stores protection settings and parent PIN hash metadata locally on the
 device. The parent PIN is not stored as plain text.
 
 Shorts Blocker Kids does not collect, transmit, sell, or share child data,
-watch history, video titles, URLs, account names, comments, messages, screen
-recordings, audio, location, contacts, browsing history, or raw
-Accessibility tree dumps.
+supported app activity, watch history, video titles, URLs, account names,
+comments, messages, screen recordings, audio, location, contacts, browsing
+history, or raw Accessibility tree dumps.
 
 The current app has no analytics, no ads, no account system, and no cloud sync.
 
@@ -214,7 +222,7 @@ Subscriptions are handled through Google Play Billing. Google Play may process
 payment and subscription data under Google Play terms. This app stores local
 subscription entitlement status and the last verification timestamp. If backend
 verification is enabled, the backend stores only billing technical entitlement
-records and a hashed purchase token.
+records, processed RTDN message IDs, and a hashed purchase token.
 
 Blocking works only when Protection is ON and Android Accessibility Service is
 active. If that permission is turned off or the app is removed, blocking stops.
@@ -262,7 +270,8 @@ Privacy:
 - no analytics;
 - no ads;
 - no watch history storage;
-- no video, audio, screen recording, messages, location, contacts, or browsing
+- no supported app activity, video titles, URLs, account names, comments,
+  messages, video, audio, screen recording, location, contacts, or browsing
   history collection.
 
 Important limitation:

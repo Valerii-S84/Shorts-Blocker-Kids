@@ -43,7 +43,9 @@ disclosure that says:
   blocked.
 - Parent PIN is used for temporary allow access.
 - The app does not collect or send child data, watch history, video data,
-  screen recordings, audio, messages, location, contacts, or browsing history.
+  video titles, URLs, account names, comments, screen recordings, audio,
+  messages, location, contacts, browsing history, or raw Accessibility tree
+  dumps.
 - There is no account system, analytics, or ads in the current app.
 - Backend behavior is limited to Google Play billing verification and RTDN.
 - Rules and PIN protection stay locally on the phone.
@@ -78,11 +80,12 @@ protected surface, and show the blocking overlay.
 Data access and handling:
 
 ```text
-The app does not collect, transmit, sell, or share child data, watch history,
-video data, screen recordings, audio, messages, location, contacts, or browsing
-history. The app has no account system, analytics, or ads. Backend behavior is
-limited to Google Play billing verification and RTDN. Settings and PIN hash
-metadata are stored locally on the device.
+The app does not collect, transmit, sell, or share child data, supported app
+activity, watch history, video titles, URLs, account names, comments, messages,
+screen recordings, audio, location, contacts, browsing history, or raw
+Accessibility tree dumps. The app has no account system, analytics, or ads.
+Backend behavior is limited to Google Play billing verification and RTDN.
+Settings and PIN hash metadata are stored locally on the device.
 ```
 
 Accessibility tool positioning:
@@ -127,7 +130,9 @@ The Privacy Policy should state:
 - The app uses AccessibilityService to detect supported short-video surfaces
   locally and show a blocking overlay.
 - The app does not collect or send child data, watch history, video data,
-  screen recordings, audio, messages, location, contacts, or browsing history.
+  video titles, URLs, account names, comments, screen recordings, audio,
+  messages, location, contacts, browsing history, or raw Accessibility tree
+  dumps.
 - The app does not use analytics or ads in the current release.
 - Google Play Billing may process payment and subscription data under Google
   Play terms; the app stores local subscription entitlement status and the last
@@ -136,14 +141,17 @@ The Privacy Policy should state:
 
 ## Data Safety Notes
 
-For the current local-only app:
+For the current app:
 
-- Data collection by this app: no collection for child data, supported app
-  activity, video data, screen recordings, audio, messages, location, contacts, or
-  browsing history.
-- Data sharing by this app: no sharing for child data, supported app activity,
-  video data, screen recordings, audio, messages, location, contacts, or
-  browsing history.
+- Data collection by this app: billing technical data only when Google Play
+  Billing and backend verification are used. No child data, supported app
+  activity, video titles, URLs, account names, comments, screen recordings,
+  audio, messages, location, contacts, browsing history, or raw Accessibility
+  tree dumps.
+- Data sharing by this app: no sale or sharing of child data, supported app
+  activity, video titles, URLs, account names, comments, screen recordings,
+  audio, messages, location, contacts, browsing history, or raw Accessibility
+  tree dumps.
 - Device storage: local settings and PIN hash metadata stay on the device.
 - Network: `INTERNET` is present for Google Play Billing and production billing
   backend verification only.

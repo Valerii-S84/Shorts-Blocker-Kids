@@ -3,7 +3,7 @@
 Status: Draft for hosting. Replace the TODO privacy contact and publisher name
 before submitting this URL to Google Play.
 
-Effective date: May 22, 2026
+Effective date: May 24, 2026
 
 ## Overview
 
@@ -47,8 +47,9 @@ or raw Accessibility tree dumps.
 ## Data Collection And Sharing
 
 Shorts Blocker Kids does not collect, transmit, sell, or share child data,
-supported app activity, video data, screen recordings, audio, messages,
-location, contacts, or browsing history.
+supported app activity, watch history, video titles, URLs, account names,
+comments, messages, screen recordings, audio, location, contacts, browsing
+history, or raw Accessibility tree dumps.
 
 The current app has:
 
@@ -61,8 +62,8 @@ Google Play Billing adds `android.permission.INTERNET` and
 `android.permission.ACCESS_NETWORK_STATE` through the Billing SDK. The app does
 not use analytics, ads, account, or cloud sync network flow.
 
-If backend subscription verification is enabled, the app may send only billing
-technical data to the backend:
+Google Play Billing and backend subscription verification may send only billing
+technical data needed to verify and maintain subscription access:
 
 - random app installation ID;
 - app package name and app version;
@@ -70,10 +71,11 @@ technical data to the backend:
 - Google Play purchase token;
 - entitlement verification timestamp and status.
 
-The billing backend must not receive child data, supported app activity,
-watch history, video titles, URLs, comments, account names, messages, screen
-recordings, audio, location, contacts, browsing history, or raw Accessibility
-tree dumps.
+The billing backend stores entitlement state, verification timestamps,
+processed RTDN message IDs, and a hashed purchase token. It must not receive
+child data, supported app activity, watch history, video titles, URLs,
+comments, account names, messages, screen recordings, audio, location,
+contacts, browsing history, or raw Accessibility tree dumps.
 
 ## Payments
 
@@ -82,9 +84,9 @@ payment and subscription data under Google Play terms.
 
 Shorts Blocker Kids stores local subscription entitlement status and the last
 verification timestamp. If backend verification is enabled, the backend stores
-minimal billing entitlement records and a hashed purchase token. The app and
-backend do not store payment card data, billing addresses, or payment account
-details.
+minimal billing entitlement records, processed RTDN message IDs, and a hashed
+purchase token. The app and backend do not store payment card data, billing
+addresses, or payment account details.
 
 ## Limitations
 

@@ -79,6 +79,7 @@ Expected not to block:
 - Open a normal YouTube video.
 - Open Home.
 - Open Search.
+- Open comments on a normal video.
 - Open Profile or account page.
 
 Evidence:
@@ -99,6 +100,8 @@ Expected not to block:
 - Open Profile.
 - Open Search.
 - Open Settings.
+- Open Inbox.
+- Open comments on a non-target screen where available.
 
 Unsupported:
 
@@ -122,6 +125,10 @@ Expected not to block:
 
 - Open Feed.
 - Open Profile.
+- Open Comments on a normal post where available.
+- Open Direct messages or inbox.
+- Open Search.
+- Open Settings.
 - Open Story.
 
 Evidence:
@@ -143,6 +150,10 @@ Expected not to block:
 - Open Feed.
 - Open Profile.
 - Open Groups.
+- Open Comments on a normal post or video where available.
+- Open Search.
+- Open Settings.
+- Open Messages where available.
 
 Unsupported:
 
@@ -169,6 +180,25 @@ Run these at least once per device:
 - Re-enable global Protection: supported short-video screens block again.
 - Disable AccessibilityService: no blocking occurs and dashboard reports
   inactive protection.
+
+## Billing And Backend Scenarios
+
+Run these on the Play internal testing build after the subscription product and
+backend URL are configured:
+
+- Product details load and show the Play price.
+- Purchase approved.
+- Purchase pending, then approved.
+- Purchase pending, then declined.
+- Purchase canceled.
+- Cancel active subscription and verify access remains active until Play reports
+  expiry.
+- Grace period / account hold where Play test controls allow it.
+- Restore purchase after reinstall or clear app data.
+- Backend online entitlement refresh.
+- Backend offline for up to 72 hours after last active verification.
+- Backend offline after the conservative window expires.
+- RTDN update processed without duplicate state changes.
 
 ## Pass Criteria
 

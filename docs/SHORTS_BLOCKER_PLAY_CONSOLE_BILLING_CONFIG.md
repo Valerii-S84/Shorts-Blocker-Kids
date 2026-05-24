@@ -2,7 +2,7 @@
 
 Status: Prepared. Must be entered and verified in Play Console.
 
-Date: May 23, 2026
+Date: May 24, 2026
 
 ## Scope
 
@@ -26,7 +26,7 @@ Package name: com.shortsblockerkids
 Version name: 0.1.0
 Version code: 1
 AAB: app/build/outputs/bundle/release/app-release.aab
-AAB SHA-256: f17a1e678ae5623e5ef5083b51733a1def79df7b3e9e8ceccfc54fae3a304230
+AAB SHA-256: 19fb8d23e0b7f03dbb21df28c957a8379abf887af0700264c1747532b98ea612
 ```
 
 If a new AAB is built, update this file and
@@ -112,7 +112,7 @@ Track: Internal testing
 Release artifact: app-release.aab
 Test source: Google Play install only
 Billing test runbook: docs/SHORTS_BLOCKER_PLAY_BILLING_INTERNAL_TEST_RUNBOOK.md
-Required scenarios: BIL-01 through BIL-12
+Required scenarios: BIL-01 through BIL-16
 ```
 
 Do not approve Billing for production release until the runbook evidence is recorded.
