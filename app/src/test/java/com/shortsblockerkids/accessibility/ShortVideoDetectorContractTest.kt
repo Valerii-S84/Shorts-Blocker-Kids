@@ -68,6 +68,21 @@ class ShortVideoDetectorContractTest {
     }
 
     @Test
+    fun eachPlatformDoesNotBlockFalsePositiveWorkflowScreens() {
+        platformCases.forEach { platformCase ->
+            platformCase.falsePositiveSurfaces.forEach { surface ->
+                val result =
+                    platformCase.detector.detect(
+                        packageName = platformCase.packageName,
+                        snapshot = falsePositiveWorkflowSnapshot(platformCase, surface),
+                    )
+
+                assertFalse("${platformCase.name} ${surface.signal}", result.shouldBlock)
+            }
+        }
+    }
+
+    @Test
     fun textOnlyShortVideoNamesDoNotBlock() {
         platformCases.forEach { platformCase ->
             val result =
@@ -271,6 +286,52 @@ class ShortVideoDetectorContractTest {
                 ),
         )
 
+    private fun falsePositiveWorkflowSnapshot(
+        platformCase: PlatformCase,
+        surface: FalsePositiveSurface,
+    ): AccessibilityTreeSnapshot {
+        val nodes =
+            mutableListOf(
+                rootNode(),
+                node(
+                    className = "androidx.recyclerview.widget.RecyclerView",
+                    viewIdResourceName = surface.viewIdResourceName,
+                    contentDescriptionSignals = setOf(surface.signal),
+                    isScrollable = true,
+                    left = 0,
+                    top = 120,
+                    right = SCREEN_WIDTH,
+                    bottom = SHORT_VIDEO_BOTTOM,
+                    width = SCREEN_WIDTH,
+                    height = SHORT_VIDEO_BOTTOM - 120,
+                    depth = 2,
+                ),
+            )
+        platformCase.primaryActionSignals.forEachIndexed { index, signal ->
+            nodes +=
+                node(
+                    contentDescriptionSignals = setOf(signal),
+                    left = ACTION_RAIL_LEFT,
+                    top = 730 + index * 350,
+                    right = ACTION_RAIL_RIGHT,
+                    bottom = 850 + index * 350,
+                    depth = 4,
+                )
+        }
+        platformCase.navigationSignals.forEachIndexed { index, signal ->
+            nodes +=
+                node(
+                    contentDescriptionSignals = setOf(signal),
+                    left = 40 + index * 260,
+                    top = 2_070,
+                    right = 160 + index * 260,
+                    bottom = 2_160,
+                    depth = 3,
+                )
+        }
+        return AccessibilityTreeSnapshot(nodes = nodes)
+    }
+
     private fun rootNode(): AccessibilityNodeSignal =
         node(
             isClickable = false,
@@ -327,6 +388,12 @@ class ShortVideoDetectorContractTest {
         val alternateActionSignals: List<String> = primaryActionSignals,
         val navigationSignals: List<String> = emptyList(),
         val localizedNavigationSignals: List<String> = navigationSignals,
+        val falsePositiveSurfaces: List<FalsePositiveSurface>,
+    )
+
+    private data class FalsePositiveSurface(
+        val signal: String,
+        val viewIdResourceName: String,
     )
 
     private companion object {
@@ -351,6 +418,12 @@ class ShortVideoDetectorContractTest {
                     explicitSignal = "shorts",
                     primaryActionSignals = listOf("like", "comments", "share"),
                     alternateActionSignals = listOf("like", "comment", "share"),
+                    falsePositiveSurfaces =
+                        listOf(
+                            FalsePositiveSurface("comments", "com.google.android.youtube:id/comments_panel"),
+                            FalsePositiveSurface("search", "com.google.android.youtube:id/search_results"),
+                            FalsePositiveSurface("settings", "com.google.android.youtube:id/settings_list"),
+                        ),
                 ),
                 PlatformCase(
                     name = "TikTok main",
@@ -364,6 +437,14 @@ class ShortVideoDetectorContractTest {
                     alternateActionSignals = listOf("save", "more", "follow"),
                     navigationSignals = listOf("home", "friends", "inbox", "profile"),
                     localizedNavigationSignals = listOf("inicio", "amigos", "bandeja", "perfil"),
+                    falsePositiveSurfaces =
+                        listOf(
+                            FalsePositiveSurface("comments", "com.zhiliaoapp.musically:id/comment_panel"),
+                            FalsePositiveSurface("search", "com.zhiliaoapp.musically:id/search_results"),
+                            FalsePositiveSurface("settings", "com.zhiliaoapp.musically:id/settings_list"),
+                            FalsePositiveSurface("inbox", "com.zhiliaoapp.musically:id/inbox_list"),
+                            FalsePositiveSurface("profile", "com.zhiliaoapp.musically:id/profile_grid"),
+                        ),
                 ),
                 PlatformCase(
                     name = "Instagram Reels",
@@ -374,6 +455,14 @@ class ShortVideoDetectorContractTest {
                     genericVideoViewId = "com.instagram.android:id/video_player",
                     explicitSignal = "reels",
                     alternateActionSignals = listOf("send", "save", "more"),
+                    falsePositiveSurfaces =
+                        listOf(
+                            FalsePositiveSurface("comments", "com.instagram.android:id/comments_view"),
+                            FalsePositiveSurface("search", "com.instagram.android:id/search_results"),
+                            FalsePositiveSurface("settings", "com.instagram.android:id/settings_list"),
+                            FalsePositiveSurface("direct", "com.instagram.android:id/direct_inbox_recycler"),
+                            FalsePositiveSurface("profile", "com.instagram.android:id/profile_grid"),
+                        ),
                 ),
                 PlatformCase(
                     name = "Facebook Reels",
@@ -384,6 +473,14 @@ class ShortVideoDetectorContractTest {
                     genericVideoViewId = "com.facebook.katana:id/video_player",
                     explicitSignal = "reels",
                     alternateActionSignals = listOf("like", "comments", "more"),
+                    falsePositiveSurfaces =
+                        listOf(
+                            FalsePositiveSurface("comments", "com.facebook.katana:id/comments_list"),
+                            FalsePositiveSurface("search", "com.facebook.katana:id/search_results"),
+                            FalsePositiveSurface("settings", "com.facebook.katana:id/settings_list"),
+                            FalsePositiveSurface("messages", "com.facebook.katana:id/messages_list"),
+                            FalsePositiveSurface("profile", "com.facebook.katana:id/profile_feed"),
+                        ),
                 ),
             )
     }
