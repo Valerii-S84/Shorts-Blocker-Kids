@@ -21,8 +21,10 @@ Reels, and Facebook Reels.
 - Prove each new platform detector before enabling it.
 - Prove shared overlay, parent PIN, and temporary allow across supported apps.
 - Prove Accessibility disclosure and consent cannot be bypassed.
-- Prove billing and backend entitlement states before production rollout.
+- Prove local billing entitlement states before production rollout.
 - Prove no child viewing history or unsupported data is collected.
+- Keep backend/cloud/analytics/ads out of scope unless a future product task
+  explicitly adds them.
 
 ## Unit Tests
 
@@ -37,6 +39,10 @@ Detector tests:
 - Facebook Reels positive fixtures.
 - Facebook feed/groups/profile/marketplace negative fixtures.
 - Regional and locale fixture variants where labels are used.
+- Misleading text where Shorts/Reels-like labels appear outside short-video
+  mode.
+- Empty Accessibility tree, null package, unsupported aliases, action rail,
+  vertical fullscreen, and repeated-feed branches.
 
 Shared blocking tests:
 
@@ -47,6 +53,9 @@ Shared blocking tests:
 - Protection disabled suppresses blocking.
 - Overlay cooldown prevents flicker loops.
 - Service restart starts from clean blocker state.
+- First block, duplicate event, overlay already visible, short-to-normal,
+  normal-to-short, unsupported package, global protection ON/OFF, and rapid
+  repeated events are covered by `BlockingDecisionControllerTest`.
 
 PIN and temporary allow tests:
 
@@ -63,8 +72,9 @@ Storage tests:
 
 - Settings defaults are safe.
 - Disclosure accepted flag is required before protection can become active.
-- Supported platform toggles persist locally.
+- Global protection state and selected protection mode persist locally.
 - Entitlement cache reads/writes only billing state.
+- Active, expired, and missing temporary allow states are covered.
 
 ## Integration Tests
 
@@ -106,7 +116,8 @@ It uses local fake target apps with debug-only fixture package aliases:
 
 The emulator suite verifies blocking behavior through the real
 AccessibilityService and Android instrumentation `UiAutomation`. The latest
-local run passed 11/11 emulator tests. It is still a controlled fixture
+local run on 2026-05-24 passed 12/12 emulator tests, including rapid switching
+between fake apps. It is still a controlled fixture
 environment and does not replace final real-device QA against the real YouTube,
 TikTok, Instagram, and Facebook apps.
 
@@ -131,6 +142,12 @@ Required scenarios:
   true disability-assistance tool.
 
 ## Manual Real-Device QA
+
+Execution checklist:
+
+```text
+docs/SHORTS_BLOCKER_REAL_DEVICE_QA_CHECKLIST.md
+```
 
 Device matrix:
 
@@ -322,51 +339,37 @@ Subscription lifecycle tests:
 
 ## Backend Verification Tests
 
-Endpoint tests:
-
-- Verify valid purchase token.
-- Reject invalid token.
-- Reject malformed request.
-- Return active entitlement.
-- Return expired entitlement.
-- Return unknown entitlement on Google API failure.
-- Do not log full purchase token.
-- Do not accept child activity payload fields.
-
-RTDN tests:
-
-- Validate message source.
-- Process renewal.
-- Process cancellation.
-- Process expiration.
-- Process revoke/refund.
-- Deduplicate repeated notification.
-- Recover by querying Google Play API.
-
-Privacy/security tests:
-
-- Backend database contains only billing technical data.
-- Backend rejects unsupported fields such as video title, URL, account name,
-  location, contact, message, or Accessibility tree dump.
-- Logs redact purchase tokens and credentials.
+Not applicable to the current product scope. This app currently has no backend,
+cloud sync, analytics, ads, account system, or server-side entitlement endpoint.
+If a future approved task adds backend/cloud behavior, this section must be
+replaced with concrete endpoint, RTDN, privacy, and logging tests before
+production claims are made.
 
 ## Release Gates
 
 Code gates:
 
-- `gradle clean :app:assembleRelease`
-- `:app:lintRelease`
-- `:app:ktlintCheck`
-- `:app:assembleDebug`
-- `:app:testDebugUnitTest`
-- `:app:lintDebug`
+- `ANDROID_HOME=/home/serputko/Android/Sdk gradle ktlintCheck`
+- `ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:testDebugUnitTest`
+- `ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:connectedDebugAndroidTest`
+- `ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:lintDebug`
+- `ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:lintRelease`
+- `ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:assembleDebug`
+- `ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:assembleRelease`
+- `ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:bundleRelease`
+- `ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:jacocoDebugUnitTestCoverageVerification`
+- JaCoCo branch coverage must be at least 90.00%; instruction and line coverage
+  gates must not be lower than the previous baseline.
+- `ANDROID_HOME=/home/serputko/Android/Sdk gradle localQualityGate` aggregates
+  the local gate when an emulator is available.
 
 Manual gates:
 
 - Full Accessibility disclosure video recorded.
 - Real-device QA completed for every supported app.
 - Billing test matrix completed.
-- Backend verification test matrix completed if backend is included.
+- Backend verification test matrix is not applicable unless a future approved
+  backend exists.
 - Privacy permissions audit completed for release merged manifest.
 - No unsupported permissions.
 - No raw Accessibility logs in release.
@@ -391,5 +394,6 @@ The full Short Video Blocker product is test-ready only when:
 - Shared overlay works across all supported apps.
 - Parent PIN and temporary allow work across all supported apps.
 - Billing entitlement is verified.
-- Backend, if included, passes privacy and entitlement tests.
+- Backend/cloud/analytics/ads remain absent, or a future approved backend passes
+  privacy and entitlement tests before any backend claims.
 - Play Store readiness checklist is complete.

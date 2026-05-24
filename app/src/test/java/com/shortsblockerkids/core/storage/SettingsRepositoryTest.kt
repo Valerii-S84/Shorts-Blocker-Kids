@@ -2,6 +2,7 @@ package com.shortsblockerkids.core.storage
 
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import com.shortsblockerkids.core.entitlement.FreeTestPolicy
+import com.shortsblockerkids.core.model.ProtectionMode
 import com.shortsblockerkids.core.security.PinVerificationResult
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -99,6 +100,16 @@ class SettingsRepositoryTest {
         }
 
     @Test
+    fun persistsSelectedProtectionMode() =
+        runBlocking {
+            val repository = createRepository("selected-mode")
+
+            repository.setSelectedMode(ProtectionMode.BLOCK_SHORTS)
+
+            assertEquals(ProtectionMode.BLOCK_SHORTS, repository.readSettings().first().selectedMode)
+        }
+
+    @Test
     fun persistsBillingEntitlementSnapshot() =
         runBlocking {
             val repository = createRepository("billing")
@@ -159,6 +170,31 @@ class SettingsRepositoryTest {
         }
 
     @Test
+    fun clearExpiredTemporaryAllowLeavesMissingOrActiveAllowUntouched() =
+        runBlocking {
+            val repository = createRepository("clear-allow-no-op")
+
+            repository.clearExpiredTemporaryAllow(nowMillis = 2_500L)
+            assertEquals(null, repository.readSettings().first().temporaryAllowUntil)
+
+            repository.setTemporaryAllowUntil(3_000L)
+            repository.clearExpiredTemporaryAllow(nowMillis = 2_500L)
+
+            assertEquals(3_000L, repository.readSettings().first().temporaryAllowUntil)
+        }
+
+    @Test
+    fun clearingTemporaryAllowRemovesStoredExpiry() =
+        runBlocking {
+            val repository = createRepository("clear-allow")
+
+            repository.setTemporaryAllowUntil(3_000L)
+            repository.setTemporaryAllowUntil(null)
+
+            assertEquals(null, repository.readSettings().first().temporaryAllowUntil)
+        }
+
+    @Test
     fun escalatesPinLockoutAcrossFailedAttempts() =
         runBlocking {
             val repository = createRepository("lockout")
@@ -176,6 +212,32 @@ class SettingsRepositoryTest {
             val sixth = repository.verifyPin("1111", nowMillis = 32_001L)
             assertEquals(PinVerificationResult.Locked(untilMillis = 92_001L), sixth)
             assertEquals(6, repository.readSettings().first().failedPinAttempts)
+        }
+
+    @Test
+    fun verifyPinWithoutSavedPinReportsNotConfigured() =
+        runBlocking {
+            val repository = createRepository("pin-not-configured")
+
+            assertEquals(PinVerificationResult.NotConfigured, repository.verifyPin("4826"))
+        }
+
+    @Test
+    fun activePinLockoutRejectsEvenCorrectPinWithoutIncreasingAttempts() =
+        runBlocking {
+            val repository = createRepository("active-lockout")
+            repository.savePin("4826")
+
+            repeat(5) { attempt ->
+                repository.verifyPin("1111", nowMillis = 1_000L + attempt)
+            }
+            val lockedBeforeRetry = repository.readSettings().first()
+
+            assertEquals(
+                PinVerificationResult.Locked(untilMillis = 31_004L),
+                repository.verifyPin("4826", nowMillis = 2_000L),
+            )
+            assertEquals(lockedBeforeRetry.failedPinAttempts, repository.readSettings().first().failedPinAttempts)
         }
 
     @Test

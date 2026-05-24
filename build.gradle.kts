@@ -56,6 +56,22 @@ val installFakeSocialApps by tasks.registering {
     }
 }
 
+tasks.register("localQualityGate") {
+    group = "verification"
+    description = "Runs the full local QA gate before real-device verification."
+    dependsOn(
+        ":app:ktlintCheck",
+        ":app:testDebugUnitTest",
+        ":app:connectedDebugAndroidTest",
+        ":app:lintDebug",
+        ":app:lintRelease",
+        ":app:assembleDebug",
+        ":app:assembleRelease",
+        ":app:bundleRelease",
+        ":app:jacocoDebugUnitTestCoverageVerification",
+    )
+}
+
 subprojects {
     if (path == ":app") {
         tasks.matching { it.name == "connectedDebugAndroidTest" }.configureEach {

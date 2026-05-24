@@ -40,6 +40,15 @@ class AppSettingsTest {
     }
 
     @Test
+    fun pinIsCreatedOnlyWhenHashAndSaltAreBothPresent() {
+        assertTrue(AppSettings(pinHash = "hash", pinSalt = "salt").isPinCreated)
+        assertFalse(AppSettings(pinHash = "", pinSalt = "salt").isPinCreated)
+        assertFalse(AppSettings(pinHash = "hash", pinSalt = " ").isPinCreated)
+        assertFalse(AppSettings(pinHash = null, pinSalt = "salt").isPinCreated)
+        assertFalse(AppSettings(pinHash = "hash", pinSalt = null).isPinCreated)
+    }
+
+    @Test
     fun freeTestIsActiveOnDayOne() {
         val settings =
             activeSettings(
@@ -127,6 +136,25 @@ class AppSettingsTest {
 
         assertFalse(settings.canProtect(nowMillis = 1_500L))
         assertTrue(settings.canProtect(nowMillis = 2_500L))
+    }
+
+    @Test
+    fun temporaryAllowReportsActiveExpiredAndMissingStates() {
+        val noAllow = AppSettings(temporaryAllowUntil = null)
+        val activeAllow = AppSettings(temporaryAllowUntil = 2_000L)
+        val expiredAllow = AppSettings(temporaryAllowUntil = 1_000L)
+
+        assertEquals(null, noAllow.activeTemporaryAllowUntil(nowMillis = 1_500L))
+        assertFalse(noAllow.isTemporarilyAllowed(nowMillis = 1_500L))
+        assertFalse(noAllow.hasExpiredTemporaryAllow(nowMillis = 1_500L))
+
+        assertEquals(2_000L, activeAllow.activeTemporaryAllowUntil(nowMillis = 1_500L))
+        assertTrue(activeAllow.isTemporarilyAllowed(nowMillis = 1_500L))
+        assertFalse(activeAllow.hasExpiredTemporaryAllow(nowMillis = 1_500L))
+
+        assertEquals(null, expiredAllow.activeTemporaryAllowUntil(nowMillis = 1_500L))
+        assertFalse(expiredAllow.isTemporarilyAllowed(nowMillis = 1_500L))
+        assertTrue(expiredAllow.hasExpiredTemporaryAllow(nowMillis = 1_500L))
     }
 
     private fun activeSettings(freeTestStartedAt: Long): AppSettings =

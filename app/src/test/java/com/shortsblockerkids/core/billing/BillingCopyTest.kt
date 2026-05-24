@@ -81,4 +81,21 @@ class BillingCopyTest {
 
         assertEquals("Billing unavailable.", label)
     }
+
+    @Test
+    fun billingUiStatePriceLabelUsesLoadedPriceOrFallback() {
+        assertEquals("Monthly subscription", BillingUiState().priceLabel)
+        assertEquals(
+            "EUR 2.20",
+            BillingUiState(productPrice = "EUR 2.20").priceLabel,
+        )
+    }
+
+    @Test
+    fun billingEntitlementSnapshotStoresPlayBillingState() {
+        val snapshot = BillingEntitlementSnapshot(isActive = true, checkedAtMillis = 4_000L)
+
+        assertEquals(true, snapshot.isActive)
+        assertEquals(4_000L, snapshot.checkedAtMillis)
+    }
 }

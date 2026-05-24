@@ -1,7 +1,8 @@
 # Shorts Blocker Kids - Emulator E2E QA
 
-Status: Automated emulator QA environment added and passed locally on
-2026-05-23 against `ShortsBlocker_Pixel_API35`.
+Status: Automated emulator QA environment is active for local fake-app
+regression testing. It is the app-controlled QA layer before real-device
+verification with the actual social apps.
 
 ## Scope
 
@@ -81,32 +82,48 @@ Covered by the Android instrumentation `UiAutomation` suite:
 - Global Protection OFF suppresses blocking.
 - Global Protection ON resumes blocking.
 - Unsupported package with a Reels-like UI does not block.
+- Rapid switching across fake YouTube, TikTok, Instagram, Facebook, and an
+  unsupported lookalike blocks only after a confirmed short-video screen.
 - YouTube still blocks after TikTok, Instagram, and Facebook detector events.
 
 ## Unit Test Coverage
 
-Existing JVM unit tests cover:
+Automatically proven by JVM unit tests:
 
 - detector confidence for YouTube Shorts, TikTok For You, Instagram Reels, and
   Facebook Reels fixtures;
-- non-short screens and unsupported packages;
+- non-short screens, profile/search/settings/feed/groups/story screens,
+  misleading short-video text, empty trees, locale-like labels, null packages,
+  and unsupported aliases;
+- detector match/no-match structural branches including action rail, vertical
+  fullscreen, repeated feed, and platform-specific high-confidence formulas;
 - blocking decision cooldown/debounce behavior;
 - temporary allow and expired temporary allow decision behavior;
 - PIN validation, hashing, verification, rate limiting, and lockout;
 - settings defaults and persistence;
+- global protection ON/OFF state, active/expired/missing temporary allow,
+  wrong/correct PIN, and not-configured/locked PIN verification;
+- billing copy/state fallbacks and free-test policy edge cases;
 - disclosure and release-copy invariants.
 
-Latest local result on 2026-05-23:
+Coverage analysis from the previous report showed branch coverage was held down
+mostly by compound detector branches, storage temporary allow/PIN branches, and
+small null/default fallback branches. The largest missed-branch sources were
+`YouTubeShortsDetector`, `InstagramReelsDetector`, `FacebookReelsDetector`,
+`TikTokShortVideoDetector`, `SettingsRepository`, and `AppSettings`.
 
-- Unit tests: 141 passed, 0 failed, 0 skipped.
-- Jacoco unit coverage: 94.05% instruction, 95.39% line, 80.83% branch.
+Latest local result on 2026-05-24:
+
+- Unit tests: 164 passed, 0 failed, 0 skipped.
+- Jacoco unit coverage: 95.77% instruction, 97.06% line, 91.00% branch.
+- Branch coverage gate: `BRANCH` covered ratio must be at least `0.90`.
 
 ## Latest Emulator Result
 
-Latest local result on 2026-05-23:
+Latest local result on 2026-05-24:
 
 - Emulator: `ShortsBlocker_Pixel_API35(AVD) - 15`.
-- Emulator E2E tests: 11 passed, 0 failed, 0 skipped.
+- Emulator E2E tests: 12 passed, 0 failed, 0 skipped.
 - Fake apps were installed automatically through `installFakeSocialApps`.
 - The AccessibilityService was enabled through secure settings for the test run
   and disabled during teardown.
@@ -120,6 +137,8 @@ Latest local result on 2026-05-23:
   not proven by fake apps.
 - Release package filtering for the real social package names remains covered
   by unit tests and still requires real-device QA with the real apps.
+- Fake apps passing does not prove real YouTube, TikTok, Instagram, or Facebook
+  Accessibility trees.
 - OEM AccessibilityService timing, overlay behavior, background restrictions,
   and launcher behavior are not fully represented by a single emulator.
 - Google Play Accessibility review behavior and real-device policy evidence are
@@ -155,9 +174,19 @@ ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:assembleDebug
 ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:assembleRelease
 ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:bundleRelease
 ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:jacocoDebugUnitTestReport
+ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:jacocoDebugUnitTestCoverageVerification
 ```
 
-Latest full local verification on 2026-05-23 passed:
+The aggregate local gate is also available:
+
+```bash
+ANDROID_HOME=/home/serputko/Android/Sdk gradle localQualityGate
+```
+
+It depends on ktlint, unit tests, emulator E2E, debug/release lint,
+debug/release builds, release bundle, and JaCoCo coverage verification.
+
+Latest full local verification on 2026-05-24 passed:
 
 - `ktlintCheck`
 - `:app:testDebugUnitTest`
@@ -168,3 +197,4 @@ Latest full local verification on 2026-05-23 passed:
 - `:app:assembleRelease`
 - `:app:bundleRelease`
 - `:app:jacocoDebugUnitTestReport`
+- `:app:jacocoDebugUnitTestCoverageVerification`

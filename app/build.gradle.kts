@@ -189,9 +189,19 @@ tasks.register<JacocoCoverageVerification>("jacocoDebugUnitTestCoverageVerificat
     violationRules {
         rule {
             limit {
+                counter = "INSTRUCTION"
+                value = "COVEREDRATIO"
+                minimum = "0.9405".toBigDecimal()
+            }
+            limit {
                 counter = "LINE"
                 value = "COVEREDRATIO"
-                minimum = "0.92".toBigDecimal()
+                minimum = "0.9539".toBigDecimal()
+            }
+            limit {
+                counter = "BRANCH"
+                value = "COVEREDRATIO"
+                minimum = "0.90".toBigDecimal()
             }
         }
     }

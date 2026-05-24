@@ -220,6 +220,26 @@ class ShortVideoBlockerEmulatorE2eTest {
     }
 
     @Test
+    fun rapidSwitchingBetweenFakeAppsBlocksOnlyConfirmedShortVideoScreen() {
+        listOf(
+            FixturePlatform.YOUTUBE to "home",
+            FixturePlatform.TIKTOK to "profile",
+            FixturePlatform.INSTAGRAM to "feed",
+            FixturePlatform.FACEBOOK to "groups",
+            FixturePlatform.UNSUPPORTED to "reels",
+        ).forEach { (platform, screen) ->
+            launchFixture(platform, screen)
+            assertNoOverlay()
+            assertEquals(platform.packageName, currentPackageName())
+        }
+
+        launchFixture(FixturePlatform.YOUTUBE, "shorts")
+
+        assertOverlayVisible()
+        assertEquals(1, overlayTitleCount())
+    }
+
+    @Test
     fun youtubeStillBlocksAfterTikTokInstagramAndFacebookEvents() {
         launchAndExpectOverlay(FixturePlatform.TIKTOK, "for_you")
         dismissOverlayByDisablingProtection()
