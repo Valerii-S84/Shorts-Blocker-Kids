@@ -35,6 +35,7 @@ keystore.properties
 # Secrets and environment files
 .env
 .env.*
+!.env.example
 *.env
 *secret*
 *credentials*

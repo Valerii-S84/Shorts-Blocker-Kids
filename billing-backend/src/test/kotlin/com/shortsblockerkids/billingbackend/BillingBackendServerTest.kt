@@ -122,6 +122,25 @@ class BillingBackendServerTest {
         assertTrue(response.contains("\"is_active\":false"))
     }
 
+    @Test
+    fun healthDoesNotRequireGoogleCredentialsAtStartup() {
+        val config =
+            BackendConfig(
+                port = 0,
+                packageName = "com.shortsblockerkids",
+                productId = "shorts_blocker_kids_monthly",
+                storeFile = temporaryFolder.newFile("health.json").toPath(),
+                rtdnSharedSecret = null,
+            )
+        val backend = BillingBackendServer.create(config = config)
+        backend.start()
+        startedServers.add(backend)
+
+        val response = get("http://127.0.0.1:${backend.port}/health")
+
+        assertTrue(response.contains("\"status\":\"ok\""))
+    }
+
     private fun startBackend(): BillingBackendServer {
         val config =
             BackendConfig(

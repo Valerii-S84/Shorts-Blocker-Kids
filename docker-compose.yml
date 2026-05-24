@@ -1,0 +1,29 @@
+name: shorts-blocker-kids
+
+services:
+  billing-backend:
+    build:
+      context: .
+      dockerfile: billing-backend/Dockerfile
+    ports:
+      - "${SBK_BACKEND_PORT:-8080}:8080"
+    environment:
+      SBK_BACKEND_PORT: "8080"
+      SBK_PACKAGE_NAME: "${SBK_PACKAGE_NAME:-com.shortsblockerkids}"
+      SBK_PLAY_SUBSCRIPTION_PRODUCT_ID: "${SBK_PLAY_SUBSCRIPTION_PRODUCT_ID:-shorts_blocker_kids_monthly}"
+      SBK_BACKEND_STORE_FILE: "${SBK_BACKEND_STORE_FILE:-/data/entitlements/billing-backend-data.json}"
+      SBK_RTDN_SHARED_SECRET: "${SBK_RTDN_SHARED_SECRET:-}"
+      GOOGLE_APPLICATION_CREDENTIALS: "${GOOGLE_APPLICATION_CREDENTIALS:-/run/secrets/google-service-account.json}"
+    volumes:
+      - billing-backend-data:/data
+      # Mount locally only when testing real Google Play verification:
+      # - ${SBK_GOOGLE_APPLICATION_CREDENTIALS_HOST}:/run/secrets/google-service-account.json:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/health >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  billing-backend-data:

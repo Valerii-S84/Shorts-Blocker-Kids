@@ -7,9 +7,11 @@ import java.net.InetSocketAddress
 class BillingBackendServer(
     private val config: BackendConfig,
     private val store: EntitlementStore,
-    private val verifier: PlaySubscriptionVerifier,
+    verifierProvider: () -> PlaySubscriptionVerifier,
     private val server: HttpServer,
 ) {
+    private val verifier: PlaySubscriptionVerifier by lazy(verifierProvider)
+
     fun start() {
         server.start()
     }
@@ -145,10 +147,16 @@ class BillingBackendServer(
         fun create(
             config: BackendConfig,
             store: EntitlementStore = EntitlementStore(config.storeFile),
-            verifier: PlaySubscriptionVerifier = GooglePlayDeveloperApiClient(),
+            verifier: PlaySubscriptionVerifier? = null,
         ): BillingBackendServer {
             val server = HttpServer.create(InetSocketAddress(config.port), 0)
-            val backend = BillingBackendServer(config, store, verifier, server)
+            val backend =
+                BillingBackendServer(
+                    config = config,
+                    store = store,
+                    verifierProvider = { verifier ?: GooglePlayDeveloperApiClient() },
+                    server = server,
+                )
             server.createContext("/health") { backend.handle(it, backend::health) }
             server.createContext("/billing/play/verify") { backend.handle(it, backend::verify) }
             server.createContext("/billing/play/rtdn") { backend.handle(it, backend::rtdn) }
