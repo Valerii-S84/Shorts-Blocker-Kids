@@ -190,6 +190,54 @@ class BlockingDecisionControllerTest {
     }
 
     @Test
+    fun ambiguousSupportedAppEventsDoNotCancelPinEntryGrace() {
+        val controller =
+            BlockingDecisionController(
+                blockCooldownMs = 0L,
+                detectionDebounceMs = 0L,
+                pinEntryLaunchGraceMs = 5_000L,
+            )
+
+        assertEquals(BlockingDecision.ShowOverlay, controller.evaluateHigh(nowMillis = 1_000L))
+        controller.onPinEntryRequested(nowMillis = 1_100L)
+        controller.onOverlayDismissed()
+
+        assertEquals(
+            BlockingDecision.Ignore,
+            controller.evaluate(
+                isInSupportedApp = true,
+                isProtectionActive = true,
+                result = DetectionResult.None,
+                nowMillis = 1_300L,
+            ),
+        )
+        assertEquals(BlockingDecision.Ignore, controller.evaluateHigh(nowMillis = 2_000L))
+        assertEquals(BlockingDecision.ShowOverlay, controller.evaluateHigh(nowMillis = 6_200L))
+    }
+
+    @Test
+    fun lowAndMediumConfidenceNeverShowOverlay() {
+        val controller =
+            BlockingDecisionController(
+                blockCooldownMs = 0L,
+                detectionDebounceMs = 0L,
+            )
+
+        listOf(Confidence.LOW, Confidence.MEDIUM).forEach { confidence ->
+            assertEquals(
+                confidence.name,
+                BlockingDecision.Ignore,
+                controller.evaluate(
+                    isInSupportedApp = true,
+                    isProtectionActive = true,
+                    result = DetectionResult(isShorts = true, confidence = confidence, reasons = listOf("test")),
+                    nowMillis = 1_000L,
+                ),
+            )
+        }
+    }
+
+    @Test
     fun pinEntryLaunchGraceDoesNotPermanentlyDisableBlocking() {
         val controller =
             BlockingDecisionController(

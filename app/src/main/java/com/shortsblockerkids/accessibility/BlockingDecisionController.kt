@@ -24,9 +24,12 @@ class BlockingDecisionController(
         }
 
         if (!result.shouldBlock) {
+            val keepPinEntryGrace = isPinEntryLaunchGraceActive(nowMillis)
             lastHighDetectionAtMillis = null
-            lastBlockAtMillis = null
-            pinEntryRequestedAtMillis = null
+            if (!keepPinEntryGrace) {
+                lastBlockAtMillis = null
+                pinEntryRequestedAtMillis = null
+            }
             if (overlayVisible) {
                 overlayVisible = false
                 return BlockingDecision.DismissOverlay
