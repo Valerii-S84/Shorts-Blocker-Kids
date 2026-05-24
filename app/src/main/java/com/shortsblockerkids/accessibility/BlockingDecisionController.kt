@@ -24,6 +24,13 @@ class BlockingDecisionController(
         }
 
         if (!result.shouldBlock) {
+            lastHighDetectionAtMillis = null
+            lastBlockAtMillis = null
+            pinEntryRequestedAtMillis = null
+            if (overlayVisible) {
+                overlayVisible = false
+                return BlockingDecision.DismissOverlay
+            }
             return BlockingDecision.Ignore
         }
 

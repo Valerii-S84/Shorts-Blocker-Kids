@@ -3,3 +3,63 @@ plugins {
     alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.ktlint) apply false
 }
+
+val fakeSocialAppVariants =
+    mapOf(
+        "youtube" to
+            "test-fixtures/fake-social-apps/build/outputs/apk/youtube/debug/" +
+                "fake-social-apps-youtube-debug.apk",
+        "tiktok" to
+            "test-fixtures/fake-social-apps/build/outputs/apk/tiktok/debug/" +
+                "fake-social-apps-tiktok-debug.apk",
+        "instagram" to
+            "test-fixtures/fake-social-apps/build/outputs/apk/instagram/debug/" +
+                "fake-social-apps-instagram-debug.apk",
+        "facebook" to
+            "test-fixtures/fake-social-apps/build/outputs/apk/facebook/debug/" +
+                "fake-social-apps-facebook-debug.apk",
+        "unsupported" to
+            "test-fixtures/fake-social-apps/build/outputs/apk/unsupported/debug/" +
+                "fake-social-apps-unsupported-debug.apk",
+    )
+
+val assembleFakeSocialApps by tasks.registering {
+    group = "verification"
+    description = "Builds fake emulator target apps for short-video E2E tests."
+    dependsOn(
+        fakeSocialAppVariants.keys.map { flavor ->
+            ":test-fixtures:fake-social-apps:assemble${flavor.replaceFirstChar(Char::titlecase)}Debug"
+        },
+    )
+}
+
+val installFakeSocialApps by tasks.registering {
+    group = "verification"
+    description = "Installs fake emulator target apps for short-video E2E tests."
+    dependsOn(assembleFakeSocialApps)
+
+    doLast {
+        val androidHome =
+            providers.environmentVariable("ANDROID_HOME")
+                .orElse("/home/serputko/Android/Sdk")
+                .get()
+        val adb = file("$androidHome/platform-tools/adb")
+        require(adb.isFile) { "adb not found at ${adb.absolutePath}" }
+
+        fakeSocialAppVariants.values.forEach { relativeApkPath ->
+            val apk = file(relativeApkPath)
+            require(apk.isFile) { "Missing fake app APK: ${apk.absolutePath}" }
+            providers.exec {
+                commandLine(adb.absolutePath, "install", "-r", apk.absolutePath)
+            }.result.get().assertNormalExitValue()
+        }
+    }
+}
+
+subprojects {
+    if (path == ":app") {
+        tasks.matching { it.name == "connectedDebugAndroidTest" }.configureEach {
+            dependsOn(installFakeSocialApps)
+        }
+    }
+}

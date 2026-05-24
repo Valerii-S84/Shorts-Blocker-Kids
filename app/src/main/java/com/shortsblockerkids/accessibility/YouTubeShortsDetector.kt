@@ -4,7 +4,8 @@ import java.util.Locale
 
 class YouTubeShortsDetector : ShortVideoDetector {
     override val platform: SupportedPlatform = SupportedPlatform.YOUTUBE_SHORTS
-    override val supportedPackages: Set<String> = setOf(YOUTUBE_PACKAGE)
+    override val supportedPackages: Set<String> =
+        setOf(YOUTUBE_PACKAGE) + DebugFixturePackages.enabled(DebugFixturePackages.YOUTUBE)
 
     override fun detect(
         packageName: String?,

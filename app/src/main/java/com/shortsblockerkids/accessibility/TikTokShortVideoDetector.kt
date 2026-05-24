@@ -4,7 +4,8 @@ import java.util.Locale
 
 class TikTokShortVideoDetector : ShortVideoDetector {
     override val platform: SupportedPlatform = SupportedPlatform.TIKTOK
-    override val supportedPackages: Set<String> = setOf(TIKTOK_PACKAGE)
+    override val supportedPackages: Set<String> =
+        setOf(TIKTOK_PACKAGE) + DebugFixturePackages.enabled(DebugFixturePackages.TIKTOK)
 
     override fun detect(
         packageName: String?,

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="fake_root" type="id" />
+    <item name="fake_top_bar" type="id" />
+    <item name="fake_screen_title" type="id" />
+    <item name="fake_bottom_nav" type="id" />
+    <item name="youtube_home_feed" type="id" />
+    <item name="youtube_search_results" type="id" />
+    <item name="watch_video_player" type="id" />
+    <item name="shorts_player" type="id" />
+    <item name="for_you_feed" type="id" />
+    <item name="aweme_video_player" type="id" />
+    <item name="tiktok_profile" type="id" />
+    <item name="tiktok_search_results" type="id" />
+    <item name="tiktok_settings" type="id" />
+    <item name="instagram_feed" type="id" />
+    <item name="instagram_profile" type="id" />
+    <item name="clips_viewer" type="id" />
+    <item name="story_viewer" type="id" />
+    <item name="facebook_feed" type="id" />
+    <item name="facebook_profile" type="id" />
+    <item name="groups_page" type="id" />
+    <item name="reels_viewer" type="id" />
+    <item name="video_player" type="id" />
+</resources>

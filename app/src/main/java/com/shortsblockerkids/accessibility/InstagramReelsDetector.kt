@@ -4,7 +4,8 @@ import java.util.Locale
 
 class InstagramReelsDetector : ShortVideoDetector {
     override val platform: SupportedPlatform = SupportedPlatform.INSTAGRAM_REELS
-    override val supportedPackages: Set<String> = setOf(INSTAGRAM_PACKAGE)
+    override val supportedPackages: Set<String> =
+        setOf(INSTAGRAM_PACKAGE) + DebugFixturePackages.enabled(DebugFixturePackages.INSTAGRAM)
 
     override fun detect(
         packageName: String?,

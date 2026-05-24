@@ -45,6 +45,23 @@ class BlockingDecisionControllerTest {
     }
 
     @Test
+    fun normalSupportedScreenDismissesVisibleOverlayAndAllowsImmediateReblock() {
+        val controller = BlockingDecisionController()
+
+        assertEquals(BlockingDecision.ShowOverlay, controller.evaluateHigh(nowMillis = 1_000L))
+        assertEquals(
+            BlockingDecision.DismissOverlay,
+            controller.evaluate(
+                isInSupportedApp = true,
+                isProtectionActive = true,
+                result = DetectionResult.None,
+                nowMillis = 1_100L,
+            ),
+        )
+        assertEquals(BlockingDecision.ShowOverlay, controller.evaluateHigh(nowMillis = 1_150L))
+    }
+
+    @Test
     fun shortsDetectedLaunchesBlockerOnceWhileVisible() {
         val controller = BlockingDecisionController(detectionDebounceMs = 0L)
 

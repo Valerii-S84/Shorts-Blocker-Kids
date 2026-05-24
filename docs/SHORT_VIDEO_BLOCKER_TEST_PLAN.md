@@ -92,6 +92,27 @@ Entitlement integration:
 - Offline grace follows finalized rules.
 - Restore purchase refreshes entitlement.
 
+## Emulator E2E QA
+
+Automated emulator E2E coverage is defined in
+`docs/SHORTS_BLOCKER_EMULATOR_E2E_QA.md`.
+
+It uses local fake target apps with debug-only fixture package aliases:
+
+- `com.shortsblockerkids.fixture.youtube`
+- `com.shortsblockerkids.fixture.tiktok`
+- `com.shortsblockerkids.fixture.instagram`
+- `com.shortsblockerkids.fixture.facebook`
+
+The emulator suite verifies blocking behavior through the real
+AccessibilityService and Android instrumentation `UiAutomation`. The latest
+local run passed 11/11 emulator tests. It is still a controlled fixture
+environment and does not replace final real-device QA against the real YouTube,
+TikTok, Instagram, and Facebook apps.
+
+Per-platform enable/disable is not currently an automated E2E scenario because
+the shipped product has a global protection toggle, not per-platform settings.
+
 ## Accessibility Flow Tests
 
 Required scenarios:

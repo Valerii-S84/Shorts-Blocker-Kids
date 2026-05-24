@@ -4,7 +4,8 @@ import java.util.Locale
 
 class FacebookReelsDetector : ShortVideoDetector {
     override val platform: SupportedPlatform = SupportedPlatform.FACEBOOK_REELS
-    override val supportedPackages: Set<String> = setOf(FACEBOOK_PACKAGE)
+    override val supportedPackages: Set<String> =
+        setOf(FACEBOOK_PACKAGE) + DebugFixturePackages.enabled(DebugFixturePackages.FACEBOOK)
 
     override fun detect(
         packageName: String?,
