@@ -1,12 +1,13 @@
 # Shorts Blocker Kids AAB Release Readiness
 
-Status: Partial. Local release pipeline passes and AAB is produced; Play
-Console upload and Play App Signing validation remain pending.
+Status: Partial. Local release pipeline passes, release APK smoke passes, and
+bundletool AAB-derived emulator install smoke passes. Play Console upload and
+Play App Signing validation remain pending.
 
 ## Scope
 
 This report records the local Android App Bundle release readiness check run on
-May 23, 2026.
+May 23, 2026, plus the release gate refresh run on May 24, 2026.
 
 It covers:
 
@@ -21,7 +22,144 @@ It covers:
 - release debug-tool flag check.
 
 It does not cover Play Console upload, Play App Signing acceptance, production
-review, billing tester flows, or final signed release-candidate device QA.
+review, billing tester flows, or final signed release-candidate device QA from
+the Play internal testing track.
+
+## May 24, 2026 Release Gate Refresh
+
+Release build command:
+
+```bash
+ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew \
+  :app:assembleRelease \
+  :app:bundleRelease \
+  :app:lintRelease
+```
+
+Result:
+
+```text
+BUILD SUCCESSFUL in 19s
+61 actionable tasks: 7 executed, 54 up-to-date
+```
+
+Release artifacts:
+
+```text
+app/build/outputs/apk/release/app-release.apk      9,632,411 bytes
+app/build/outputs/bundle/release/app-release.aab   9,131,002 bytes
+```
+
+SHA-256:
+
+```text
+0c33cb46074f3499ca58bfff0630b4f4bd9103105b83cdb63b503ca5be0244c3  app/build/outputs/apk/release/app-release.apk
+c508aea82a9212f193de6cdccbe2694463d1537ff7420666a5de0adca83bbc41  app/build/outputs/bundle/release/app-release.aab
+```
+
+APK signing verification:
+
+```text
+Verifies
+Verified using v2 scheme: true
+Number of signers: 1
+```
+
+Release metadata from `output-metadata.json`:
+
+```text
+applicationId=com.shortsblockerkids
+variantName=release
+versionCode=1
+versionName=0.1.0
+minSdkVersionForDexing=26
+```
+
+Release `BuildConfig`:
+
+```text
+DEBUG=false
+APPLICATION_ID="com.shortsblockerkids"
+BUILD_TYPE="release"
+ACCESSIBILITY_DEBUG_TOOLS_ENABLED=false
+BILLING_BACKEND_BASE_URL=""
+```
+
+Merged release manifest:
+
+```text
+versionCode="1"
+versionName="0.1.0"
+uses-permission: com.android.vending.BILLING
+uses-permission: com.shortsblockerkids.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+uses-permission: android.permission.ACCESS_NETWORK_STATE
+uses-permission: android.permission.INTERNET
+service permission: android.permission.BIND_ACCESSIBILITY_SERVICE
+```
+
+Release APK emulator smoke:
+
+```text
+AVD: ShortsBlocker_Pixel_API35
+Install source: app/build/outputs/apk/release/app-release.apk
+Install result: Success
+Launch package: com.shortsblockerkids
+Runtime package: versionCode=1 minSdk=26 targetSdk=36 versionName=0.1.0
+Runtime process: pid 2349
+```
+
+AAB-derived emulator smoke:
+
+```bash
+BUNDLETOOL_CP=$(find /home/serputko/.gradle/caches/modules-2/files-2.1 -name '*.jar' | paste -sd ':' -)
+java -cp "$BUNDLETOOL_CP" com.android.tools.build.bundletool.BundleToolMain \
+  build-apks \
+  --bundle=app/build/outputs/bundle/release/app-release.aab \
+  --output=app/build/outputs/bundle/release/app-release-universal.apks \
+  --mode=universal \
+  --overwrite \
+  --aapt2=/home/serputko/Android/Sdk/build-tools/36.0.0/aapt2
+java -cp "$BUNDLETOOL_CP" com.android.tools.build.bundletool.BundleToolMain \
+  install-apks \
+  --apks=app/build/outputs/bundle/release/app-release-universal.apks
+```
+
+Result:
+
+```text
+APKs generated from release AAB: app-release-universal.apks
+Local bundletool signing: debug keystore, for emulator install only
+Install target: emulator-5554
+Launch package: com.shortsblockerkids
+Runtime package: versionCode=1 minSdk=26 targetSdk=36 versionName=0.1.0
+Runtime process: pid 3217
+```
+
+AAB-derived `.apks` SHA-256:
+
+```text
+b99bb40e0d01b9ab91023e4f4794cd1cb1f23a1359b7fd7b0e7a8aa0f3235c79  app/build/outputs/bundle/release/app-release-universal.apks
+```
+
+Release minification decision remains unchanged:
+
+```text
+isMinifyEnabled=false
+```
+
+Reason: keep R8 disabled for this release-candidate line until final
+release-device regression coverage is complete for the AccessibilityService
+detector path.
+
+Release lint result:
+
+```text
+0 errors, 20 warnings
+```
+
+Warnings are dependency/version freshness, Android backup-rule modernization,
+launcher icon shape, one unused string, and one KTX suggestion. None changed
+the release gate result because `lintRelease` completed successfully.
 
 ## Command
 
