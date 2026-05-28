@@ -35,7 +35,6 @@ class FacebookReelsDetector : ShortVideoDetector {
             when {
                 isHighConfidenceReels(
                     hasReelsIdentifier = hasReelsIdentifier,
-                    hasReelContainer = hasReelContainer,
                     hasActionRail = hasActionRail,
                     hasVerticalFullscreen = hasVerticalFullscreen,
                     hasRepeatedVerticalFeed = hasRepeatedVerticalFeed,
@@ -158,6 +157,7 @@ class FacebookReelsDetector : ShortVideoDetector {
             nodes.any { node ->
                 node.isVisibleToUser &&
                     node.isScrollable &&
+                    !node.viewIdResourceName.isNonReelsWorkflowId() &&
                     node.width >= screenWidth * 0.72f &&
                     node.height >= screenHeight * 0.65f
             }
@@ -171,12 +171,11 @@ class FacebookReelsDetector : ShortVideoDetector {
 
     private fun isHighConfidenceReels(
         hasReelsIdentifier: Boolean,
-        hasReelContainer: Boolean,
         hasActionRail: Boolean,
         hasVerticalFullscreen: Boolean,
         hasRepeatedVerticalFeed: Boolean,
     ): Boolean {
-        if (!hasActionRail || !hasVerticalFullscreen || !hasReelContainer) {
+        if (!hasActionRail || !hasVerticalFullscreen) {
             return false
         }
 
@@ -187,6 +186,22 @@ class FacebookReelsDetector : ShortVideoDetector {
         val normalized = this?.lowercase(Locale.US) ?: return false
         return needles.any { normalized.contains(it) }
     }
+
+    private fun String?.isNonReelsWorkflowId(): Boolean =
+        containsAny(
+            "news_feed",
+            "home_feed",
+            "comments",
+            "comment",
+            "search",
+            "settings",
+            "messages",
+            "message",
+            "profile",
+            "groups",
+            "group",
+            "marketplace",
+        )
 
     private fun AccessibilityNodeSignal.isFacebookSurfaceCandidate(): Boolean =
         isScrollable ||
@@ -220,11 +235,26 @@ class FacebookReelsDetector : ShortVideoDetector {
                 "поділитися",
                 "поширити",
                 "поделиться",
+                "send",
+                "enviar",
+                "senden",
+                "надіслати",
+                "отправить",
+                "save",
+                "guardar",
+                "speichern",
+                "зберегти",
+                "сохранить",
                 "more",
                 "mehr",
                 "більше",
                 "еще",
                 "ещё",
+                "follow",
+                "seguir",
+                "folgen",
+                "стежити",
+                "подписаться",
             )
     }
 }

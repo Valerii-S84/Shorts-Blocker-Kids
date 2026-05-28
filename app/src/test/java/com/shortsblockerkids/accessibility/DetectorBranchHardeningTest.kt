@@ -302,13 +302,15 @@ class DetectorBranchHardeningTest {
                         surfaceViewId = "com.instagram.android:id/viewer",
                     ),
             )
-        val facebookWithoutReelContainer =
+        val facebookWithoutReelContainerOrIdentifier =
             FacebookReelsDetector().detect(
                 packageName = FacebookReelsDetector.FACEBOOK_PACKAGE,
                 snapshot =
                     highConfidenceSnapshot(
                         detectorCase = facebookCase,
+                        includeIdentifier = false,
                         includeReelContainer = false,
+                        includeRepeatedFeed = false,
                     ),
             )
         val tiktokWithoutContainer =
@@ -323,7 +325,7 @@ class DetectorBranchHardeningTest {
 
         assertFalse(youtubeWithoutReelOrRepeatedFeed.shouldBlock)
         assertFalse(instagramWithoutIdentifierOrRepeatedFeed.shouldBlock)
-        assertFalse(facebookWithoutReelContainer.shouldBlock)
+        assertFalse(facebookWithoutReelContainerOrIdentifier.shouldBlock)
         assertFalse(tiktokWithoutContainer.shouldBlock)
     }
 

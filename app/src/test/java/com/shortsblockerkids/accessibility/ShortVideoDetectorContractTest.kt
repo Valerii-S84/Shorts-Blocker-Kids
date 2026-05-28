@@ -147,8 +147,8 @@ class ShortVideoDetectorContractTest {
     }
 
     @Test
-    fun instagramReelsIdentifierWithFullscreenActionRailBlocksWithoutStableContainerId() {
-        instagramPlatformCases.forEach { platformCase ->
+    fun reelsIdentifierWithFullscreenActionRailBlocksWithoutStableContainerId() {
+        reelsPlatformCases.forEach { platformCase ->
             val result =
                 platformCase.detector.detect(
                     packageName = platformCase.packageName,
@@ -158,6 +158,67 @@ class ShortVideoDetectorContractTest {
             assertEquals(platformCase.name, Confidence.HIGH, result.confidence)
             assertTrue(platformCase.name, result.shouldBlock)
         }
+    }
+
+    @Test
+    fun facebookRepeatedFeedWithActionRailBlocksWithoutStableContainerIdOrExplicitText() {
+        val result =
+            FacebookReelsDetector().detect(
+                packageName = FacebookReelsDetector.FACEBOOK_PACKAGE,
+                snapshot = facebookRepeatedFeedWithoutContainerSnapshot(),
+            )
+
+        assertEquals(Confidence.HIGH, result.confidence)
+        assertTrue(result.shouldBlock)
+        assertFalse(result.matchedSignals.contains(DetectorSignal.SHORT_VIDEO_IDENTIFIER.id))
+        assertFalse(result.matchedSignals.contains(DetectorSignal.REEL_CONTAINER.id))
+        assertTrue(result.matchedSignals.contains(DetectorSignal.ACTION_RAIL.id))
+        assertTrue(result.matchedSignals.contains(DetectorSignal.REPEATED_VERTICAL_FEED.id))
+    }
+
+    @Test
+    fun facebookKnownWorkflowContainerDoesNotBlockAsStructuralReelsFallback() {
+        val result =
+            FacebookReelsDetector().detect(
+                packageName = FacebookReelsDetector.FACEBOOK_PACKAGE,
+                snapshot = facebookRepeatedFeedWithoutContainerSnapshot("com.facebook.katana:id/news_feed"),
+            )
+
+        assertFalse(result.shouldBlock)
+        assertFalse(result.matchedSignals.contains(DetectorSignal.REPEATED_VERTICAL_FEED.id))
+    }
+
+    @Test
+    fun tiktokStructuralNavigationContextBlocksWithoutExplicitFeedText() {
+        val result =
+            TikTokShortVideoDetector().detect(
+                packageName = TikTokShortVideoDetector.TIKTOK_PACKAGE,
+                snapshot = tiktokStructuralNavigationSnapshot(),
+            )
+
+        assertEquals(Confidence.HIGH, result.confidence)
+        assertTrue(result.shouldBlock)
+        assertFalse(result.matchedSignals.contains(DetectorSignal.SHORT_VIDEO_IDENTIFIER.id))
+        assertTrue(result.matchedSignals.contains(DetectorSignal.REEL_CONTAINER.id))
+        assertTrue(result.matchedSignals.contains(DetectorSignal.ACTION_RAIL.id))
+        assertTrue(result.matchedSignals.contains(DetectorSignal.REPEATED_VERTICAL_FEED.id))
+        assertTrue(result.matchedSignals.contains(DetectorSignal.PLATFORM_NAVIGATION.id))
+    }
+
+    @Test
+    fun tiktokStrongStructuralEvidenceWithoutContainerDoesNotBlock() {
+        val result =
+            TikTokShortVideoDetector().detect(
+                packageName = TikTokShortVideoDetector.TIKTOK_PACKAGE,
+                snapshot = tiktokStructuralNavigationSnapshot(containerViewId = "com.zhiliaoapp.musically:id/main_surface"),
+            )
+
+        assertEquals(Confidence.MEDIUM, result.confidence)
+        assertFalse(result.shouldBlock)
+        assertFalse(result.matchedSignals.contains(DetectorSignal.REEL_CONTAINER.id))
+        assertTrue(result.matchedSignals.contains(DetectorSignal.ACTION_RAIL.id))
+        assertTrue(result.matchedSignals.contains(DetectorSignal.REPEATED_VERTICAL_FEED.id))
+        assertTrue(result.matchedSignals.contains(DetectorSignal.PLATFORM_NAVIGATION.id))
     }
 
     @Test
@@ -340,6 +401,58 @@ class ShortVideoDetectorContractTest {
                     node(contentDescriptionSignals = setOf("like"), left = ACTION_RAIL_LEFT, top = 730),
                     node(contentDescriptionSignals = setOf("comment"), left = ACTION_RAIL_LEFT, top = 1_080),
                     node(contentDescriptionSignals = setOf("share"), left = ACTION_RAIL_LEFT, top = 1_430),
+                ),
+        )
+
+    private fun facebookRepeatedFeedWithoutContainerSnapshot(viewIdResourceName: String? = null): AccessibilityTreeSnapshot =
+        AccessibilityTreeSnapshot(
+            nodes =
+                listOf(
+                    rootNode(),
+                    node(
+                        className = "android.widget.FrameLayout",
+                        viewIdResourceName = viewIdResourceName,
+                        isScrollable = true,
+                        left = 0,
+                        top = 0,
+                        right = SCREEN_WIDTH,
+                        bottom = SHORT_VIDEO_BOTTOM,
+                        width = SCREEN_WIDTH,
+                        height = SHORT_VIDEO_BOTTOM,
+                        depth = 2,
+                    ),
+                    node(contentDescriptionSignals = setOf("send"), left = ACTION_RAIL_LEFT, top = 730),
+                    node(contentDescriptionSignals = setOf("save"), left = ACTION_RAIL_LEFT, top = 1_080),
+                    node(contentDescriptionSignals = setOf("more"), left = ACTION_RAIL_LEFT, top = 1_430),
+                ),
+        )
+
+    private fun tiktokStructuralNavigationSnapshot(
+        containerViewId: String? = "com.zhiliaoapp.musically:id/main_viewpager",
+    ): AccessibilityTreeSnapshot =
+        AccessibilityTreeSnapshot(
+            nodes =
+                listOf(
+                    rootNode(),
+                    node(
+                        className = "android.widget.FrameLayout",
+                        viewIdResourceName = containerViewId,
+                        isScrollable = true,
+                        left = 0,
+                        top = 0,
+                        right = SCREEN_WIDTH,
+                        bottom = SHORT_VIDEO_BOTTOM,
+                        width = SCREEN_WIDTH,
+                        height = SHORT_VIDEO_BOTTOM,
+                        depth = 2,
+                    ),
+                    node(contentDescriptionSignals = setOf("like"), left = ACTION_RAIL_LEFT, top = 730),
+                    node(contentDescriptionSignals = setOf("comments"), left = ACTION_RAIL_LEFT, top = 1_080),
+                    node(contentDescriptionSignals = setOf("share"), left = ACTION_RAIL_LEFT, top = 1_430),
+                    node(contentDescriptionSignals = setOf("home"), left = 40, top = 2_070),
+                    node(contentDescriptionSignals = setOf("friends"), left = 300, top = 2_070),
+                    node(contentDescriptionSignals = setOf("inbox"), left = 560, top = 2_070),
+                    node(contentDescriptionSignals = setOf("profile"), left = 820, top = 2_070),
                 ),
         )
 
@@ -536,7 +649,7 @@ class ShortVideoDetectorContractTest {
                     genericVideoViewId = "com.facebook.katana:id/video_player",
                     explicitSignal = "reels",
                     cyrillicExplicitSignal = "рілс",
-                    alternateActionSignals = listOf("like", "comments", "more"),
+                    alternateActionSignals = listOf("send", "save", "more"),
                     falsePositiveSurfaces =
                         listOf(
                             FalsePositiveSurface("comments", "com.facebook.katana:id/comments_list"),
@@ -548,9 +661,10 @@ class ShortVideoDetectorContractTest {
                 ),
             )
 
-        val instagramPlatformCases =
+        val reelsPlatformCases =
             platformCases.filter { platformCase ->
-                platformCase.detector is InstagramReelsDetector
+                platformCase.detector is InstagramReelsDetector ||
+                    platformCase.detector is FacebookReelsDetector
             }
     }
 }

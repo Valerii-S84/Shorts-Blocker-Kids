@@ -1,12 +1,13 @@
 # Shorts Blocker Kids Real-Device Smoke Report
 
-Status: Partial. User-confirmed smoke QA passed on five real Android devices;
-detailed device matrix remains pending.
+Status: Partial. User-confirmed smoke QA passed on real Android devices;
+detailed device matrix remains pending. The May 28, 2026 user smoke pass found
+Facebook Reels not blocking and triggered the detector fix in this repository.
 
 ## Scope
 
 This report records manual real-device smoke evidence provided by the product
-owner on May 22, 2026.
+owner on May 22, 2026 and May 28, 2026.
 
 The report covers the current Shorts Blocker Kids Android app behavior:
 
@@ -32,6 +33,14 @@ User-confirmed results across five devices:
 - Temporary allow durations 5, 10, and 15 minutes work.
 - No problems were observed in this smoke pass.
 
+User-confirmed May 28, 2026 smoke update:
+
+- The current app behavior looked normal in manual testing except Facebook
+  Reels.
+- Facebook Reels did not block in that run.
+- A code-level Facebook Reels detector hardening change was added after this
+  finding.
+
 ## Production Impact
 
 This closes the main real-device blocker smoke risk that was still open after
@@ -51,3 +60,4 @@ device/version matrix required before final staged rollout.
 - OEM-specific behavior notes.
 - Regression pass after Play Billing integration.
 - Regression pass on the final signed release candidate.
+- Facebook Reels real-device retest after the May 28 detector hardening change.
