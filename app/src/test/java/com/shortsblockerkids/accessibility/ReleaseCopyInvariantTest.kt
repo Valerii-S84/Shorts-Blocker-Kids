@@ -50,6 +50,48 @@ class ReleaseCopyInvariantTest {
     }
 
     @Test
+    fun privacyCopyDeniesSensitiveChildAndAccessibilityDataCollection() {
+        val privacySources =
+            listOf(
+                normalizedText(
+                    repoFile(
+                        "app/src/main/java/com/shortsblockerkids/feature/privacy/PrivacyPolicyScreen.kt",
+                    ).readText(),
+                ),
+                normalizedText(repoFile("docs/SHORTS_BLOCKER_PRIVACY_POLICY_DRAFT.md").readText()),
+            )
+
+        privacySources.forEach { text ->
+            assertTrue(text.contains("does not collect") || text.contains("does not store"))
+            assertTrue(text.contains("watch history"))
+            assertTrue(text.contains("video titles"))
+            assertTrue(text.contains("URLs"))
+            assertTrue(text.contains("account names"))
+            assertTrue(text.contains("screen recordings"))
+            assertTrue(text.contains("audio"))
+            assertTrue(text.contains("raw Accessibility tree dumps"))
+            assertTrue(text.contains("parent PIN"))
+            assertTrue(text.contains("not stored as plain text"))
+        }
+    }
+
+    @Test
+    fun billingPrivacyCopyLimitsBackendDataToEntitlementVerification() {
+        val privacyPolicy = normalizedText(repoFile("docs/SHORTS_BLOCKER_PRIVACY_POLICY_DRAFT.md").readText())
+        val inAppPrivacy =
+            normalizedText(
+                repoFile(
+                    "app/src/main/java/com/shortsblockerkids/feature/privacy/PrivacyPolicyScreen.kt",
+                ).readText(),
+            )
+
+        assertTrue(privacyPolicy.contains("billing technical data"))
+        assertTrue(privacyPolicy.contains("hashed purchase token"))
+        assertTrue(inAppPrivacy.contains("billing backend limited to Google Play entitlement status"))
+        assertTrue(inAppPrivacy.contains("stores hashed purchase tokens"))
+    }
+
+    @Test
     fun accessibilityServiceReceivesOnlyProtectedPlatformPackages() {
         val serviceConfig =
             repoFile(
@@ -76,4 +118,9 @@ class ReleaseCopyInvariantTest {
         }
         error("Missing repository file: $relativePath")
     }
+
+    private fun normalizedText(text: String): String =
+        text
+            .replace(Regex("[\"+\\r\\n]+"), " ")
+            .replace(Regex("\\s+"), " ")
 }

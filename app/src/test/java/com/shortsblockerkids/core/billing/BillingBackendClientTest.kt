@@ -46,6 +46,22 @@ class BillingBackendClientTest {
     }
 
     @Test
+    fun whitespaceBackendUrlKeepsClientOnlyBillingPathDisabled() {
+        val client = HttpBillingBackendClient.fromBaseUrl("   ")
+
+        assertSame(DisabledBillingBackendClient, client)
+        assertFalse(client.isConfigured)
+    }
+
+    @Test
+    fun configuredBackendUrlEnablesHttpBillingClient() {
+        val client = HttpBillingBackendClient.fromBaseUrl("http://127.0.0.1:8080")
+
+        assertTrue(client is HttpBillingBackendClient)
+        assertTrue(client.isConfigured)
+    }
+
+    @Test
     fun configuredBackendVerifiesPurchaseViaPostAndParsesEntitlement() {
         runBlocking {
             SingleResponseHttpServer(

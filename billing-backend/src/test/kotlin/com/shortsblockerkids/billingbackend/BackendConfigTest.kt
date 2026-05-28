@@ -1,14 +1,28 @@
 package com.shortsblockerkids.billingbackend
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import java.nio.file.Path
 
 class BackendConfigTest {
     @get:Rule
     val temporaryFolder = TemporaryFolder()
+
+    @Test
+    fun developmentDefaultsUseFileStorageWithoutProductionRequirements() {
+        val config = BackendConfig.fromEnvironment(emptyMap())
+
+        assertEquals(BackendEnvironment.DEVELOPMENT, config.environment)
+        assertEquals(StorageBackend.FILE, config.storageBackend)
+        assertEquals(Path.of("billing-backend-data.json"), config.storeFile)
+        assertFalse(config.requireHttps)
+        assertEquals("com.shortsblockerkids", config.packageName)
+        assertEquals("shorts_blocker_kids_monthly", config.productId)
+    }
 
     @Test
     fun productionRequiresDurableStorageHttpsCredentialsAndPubSubAuth() {
@@ -46,5 +60,19 @@ class BackendConfigTest {
 
         assertEquals(StorageBackend.POSTGRES, config.storageBackend)
         assertEquals(true, config.requireHttps)
+    }
+
+    @Test
+    fun invalidEnvironmentValuesAreRejected() {
+        val exception =
+            runCatching {
+                BackendConfig.fromEnvironment(
+                    mapOf(
+                        "SBK_BACKEND_PORT" to "70000",
+                    ),
+                )
+            }.exceptionOrNull() as ConfigurationException
+
+        assertEquals(listOf("SBK_BACKEND_PORT must be in range 1..65535"), exception.errors)
     }
 }

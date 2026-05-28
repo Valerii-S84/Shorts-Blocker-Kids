@@ -349,6 +349,42 @@ class BillingBackendServerTest {
         assertTrue(response.contains("Request body too large"))
     }
 
+    @Test
+    fun verifyRejectsMissingRequiredFieldsWithoutStoredEntitlement() {
+        val backend = startBackend()
+
+        val response =
+            post(
+                url = "http://127.0.0.1:${backend.port}/billing/play/verify",
+                body = "{}",
+                expectedCode = 400,
+            )
+        val status = get("http://127.0.0.1:${backend.port}/entitlement/status?install_id=install-1")
+
+        assertTrue(response.contains("Missing required field: install_id"))
+        assertTrue(status.contains("\"state\":\"UNKNOWN\""))
+        assertTrue(status.contains("\"is_active\":false"))
+    }
+
+    @Test
+    fun statusEndpointRejectsMissingOrInvalidInstallId() {
+        val backend = startBackend()
+
+        val missing =
+            get(
+                url = "http://127.0.0.1:${backend.port}/entitlement/status",
+                expectedCode = 400,
+            )
+        val invalid =
+            get(
+                url = "http://127.0.0.1:${backend.port}/entitlement/status?install_id=bad%20id",
+                expectedCode = 400,
+            )
+
+        assertTrue(missing.contains("Missing install_id"))
+        assertTrue(invalid.contains("Missing install_id"))
+    }
+
     private fun startBackend(
         verifier: PlaySubscriptionVerifier = FakeVerifier(),
         config: BackendConfig = backendConfig(),
@@ -412,10 +448,13 @@ class BillingBackendServerTest {
         return connection.responseBody()
     }
 
-    private fun get(url: String): String {
+    private fun get(
+        url: String,
+        expectedCode: Int = 200,
+    ): String {
         val connection = URI(url).toURL().openConnection() as HttpURLConnection
         connection.requestMethod = "GET"
-        assertEquals(200, connection.responseCode)
+        assertEquals(expectedCode, connection.responseCode)
         return connection.responseBody()
     }
 
