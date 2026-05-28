@@ -124,6 +124,7 @@ class AppSettingsTest {
         val settings =
             activeSettings(freeTestStartedAt = TEST_STARTED_AT)
                 .copy(
+                    billingEntitlementState = BillingEntitlementState.ACTIVE,
                     billingSubscriptionActive = true,
                     billingLastVerifiedAt = TWENTY_DAYS,
                 )
@@ -131,6 +132,20 @@ class AppSettingsTest {
         assertEquals(EntitlementState.FREE_TEST_EXPIRED, settings.freeTestState(TWENTY_DAYS))
         assertTrue(settings.hasBillingEntitlement(nowMillis = TWENTY_DAYS))
         assertTrue(settings.canProtect(nowMillis = TWENTY_DAYS))
+    }
+
+    @Test
+    fun unconfirmedLocalBillingFlagDoesNotProtectAfterFreeTestExpires() {
+        val settings =
+            activeSettings(freeTestStartedAt = TEST_STARTED_AT)
+                .copy(
+                    billingEntitlementState = BillingEntitlementState.UNKNOWN,
+                    billingSubscriptionActive = true,
+                    billingLastVerifiedAt = TWENTY_DAYS,
+                )
+
+        assertFalse(settings.hasBillingEntitlement(nowMillis = TWENTY_DAYS))
+        assertFalse(settings.canProtect(nowMillis = TWENTY_DAYS))
     }
 
     @Test
@@ -167,6 +182,7 @@ class AppSettingsTest {
         val settings =
             activeSettings(freeTestStartedAt = TEST_STARTED_AT)
                 .copy(
+                    billingEntitlementState = BillingEntitlementState.ACTIVE,
                     billingSubscriptionActive = true,
                     billingLastVerifiedAt = TWENTY_DAYS,
                 )
@@ -181,6 +197,7 @@ class AppSettingsTest {
         val settings =
             activeSettings(freeTestStartedAt = TEST_STARTED_AT)
                 .copy(
+                    billingEntitlementState = BillingEntitlementState.ACTIVE,
                     billingSubscriptionActive = true,
                     billingLastVerifiedAt = TWENTY_DAYS + 1L,
                 )

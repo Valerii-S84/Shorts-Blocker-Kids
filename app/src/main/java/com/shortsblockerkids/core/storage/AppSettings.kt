@@ -67,10 +67,7 @@ data class AppSettings(
         if (verifiedAt > nowMillis) {
             return false
         }
-        val stateAllowsProtection =
-            billingEntitlementState.allowsPaidProtection() ||
-                (billingEntitlementState == BillingEntitlementState.UNKNOWN && billingSubscriptionActive)
-        if (!stateAllowsProtection) {
+        if (!billingEntitlementState.allowsPaidProtection()) {
             return false
         }
         val offlineGraceUntil = verifiedAt + BillingAvailability.OFFLINE_GRACE_MILLIS

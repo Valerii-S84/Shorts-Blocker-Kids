@@ -116,8 +116,14 @@ class BillingBackendServer(
     ) {
         try {
             block(exchange)
+        } catch (exception: PurchaseNotFoundException) {
+            exchange.respond(404, JsonBodies.errorResponse(exception.message ?: "Purchase not found"))
+        } catch (exception: InvalidPurchaseTokenException) {
+            exchange.respond(400, JsonBodies.errorResponse(exception.message ?: "Invalid purchase token"))
         } catch (exception: IllegalArgumentException) {
             exchange.respond(400, JsonBodies.errorResponse(exception.message ?: "Bad request"))
+        } catch (exception: BillingBackendUnavailableException) {
+            exchange.respond(503, JsonBodies.errorResponse("Billing backend temporarily unavailable"))
         } catch (exception: IllegalStateException) {
             exchange.respond(503, JsonBodies.errorResponse("Billing backend temporarily unavailable"))
         } catch (exception: Exception) {

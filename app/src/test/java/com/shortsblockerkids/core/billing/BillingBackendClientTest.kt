@@ -183,6 +183,23 @@ class BillingBackendClientTest {
     }
 
     @Test
+    fun unavailableBackendSurfacesAsFailureWithoutEntitlementSnapshot() {
+        runBlocking {
+            val unavailablePort =
+                ServerSocket(0, 1, InetAddress.getByName("127.0.0.1")).use {
+                    it.localPort
+                }
+            val client = HttpBillingBackendClient("http://127.0.0.1:$unavailablePort")
+
+            val error =
+                runCatching { client.refreshEntitlement("install-id") }
+                    .exceptionOrNull()
+
+            assertNotNull(error)
+        }
+    }
+
+    @Test
     fun directBlankHttpClientRejectsNetworkOperationsConservatively() {
         runBlocking {
             val client = HttpBillingBackendClient(" ")

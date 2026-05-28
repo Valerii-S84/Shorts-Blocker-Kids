@@ -30,6 +30,8 @@ class PlayBillingRepository(
     private val billingBackendClient: BillingBackendClient = DisabledBillingBackendClient,
     private val installId: String? = null,
     private val appVersion: String = "",
+    private val clientOnlyModeRequested: Boolean = false,
+    private val internalTestingBuild: Boolean = false,
     private val billingScope: CoroutineScope =
         CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate),
     private val nowMillis: () -> Long = System::currentTimeMillis,
@@ -281,13 +283,20 @@ class PlayBillingRepository(
             return
         }
 
-        purchased
-            .filterNot { it.isAcknowledged }
-            .forEach(::acknowledgePurchase)
+        val verificationPolicy =
+            BillingVerificationPolicy(
+                clientOnlyModeRequested = clientOnlyModeRequested,
+                internalTestingBuild = internalTestingBuild,
+            )
+        if (verificationPolicy.canUseClientOnlyEntitlement) {
+            purchased
+                .filterNot { it.isAcknowledged }
+                .forEach(::acknowledgePurchase)
+        }
 
         onEntitlementChanged(
-            BillingEntitlementSnapshot(
-                isActive = purchased.isNotEmpty(),
+            verificationPolicy.localPurchaseSnapshot(
+                hasPurchasedSubscription = purchased.isNotEmpty(),
                 checkedAtMillis = nowMillis(),
             ),
         )
@@ -295,11 +304,10 @@ class PlayBillingRepository(
             it.copy(
                 isLoading = false,
                 statusMessage =
-                    when {
-                        purchased.isNotEmpty() -> "Subscription active."
-                        hasPending -> "Purchase pending. Protection unlocks after payment completes."
-                        else -> "No active Google Play subscription found."
-                    },
+                    verificationPolicy.localPurchaseStatusMessage(
+                        hasPurchasedSubscription = purchased.isNotEmpty(),
+                        hasPendingSubscription = hasPending,
+                    ),
             )
         }
     }

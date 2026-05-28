@@ -28,7 +28,9 @@ class GooglePlayDeveloperApiClient(
         productId: String,
         purchaseToken: String,
     ): VerifiedSubscription {
-        val accessToken = accessToken()
+        val accessToken =
+            runCatching { accessToken() }
+                .getOrElse { throw BillingBackendUnavailableException("Google Play credentials unavailable") }
         val response =
             getJson(
                 url =
@@ -37,84 +39,19 @@ class GooglePlayDeveloperApiClient(
                         urlEncode(purchaseToken),
                 accessToken = accessToken,
             )
-        val subscription = parseSubscription(response, productId, purchaseToken)
+        val subscription =
+            GooglePlaySubscriptionParser.parse(
+                response = response,
+                productId = productId,
+                purchaseToken = purchaseToken,
+                nowMillis = nowMillis(),
+            )
         if (subscription.state.allowsProtection() && !subscription.acknowledged) {
             acknowledge(packageName, productId, purchaseToken, accessToken)
             return subscription.copy(acknowledged = true)
         }
         return subscription
     }
-
-    private fun parseSubscription(
-        response: JsonObject,
-        productId: String,
-        purchaseToken: String,
-    ): VerifiedSubscription {
-        val lineItem =
-            response
-                .optionalArray("lineItems")
-                ?.firstOrNull { item ->
-                    item.jsonObject.optionalString("productId") == productId
-                }?.jsonObject
-                ?: throw IllegalStateException("Verified purchase does not match the configured product.")
-        val activeUntilMillis =
-            lineItem
-                .optionalString("expiryTime")
-                ?.let { Instant.parse(it).toEpochMilli() }
-        val autoRenewEnabled =
-            lineItem
-                .optionalObject("autoRenewingPlan")
-                ?.optionalBoolean("autoRenewEnabled")
-        val rawState = response.optionalString("subscriptionState")
-        val state =
-            mapGoogleState(
-                rawState = rawState,
-                activeUntilMillis = activeUntilMillis,
-                autoRenewEnabled = autoRenewEnabled,
-            )
-        return VerifiedSubscription(
-            productId = productId,
-            purchaseToken = purchaseToken,
-            state = state,
-            activeUntilMillis = activeUntilMillis,
-            acknowledged =
-                response.optionalString("acknowledgementState") ==
-                    "ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED",
-            verifiedAtMillis = nowMillis(),
-        )
-    }
-
-    private fun mapGoogleState(
-        rawState: String?,
-        activeUntilMillis: Long?,
-        autoRenewEnabled: Boolean?,
-    ): SubscriptionEntitlementState =
-        when (rawState) {
-            "SUBSCRIPTION_STATE_ACTIVE" ->
-                if (autoRenewEnabled == false && activeUntilMillis.isFuture()) {
-                    SubscriptionEntitlementState.CANCELED_ACTIVE
-                } else {
-                    SubscriptionEntitlementState.ACTIVE
-                }
-
-            "SUBSCRIPTION_STATE_IN_GRACE_PERIOD" -> SubscriptionEntitlementState.IN_GRACE
-            "SUBSCRIPTION_STATE_PENDING" -> SubscriptionEntitlementState.PENDING
-            "SUBSCRIPTION_STATE_ON_HOLD",
-            "SUBSCRIPTION_STATE_PAUSED",
-            -> SubscriptionEntitlementState.ON_HOLD
-
-            "SUBSCRIPTION_STATE_CANCELED" ->
-                if (activeUntilMillis.isFuture()) {
-                    SubscriptionEntitlementState.CANCELED_ACTIVE
-                } else {
-                    SubscriptionEntitlementState.EXPIRED
-                }
-
-            "SUBSCRIPTION_STATE_EXPIRED" -> SubscriptionEntitlementState.EXPIRED
-            else -> SubscriptionEntitlementState.UNKNOWN
-        }
-
-    private fun Long?.isFuture(): Boolean = this != null && this > nowMillis()
 
     private fun acknowledge(
         packageName: String,
@@ -133,7 +70,7 @@ class GooglePlayDeveloperApiClient(
         connection.outputStream.use { it.write("{}".toByteArray()) }
         val code = connection.responseCode
         if (code !in 200..299) {
-            throw IllegalStateException("Google Play acknowledge failed with HTTP $code")
+            throw BillingBackendUnavailableException("Google Play acknowledge failed with HTTP $code")
         }
     }
 
@@ -154,7 +91,11 @@ class GooglePlayDeveloperApiClient(
                     .orEmpty()
             }
         if (code !in 200..299) {
-            throw IllegalStateException("Google Play verification failed with HTTP $code")
+            when (code) {
+                HttpURLConnection.HTTP_BAD_REQUEST -> throw InvalidPurchaseTokenException()
+                HttpURLConnection.HTTP_NOT_FOUND -> throw PurchaseNotFoundException()
+                else -> throw BillingBackendUnavailableException("Google Play verification failed with HTTP $code")
+            }
         }
         return JsonBodies.json.parseToJsonElement(body).jsonObject
     }
@@ -179,4 +120,78 @@ class GooglePlayDeveloperApiClient(
     private companion object {
         const val ANDROID_PUBLISHER_SCOPE = "https://www.googleapis.com/auth/androidpublisher"
     }
+}
+
+internal object GooglePlaySubscriptionParser {
+    fun parse(
+        response: JsonObject,
+        productId: String,
+        purchaseToken: String,
+        nowMillis: Long,
+    ): VerifiedSubscription {
+        val lineItem =
+            response
+                .optionalArray("lineItems")
+                ?.firstOrNull { item ->
+                    item.jsonObject.optionalString("productId") == productId
+                }?.jsonObject
+                ?: throw InvalidPurchaseTokenException()
+        val activeUntilMillis =
+            lineItem
+                .optionalString("expiryTime")
+                ?.let { Instant.parse(it).toEpochMilli() }
+        val autoRenewEnabled =
+            lineItem
+                .optionalObject("autoRenewingPlan")
+                ?.optionalBoolean("autoRenewEnabled")
+        return VerifiedSubscription(
+            productId = productId,
+            purchaseToken = purchaseToken,
+            state =
+                mapGoogleState(
+                    rawState = response.optionalString("subscriptionState"),
+                    activeUntilMillis = activeUntilMillis,
+                    autoRenewEnabled = autoRenewEnabled,
+                    nowMillis = nowMillis,
+                ),
+            activeUntilMillis = activeUntilMillis,
+            acknowledged =
+                response.optionalString("acknowledgementState") ==
+                    "ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED",
+            verifiedAtMillis = nowMillis,
+        )
+    }
+
+    private fun mapGoogleState(
+        rawState: String?,
+        activeUntilMillis: Long?,
+        autoRenewEnabled: Boolean?,
+        nowMillis: Long,
+    ): SubscriptionEntitlementState =
+        when (rawState) {
+            "SUBSCRIPTION_STATE_ACTIVE" ->
+                if (autoRenewEnabled == false && activeUntilMillis.isFuture(nowMillis)) {
+                    SubscriptionEntitlementState.CANCELED_ACTIVE
+                } else {
+                    SubscriptionEntitlementState.ACTIVE
+                }
+
+            "SUBSCRIPTION_STATE_IN_GRACE_PERIOD" -> SubscriptionEntitlementState.IN_GRACE
+            "SUBSCRIPTION_STATE_PENDING" -> SubscriptionEntitlementState.PENDING
+            "SUBSCRIPTION_STATE_ON_HOLD",
+            "SUBSCRIPTION_STATE_PAUSED",
+            -> SubscriptionEntitlementState.ON_HOLD
+
+            "SUBSCRIPTION_STATE_CANCELED" ->
+                if (activeUntilMillis.isFuture(nowMillis)) {
+                    SubscriptionEntitlementState.CANCELED_ACTIVE
+                } else {
+                    SubscriptionEntitlementState.EXPIRED
+                }
+
+            "SUBSCRIPTION_STATE_EXPIRED" -> SubscriptionEntitlementState.EXPIRED
+            else -> SubscriptionEntitlementState.UNKNOWN
+        }
+
+    private fun Long?.isFuture(nowMillis: Long): Boolean = this != null && this > nowMillis
 }

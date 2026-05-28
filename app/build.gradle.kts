@@ -42,6 +42,13 @@ val billingBackendBaseUrl =
         .orElse(providers.gradleProperty("SBK_BILLING_BACKEND_BASE_URL"))
         .orElse("")
         .get()
+val billingClientOnlyTestMode =
+    providers
+        .environmentVariable("SBK_BILLING_CLIENT_ONLY_TEST_MODE")
+        .orElse(providers.gradleProperty("SBK_BILLING_CLIENT_ONLY_TEST_MODE"))
+        .orElse("false")
+        .map { it.equals("true", ignoreCase = true) }
+        .get()
 
 android {
     namespace = "com.shortsblockerkids"
@@ -60,6 +67,7 @@ android {
             "BILLING_BACKEND_BASE_URL",
             buildConfigString(billingBackendBaseUrl),
         )
+        buildConfigField("boolean", "BILLING_CLIENT_ONLY_TEST_MODE", "false")
     }
 
     buildFeatures {
@@ -84,6 +92,7 @@ android {
             versionNameSuffix = "-debug"
             isDebuggable = true
             buildConfigField("boolean", "ACCESSIBILITY_DEBUG_TOOLS_ENABLED", "true")
+            buildConfigField("boolean", "BILLING_CLIENT_ONLY_TEST_MODE", billingClientOnlyTestMode.toString())
         }
 
         release {
@@ -93,6 +102,7 @@ android {
             isDebuggable = false
             isMinifyEnabled = false
             buildConfigField("boolean", "ACCESSIBILITY_DEBUG_TOOLS_ENABLED", "false")
+            buildConfigField("boolean", "BILLING_CLIENT_ONLY_TEST_MODE", "false")
         }
     }
 

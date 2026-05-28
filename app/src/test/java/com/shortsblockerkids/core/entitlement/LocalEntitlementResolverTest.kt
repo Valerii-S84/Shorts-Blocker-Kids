@@ -1,5 +1,6 @@
 package com.shortsblockerkids.core.entitlement
 
+import com.shortsblockerkids.core.billing.BillingEntitlementState
 import com.shortsblockerkids.core.model.EntitlementState
 import com.shortsblockerkids.core.storage.AppSettings
 import org.junit.Assert.assertEquals
@@ -53,6 +54,7 @@ class LocalEntitlementResolverTest {
         val settings =
             activeSettings()
                 .copy(
+                    billingEntitlementState = BillingEntitlementState.ACTIVE,
                     billingSubscriptionActive = true,
                     billingLastVerifiedAt = FreeTestPolicy.DEFAULT_DURATION_DAYS * ONE_DAY,
                 )
@@ -73,6 +75,7 @@ class LocalEntitlementResolverTest {
             activeSettings()
                 .copy(
                     protectionEnabled = false,
+                    billingEntitlementState = BillingEntitlementState.ACTIVE,
                     billingSubscriptionActive = true,
                     billingLastVerifiedAt = FreeTestPolicy.DEFAULT_DURATION_DAYS * ONE_DAY,
                 )
@@ -85,6 +88,26 @@ class LocalEntitlementResolverTest {
             )
 
         assertEquals(EntitlementState.SUBSCRIPTION_ACTIVE, state)
+    }
+
+    @Test
+    fun unconfirmedLocalBillingFlagDoesNotUnlockAfterFreeTestExpiry() {
+        val settings =
+            activeSettings()
+                .copy(
+                    billingEntitlementState = BillingEntitlementState.UNKNOWN,
+                    billingSubscriptionActive = true,
+                    billingLastVerifiedAt = FreeTestPolicy.DEFAULT_DURATION_DAYS * ONE_DAY,
+                )
+
+        val state =
+            LocalEntitlementResolver.resolve(
+                settings = settings,
+                isProtectionPermissionGranted = true,
+                nowMillis = FreeTestPolicy.DEFAULT_DURATION_DAYS * ONE_DAY,
+            )
+
+        assertEquals(EntitlementState.PROTECTION_LOCKED, state)
     }
 
     private fun activeSettings(): AppSettings =

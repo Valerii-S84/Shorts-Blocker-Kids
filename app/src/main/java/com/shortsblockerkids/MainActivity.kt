@@ -70,6 +70,8 @@ class MainActivity : ComponentActivity() {
                     HttpBillingBackendClient.fromBaseUrl(BuildConfig.BILLING_BACKEND_BASE_URL),
                 installId = runBlocking { settingsRepository.getOrCreateBillingInstallationId() },
                 appVersion = BuildConfig.VERSION_NAME,
+                clientOnlyModeRequested = BuildConfig.BILLING_CLIENT_ONLY_TEST_MODE,
+                internalTestingBuild = BuildConfig.DEBUG,
                 billingScope = activityScope,
             )
         temporaryAllowRequestState.value = intent.isTemporaryAllowRequest()

@@ -44,3 +44,11 @@ data class EntitlementRecord(
     val lastVerifiedAtMillis: Long,
     val appVersion: String?,
 )
+
+class InvalidPurchaseTokenException : IllegalArgumentException("Invalid purchase token")
+
+class PurchaseNotFoundException : IllegalArgumentException("Purchase not found")
+
+class BillingBackendUnavailableException(
+    message: String,
+) : IllegalStateException(message)

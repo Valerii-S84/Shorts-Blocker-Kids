@@ -4,6 +4,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -44,6 +45,50 @@ class BillingBackendServerTest {
 
         assertTrue(response.contains("\"state\":\"ACTIVE\""))
         assertTrue(response.contains("\"is_active\":true"))
+    }
+
+    @Test
+    fun canceledActivePurchaseRemainsActiveUntilPaidPeriodEnds() {
+        val backend =
+            startBackend(
+                FakeVerifier(
+                    state = SubscriptionEntitlementState.CANCELED_ACTIVE,
+                    activeUntilMillis = 20_000L,
+                    verifiedAtMillis = 7_000L,
+                ),
+            )
+
+        val response =
+            post(
+                url = "http://127.0.0.1:${backend.port}/billing/play/verify",
+                body = verifyBody(installId = "install-1", purchaseToken = "token-1"),
+            )
+
+        assertTrue(response.contains("\"state\":\"CANCELED_ACTIVE\""))
+        assertTrue(response.contains("\"is_active\":true"))
+        assertTrue(response.contains("\"active_until_millis\":20000"))
+        assertTrue(response.contains("\"checked_at_millis\":7000"))
+    }
+
+    @Test
+    fun expiredPurchaseDoesNotGrantEntitlement() {
+        val backend =
+            startBackend(
+                FakeVerifier(
+                    state = SubscriptionEntitlementState.EXPIRED,
+                    activeUntilMillis = 4_000L,
+                    verifiedAtMillis = 8_000L,
+                ),
+            )
+
+        val response =
+            post(
+                url = "http://127.0.0.1:${backend.port}/billing/play/verify",
+                body = verifyBody(installId = "install-1", purchaseToken = "token-1"),
+            )
+
+        assertTrue(response.contains("\"state\":\"EXPIRED\""))
+        assertTrue(response.contains("\"is_active\":false"))
     }
 
     @Test
@@ -112,6 +157,40 @@ class BillingBackendServerTest {
     }
 
     @Test
+    fun repeatedVerificationUpdatesExistingEntitlement() {
+        val backend =
+            startBackend(
+                SequenceVerifier(
+                    verifiedSubscription(
+                        state = SubscriptionEntitlementState.ACTIVE,
+                        verifiedAtMillis = 5_000L,
+                    ),
+                    verifiedSubscription(
+                        state = SubscriptionEntitlementState.EXPIRED,
+                        activeUntilMillis = 4_000L,
+                        verifiedAtMillis = 9_000L,
+                    ),
+                ),
+            )
+
+        post(
+            url = "http://127.0.0.1:${backend.port}/billing/play/verify",
+            body = verifyBody(installId = "install-1", purchaseToken = "token-1"),
+        )
+        val updated =
+            post(
+                url = "http://127.0.0.1:${backend.port}/billing/play/verify",
+                body = verifyBody(installId = "install-1", purchaseToken = "token-1"),
+            )
+        val status = get("http://127.0.0.1:${backend.port}/entitlement/status?install_id=install-1")
+
+        assertTrue(updated.contains("\"state\":\"EXPIRED\""))
+        assertTrue(status.contains("\"state\":\"EXPIRED\""))
+        assertTrue(status.contains("\"is_active\":false"))
+        assertTrue(status.contains("\"checked_at_millis\":9000"))
+    }
+
+    @Test
     fun statusReturnsUnknownForUnregisteredInstall() {
         val backend = startBackend()
 
@@ -120,6 +199,76 @@ class BillingBackendServerTest {
 
         assertTrue(response.contains("\"state\":\"UNKNOWN\""))
         assertTrue(response.contains("\"is_active\":false"))
+    }
+
+    @Test
+    fun invalidPurchaseTokenIsRejectedWithoutStoredEntitlement() {
+        val backend = startBackend(ThrowingVerifier(InvalidPurchaseTokenException()))
+
+        val response =
+            post(
+                url = "http://127.0.0.1:${backend.port}/billing/play/verify",
+                body = verifyBody(installId = "install-1", purchaseToken = "token-1"),
+                expectedCode = 400,
+            )
+        val status = get("http://127.0.0.1:${backend.port}/entitlement/status?install_id=install-1")
+
+        assertTrue(response.contains("Invalid purchase token"))
+        assertFalse(response.contains("token-1"))
+        assertTrue(status.contains("\"state\":\"UNKNOWN\""))
+        assertTrue(status.contains("\"is_active\":false"))
+    }
+
+    @Test
+    fun purchaseNotFoundDoesNotCreateEntitlement() {
+        val backend = startBackend(ThrowingVerifier(PurchaseNotFoundException()))
+
+        val response =
+            post(
+                url = "http://127.0.0.1:${backend.port}/billing/play/verify",
+                body = verifyBody(installId = "install-1", purchaseToken = "token-1"),
+                expectedCode = 404,
+            )
+        val status = get("http://127.0.0.1:${backend.port}/entitlement/status?install_id=install-1")
+
+        assertTrue(response.contains("Purchase not found"))
+        assertTrue(status.contains("\"state\":\"UNKNOWN\""))
+        assertTrue(status.contains("\"is_active\":false"))
+    }
+
+    @Test
+    fun backendUnavailableReturnsServiceUnavailableWithoutGrantingEntitlement() {
+        val backend = startBackend(ThrowingVerifier(BillingBackendUnavailableException("upstream down")))
+
+        val response =
+            post(
+                url = "http://127.0.0.1:${backend.port}/billing/play/verify",
+                body = verifyBody(installId = "install-1", purchaseToken = "token-1"),
+                expectedCode = 503,
+            )
+        val status = get("http://127.0.0.1:${backend.port}/entitlement/status?install_id=install-1")
+
+        assertTrue(response.contains("Billing backend temporarily unavailable"))
+        assertFalse(response.contains("upstream down"))
+        assertTrue(status.contains("\"state\":\"UNKNOWN\""))
+    }
+
+    @Test
+    fun unexpectedBackendErrorReturnsGenericErrorWithoutGrantingEntitlement() {
+        val backend = startBackend(ThrowingVerifier(RuntimeException("token-1 leaked")))
+
+        val response =
+            post(
+                url = "http://127.0.0.1:${backend.port}/billing/play/verify",
+                body = verifyBody(installId = "install-1", purchaseToken = "token-1"),
+                expectedCode = 500,
+            )
+        val status = get("http://127.0.0.1:${backend.port}/entitlement/status?install_id=install-1")
+
+        assertTrue(response.contains("Internal billing backend error"))
+        assertFalse(response.contains("token-1"))
+        assertFalse(response.contains("leaked"))
+        assertTrue(status.contains("\"state\":\"UNKNOWN\""))
     }
 
     @Test
@@ -141,7 +290,7 @@ class BillingBackendServerTest {
         assertTrue(response.contains("\"status\":\"ok\""))
     }
 
-    private fun startBackend(): BillingBackendServer {
+    private fun startBackend(verifier: PlaySubscriptionVerifier = FakeVerifier()): BillingBackendServer {
         val config =
             BackendConfig(
                 port = 0,
@@ -153,7 +302,7 @@ class BillingBackendServerTest {
         val backend =
             BillingBackendServer.create(
                 config = config,
-                verifier = FakeVerifier(),
+                verifier = verifier,
             )
         backend.start()
         startedServers.add(backend)
@@ -235,18 +384,63 @@ class BillingBackendServerTest {
     }
 }
 
-private class FakeVerifier : PlaySubscriptionVerifier {
+private class FakeVerifier(
+    state: SubscriptionEntitlementState = SubscriptionEntitlementState.ACTIVE,
+    activeUntilMillis: Long? = 10_000L,
+    acknowledged: Boolean = true,
+    verifiedAtMillis: Long = 5_000L,
+) : PlaySubscriptionVerifier {
+    private val subscription =
+        verifiedSubscription(
+            state = state,
+            activeUntilMillis = activeUntilMillis,
+            acknowledged = acknowledged,
+            verifiedAtMillis = verifiedAtMillis,
+        )
+
+    override fun verify(
+        packageName: String,
+        productId: String,
+        purchaseToken: String,
+    ): VerifiedSubscription = subscription.copy(productId = productId, purchaseToken = purchaseToken)
+}
+
+private class SequenceVerifier(
+    vararg subscriptions: VerifiedSubscription,
+) : PlaySubscriptionVerifier {
+    private val remaining = subscriptions.toMutableList()
+
     override fun verify(
         packageName: String,
         productId: String,
         purchaseToken: String,
     ): VerifiedSubscription =
-        VerifiedSubscription(
-            productId = productId,
-            purchaseToken = purchaseToken,
-            state = SubscriptionEntitlementState.ACTIVE,
-            activeUntilMillis = 10_000L,
-            acknowledged = true,
-            verifiedAtMillis = 5_000L,
-        )
+        remaining
+            .removeAt(0)
+            .copy(productId = productId, purchaseToken = purchaseToken)
 }
+
+private class ThrowingVerifier(
+    private val throwable: RuntimeException,
+) : PlaySubscriptionVerifier {
+    override fun verify(
+        packageName: String,
+        productId: String,
+        purchaseToken: String,
+    ): VerifiedSubscription = throw throwable
+}
+
+private fun verifiedSubscription(
+    state: SubscriptionEntitlementState,
+    activeUntilMillis: Long? = 10_000L,
+    acknowledged: Boolean = true,
+    verifiedAtMillis: Long = 5_000L,
+): VerifiedSubscription =
+    VerifiedSubscription(
+        productId = "shorts_blocker_kids_monthly",
+        purchaseToken = "purchase-token",
+        state = state,
+        activeUntilMillis = activeUntilMillis,
+        acknowledged = acknowledged,
+        verifiedAtMillis = verifiedAtMillis,
+    )
