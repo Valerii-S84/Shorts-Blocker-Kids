@@ -35,6 +35,7 @@ fun DashboardScreen(
     isAccessibilityServiceEnabled: Boolean,
     billingUiState: BillingUiState,
     onProtectionChanged: (Boolean) -> Unit,
+    onPlatformEnabledChanged: (String, Boolean) -> Unit,
     onSubscribe: () -> Unit,
     onRestorePurchases: () -> Unit,
     onManageSubscription: () -> Unit,
@@ -88,6 +89,26 @@ fun DashboardScreen(
                     },
                 )
                 StatusRow("Platform support", PlatformSupportMatrix.protectedSummary())
+                StatusRow("Enabled apps", enabledAppsLabel(settings))
+                PlatformSupportMatrix.protectedEntries.forEach { entry ->
+                    ProtectionRow(
+                        label = entry.platformName,
+                        value =
+                            if (settings.isPlatformEnabled(entry.platformId)) {
+                                "enabled"
+                            } else {
+                                "disabled"
+                            },
+                        control = {
+                            Switch(
+                                checked = settings.isPlatformEnabled(entry.platformId),
+                                onCheckedChange = { enabled ->
+                                    onPlatformEnabledChanged(entry.platformId, enabled)
+                                },
+                            )
+                        },
+                    )
+                }
                 StatusRow("Not supported", PlatformSupportMatrix.unsupportedSummary())
                 StatusRow("PIN", if (settings.isPinCreated) "created" else "not created")
                 StatusRow(
@@ -118,6 +139,9 @@ fun DashboardScreen(
                 }
                 if (!isAccessibilityServiceEnabled) {
                     ErrorText("Protection permission missing")
+                }
+                if (!settings.hasEnabledPlatforms) {
+                    ErrorText("No protected apps selected")
                 }
                 if (!isProtectionActive) {
                     val inactiveMessage =
@@ -198,6 +222,10 @@ private fun protectionInactiveMessage(
         return "Protection inactive. Turn Protection ON to block short videos."
     }
 
+    if (!settings.hasEnabledPlatforms) {
+        return "Protection inactive. Enable at least one protected app."
+    }
+
     if (!isAccessibilityServiceEnabled) {
         return "Protection inactive. Enable Accessibility Service."
     }
@@ -212,6 +240,19 @@ private fun protectionInactiveMessage(
     }
 
     return "Protection inactive. Complete setup to block short videos."
+}
+
+private fun enabledAppsLabel(settings: AppSettings): String {
+    val enabledNames =
+        PlatformSupportMatrix.protectedEntries
+            .filter { entry -> settings.isPlatformEnabled(entry.platformId) }
+            .map { it.platformName }
+
+    return if (enabledNames.isEmpty()) {
+        "none"
+    } else {
+        enabledNames.joinToString()
+    }
 }
 
 private fun EntitlementState.dashboardLabel(): String =

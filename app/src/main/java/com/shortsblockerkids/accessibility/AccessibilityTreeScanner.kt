@@ -15,6 +15,7 @@ class AccessibilityTreeScanner {
         return AccessibilityTreeSnapshot(nodes = nodes)
     }
 
+    @Suppress("DEPRECATION")
     private fun collectNodeSignals(
         node: AccessibilityNodeInfo,
         depth: Int,
@@ -32,7 +33,11 @@ class AccessibilityTreeScanner {
             }
 
             val child = node.getChild(index) ?: continue
-            collectNodeSignals(child, depth + 1, nodes)
+            try {
+                collectNodeSignals(child, depth + 1, nodes)
+            } finally {
+                child.recycle()
+            }
         }
     }
 

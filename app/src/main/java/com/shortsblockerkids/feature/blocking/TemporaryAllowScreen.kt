@@ -42,7 +42,7 @@ fun TemporaryAllowScreen(
             style = MaterialTheme.typography.bodyLarge,
         )
         Spacer(modifier = Modifier.height(24.dp))
-        listOf(5, 10, 15).forEach { minutes ->
+        TemporaryAllowFlowController.ALLOWED_DURATIONS.forEach { minutes ->
             Button(
                 onClick = { onDurationSelected(minutes) },
                 modifier = Modifier.fillMaxWidth(),

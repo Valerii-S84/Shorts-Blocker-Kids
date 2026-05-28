@@ -21,7 +21,8 @@ class AccessibilityEventRouter(
     ) {
         val packageName = event.packageName?.toString()
         val nowMillis = System.currentTimeMillis()
-        if (!detectionEngine.supportsPackage(packageName)) {
+        val platform = detectionEngine.platformForPackage(packageName)
+        if (platform == null) {
             if (
                 blockOverlayController.isOverlayVisible ||
                 blockingDecisionController.shouldIgnoreUnsupportedPackageEvent(nowMillis)
@@ -37,6 +38,16 @@ class AccessibilityEventRouter(
             return
         }
         val supportedPackageName = packageName ?: return
+        val settings = settingsProvider()
+        if (!settings.isPlatformEnabled(platform.id)) {
+            debugLogger.logIgnoredEvent(
+                packageName = packageName,
+                eventType = event.eventType,
+                reason = "protected app disabled",
+            )
+            dismissBlockingState()
+            return
+        }
 
         if (blockOverlayController.isOverlayVisible) {
             debugLogger.logIgnoredEvent(
@@ -65,7 +76,6 @@ class AccessibilityEventRouter(
             return
         }
 
-        val settings = settingsProvider()
         val isProtectionActive = settings.canProtect(nowMillis)
         val isDebugSnapshotPending = RuntimeProtectionState.isDebugSnapshotPending()
         if (!isProtectionActive && !isDebugSnapshotPending) {

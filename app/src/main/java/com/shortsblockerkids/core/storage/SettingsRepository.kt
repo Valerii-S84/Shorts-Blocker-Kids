@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.shortsblockerkids.core.billing.BillingEntitlementSnapshot
 import com.shortsblockerkids.core.billing.BillingEntitlementState
@@ -109,6 +110,24 @@ class SettingsRepository(
         }
     }
 
+    suspend fun setPlatformEnabled(
+        platformId: String,
+        enabled: Boolean,
+    ) {
+        require(platformId in AppSettings.DEFAULT_ENABLED_PLATFORM_IDS) {
+            "Unsupported protected platform id: $platformId"
+        }
+        dataStore.edit { preferences ->
+            val current = preferences.enabledPlatformIds()
+            preferences[KEY_ENABLED_PLATFORM_IDS] =
+                if (enabled) {
+                    current + platformId
+                } else {
+                    current - platformId
+                }
+        }
+    }
+
     suspend fun acceptAccessibilityDisclosure() {
         setDisclosureAccepted(true)
     }
@@ -123,6 +142,7 @@ class SettingsRepository(
         minutes: Int,
         nowMillis: Long = System.currentTimeMillis(),
     ) {
+        require(minutes > 0) { "Temporary allow duration must be positive." }
         setTemporaryAllowUntil(nowMillis + minutes * 60_000L)
     }
 
@@ -181,8 +201,14 @@ class SettingsRepository(
 
         val expectedHash = settings.pinHash ?: return PinVerificationResult.NotConfigured
         val salt = settings.pinSalt ?: return PinVerificationResult.NotConfigured
-        val actualHash = pinHasher.hash(pin = pin, saltBase64 = salt)
-        if (pinHasher.matches(expectedHash, actualHash)) {
+        val matches =
+            runCatching {
+                val actualHash = pinHasher.hash(pin = pin, saltBase64 = salt)
+                pinHasher.matches(expectedHash, actualHash)
+            }.getOrElse {
+                return PinVerificationResult.NotConfigured
+            }
+        if (matches) {
             preferences[KEY_FAILED_PIN_ATTEMPTS] = 0
             preferences.remove(KEY_PIN_LOCKOUT_UNTIL)
             return PinVerificationResult.Success
@@ -207,6 +233,7 @@ class SettingsRepository(
             protectionEnabled = this[KEY_PROTECTION_ENABLED] ?: true,
             accessibilityDisclosureAccepted = this[KEY_ACCESSIBILITY_DISCLOSURE_ACCEPTED] ?: false,
             selectedMode = enumValueOrDefault(this[KEY_SELECTED_MODE], ProtectionMode.BLOCK_SHORTS),
+            enabledPlatformIds = enabledPlatformIds(),
             temporaryAllowUntil = this[KEY_TEMPORARY_ALLOW_UNTIL],
             freeTestStartedAt = this[KEY_FREE_TEST_STARTED_AT],
             freeTestDurationDays =
@@ -243,6 +270,13 @@ class SettingsRepository(
         }
     }
 
+    private fun Preferences.enabledPlatformIds(): Set<String> =
+        this[KEY_ENABLED_PLATFORM_IDS]
+            ?.filterTo(mutableSetOf()) { platformId ->
+                platformId in AppSettings.DEFAULT_ENABLED_PLATFORM_IDS
+            }
+            ?: AppSettings.DEFAULT_ENABLED_PLATFORM_IDS
+
     companion object {
         private val KEY_PROTECTION_ENABLED = booleanPreferencesKey("protectionEnabled")
         private val KEY_ACCESSIBILITY_DISCLOSURE_ACCEPTED =
@@ -250,6 +284,7 @@ class SettingsRepository(
                 "accessibilityDisclosureAccepted",
             )
         private val KEY_SELECTED_MODE = stringPreferencesKey("selectedMode")
+        private val KEY_ENABLED_PLATFORM_IDS = stringSetPreferencesKey("enabledPlatformIds")
         private val KEY_TEMPORARY_ALLOW_UNTIL = longPreferencesKey("temporaryAllowUntil")
         private val KEY_FREE_TEST_STARTED_AT = longPreferencesKey("free_test_started_at")
         private val KEY_FREE_TEST_DURATION_DAYS = intPreferencesKey("free_test_duration_days")

@@ -69,6 +69,29 @@ class ShortVideoDetectionEngineTest {
     }
 
     @Test
+    fun platformForPackageReturnsMatchingProtectedPlatform() {
+        val engine = ShortVideoDetectionEngine.production()
+
+        assertEquals(
+            SupportedPlatform.YOUTUBE_SHORTS,
+            engine.platformForPackage(YouTubeShortsDetector.YOUTUBE_PACKAGE),
+        )
+        assertEquals(
+            SupportedPlatform.TIKTOK,
+            engine.platformForPackage(TikTokShortVideoDetector.TIKTOK_PACKAGE),
+        )
+        assertEquals(
+            SupportedPlatform.INSTAGRAM_REELS,
+            engine.platformForPackage(InstagramReelsDetector.INSTAGRAM_PACKAGE),
+        )
+        assertEquals(
+            SupportedPlatform.FACEBOOK_REELS,
+            engine.platformForPackage(FacebookReelsDetector.FACEBOOK_PACKAGE),
+        )
+        assertEquals(null, engine.platformForPackage("com.example.unknown"))
+    }
+
+    @Test
     fun routesToTheMatchingDetectorWhenMultipleDetectorsAreRegistered() {
         val youtubeDetector =
             RecordingDetector(

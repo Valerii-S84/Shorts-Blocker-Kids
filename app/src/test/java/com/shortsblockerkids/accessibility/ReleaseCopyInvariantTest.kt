@@ -49,6 +49,21 @@ class ReleaseCopyInvariantTest {
         assertTrue(privacyPolicy.contains("Facebook Lite `com.facebook.lite` | not supported"))
     }
 
+    @Test
+    fun accessibilityServiceReceivesOnlyProtectedPlatformPackages() {
+        val serviceConfig =
+            repoFile(
+                "app/src/main/res/xml/shorts_blocker_accessibility_service.xml",
+            ).readText()
+
+        assertTrue(serviceConfig.contains(YouTubeShortsDetector.YOUTUBE_PACKAGE))
+        assertTrue(serviceConfig.contains(TikTokShortVideoDetector.TIKTOK_PACKAGE))
+        assertTrue(serviceConfig.contains(InstagramReelsDetector.INSTAGRAM_PACKAGE))
+        assertTrue(serviceConfig.contains(FacebookReelsDetector.FACEBOOK_PACKAGE))
+        assertFalse(serviceConfig.contains(PlatformSupportMatrix.TIKTOK_REGIONAL_PACKAGE))
+        assertFalse(serviceConfig.contains(PlatformSupportMatrix.FACEBOOK_LITE_PACKAGE))
+    }
+
     private fun repoFile(relativePath: String): File {
         val userDir = requireNotNull(System.getProperty("user.dir"))
         var root: File? = File(userDir)

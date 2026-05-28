@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.shortsblockerkids.core.billing.BillingEntitlementSnapshot
 import com.shortsblockerkids.core.billing.BillingEntitlementState
 import com.shortsblockerkids.core.entitlement.FreeTestPolicy
@@ -20,6 +21,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -114,6 +116,76 @@ class SettingsRepositoryTest {
 
             assertEquals(ProtectionMode.BLOCK_SHORTS, repository.readSettings().first().selectedMode)
         }
+
+    @Test
+    fun persistsEnabledProtectedAppsAcrossRestart() =
+        runBlocking {
+            val firstRepository = createRepository("enabled-platforms")
+
+            firstRepository.setPlatformEnabled(AppSettings.TIKTOK_PLATFORM_ID, false)
+            firstRepository.setPlatformEnabled(AppSettings.FACEBOOK_REELS_PLATFORM_ID, false)
+            val firstSettings = firstRepository.readSettings().first()
+
+            assertFalse(firstSettings.isPlatformEnabled(AppSettings.TIKTOK_PLATFORM_ID))
+            assertFalse(firstSettings.isPlatformEnabled(AppSettings.FACEBOOK_REELS_PLATFORM_ID))
+            assertTrue(firstSettings.isPlatformEnabled(AppSettings.YOUTUBE_SHORTS_PLATFORM_ID))
+            cancelOpenStores()
+
+            val restartedRepository = createRepository("enabled-platforms")
+            val restartedSettings = restartedRepository.readSettings().first()
+
+            assertEquals(firstSettings.enabledPlatformIds, restartedSettings.enabledPlatformIds)
+        }
+
+    @Test
+    fun disablingEveryProtectedAppPreventsProtectionUntilOneIsEnabledAgain() =
+        runBlocking {
+            val repository = createRepository("all-platforms-disabled")
+            repository.savePin("4826")
+            repository.setDisclosureAccepted(true)
+            repository.recordSuccessfulProtectionActivation(nowMillis = 1_000L)
+
+            AppSettings.DEFAULT_ENABLED_PLATFORM_IDS.forEach { platformId ->
+                repository.setPlatformEnabled(platformId, false)
+            }
+            val disabledSettings = repository.readSettings().first()
+
+            assertEquals(emptySet<String>(), disabledSettings.enabledPlatformIds)
+            assertFalse(disabledSettings.canProtect(nowMillis = 1_500L))
+
+            repository.setPlatformEnabled(AppSettings.INSTAGRAM_REELS_PLATFORM_ID, true)
+            val reenabledSettings = repository.readSettings().first()
+
+            assertEquals(setOf(AppSettings.INSTAGRAM_REELS_PLATFORM_ID), reenabledSettings.enabledPlatformIds)
+            assertTrue(reenabledSettings.canProtect(nowMillis = 1_500L))
+        }
+
+    @Test
+    fun unknownStoredPlatformIdsAreIgnored() =
+        runBlocking {
+            val dataStore = createDataStore("unknown-platform")
+            dataStore.edit { preferences ->
+                preferences[stringSetPreferencesKey("enabledPlatformIds")] =
+                    setOf(AppSettings.YOUTUBE_SHORTS_PLATFORM_ID, "unknown_platform")
+            }
+            val repository = SettingsRepository(dataStore)
+
+            assertEquals(
+                setOf(AppSettings.YOUTUBE_SHORTS_PLATFORM_ID),
+                repository.readSettings().first().enabledPlatformIds,
+            )
+        }
+
+    @Test
+    fun unknownProtectedPlatformIdIsRejected() {
+        val repository = createRepository("unknown-platform-id")
+
+        assertThrows(IllegalArgumentException::class.java) {
+            runBlocking {
+                repository.setPlatformEnabled("unknown_platform", true)
+            }
+        }
+    }
 
     @Test
     fun persistsBillingEntitlementSnapshot() =
@@ -253,6 +325,17 @@ class SettingsRepositoryTest {
         }
 
     @Test
+    fun rejectsNonPositiveTemporaryAllowDurations() {
+        val repository = createRepository("invalid-allow-duration")
+
+        assertThrows(IllegalArgumentException::class.java) {
+            runBlocking {
+                repository.setTemporaryAllowForMinutes(0, nowMillis = 1_000L)
+            }
+        }
+    }
+
+    @Test
     fun escalatesPinLockoutAcrossFailedAttempts() =
         runBlocking {
             val repository = createRepository("lockout")
@@ -362,6 +445,19 @@ class SettingsRepositoryTest {
             repository.savePin("4826")
 
             assertTrue(repository.verifyPin("482") is PinVerificationResult.Failure)
+        }
+
+    @Test
+    fun corruptedPinMetadataDoesNotCrashVerification() =
+        runBlocking {
+            val dataStore = createDataStore("corrupted-pin")
+            dataStore.edit { preferences ->
+                preferences[stringPreferencesKey("pinHash")] = "not-base64"
+                preferences[stringPreferencesKey("pinSalt")] = "not-base64"
+            }
+            val repository = SettingsRepository(dataStore)
+
+            assertEquals(PinVerificationResult.NotConfigured, repository.verifyPin("4826"))
         }
 
     @Test

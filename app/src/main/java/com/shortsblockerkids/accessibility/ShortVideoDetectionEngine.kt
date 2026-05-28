@@ -25,6 +25,8 @@ class ShortVideoDetectionEngine(
 
     fun supportsPackage(packageName: String?): Boolean = detectorFor(packageName) != null
 
+    fun platformForPackage(packageName: String?): SupportedPlatform? = detectorFor(packageName)?.platform
+
     fun detect(
         packageName: String?,
         snapshot: AccessibilityTreeSnapshot,

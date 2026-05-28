@@ -346,6 +346,12 @@ private fun ShortsBlockerKidsApp(
                             screen = AppScreen.PinEntry
                         }
                     },
+                    onPlatformEnabledChanged = { platformId, enabled ->
+                        coroutineScope.launch {
+                            repository.setPlatformEnabled(platformId, enabled)
+                            onStateChanged()
+                        }
+                    },
                     onSubscribe = onSubscribe,
                     onRestorePurchases = onRestorePurchases,
                     onManageSubscription = onManageSubscription,

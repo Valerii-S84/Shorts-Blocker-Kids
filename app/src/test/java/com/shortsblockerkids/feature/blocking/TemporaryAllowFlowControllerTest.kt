@@ -2,6 +2,7 @@ package com.shortsblockerkids.feature.blocking
 
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertThrows
 import org.junit.Test
 
 class TemporaryAllowFlowControllerTest {
@@ -54,5 +55,21 @@ class TemporaryAllowFlowControllerTest {
 
         assertEquals(emptyList<Int>(), storedDurations)
         assertEquals(TemporaryAllowCompletion.ReturnToForegroundApp, completion)
+    }
+
+    @Test
+    fun unsupportedDurationIsRejectedAndNotStored() {
+        val storedDurations = mutableListOf<Int>()
+        val controller =
+            TemporaryAllowFlowController { minutes ->
+                storedDurations += minutes
+            }
+
+        assertThrows(IllegalArgumentException::class.java) {
+            runBlocking {
+                controller.selectDuration(30)
+            }
+        }
+        assertEquals(emptyList<Int>(), storedDurations)
     }
 }

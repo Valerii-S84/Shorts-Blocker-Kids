@@ -1,5 +1,7 @@
 package com.shortsblockerkids.accessibility
 
+import com.shortsblockerkids.core.storage.AppSettings
+
 data class SupportedPlatform(
     val id: String,
     val displayName: String,
@@ -7,22 +9,22 @@ data class SupportedPlatform(
     companion object {
         val YOUTUBE_SHORTS =
             SupportedPlatform(
-                id = "youtube_shorts",
+                id = AppSettings.YOUTUBE_SHORTS_PLATFORM_ID,
                 displayName = "YouTube Shorts",
             )
         val TIKTOK =
             SupportedPlatform(
-                id = "tiktok",
+                id = AppSettings.TIKTOK_PLATFORM_ID,
                 displayName = "TikTok main",
             )
         val INSTAGRAM_REELS =
             SupportedPlatform(
-                id = "instagram_reels",
+                id = AppSettings.INSTAGRAM_REELS_PLATFORM_ID,
                 displayName = "Instagram Reels",
             )
         val FACEBOOK_REELS =
             SupportedPlatform(
-                id = "facebook_reels",
+                id = AppSettings.FACEBOOK_REELS_PLATFORM_ID,
                 displayName = "Facebook Reels",
             )
 
@@ -45,6 +47,7 @@ enum class PlatformSupportStatus(
 }
 
 data class PlatformSupportEntry(
+    val platformId: String,
     val platformName: String,
     val packageName: String,
     val status: PlatformSupportStatus,
@@ -57,31 +60,37 @@ object PlatformSupportMatrix {
     val entries =
         listOf(
             PlatformSupportEntry(
+                platformId = SupportedPlatform.YOUTUBE_SHORTS.id,
                 platformName = "YouTube Shorts",
                 packageName = YouTubeShortsDetector.YOUTUBE_PACKAGE,
                 status = PlatformSupportStatus.SUPPORTED,
             ),
             PlatformSupportEntry(
+                platformId = SupportedPlatform.TIKTOK.id,
                 platformName = "TikTok main",
                 packageName = TikTokShortVideoDetector.TIKTOK_PACKAGE,
                 status = PlatformSupportStatus.CODE_SUPPORTED_NEEDS_REAL_DEVICE_QA,
             ),
             PlatformSupportEntry(
+                platformId = "tiktok_regional",
                 platformName = "TikTok regional",
                 packageName = TIKTOK_REGIONAL_PACKAGE,
                 status = PlatformSupportStatus.NOT_SUPPORTED,
             ),
             PlatformSupportEntry(
+                platformId = SupportedPlatform.INSTAGRAM_REELS.id,
                 platformName = "Instagram Reels",
                 packageName = InstagramReelsDetector.INSTAGRAM_PACKAGE,
                 status = PlatformSupportStatus.CODE_SUPPORTED_NEEDS_REAL_DEVICE_QA,
             ),
             PlatformSupportEntry(
+                platformId = SupportedPlatform.FACEBOOK_REELS.id,
                 platformName = "Facebook Reels",
                 packageName = FacebookReelsDetector.FACEBOOK_PACKAGE,
                 status = PlatformSupportStatus.CODE_SUPPORTED_NEEDS_REAL_DEVICE_QA,
             ),
             PlatformSupportEntry(
+                platformId = "facebook_lite",
                 platformName = "Facebook Lite",
                 packageName = FACEBOOK_LITE_PACKAGE,
                 status = PlatformSupportStatus.NOT_SUPPORTED,

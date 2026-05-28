@@ -10,28 +10,38 @@ class PlatformSupportMatrixTest {
     fun platformSupportMatrixMatchesCurrentReleaseScope() {
         assertEquals(
             listOf(
-                support("YouTube Shorts", YouTubeShortsDetector.YOUTUBE_PACKAGE, PlatformSupportStatus.SUPPORTED),
                 support(
+                    SupportedPlatform.YOUTUBE_SHORTS.id,
+                    "YouTube Shorts",
+                    YouTubeShortsDetector.YOUTUBE_PACKAGE,
+                    PlatformSupportStatus.SUPPORTED,
+                ),
+                support(
+                    SupportedPlatform.TIKTOK.id,
                     "TikTok main",
                     TikTokShortVideoDetector.TIKTOK_PACKAGE,
                     PlatformSupportStatus.CODE_SUPPORTED_NEEDS_REAL_DEVICE_QA,
                 ),
                 support(
+                    "tiktok_regional",
                     "TikTok regional",
                     PlatformSupportMatrix.TIKTOK_REGIONAL_PACKAGE,
                     PlatformSupportStatus.NOT_SUPPORTED,
                 ),
                 support(
+                    SupportedPlatform.INSTAGRAM_REELS.id,
                     "Instagram Reels",
                     InstagramReelsDetector.INSTAGRAM_PACKAGE,
                     PlatformSupportStatus.CODE_SUPPORTED_NEEDS_REAL_DEVICE_QA,
                 ),
                 support(
+                    SupportedPlatform.FACEBOOK_REELS.id,
                     "Facebook Reels",
                     FacebookReelsDetector.FACEBOOK_PACKAGE,
                     PlatformSupportStatus.CODE_SUPPORTED_NEEDS_REAL_DEVICE_QA,
                 ),
                 support(
+                    "facebook_lite",
                     "Facebook Lite",
                     PlatformSupportMatrix.FACEBOOK_LITE_PACKAGE,
                     PlatformSupportStatus.NOT_SUPPORTED,
@@ -63,11 +73,13 @@ class PlatformSupportMatrixTest {
     }
 
     private fun support(
+        platformId: String,
         platformName: String,
         packageName: String,
         status: PlatformSupportStatus,
     ): PlatformSupportEntry =
         PlatformSupportEntry(
+            platformId = platformId,
             platformName = platformName,
             packageName = packageName,
             status = status,

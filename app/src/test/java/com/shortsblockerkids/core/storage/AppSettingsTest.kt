@@ -41,6 +41,43 @@ class AppSettingsTest {
     }
 
     @Test
+    fun supportedPlatformsAreEnabledByDefault() {
+        val settings = AppSettings()
+
+        assertEquals(AppSettings.DEFAULT_ENABLED_PLATFORM_IDS, settings.enabledPlatformIds)
+        assertTrue(settings.hasEnabledPlatforms)
+        assertTrue(settings.isPlatformEnabled(AppSettings.YOUTUBE_SHORTS_PLATFORM_ID))
+        assertTrue(settings.isPlatformEnabled(AppSettings.TIKTOK_PLATFORM_ID))
+        assertTrue(settings.isPlatformEnabled(AppSettings.INSTAGRAM_REELS_PLATFORM_ID))
+        assertTrue(settings.isPlatformEnabled(AppSettings.FACEBOOK_REELS_PLATFORM_ID))
+    }
+
+    @Test
+    fun canProtectRequiresAtLeastOneEnabledPlatform() {
+        val settings =
+            activeSettings(freeTestStartedAt = TEST_STARTED_AT)
+                .copy(enabledPlatformIds = emptySet())
+
+        assertFalse(settings.hasEnabledPlatforms)
+        assertFalse(settings.canProtect(nowMillis = 1_000L))
+    }
+
+    @Test
+    fun disabledSinglePlatformDoesNotDisableOtherProtectedApps() {
+        val settings =
+            activeSettings(freeTestStartedAt = TEST_STARTED_AT)
+                .copy(
+                    enabledPlatformIds =
+                        AppSettings.DEFAULT_ENABLED_PLATFORM_IDS -
+                            AppSettings.TIKTOK_PLATFORM_ID,
+                )
+
+        assertFalse(settings.isPlatformEnabled(AppSettings.TIKTOK_PLATFORM_ID))
+        assertTrue(settings.isPlatformEnabled(AppSettings.YOUTUBE_SHORTS_PLATFORM_ID))
+        assertTrue(settings.canProtect(nowMillis = 1_000L))
+    }
+
+    @Test
     fun pinIsCreatedOnlyWhenHashAndSaltAreBothPresent() {
         assertTrue(AppSettings(pinHash = "hash", pinSalt = "salt").isPinCreated)
         assertFalse(AppSettings(pinHash = "", pinSalt = "salt").isPinCreated)
