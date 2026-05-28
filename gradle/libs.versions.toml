@@ -9,6 +9,7 @@ googlePlayBilling = "9.0.0"
 androidxTestExtJunit = "1.2.1"
 androidxTestRunner = "1.6.2"
 kotlinxSerializationJson = "1.11.0"
+postgresql = "42.7.11"
 uiautomator = "2.3.0"
 junit = "4.13.2"
 kotlin = "2.3.20"
@@ -28,6 +29,7 @@ google-auth-oauth2-http = { module = "com.google.auth:google-auth-library-oauth2
 google-play-billing-ktx = { module = "com.android.billingclient:billing-ktx", version.ref = "googlePlayBilling" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
 junit = { module = "junit:junit", version.ref = "junit" }
+postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

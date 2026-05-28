@@ -1,23 +1,58 @@
 name: shorts-blocker-kids
 
 services:
+  billing-db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: "${SBK_DATABASE_NAME:-shorts_blocker_kids}"
+      POSTGRES_USER: "${SBK_DATABASE_USER:?set SBK_DATABASE_USER}"
+      POSTGRES_PASSWORD: "${SBK_DATABASE_PASSWORD:?set SBK_DATABASE_PASSWORD}"
+    volumes:
+      - billing-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+
   billing-backend:
+    image: "${SBK_BACKEND_IMAGE:-shorts-blocker-kids-billing-backend:local}"
     build:
       context: .
       dockerfile: billing-backend/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      billing-db:
+        condition: service_healthy
     ports:
       - "${SBK_BACKEND_PORT:-8080}:8080"
     environment:
+      SBK_ENV: "${SBK_ENV:-production}"
+      SBK_BACKEND_BIND_ADDRESS: "0.0.0.0"
       SBK_BACKEND_PORT: "8080"
+      SBK_PUBLIC_BASE_URL: "${SBK_PUBLIC_BASE_URL:?set SBK_PUBLIC_BASE_URL}"
+      SBK_REQUIRE_HTTPS: "true"
       SBK_PACKAGE_NAME: "${SBK_PACKAGE_NAME:-com.shortsblockerkids}"
       SBK_PLAY_SUBSCRIPTION_PRODUCT_ID: "${SBK_PLAY_SUBSCRIPTION_PRODUCT_ID:-shorts_blocker_kids_monthly}"
-      SBK_BACKEND_STORE_FILE: "${SBK_BACKEND_STORE_FILE:-/data/entitlements/billing-backend-data.json}"
-      SBK_RTDN_SHARED_SECRET: "${SBK_RTDN_SHARED_SECRET:-}"
-      GOOGLE_APPLICATION_CREDENTIALS: "${GOOGLE_APPLICATION_CREDENTIALS:-/run/secrets/google-service-account.json}"
-    volumes:
-      - billing-backend-data:/data
-      # Mount locally only when testing real Google Play verification:
-      # - ${SBK_GOOGLE_APPLICATION_CREDENTIALS_HOST}:/run/secrets/google-service-account.json:ro
+      SBK_DATABASE_URL: "jdbc:postgresql://billing-db:5432/${SBK_DATABASE_NAME:-shorts_blocker_kids}"
+      SBK_DATABASE_USER: "${SBK_DATABASE_USER:?set SBK_DATABASE_USER}"
+      SBK_DATABASE_PASSWORD: "${SBK_DATABASE_PASSWORD:?set SBK_DATABASE_PASSWORD}"
+      SBK_RUN_MIGRATIONS: "${SBK_RUN_MIGRATIONS:-true}"
+      SBK_MIGRATIONS_DIR: "/opt/shorts-blocker-kids/billing-backend/migrations"
+      SBK_RTDN_PUBSUB_AUDIENCE: "${SBK_RTDN_PUBSUB_AUDIENCE:?set SBK_RTDN_PUBSUB_AUDIENCE}"
+      SBK_RTDN_PUBSUB_SERVICE_ACCOUNT_EMAIL: "${SBK_RTDN_PUBSUB_SERVICE_ACCOUNT_EMAIL:?set SBK_RTDN_PUBSUB_SERVICE_ACCOUNT_EMAIL}"
+      SBK_MAX_REQUEST_BYTES: "${SBK_MAX_REQUEST_BYTES:-32768}"
+      SBK_RATE_LIMIT_VERIFY_PER_MINUTE: "${SBK_RATE_LIMIT_VERIFY_PER_MINUTE:-30}"
+      SBK_RATE_LIMIT_STATUS_PER_MINUTE: "${SBK_RATE_LIMIT_STATUS_PER_MINUTE:-120}"
+      SBK_RATE_LIMIT_RTDN_PER_MINUTE: "${SBK_RATE_LIMIT_RTDN_PER_MINUTE:-300}"
+      GOOGLE_APPLICATION_CREDENTIALS: "/run/secrets/google-service-account.json"
+    secrets:
+      - source: google-service-account
+        target: google-service-account.json
+    read_only: true
+    tmpfs:
+      - /tmp
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/health >/dev/null || exit 1"]
       interval: 30s
@@ -25,5 +60,9 @@ services:
       retries: 3
       start_period: 15s
 
+secrets:
+  google-service-account:
+    file: "${SBK_GOOGLE_APPLICATION_CREDENTIALS_HOST:?set SBK_GOOGLE_APPLICATION_CREDENTIALS_HOST}"
+
 volumes:
-  billing-backend-data:
+  billing-db-data:

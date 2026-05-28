@@ -4,5 +4,12 @@ fun main() {
     val config = BackendConfig.fromEnvironment(System.getenv())
     val backend = BillingBackendServer.create(config)
     backend.start()
-    println("Shorts Blocker Kids billing backend listening on port ${config.port}")
+    StructuredLogger().info(
+        "backend.started",
+        mapOf(
+            "port" to config.port,
+            "environment" to config.environment.name,
+            "storage_backend" to config.storageBackend.name,
+        ),
+    )
 }

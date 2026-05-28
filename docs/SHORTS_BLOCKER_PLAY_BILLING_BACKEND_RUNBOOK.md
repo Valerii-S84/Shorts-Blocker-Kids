@@ -1,8 +1,9 @@
 # Shorts Blocker Kids Play Billing Backend Runbook
 
-Status: Prepared. Deployment and Play Console RTDN setup remain pending.
+Status: Repository production flow prepared. Live deployment, Play Console RTDN
+setup, and license-tester evidence remain pending.
 
-Date: May 24, 2026
+Date: May 28, 2026
 
 ## Scope
 
@@ -11,24 +12,43 @@ Google Play purchase verification, entitlement status, and Real-time Developer
 Notifications.
 
 It does not create Play Console credentials, Pub/Sub topics, DNS, TLS
-certificates, hosting, or live production storage. Durable storage is captured
-as a migration-backed production plan under `billing-backend/migrations/`.
+certificates, or hosting. Those remain runtime deployment tasks outside the
+repository.
+
+Official references checked for this backend:
+
+- Google Play backend integration:
+  <https://developer.android.com/google/play/billing/backend>
+- RTDN reference:
+  <https://developer.android.com/google/play/billing/rtdn-reference>
+- Pub/Sub authenticated push:
+  <https://docs.cloud.google.com/pubsub/docs/authenticate-push-subscriptions>
+- Subscriptions v2 API:
+  <https://developers.google.com/android-publisher/api-ref/rest/v3/purchases.subscriptionsv2>
+- Subscription acknowledge API:
+  <https://developers.google.com/android-publisher/api-ref/rest/v3/purchases.subscriptions/acknowledge>
 
 ## Runtime Inputs
 
 Required outside the repository:
 
 ```text
-GOOGLE_APPLICATION_CREDENTIALS=/secure/path/service-account.json
+SBK_ENV=production
 SBK_BACKEND_PORT=8080
+SBK_PUBLIC_BASE_URL=https://billing.example.com
+SBK_REQUIRE_HTTPS=true
 SBK_PACKAGE_NAME=com.shortsblockerkids
 SBK_PLAY_SUBSCRIPTION_PRODUCT_ID=shorts_blocker_kids_monthly
-SBK_BACKEND_STORE_FILE=/secure/path/billing-backend-data.json
-SBK_RTDN_SHARED_SECRET=<runtime secret>
+SBK_DATABASE_URL=jdbc:postgresql://billing-db:5432/shorts_blocker_kids
+SBK_DATABASE_USER=<runtime database user>
+SBK_DATABASE_PASSWORD=<runtime database password>
+GOOGLE_APPLICATION_CREDENTIALS=/run/secrets/google-service-account.json
+SBK_RTDN_PUBSUB_AUDIENCE=https://billing.example.com/billing/play/rtdn
+SBK_RTDN_PUBSUB_SERVICE_ACCOUNT_EMAIL=<pubsub push service account email>
 ```
 
-Do not commit service-account JSON, runtime secrets, keystores, or production
-environment files.
+Do not commit service-account JSON, runtime secrets, keystores, database
+passwords, or production environment files.
 
 ## Local Commands
 
@@ -37,18 +57,16 @@ environment files.
 ./gradlew :billing-backend:run
 ```
 
-Production-like local service:
+Production-like Docker Compose flow:
 
 ```bash
-./gradlew :billing-backend:installDist
-docker compose up --build billing-backend
+./scripts/backend_deploy_compose.sh
 curl -fsS http://127.0.0.1:8080/health
 ```
 
-`docker-compose.yml` uses a named volume for `/data` and a healthcheck against
-`GET /health`. It intentionally does not mount real Google credentials by
-default. For real Play verification, copy `.env.example` to `.env` locally and
-mount the service-account JSON through the commented compose volume line.
+`docker-compose.yml` runs PostgreSQL with a named volume, runs migrations at
+backend startup, mounts Google credentials through a Docker Compose secret, and
+uses `GET /health` for container healthchecks.
 
 Production-configured Android build:
 
@@ -65,6 +83,7 @@ GET /health
 
 ```http
 POST /billing/play/verify
+X-Forwarded-Proto: https
 Content-Type: application/json
 
 {
@@ -78,35 +97,44 @@ Content-Type: application/json
 
 ```http
 GET /entitlement/status?install_id=random-app-install-id
+X-Forwarded-Proto: https
 ```
 
 ```http
 POST /billing/play/rtdn
-X-SBK-RTDN-Secret: <runtime secret>
+Authorization: Bearer <pubsub-signed-jwt>
+X-Forwarded-Proto: https
 Content-Type: application/json
 ```
 
-The RTDN endpoint expects a Google Pub/Sub push body and uses the decoded
-subscription purchase token as a signal. The backend still queries the Google
-Play Developer API before changing entitlement state.
+The RTDN endpoint expects a Google Pub/Sub push body. RTDN is treated only as a
+signal: the backend queries the Google Play Developer API before changing
+entitlement state. Duplicate Pub/Sub `messageId` values are persisted and
+processed idempotently.
 
-## Storage Plan
+For local development only, RTDN can use `SBK_RTDN_SHARED_SECRET` and
+`X-SBK-RTDN-Secret` when Pub/Sub JWT config is absent. Production config rejects
+missing Pub/Sub JWT settings.
 
-The current module uses a file store as a local baseline:
+## Storage And Migrations
+
+Production storage:
+
+- PostgreSQL through `SBK_DATABASE_URL`;
+- migration runner applies `billing-backend/migrations/*.sql` in filename order;
+- applied migration versions are tracked in `schema_migrations`;
+- `entitlements.purchase_token_hash` is unique;
+- raw purchase tokens are used only for Google Play verification and
+  acknowledgement, then discarded;
+- RTDN message IDs are persisted for idempotency.
+
+Local development fallback:
 
 ```text
 SBK_BACKEND_STORE_FILE=/secure/path/billing-backend-data.json
 ```
 
-Production storage target:
-
-- PostgreSQL or managed relational storage;
-- migration runner applies `billing-backend/migrations/*.sql` in filename order;
-- `entitlements.purchase_token_hash` is unique;
-- raw purchase tokens are used only for Google Play verification and are not
-  stored;
-- RTDN message IDs are persisted for idempotency;
-- backups are scheduled outside the app process.
+Production config rejects file storage.
 
 Migration files:
 
@@ -117,37 +145,78 @@ billing-backend/migrations/002_create_processed_rtdn_messages.sql
 
 ## Backup And Restore
 
-File-store baseline backup:
+PostgreSQL backup:
 
 ```bash
-SBK_BACKEND_STORE_FILE=/secure/path/billing-backend-data.json \
+SBK_DATABASE_URL=jdbc:postgresql://host:5432/shorts_blocker_kids \
+SBK_DATABASE_USER=<runtime database user> \
+SBK_DATABASE_PASSWORD=<runtime database password> \
 SBK_BACKUP_DIR=/secure/path/backups \
 ./scripts/backend_backup.sh
 ```
 
-File-store baseline restore:
+Docker Compose managed PostgreSQL backup:
 
 ```bash
-SBK_BACKEND_STORE_FILE=/secure/path/billing-backend-data.json \
-./scripts/backend_restore.sh /secure/path/backups/billing-backend-data-YYYYMMDDTHHMMSSZ.json
+SBK_BACKUP_WITH_DOCKER_COMPOSE=true \
+SBK_BACKUP_DIR=/secure/path/backups \
+./scripts/backend_backup.sh
 ```
 
-The restore script writes a `.pre-restore-<timestamp>` copy of the current store
-before replacing it. When production storage moves to the SQL plan, replace
-these scripts with database-native backup and restore such as managed snapshots
-or `pg_dump` / `pg_restore`.
+PostgreSQL restore:
+
+```bash
+SBK_DATABASE_URL=jdbc:postgresql://host:5432/shorts_blocker_kids \
+SBK_DATABASE_USER=<runtime database user> \
+SBK_DATABASE_PASSWORD=<runtime database password> \
+./scripts/backend_restore.sh /secure/path/backups/postgres-YYYYMMDDTHHMMSSZ.dump
+```
+
+Docker Compose managed PostgreSQL restore:
+
+```bash
+SBK_BACKUP_WITH_DOCKER_COMPOSE=true \
+./scripts/backend_restore.sh /secure/path/backups/postgres-YYYYMMDDTHHMMSSZ.dump
+```
+
+The restore script first writes a pre-restore dump, then runs `pg_restore
+--clean --if-exists --no-owner`.
+
+File-store backup/restore remains supported only for local development by
+omitting `SBK_DATABASE_URL`.
+
+## Logging And Audit
+
+The backend writes JSON-line structured logs to stdout:
+
+- `http.request.completed` for request status and latency;
+- `billing.verify.completed` for successful purchase verification;
+- `billing.rtdn.processed` and `billing.rtdn.duplicate` for RTDN handling;
+- `billing.request.failed` for billing endpoint failures.
+
+Audit logs include request ID, endpoint, install ID where applicable, product
+ID, entitlement state, acknowledgement status, and a short purchase-token hash
+prefix. They must not include raw purchase tokens, credentials, request bodies,
+child data, Accessibility trees, URLs, video titles, account names, or supported
+app activity.
 
 ## Rate Limiting And Edge
 
-Deploy the backend behind an HTTPS reverse proxy or managed edge with:
+Backend controls:
 
-- per-IP and per-install rate limits for `/billing/play/verify`;
-- stricter unauthenticated rate limits for `/entitlement/status`;
-- RTDN endpoint allowlisting where the hosting platform supports it;
-- request body size limits;
+- per-remote-address rate limits for verify/status/RTDN endpoints;
+- request body size limit through `SBK_MAX_REQUEST_BYTES`;
+- `X-Forwarded-Proto: https` required for billing endpoints when
+  `SBK_REQUIRE_HTTPS=true`;
+- exact endpoint path checks.
+
+Required edge controls:
+
 - TLS termination before the backend process;
-- no request or response body logging for billing endpoints;
-- healthcheck access limited to the deployment platform or monitoring system.
+- reverse proxy sets `X-Forwarded-Proto`;
+- RTDN endpoint uses authenticated Pub/Sub push;
+- optional IP allowlisting where hosting supports it;
+- healthcheck access limited to deployment or monitoring systems.
 
 ## Privacy Boundary
 
@@ -157,9 +226,10 @@ Allowed backend data:
 - package name;
 - app version;
 - subscription product ID;
-- purchase token for verification;
+- purchase token only during request processing;
 - hashed purchase token at rest;
-- entitlement state and timestamps.
+- entitlement state and timestamps;
+- RTDN Pub/Sub message IDs.
 
 Forbidden backend data:
 
@@ -178,16 +248,45 @@ Forbidden backend data:
 - browsing history;
 - raw Accessibility tree dumps.
 
+## Rollback Plan
+
+Before deployment:
+
+1. Capture the currently running backend image tag.
+2. Run `./scripts/backend_backup.sh`.
+3. Deploy the new image through `./scripts/backend_deploy_compose.sh`.
+4. Verify `GET /health` and one Play license-tester verification flow.
+
+Application rollback:
+
+```bash
+./scripts/backend_rollback_compose.sh <previous-backend-image>
+curl -fsS http://127.0.0.1:8080/health
+```
+
+Data rollback:
+
+1. Stop the backend container.
+2. Restore the last known-good dump with `./scripts/backend_restore.sh`.
+3. Start the previous backend image.
+4. Verify `GET /health`, `GET /entitlement/status`, and one Play tester
+   restore flow.
+
+Only restore database state when the failed release wrote incompatible or
+incorrect data. Prefer application rollback alone when schema and data remain
+compatible.
+
 ## Production Gates
 
 - Backend is deployed behind HTTPS.
-- Google Play Developer API credentials are available only in runtime secret
+- Google Play Developer API credentials are mounted only from runtime secret
   storage.
-- RTDN Pub/Sub push is configured in Play Console.
-- `SBK_RTDN_SHARED_SECRET` is configured at the backend edge.
-- Entitlement storage is durable and backed up.
-- Rate limiting and request body limits are enforced at the edge.
-- Backend logs are checked for token and child-data leakage.
+- Play Console RTDN Pub/Sub push is configured with authenticated push.
+- PostgreSQL storage is live, migrated, and backed up.
+- Rate limiting, request body limits, structured logs, and audit logs are
+  enabled.
+- Backend logs are checked for raw token, credential, and child-data leakage.
 - App build is generated with `SBK_BILLING_BACKEND_BASE_URL`.
 - Play license tester purchase, restore, pending, cancel, grace, account hold,
-  expire, and non-license sanity flows pass against the deployed backend.
+  expire, refund/revoke, and non-license sanity flows pass against the deployed
+  backend.

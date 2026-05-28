@@ -10,9 +10,26 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.security.MessageDigest
 
+interface EntitlementStorage {
+    fun upsert(record: EntitlementRecord)
+
+    fun findByInstallId(installId: String): EntitlementRecord?
+
+    fun findByPurchaseTokenHash(purchaseTokenHash: String): EntitlementRecord?
+
+    fun markRtdnProcessed(messageId: String): Boolean
+
+    fun isRtdnProcessed(messageId: String): Boolean
+
+    fun updateByPurchaseToken(
+        purchaseToken: String,
+        verified: VerifiedSubscription,
+    ): Boolean
+}
+
 class EntitlementStore(
     private val path: Path,
-) {
+) : EntitlementStorage {
     private val records = linkedMapOf<String, EntitlementRecord>()
     private val processedRtdnIds = linkedSetOf<String>()
 
@@ -21,20 +38,20 @@ class EntitlementStore(
     }
 
     @Synchronized
-    fun upsert(record: EntitlementRecord) {
+    override fun upsert(record: EntitlementRecord) {
         records[record.installId] = record
         persist()
     }
 
     @Synchronized
-    fun findByInstallId(installId: String): EntitlementRecord? = records[installId]
+    override fun findByInstallId(installId: String): EntitlementRecord? = records[installId]
 
     @Synchronized
-    fun findByPurchaseTokenHash(purchaseTokenHash: String): EntitlementRecord? =
+    override fun findByPurchaseTokenHash(purchaseTokenHash: String): EntitlementRecord? =
         records.values.firstOrNull { it.purchaseTokenHash == purchaseTokenHash }
 
     @Synchronized
-    fun markRtdnProcessed(messageId: String): Boolean {
+    override fun markRtdnProcessed(messageId: String): Boolean {
         if (!processedRtdnIds.add(messageId)) {
             return false
         }
@@ -43,10 +60,10 @@ class EntitlementStore(
     }
 
     @Synchronized
-    fun isRtdnProcessed(messageId: String): Boolean = messageId in processedRtdnIds
+    override fun isRtdnProcessed(messageId: String): Boolean = messageId in processedRtdnIds
 
     @Synchronized
-    fun updateByPurchaseToken(
+    override fun updateByPurchaseToken(
         purchaseToken: String,
         verified: VerifiedSubscription,
     ): Boolean {

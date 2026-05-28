@@ -26,6 +26,7 @@ application {
 dependencies {
     implementation(libs.google.auth.oauth2.http)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.postgresql)
 
     testImplementation(libs.junit)
 }

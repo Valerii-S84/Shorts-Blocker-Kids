@@ -290,15 +290,69 @@ class BillingBackendServerTest {
         assertTrue(response.contains("\"status\":\"ok\""))
     }
 
-    private fun startBackend(verifier: PlaySubscriptionVerifier = FakeVerifier()): BillingBackendServer {
-        val config =
-            BackendConfig(
-                port = 0,
-                packageName = "com.shortsblockerkids",
-                productId = "shorts_blocker_kids_monthly",
-                storeFile = temporaryFolder.newFile("backend.json").toPath(),
-                rtdnSharedSecret = "secret",
+    @Test
+    fun billingEndpointsRequireHttpsForwardingHeaderWhenConfigured() {
+        val backend = startBackend(config = backendConfig(requireHttps = true))
+
+        val insecure =
+            post(
+                url = "http://127.0.0.1:${backend.port}/billing/play/verify",
+                body = verifyBody(installId = "install-1", purchaseToken = "token-1"),
+                expectedCode = 400,
             )
+        val secure =
+            post(
+                url = "http://127.0.0.1:${backend.port}/billing/play/verify",
+                body = verifyBody(installId = "install-1", purchaseToken = "token-1"),
+                headers = mapOf("X-Forwarded-Proto" to "https"),
+            )
+
+        assertTrue(insecure.contains("HTTPS is required"))
+        assertTrue(secure.contains("\"state\":\"ACTIVE\""))
+    }
+
+    @Test
+    fun verifyEndpointIsRateLimited() {
+        val backend =
+            startBackend(
+                config =
+                    backendConfig(
+                        rateLimits = RateLimitConfig(verifyPerMinute = 1),
+                    ),
+            )
+        post(
+            url = "http://127.0.0.1:${backend.port}/billing/play/verify",
+            body = verifyBody(installId = "install-1", purchaseToken = "token-1"),
+        )
+
+        val limited =
+            post(
+                url = "http://127.0.0.1:${backend.port}/billing/play/verify",
+                body = verifyBody(installId = "install-1", purchaseToken = "token-1"),
+                expectedCode = 429,
+            )
+
+        assertTrue(limited.contains("Rate limit exceeded"))
+    }
+
+    @Test
+    fun oversizedRequestBodyIsRejected() {
+        val backend = startBackend(config = backendConfig(maxRequestBytes = 16))
+
+        val response =
+            post(
+                url = "http://127.0.0.1:${backend.port}/billing/play/verify",
+                body = verifyBody(installId = "install-1", purchaseToken = "token-1"),
+                expectedCode = 413,
+            )
+
+        assertTrue(response.contains("Request body too large"))
+    }
+
+    private fun startBackend(
+        verifier: PlaySubscriptionVerifier = FakeVerifier(),
+        config: BackendConfig = backendConfig(),
+    ): BillingBackendServer {
         val backend =
             BillingBackendServer.create(
                 config = config,
@@ -307,6 +361,25 @@ class BillingBackendServerTest {
         backend.start()
         startedServers.add(backend)
         return backend
+    }
+
+    private fun backendConfig(
+        requireHttps: Boolean = false,
+        maxRequestBytes: Int = 32_768,
+        rateLimits: RateLimitConfig = RateLimitConfig(),
+    ): BackendConfig {
+        val config =
+            BackendConfig(
+                port = 0,
+                packageName = "com.shortsblockerkids",
+                productId = "shorts_blocker_kids_monthly",
+                storeFile = temporaryFolder.newFile("backend.json").toPath(),
+                rtdnSharedSecret = "secret",
+                requireHttps = requireHttps,
+                maxRequestBytes = maxRequestBytes,
+                rateLimits = rateLimits,
+            )
+        return config
     }
 
     private fun verifyBody(
@@ -360,11 +433,13 @@ class BillingBackendServerTest {
         val data =
             JsonObject(
                 mapOf(
+                    "packageName" to JsonPrimitive("com.shortsblockerkids"),
                     "subscriptionNotification" to
                         JsonObject(
                             mapOf(
                                 "subscriptionId" to JsonPrimitive("shorts_blocker_kids_monthly"),
                                 "purchaseToken" to JsonPrimitive(token),
+                                "notificationType" to JsonPrimitive(2),
                             ),
                         ),
                 ),

@@ -4,9 +4,35 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-STORE_FILE="${SBK_BACKEND_STORE_FILE:-billing-backend-data.json}"
 BACKUP_DIR="${SBK_BACKUP_DIR:-backups/billing-backend}"
 TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
+
+mkdir -p "$BACKUP_DIR"
+
+if [[ "${SBK_BACKUP_WITH_DOCKER_COMPOSE:-false}" == "true" ]]; then
+    BACKUP_FILE="$BACKUP_DIR/postgres-$TIMESTAMP.dump"
+    docker compose up -d billing-db >/dev/null
+    docker compose exec -T billing-db sh -c \
+        'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --format=custom' >"$BACKUP_FILE"
+    echo "$BACKUP_FILE"
+    exit 0
+fi
+
+if [[ -n "${SBK_DATABASE_URL:-}" ]]; then
+    command -v pg_dump >/dev/null || {
+        echo "pg_dump is required for PostgreSQL backups" >&2
+        exit 1
+    }
+    export PGUSER="${SBK_DATABASE_USER:-}"
+    export PGPASSWORD="${SBK_DATABASE_PASSWORD:-}"
+    DUMP_URL="${SBK_DATABASE_URL#jdbc:}"
+    BACKUP_FILE="$BACKUP_DIR/postgres-$TIMESTAMP.dump"
+    pg_dump --format=custom --file="$BACKUP_FILE" "$DUMP_URL"
+    echo "$BACKUP_FILE"
+    exit 0
+fi
+
+STORE_FILE="${SBK_BACKEND_STORE_FILE:-billing-backend-data.json}"
 STORE_NAME="$(basename "$STORE_FILE")"
 BACKUP_FILE="$BACKUP_DIR/${STORE_NAME%.json}-$TIMESTAMP.json"
 
@@ -15,6 +41,5 @@ if [[ ! -f "$STORE_FILE" ]]; then
     exit 1
 fi
 
-mkdir -p "$BACKUP_DIR"
 cp -p "$STORE_FILE" "$BACKUP_FILE"
 echo "$BACKUP_FILE"
