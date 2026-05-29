@@ -230,8 +230,8 @@ active. If that permission is turned off or the app is removed, blocking stops.
 To remove local app data, uninstall Shorts Blocker Kids or clear the app data in
 Android settings.
 
-Privacy contact: TODO before submission - add the public privacy contact.
-Developer / publisher: TODO before submission - add the Play listing entity.
+Privacy contact: svalerii535@gmail.com
+Developer / publisher: Valerii Serputko
 ```
 
 ## Store Listing Draft
@@ -306,8 +306,10 @@ To test:
 ## External Submission Blockers
 
 - Hosted Privacy Policy URL.
-- Public privacy contact email or contact form.
-- Final developer / publisher entity name.
+- Hosted Privacy Policy URL must use the same public privacy contact:
+  `svalerii535@gmail.com`.
+- Play Console developer / publisher name for the current personal developer
+  release: `Valerii Serputko`.
 - Play Console Data Safety form submission.
 - Play Console Accessibility declaration submission.
 - Demo video recording and URL.

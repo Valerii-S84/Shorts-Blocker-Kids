@@ -1,7 +1,7 @@
 # Shorts Blocker Kids Privacy Policy Draft
 
-Status: Draft for hosting. Replace the TODO privacy contact and publisher name
-before submitting this URL to Google Play.
+Status: Draft for hosting. Public privacy contact and personal developer /
+publisher name are filled for the current Google Play submission path.
 
 Effective date: May 24, 2026
 
@@ -100,6 +100,6 @@ Android settings.
 
 ## Contact
 
-Privacy contact: TODO before submission - add the public privacy contact.
+Privacy contact: svalerii535@gmail.com
 
-Developer / publisher: TODO before submission - add the Play listing entity.
+Developer / publisher: Valerii Serputko

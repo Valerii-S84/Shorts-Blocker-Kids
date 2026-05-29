@@ -50,6 +50,20 @@ class ReleaseCopyInvariantTest {
     }
 
     @Test
+    fun privacyAndPlayPolicyDocsUseFinalPersonalDeveloperContact() {
+        val privacyPolicy = repoFile("docs/SHORTS_BLOCKER_PRIVACY_POLICY_DRAFT.md").readText()
+        val playPolicyPackage = repoFile("docs/SHORTS_BLOCKER_PLAY_POLICY_PACKAGE.md").readText()
+
+        listOf(privacyPolicy, playPolicyPackage).forEach { text ->
+            assertTrue(text.contains("svalerii535@gmail.com"))
+            assertTrue(text.contains("Valerii Serputko"))
+            assertFalse(text.contains("TODO before submission"))
+            assertFalse(text.contains("add the public privacy contact"))
+            assertFalse(text.contains("add the Play listing entity"))
+        }
+    }
+
+    @Test
     fun privacyCopyDeniesSensitiveChildAndAccessibilityDataCollection() {
         val privacySources =
             listOf(

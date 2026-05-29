@@ -200,7 +200,10 @@ claimed.
 ## Not Yet Completed Outside The Repo
 
 - Final hosted Privacy Policy URL.
-- Public privacy contact and final developer / publisher entity name.
+- Play Console developer account ownership/legal entity details remain
+  owner-dependent if Google Play requires fields beyond the current personal
+  developer / publisher name `Valerii Serputko` and public privacy contact
+  `svalerii535@gmail.com`.
 - Final Play Console Data Safety form submission.
 - Final Play Console Accessibility declaration submission.
 - Recorded and uploaded Play review demo video.
