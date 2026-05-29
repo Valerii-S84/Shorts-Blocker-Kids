@@ -25,12 +25,14 @@ internal test runbook stay aligned.
 Package name: com.shortsblockerkids
 Version name: 0.1.0
 Version code: 1
-AAB: app/build/outputs/bundle/release/app-release.aab
-AAB SHA-256: 2fee86da1e3b423d4c20007a7bf95d7fb829e11c97559ec2865cb2a8f723d23d
+AAB: pending
+AAB SHA-256: pending
 ```
 
-If a new AAB is built, update this file and
-`docs/SHORTS_BLOCKER_PLAY_BILLING_INTERNAL_TEST_RUNBOOK.md` before Play testing.
+The Play-bound AAB must be rebuilt with a real HTTPS
+`SBK_BILLING_BACKEND_BASE_URL`. After it is built, update this file and
+`docs/SHORTS_BLOCKER_PLAY_BILLING_INTERNAL_TEST_RUNBOOK.md` before Play
+testing.
 
 ## Subscription Product
 

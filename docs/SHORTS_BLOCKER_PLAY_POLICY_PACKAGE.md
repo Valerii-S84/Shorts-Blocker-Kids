@@ -3,6 +3,12 @@
 Status: Partial. Repository-side policy package prepared; external Play Console
 submission, hosted Privacy Policy URL, and demo video URL are pending.
 
+Current Play Console submission source:
+
+```text
+docs/SHORTS_BLOCKER_PLAY_CONSOLE_PREPARATION_PACKAGE.md
+```
+
 ## Current Release Behavior
 
 This package is for the current Shorts Blocker Kids build:

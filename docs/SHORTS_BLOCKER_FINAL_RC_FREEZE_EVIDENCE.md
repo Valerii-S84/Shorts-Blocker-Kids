@@ -1,10 +1,13 @@
 # Shorts Blocker Kids Final RC Freeze Evidence
 
-Status: Partial. Local release freeze evidence is recorded from a clean `main`
-checkout. Play Console submission, Play Billing license-tester purchase flows,
-and real-device Accessibility/Billing QA remain external gates.
+Status: Partial. May 24 local release freeze evidence was recorded from a
+clean `main` checkout. The May 29 backend deploy attempt verified local
+production-like Compose mechanics, but real HTTPS backend deployment and
+production-configured AAB generation remain blocked until runtime production
+env and credentials are available.
 
 Date: May 24, 2026
+Updated: May 29, 2026
 
 ## Source State
 
@@ -19,7 +22,129 @@ commit=032b85d15d6480f037f1d6d61957d93639090030
 No product code, build configuration, manifest, dependency, or feature behavior
 was changed for this freeze pass.
 
-## Release Build Evidence
+May 29 working tree after backend deploy-readiness pass:
+
+```text
+branch=main
+commit=02901425da18423bd62fe01cc10196adac0d0382
+modified=docs/SHORTS_BLOCKER_FINAL_RC_FREEZE_EVIDENCE.md
+modified=scripts/backend_backup.sh
+modified=scripts/backend_restore.sh
+```
+
+## May 29 Backend Production Deploy Readiness Attempt
+
+Real production deploy status:
+
+```text
+Status: Incomplete
+Reason: production runtime env/secrets were not present in this shell.
+Missing/unset at verification time:
+SBK_ENV
+SBK_PUBLIC_BASE_URL
+SBK_BACKEND_PORT
+SBK_DATABASE_USER
+SBK_DATABASE_PASSWORD
+SBK_GOOGLE_APPLICATION_CREDENTIALS_HOST
+SBK_RTDN_PUBSUB_AUDIENCE
+SBK_RTDN_PUBSUB_SERVICE_ACCOUNT_EMAIL
+SBK_BILLING_BACKEND_BASE_URL
+```
+
+Backend unit gate:
+
+```bash
+./gradlew :billing-backend:test
+```
+
+Result:
+
+```text
+BUILD SUCCESSFUL in 17s
+4 actionable tasks: 4 up-to-date
+```
+
+Local isolated Docker Compose smoke:
+
+```text
+COMPOSE_PROJECT_NAME=sbk-smoke-20260529084411
+SBK_BACKEND_IMAGE=shorts-blocker-kids-billing-backend:smoke-20260529T084411Z
+```
+
+Verified locally with non-production dummy env and a temporary non-secret
+credentials placeholder:
+
+```text
+./scripts/backend_deploy_compose.sh: passed
+GET http://127.0.0.1:8080/health: {"status":"ok"}
+post-migration backup: postgres-20260529T084434Z.dump
+restore pre-restore backup: pre-restore-20260529T084438Z.dump
+schema_migrations: 001, 002
+./scripts/backend_rollback_compose.sh <current-smoke-image>: passed
+post-rollback GET /health: {"status":"ok"}
+```
+
+Deploy script fix made during this pass:
+
+```text
+scripts/backend_backup.sh and scripts/backend_restore.sh now wait for
+Docker Compose PostgreSQL readiness before pg_dump/pg_restore.
+```
+
+Not proven by the local smoke:
+
+```text
+real HTTPS DNS/TLS edge
+real production host deployment
+real Google service-account credential parsing/loading
+Google Play Developer API purchase verification
+Play Console RTDN Pub/Sub authenticated push delivery
+license-tester purchase/restore/lifecycle flows
+```
+
+Android release gate after stale artifact cleanup:
+
+```bash
+ANDROID_HOME=/home/serputko/Android/Sdk \
+ANDROID_SDK_ROOT=/home/serputko/Android/Sdk \
+./gradlew :app:clean
+```
+
+Result:
+
+```text
+BUILD SUCCESSFUL in 1m 45s
+```
+
+Release AAB build without a real backend URL was intentionally blocked:
+
+```bash
+ANDROID_HOME=/home/serputko/Android/Sdk \
+ANDROID_SDK_ROOT=/home/serputko/Android/Sdk \
+./gradlew :app:bundleRelease
+```
+
+Result:
+
+```text
+Execution failed for task ':app:validateProductionReleaseConfig'.
+SBK_BILLING_BACKEND_BASE_URL is required for release builds.
+BUILD FAILED in 1m 17s
+```
+
+Current release artifact state after the cleanup and blocked build:
+
+```text
+No app/build/outputs APK or AAB artifacts are present.
+No release AAB was generated with a placeholder backend URL.
+```
+
+## Historical May 24 Release Build Evidence
+
+The May 24 artifacts below are historical local freeze evidence. They are not
+valid production-backend release artifacts because they did not embed a
+production HTTPS billing backend URL and were removed from `app/build/outputs`
+during the May 29 cleanup.
 
 Command:
 

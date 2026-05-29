@@ -135,11 +135,13 @@ For every required scenario, record:
 ## Current Artifact
 
 ```text
-app/build/outputs/bundle/release/app-release.aab
-SHA-256: 2fee86da1e3b423d4c20007a7bf95d7fb829e11c97559ec2865cb2a8f723d23d
+Status: Pending.
+Reason: no valid production-configured AAB is present after the May 29 cleanup.
+Requirement: rebuild app-release.aab with a real HTTPS
+SBK_BILLING_BACKEND_BASE_URL before Play internal testing.
 ```
 
-If the AAB is rebuilt, update the hash here before testing.
+After the AAB is rebuilt, record its path and SHA-256 here before testing.
 
 ## Pass Gate
 

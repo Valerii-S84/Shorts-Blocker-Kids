@@ -13,6 +13,20 @@ BACKUP_FILE="$1"
 BACKUP_DIR="${SBK_BACKUP_DIR:-backups/billing-backend}"
 TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 
+wait_for_compose_database() {
+    local attempts="${SBK_DATABASE_WAIT_ATTEMPTS:-30}"
+    docker compose up -d billing-db >/dev/null
+    until docker compose exec -T billing-db sh -c \
+        'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB" >/dev/null'; do
+        attempts=$((attempts - 1))
+        if [[ "$attempts" -le 0 ]]; then
+            echo "Timed out waiting for Docker Compose PostgreSQL readiness" >&2
+            exit 1
+        fi
+        sleep 2
+    done
+}
+
 if [[ ! -f "$BACKUP_FILE" ]]; then
     echo "Backup file not found: $BACKUP_FILE" >&2
     exit 1
@@ -21,7 +35,7 @@ fi
 if [[ "${SBK_BACKUP_WITH_DOCKER_COMPOSE:-false}" == "true" ]]; then
     mkdir -p "$BACKUP_DIR"
     PRE_RESTORE_FILE="$BACKUP_DIR/pre-restore-$TIMESTAMP.dump"
-    docker compose up -d billing-db >/dev/null
+    wait_for_compose_database
     docker compose exec -T billing-db sh -c \
         'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --format=custom' >"$PRE_RESTORE_FILE"
     docker compose exec -T billing-db sh -c \
