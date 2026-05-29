@@ -23,10 +23,9 @@ Subscriptions are handled through Google Play Billing. There are no website,
 Stripe, manual license key, or external payment flows in the Play-distributed
 app.
 
-The Android app does not call a custom billing backend unless
-`SBK_BILLING_BACKEND_BASE_URL` is supplied at build time. Without that value,
-the app keeps the existing client-side Google Play Billing flow for internal
-testing.
+Release artifacts require `SBK_BILLING_BACKEND_BASE_URL` at build time and the
+value must be an HTTPS URL. Debug builds can still omit that value and use the
+client-only Google Play Billing path for internal testing.
 
 ## Requirements
 
@@ -139,6 +138,10 @@ Android release builds can opt into backend verification with:
 SBK_BILLING_BACKEND_BASE_URL=https://billing.example.com \
 ./gradlew :app:bundleRelease
 ```
+
+`assembleRelease` and `bundleRelease` fail closed when the backend URL is blank
+or not HTTPS. This prevents a Play-bound build from shipping with subscription
+purchase UI but no backend entitlement verification.
 
 ## Known Limitation
 

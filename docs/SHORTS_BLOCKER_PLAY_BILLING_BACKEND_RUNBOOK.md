@@ -1,7 +1,8 @@
 # Shorts Blocker Kids Play Billing Backend Runbook
 
-Status: Repository production flow prepared. Live deployment, Play Console RTDN
-setup, and license-tester evidence remain pending.
+Status: Repository production flow prepared. Android release builds now require
+an HTTPS billing backend URL. Live deployment, Play Console RTDN setup, and
+license-tester evidence remain pending.
 
 Date: May 28, 2026
 
@@ -74,6 +75,15 @@ Production-configured Android build:
 SBK_BILLING_BACKEND_BASE_URL=https://billing.example.com \
 ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew :app:bundleRelease
 ```
+
+Release builds fail closed when `SBK_BILLING_BACKEND_BASE_URL` is blank or is
+not an HTTPS URL. Debug builds may omit the backend URL for internal client-only
+Billing Library testing.
+
+Do not remove `android.permission.INTERNET` or
+`android.permission.ACCESS_NETWORK_STATE` from the release manifest until there
+is separate proof that Google Play Billing and production backend verification
+continue to work without them.
 
 ## Endpoints
 
@@ -279,6 +289,8 @@ compatible.
 ## Production Gates
 
 - Backend is deployed behind HTTPS.
+- `SBK_PUBLIC_BASE_URL` and app `SBK_BILLING_BACKEND_BASE_URL` point to the
+  same public HTTPS backend origin.
 - Google Play Developer API credentials are mounted only from runtime secret
   storage.
 - Play Console RTDN Pub/Sub push is configured with authenticated push.
@@ -287,6 +299,9 @@ compatible.
   enabled.
 - Backend logs are checked for raw token, credential, and child-data leakage.
 - App build is generated with `SBK_BILLING_BACKEND_BASE_URL`.
+- `./gradlew :billing-backend:test` passes before image build.
+- `./gradlew :app:testDebugUnitTest :app:lintRelease :app:bundleRelease` passes
+  with the production HTTPS backend URL supplied.
 - Play license tester purchase, restore, pending, cancel, grace, account hold,
   expire, refund/revoke, and non-license sanity flows pass against the deployed
   backend.

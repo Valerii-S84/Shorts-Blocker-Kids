@@ -12,6 +12,8 @@ Stripe, analytics, ads, profiles, cloud sync, schedules, or device-owner mode.
 
 ## Official Policy Sources Checked
 
+Checked again on May 29, 2026.
+
 - Google Play AccessibilityService API policy:
   <https://support.google.com/googleplay/android-developer/answer/10964491>
 - Google Play Permissions and APIs that Access Sensitive Information:
@@ -28,6 +30,9 @@ Current interpretation:
 - Require affirmative consent before opening Android Accessibility settings.
 - Document AccessibilityService use in the Google Play listing.
 - Keep Data Safety and Privacy Policy consistent with the shipped build.
+- Complete the Play Console Accessibility permission declaration before review.
+- Treat Accessibility review as blocked until the hosted Privacy Policy URL,
+  Play Data Safety answers, and review demo video are final.
 
 ## In-App Prominent Disclosure
 
@@ -53,6 +58,15 @@ disclosure that says:
 The consent action must be separate and affirmative: `I agree and continue`.
 The decline action must keep the user in the app and must not open Android
 Accessibility settings.
+
+Policy blocker status:
+
+- repository copy and gating are prepared;
+- Play Console declaration is not submitted;
+- demo video URL is not submitted;
+- final hosted Privacy Policy URL is not submitted;
+- real-device QA remains required before TikTok main, Instagram Reels, and
+  Facebook Reels are claimed as fully supported in store copy.
 
 ## Play Accessibility Declaration Answers
 

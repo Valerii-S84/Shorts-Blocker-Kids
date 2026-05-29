@@ -63,6 +63,27 @@ class BackendConfigTest {
     }
 
     @Test
+    fun productionRejectsExplicitlyDisabledHttps() {
+        val credentialsFile = temporaryFolder.newFile("service-account.json")
+        val exception =
+            runCatching {
+                BackendConfig.fromEnvironment(
+                    mapOf(
+                        "SBK_ENV" to "production",
+                        "SBK_PUBLIC_BASE_URL" to "https://billing.example.com",
+                        "SBK_REQUIRE_HTTPS" to "false",
+                        "SBK_DATABASE_URL" to "jdbc:postgresql://db:5432/shorts_blocker_kids",
+                        "GOOGLE_APPLICATION_CREDENTIALS" to credentialsFile.absolutePath,
+                        "SBK_RTDN_PUBSUB_AUDIENCE" to "https://billing.example.com/billing/play/rtdn",
+                        "SBK_RTDN_PUBSUB_SERVICE_ACCOUNT_EMAIL" to "pubsub@example.iam.gserviceaccount.com",
+                    ),
+                )
+            }.exceptionOrNull() as ConfigurationException
+
+        assertTrue(exception.errors.contains("SBK_REQUIRE_HTTPS must be true in production"))
+    }
+
+    @Test
     fun invalidEnvironmentValuesAreRejected() {
         val exception =
             runCatching {

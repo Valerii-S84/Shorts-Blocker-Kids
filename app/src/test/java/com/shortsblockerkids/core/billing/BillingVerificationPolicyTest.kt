@@ -86,4 +86,19 @@ class BillingVerificationPolicyTest {
         assertEquals(BillingEntitlementState.EXPIRED, snapshot.state)
         assertFalse(snapshot.isActive)
     }
+
+    @Test
+    fun failClosedSnapshotNeverGrantsPremiumEntitlement() {
+        val policy =
+            BillingVerificationPolicy(
+                clientOnlyModeRequested = true,
+                internalTestingBuild = true,
+            )
+
+        val snapshot = policy.failClosedSnapshot(checkedAtMillis = 2_000L)
+
+        assertEquals(BillingEntitlementState.UNKNOWN, snapshot.state)
+        assertEquals(2_000L, snapshot.checkedAtMillis)
+        assertFalse(snapshot.isActive)
+    }
 }

@@ -106,6 +106,44 @@ class ReleaseCopyInvariantTest {
     }
 
     @Test
+    fun releaseBuildRequiresConfiguredHttpsBillingBackendUrl() {
+        val buildConfig = repoFile("app/build.gradle.kts").readText()
+
+        assertTrue(buildConfig.contains("validateProductionReleaseConfig"))
+        assertTrue(buildConfig.contains("SBK_BILLING_BACKEND_BASE_URL is required for release builds."))
+        assertTrue(buildConfig.contains("SBK_BILLING_BACKEND_BASE_URL must be an https URL with a host"))
+        assertTrue(buildConfig.contains("\"assembleRelease\""))
+        assertTrue(buildConfig.contains("\"bundleRelease\""))
+    }
+
+    @Test
+    fun billingRepositoryRecordsFailClosedEntitlementOnBackendFailures() {
+        val repositorySource =
+            repoFile(
+                "app/src/main/java/com/shortsblockerkids/core/billing/PlayBillingRepository.kt",
+            ).readText()
+        val failureRecordings =
+            Regex("\\.onFailure \\{\\s+recordFailClosedEntitlement\\(")
+                .findAll(repositorySource)
+                .count()
+
+        assertTrue(repositorySource.contains("verificationPolicy.failClosedSnapshot"))
+        assertTrue("expected verify and refresh failure handlers", failureRecordings >= 2)
+    }
+
+    @Test
+    fun releaseReadinessDocsRecordBillingBackendAndPermissionBoundaries() {
+        val releaseReadiness = repoFile("docs/SHORTS_BLOCKER_AAB_RELEASE_READINESS.md").readText()
+        val backendRunbook = repoFile("docs/SHORTS_BLOCKER_PLAY_BILLING_BACKEND_RUNBOOK.md").readText()
+
+        assertTrue(releaseReadiness.contains("SBK_BILLING_BACKEND_BASE_URL"))
+        assertTrue(releaseReadiness.contains("Release fail-closed behavior"))
+        assertTrue(backendRunbook.contains("Production Gates"))
+        assertTrue(backendRunbook.contains("Play license tester"))
+        assertTrue(backendRunbook.contains("Do not remove `android.permission.INTERNET`"))
+    }
+
+    @Test
     fun accessibilityServiceReceivesOnlyProtectedPlatformPackages() {
         val serviceConfig =
             repoFile(

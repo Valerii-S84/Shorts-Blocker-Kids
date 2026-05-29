@@ -25,6 +25,38 @@ It does not cover Play Console upload, Play App Signing acceptance, production
 review, billing tester flows, or final signed release-candidate device QA from
 the Play internal testing track.
 
+## May 29, 2026 Production Backend Gate
+
+Release artifacts now fail closed unless `SBK_BILLING_BACKEND_BASE_URL` is
+supplied as an HTTPS URL. This is wired through
+`validateProductionReleaseConfig`, which blocks `assembleRelease`,
+`packageRelease`, and `bundleRelease` when the backend URL is blank or not
+HTTPS.
+
+Expected production-configured release command:
+
+```bash
+SBK_BILLING_BACKEND_BASE_URL=https://<production-billing-host> \
+ANDROID_HOME=/home/serputko/Android/Sdk \
+ANDROID_SDK_ROOT=/home/serputko/Android/Sdk \
+./gradlew :app:lintRelease :app:assembleRelease :app:bundleRelease
+```
+
+Release fail-closed behavior:
+
+- blank backend URL: build fails before release artifact generation;
+- non-HTTPS backend URL: build fails before release artifact generation;
+- configured HTTPS backend URL: release build proceeds and embeds the URL in
+  release `BuildConfig.BILLING_BACKEND_BASE_URL`;
+- backend verification or refresh failure in the app records a non-active
+  entitlement snapshot instead of retaining a stale active grant.
+
+`android.permission.INTERNET` and `android.permission.ACCESS_NETWORK_STATE`
+remain documented release permissions. They are merged from the Google Play
+Billing dependency graph and are also required for production backend
+verification. Do not remove either permission until a separate dependency and
+runtime proof shows removal is safe.
+
 ## May 24, 2026 Release Gate Refresh
 
 Release gate command:
@@ -141,15 +173,14 @@ AAB-derived `.apks` SHA-256:
 5bb72e6c1575c9868f129c9094b9b8f32f85571e8cab3dee05ffaec88d7432a4  app/build/outputs/bundle/release/app-release-universal.apks
 ```
 
-Release minification decision remains unchanged:
+Release minification decision:
 
 ```text
-isMinifyEnabled=false
+isMinifyEnabled=true
+isShrinkResources=true
 ```
 
-Reason: keep R8 disabled for this release-candidate line until final
-release-device regression coverage is complete for the AccessibilityService
-detector path.
+R8/resource shrinking are enabled for the current release build config.
 
 Release lint result:
 
@@ -240,8 +271,7 @@ ACCESSIBILITY_DEBUG_TOOLS_ENABLED = false
 
 - `versionName = 0.1.0` and `versionCode = 1` remain a controlled release
   candidate line.
-- Release minification remains disabled until final release-device regression
-  coverage is complete for the AccessibilityService detector path.
+- Release builds use R8 minification and resource shrinking.
 - Google Play Billing is integrated for the planned monthly subscription.
 - App-side detector support includes YouTube Shorts, TikTok primary package,
   Instagram Reels, and Facebook Reels.

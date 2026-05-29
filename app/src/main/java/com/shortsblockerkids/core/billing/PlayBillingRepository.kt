@@ -55,6 +55,11 @@ class PlayBillingRepository(
     private var productDetails: ProductDetails? = null
     private var subscriptionOfferToken: String? = null
     private val packageName = context.applicationContext.packageName
+    private val verificationPolicy =
+        BillingVerificationPolicy(
+            clientOnlyModeRequested = clientOnlyModeRequested,
+            internalTestingBuild = internalTestingBuild,
+        )
 
     fun start() {
         if (billingClient.isReady) {
@@ -283,11 +288,6 @@ class PlayBillingRepository(
             return
         }
 
-        val verificationPolicy =
-            BillingVerificationPolicy(
-                clientOnlyModeRequested = clientOnlyModeRequested,
-                internalTestingBuild = internalTestingBuild,
-            )
         if (verificationPolicy.canUseClientOnlyEntitlement) {
             purchased
                 .filterNot { it.isAcknowledged }
@@ -318,6 +318,7 @@ class PlayBillingRepository(
     ) {
         val currentInstallId = installId
         if (currentInstallId.isNullOrBlank()) {
+            recordFailClosedEntitlement()
             _uiState.update {
                 it.copy(statusMessage = "Billing backend verification is not ready yet.")
             }
@@ -350,6 +351,7 @@ class PlayBillingRepository(
                     )
                 }
             }.onFailure {
+                recordFailClosedEntitlement()
                 _uiState.update {
                     it.copy(
                         isLoading = false,
@@ -364,12 +366,7 @@ class PlayBillingRepository(
     private fun refreshEntitlementFromBackend(hasPending: Boolean) {
         val currentInstallId = installId
         if (currentInstallId.isNullOrBlank()) {
-            onEntitlementChanged(
-                BillingEntitlementSnapshot(
-                    state = BillingEntitlementState.EXPIRED,
-                    checkedAtMillis = nowMillis(),
-                ),
-            )
+            recordFailClosedEntitlement()
             return
         }
 
@@ -405,6 +402,7 @@ class PlayBillingRepository(
                     )
                 }
             }.onFailure {
+                recordFailClosedEntitlement()
                 _uiState.update {
                     it.copy(
                         isLoading = false,
@@ -414,6 +412,10 @@ class PlayBillingRepository(
                 }
             }
         }
+    }
+
+    private fun recordFailClosedEntitlement() {
+        onEntitlementChanged(verificationPolicy.failClosedSnapshot(checkedAtMillis = nowMillis()))
     }
 
     private fun acknowledgePurchase(purchase: Purchase) {

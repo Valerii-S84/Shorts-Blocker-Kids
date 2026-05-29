@@ -21,6 +21,12 @@ data class BillingVerificationPolicy(
             checkedAtMillis = checkedAtMillis,
         )
 
+    fun failClosedSnapshot(checkedAtMillis: Long): BillingEntitlementSnapshot =
+        BillingEntitlementSnapshot(
+            state = BillingEntitlementState.UNKNOWN,
+            checkedAtMillis = checkedAtMillis,
+        )
+
     fun localPurchaseStatusMessage(
         hasPurchasedSubscription: Boolean,
         hasPendingSubscription: Boolean,

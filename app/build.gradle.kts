@@ -2,6 +2,7 @@ import org.gradle.api.tasks.testing.Test
 import org.gradle.testing.jacoco.plugins.JacocoTaskExtension
 import org.gradle.testing.jacoco.tasks.JacocoCoverageVerification
 import org.gradle.testing.jacoco.tasks.JacocoReport
+import java.net.URI
 import java.util.Properties
 
 plugins {
@@ -35,6 +36,11 @@ val isReleaseSigningConfigured =
     ).all { !it.isNullOrBlank() }
 
 fun buildConfigString(value: String): String = "\"${value.replace("\\", "\\\\").replace("\"", "\\\"")}\""
+
+fun isProductionBackendUrl(value: String): Boolean {
+    val uri = runCatching { URI(value.trim()) }.getOrNull() ?: return false
+    return uri.scheme.equals("https", ignoreCase = true) && !uri.host.isNullOrBlank()
+}
 
 val billingBackendBaseUrl =
     providers
@@ -137,6 +143,24 @@ ktlint {
     filter {
         exclude("**/build/**")
     }
+}
+
+val validateProductionReleaseConfig by tasks.registering {
+    group = "verification"
+    description = "Fails release artifacts unless production billing backend URL is configured."
+
+    doLast {
+        check(billingBackendBaseUrl.isNotBlank()) {
+            "SBK_BILLING_BACKEND_BASE_URL is required for release builds."
+        }
+        check(isProductionBackendUrl(billingBackendBaseUrl)) {
+            "SBK_BILLING_BACKEND_BASE_URL must be an https URL with a host for release builds."
+        }
+    }
+}
+
+tasks.matching { it.name in setOf("assembleRelease", "bundleRelease", "packageRelease") }.configureEach {
+    dependsOn(validateProductionReleaseConfig)
 }
 
 jacoco {
