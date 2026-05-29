@@ -256,6 +256,24 @@ class BlockingDecisionControllerTest {
     }
 
     @Test
+    fun repeatedPinEntryRequestsExtendGraceButStillExpire() {
+        val controller =
+            BlockingDecisionController(
+                blockCooldownMs = 0L,
+                detectionDebounceMs = 0L,
+                pinEntryLaunchGraceMs = 5_000L,
+            )
+
+        assertEquals(BlockingDecision.ShowOverlay, controller.evaluateHigh(nowMillis = 1_000L))
+        controller.onPinEntryRequested(nowMillis = 1_100L)
+        controller.onOverlayDismissed()
+        controller.onPinEntryRequested(nowMillis = 4_000L)
+
+        assertEquals(BlockingDecision.Ignore, controller.evaluateHigh(nowMillis = 6_000L))
+        assertEquals(BlockingDecision.ShowOverlay, controller.evaluateHigh(nowMillis = 9_100L))
+    }
+
+    @Test
     fun cooldownPreventsSecondLaunchWithinWindow() {
         val controller =
             BlockingDecisionController(

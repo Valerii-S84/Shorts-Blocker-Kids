@@ -6,8 +6,10 @@ import com.shortsblockerkids.core.storage.AppSettings
 import com.shortsblockerkids.core.storage.SettingsRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -16,6 +18,7 @@ class ShortsBlockerAccessibilityService : AccessibilityService() {
     private lateinit var eventRouter: AccessibilityEventRouter
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var latestSettings = AppSettings()
+    private var pinEntryRecheckJob: Job? = null
 
     override fun onServiceConnected() {
         super.onServiceConnected()
@@ -40,7 +43,10 @@ class ShortsBlockerAccessibilityService : AccessibilityService() {
                     BlockOverlayController(
                         service = this,
                         onOverlayDismissed = blockingDecisionController::onOverlayDismissed,
-                        onPinEntryRequested = blockingDecisionController::onPinEntryRequested,
+                        onPinEntryRequested = {
+                            blockingDecisionController.onPinEntryRequested()
+                            schedulePinEntryRecheck()
+                        },
                         onShortsCloseCompleted = {
                             if (::eventRouter.isInitialized) {
                                 eventRouter.dismissBlockingState()
@@ -81,12 +87,14 @@ class ShortsBlockerAccessibilityService : AccessibilityService() {
         if (::eventRouter.isInitialized) {
             eventRouter.shutdown()
         }
+        pinEntryRecheckJob?.cancel()
     }
 
     override fun onDestroy() {
         if (::eventRouter.isInitialized) {
             eventRouter.shutdown()
         }
+        pinEntryRecheckJob?.cancel()
         serviceScope.cancel()
         super.onDestroy()
     }
@@ -103,6 +111,15 @@ class ShortsBlockerAccessibilityService : AccessibilityService() {
             settings
         }
 
+    private fun schedulePinEntryRecheck() {
+        pinEntryRecheckJob?.cancel()
+        pinEntryRecheckJob =
+            serviceScope.launch {
+                delay(BlockingDecisionController.DEFAULT_PIN_ENTRY_LAUNCH_GRACE_MS + PIN_ENTRY_RECHECK_DELAY_MS)
+                routeCurrentWindow()
+            }
+    }
+
     @Suppress("DEPRECATION")
     private fun routeCurrentWindow() {
         if (!::eventRouter.isInitialized) {
@@ -118,5 +135,9 @@ class ShortsBlockerAccessibilityService : AccessibilityService() {
         } finally {
             event.recycle()
         }
+    }
+
+    private companion object {
+        const val PIN_ENTRY_RECHECK_DELAY_MS = 100L
     }
 }

@@ -438,6 +438,37 @@ class SettingsRepositoryTest {
         }
 
     @Test
+    fun repeatedEmptyPinAttemptsKeepProtectionActiveWithoutTemporaryAllow() =
+        runBlocking {
+            val repository = createRepository("empty-pin-protection")
+            repository.savePin("4826")
+            repository.setDisclosureAccepted(true)
+            repository.recordSuccessfulProtectionActivation(nowMillis = 1_000L)
+
+            repeat(5) { attempt ->
+                repository.verifyPin("", nowMillis = 2_000L + attempt)
+            }
+            val settings = repository.readSettings().first()
+
+            assertEquals(null, settings.temporaryAllowUntil)
+            assertTrue(settings.protectionEnabled)
+            assertTrue(settings.canProtect(nowMillis = 2_500L))
+        }
+
+    @Test
+    fun emptyPinLockoutRejectsCorrectPinUntilLockoutExpires() =
+        runBlocking {
+            val repository = createRepository("empty-pin-lockout")
+            repository.savePin("4826")
+
+            repeat(5) { attempt ->
+                repository.verifyPin("", nowMillis = 1_000L + attempt)
+            }
+
+            assertTrue(repository.verifyPin("4826", nowMillis = 2_000L) is PinVerificationResult.Locked)
+        }
+
+    @Test
     fun partialPinDoesNotUnlockBlockingFlow() =
         runBlocking {
             val repository = createRepository("partial-pin-unlock")

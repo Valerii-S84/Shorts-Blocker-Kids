@@ -8,7 +8,7 @@ object PinPolicy {
         pin: String,
         confirmation: String,
     ): PinValidationResult {
-        if (!allowedPattern.matches(pin)) {
+        if (!isVerificationInputComplete(pin)) {
             return PinValidationResult.Invalid("PIN must be 4-6 digits.")
         }
 
@@ -22,6 +22,8 @@ object PinPolicy {
 
         return PinValidationResult.Valid
     }
+
+    fun isVerificationInputComplete(pin: String): Boolean = allowedPattern.matches(pin)
 }
 
 sealed interface PinValidationResult {

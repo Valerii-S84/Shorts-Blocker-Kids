@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -21,9 +22,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.shortsblockerkids.core.security.PinPolicy
 import com.shortsblockerkids.core.security.PinVerificationResult
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
@@ -38,6 +41,32 @@ fun PinEntryScreen(
     var message by remember { mutableStateOf<String?>(null) }
     var isVerifying by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
+    val canSubmit = PinPolicy.isVerificationInputComplete(pin)
+
+    fun submitPin() {
+        if (isVerifying) {
+            return
+        }
+        val submittedPin = pin
+        if (!PinPolicy.isVerificationInputComplete(submittedPin)) {
+            message = "Enter the 4-6 digit PIN."
+            return
+        }
+        isVerifying = true
+        coroutineScope.launch {
+            when (val result = onVerifyPin(submittedPin)) {
+                PinVerificationResult.Success -> onUnlocked()
+                PinVerificationResult.NotConfigured -> message = "PIN is not configured."
+                is PinVerificationResult.Failure -> {
+                    message = "Wrong PIN. ${result.remainingAttempts} attempts left."
+                }
+                is PinVerificationResult.Locked -> {
+                    message = "PIN locked. Try again in ${result.remainingMinutes()} min."
+                }
+            }
+            isVerifying = false
+        }
+    }
 
     Column(
         modifier =
@@ -62,7 +91,12 @@ fun PinEntryScreen(
             label = { Text("PIN") },
             singleLine = true,
             visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+            keyboardOptions =
+                KeyboardOptions(
+                    keyboardType = KeyboardType.NumberPassword,
+                    imeAction = ImeAction.Done,
+                ),
+            keyboardActions = KeyboardActions(onDone = { submitPin() }),
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(modifier = Modifier.height(12.dp))
@@ -75,26 +109,8 @@ fun PinEntryScreen(
         }
         Spacer(modifier = Modifier.height(24.dp))
         Button(
-            onClick = {
-                if (isVerifying) {
-                    return@Button
-                }
-                isVerifying = true
-                coroutineScope.launch {
-                    when (val result = onVerifyPin(pin)) {
-                        PinVerificationResult.Success -> onUnlocked()
-                        PinVerificationResult.NotConfigured -> message = "PIN is not configured."
-                        is PinVerificationResult.Failure -> {
-                            message = "Wrong PIN. ${result.remainingAttempts} attempts left."
-                        }
-                        is PinVerificationResult.Locked -> {
-                            message = "PIN locked. Try again in ${result.remainingMinutes()} min."
-                        }
-                    }
-                    isVerifying = false
-                }
-            },
-            enabled = !isVerifying,
+            onClick = { submitPin() },
+            enabled = canSubmit && !isVerifying,
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text("Unlock")
