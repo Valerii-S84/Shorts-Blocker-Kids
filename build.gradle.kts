@@ -42,8 +42,9 @@ val installFakeSocialApps by tasks.registering {
     doLast {
         val androidHome =
             providers.environmentVariable("ANDROID_HOME")
-                .orElse("/home/serputko/Android/Sdk")
-                .get()
+                .orElse(providers.environmentVariable("ANDROID_SDK_ROOT"))
+                .orNull
+                ?: error("Set ANDROID_HOME or ANDROID_SDK_ROOT to install fake social apps.")
         val adb = file("$androidHome/platform-tools/adb")
         require(adb.isFile) { "adb not found at ${adb.absolutePath}" }
 

@@ -54,14 +54,14 @@ fallback: if a language or framework is introduced later, follow the existing lo
 
 ## Shell / CLI
 
-- No project shell scripts are currently defined.
+- Project shell scripts live under `scripts/`.
 - Prefer documented Gradle and adb commands over adding scripts.
 
 ## Tests and fixtures
 
 - Test frameworks: JUnit 4 JVM unit tests under `app/src/test/java`
 - Fixture / mock conventions: keep detector and security fixtures small, explicit, and local to the test file unless reused by multiple tests
-- Required test suites before close-out: for Android code changes run `ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:assembleDebug :app:testDebugUnitTest :app:lintDebug`; for `.agent/project`-only changes reread changed files and verify no template placeholders remain
+- Required test suites before close-out: for Android code changes run `gradle :app:assembleDebug :app:testDebugUnitTest :app:lintDebug` with `ANDROID_HOME` or `ANDROID_SDK_ROOT` set; for `.agent/project`-only changes reread changed files and verify no template placeholders remain
 
 ## Framework or repo-specific exceptions
 

@@ -1,5 +1,6 @@
 package com.shortsblockerkids.feature.debug
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.shortsblockerkids.core.billing.BillingUiState
@@ -13,5 +14,5 @@ fun DetectorPlaygroundScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    onBack()
+    Box(modifier = modifier)
 }

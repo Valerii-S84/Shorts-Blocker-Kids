@@ -1,7 +1,5 @@
 package com.shortsblockerkids.accessibility
 
-import java.util.Locale
-
 class InstagramReelsDetector : ShortVideoDetector {
     override val platform: SupportedPlatform = SupportedPlatform.INSTAGRAM_REELS
     override val supportedPackages: Set<String> =
@@ -23,13 +21,13 @@ class InstagramReelsDetector : ShortVideoDetector {
         val hasRepeatedVerticalFeed = snapshot.hasRepeatedVerticalFeed(matchedSignals)
 
         val score =
-            listOf(
+            weightedScore(
                 hasReelsIdentifier to 2,
                 hasReelContainer to 3,
                 hasActionRail to 3,
                 hasVerticalFullscreen to 1,
                 hasRepeatedVerticalFeed to 1,
-            ).sumOf { (matched, points) -> if (matched) points else 0 }
+            )
 
         val confidence =
             when {
@@ -47,19 +45,14 @@ class InstagramReelsDetector : ShortVideoDetector {
                 else -> Confidence.NONE
             }
 
-        return DetectionResult(
-            isShorts = confidence == Confidence.HIGH,
-            confidence = confidence,
-            reasons = matchedSignals.map { it.reason },
-            matchedSignals = matchedSignals.map { it.id },
-        )
+        return detectionResult(confidence, matchedSignals)
     }
 
     private fun AccessibilityTreeSnapshot.hasReelsIdentifier(matchedSignals: MutableSet<DetectorSignal>): Boolean {
         val matched =
             nodes.any { node ->
-                node.contentDescriptionSignals.any { it in reelsSignals } ||
-                    node.viewIdResourceName.containsAny("reel", "reels", "clips")
+                node.contentDescriptionSignals.any { it in ShortVideoTextSignals.reelsIdentifiers } ||
+                    node.viewIdResourceName.containsAnyIgnoringCase("reel", "reels", "clips")
             }
 
         if (matched) {
@@ -72,7 +65,7 @@ class InstagramReelsDetector : ShortVideoDetector {
     private fun AccessibilityTreeSnapshot.hasReelContainer(matchedSignals: MutableSet<DetectorSignal>): Boolean {
         val matched =
             nodes.any { node ->
-                node.viewIdResourceName.containsAny(
+                node.viewIdResourceName.containsAnyIgnoringCase(
                     "clips",
                     "clips_viewer",
                     "reel",
@@ -80,7 +73,7 @@ class InstagramReelsDetector : ShortVideoDetector {
                     "reel_viewer",
                     "viewer",
                 ) ||
-                    node.className.containsAny("viewpager")
+                    node.className.containsAnyIgnoringCase("viewpager")
             }
 
         if (matched) {
@@ -90,91 +83,17 @@ class InstagramReelsDetector : ShortVideoDetector {
         return matched
     }
 
-    private fun AccessibilityTreeSnapshot.hasActionRail(matchedSignals: MutableSet<DetectorSignal>): Boolean {
-        val screenWidth = screenRight
-        val screenHeight = screenBottom
-        if (screenWidth <= 0 || screenHeight <= 0) {
-            return false
-        }
+    private fun AccessibilityTreeSnapshot.hasActionRail(matchedSignals: MutableSet<DetectorSignal>): Boolean =
+        hasActionRailSignal(
+            actionSignals = ShortVideoTextSignals.instagramActions,
+            matchedSignals = matchedSignals,
+        )
 
-        val actionNodes =
-            nodes.filter { node ->
-                node.isVisibleToUser &&
-                    node.contentDescriptionSignals.any { it in instagramActionSignals }
-            }
-        val actionSignals =
-            actionNodes
-                .flatMap { it.contentDescriptionSignals }
-                .filter { it in instagramActionSignals }
-                .distinct()
-        val rightSideActionCount =
-            actionNodes.count { node ->
-                node.centerX >= screenWidth * 0.62f
-            }
-        val verticalSpread =
-            actionNodes
-                .map { it.centerY }
-                .let { centers ->
-                    val top = centers.minOrNull() ?: 0
-                    val bottom = centers.maxOrNull() ?: 0
-                    bottom - top
-                }
+    private fun AccessibilityTreeSnapshot.hasVerticalFullscreen(matchedSignals: MutableSet<DetectorSignal>): Boolean =
+        hasVerticalFullscreenSignal(matchedSignals) { it.isInstagramSurfaceCandidate() }
 
-        val matched =
-            actionSignals.size >= 3 &&
-                rightSideActionCount >= 3 &&
-                verticalSpread >= screenHeight * 0.22f
-        if (matched) {
-            matchedSignals += DetectorSignal.ACTION_RAIL
-        }
-
-        return matched
-    }
-
-    private fun AccessibilityTreeSnapshot.hasVerticalFullscreen(matchedSignals: MutableSet<DetectorSignal>): Boolean {
-        val screenWidth = maxWidth
-        val screenHeight = maxHeight
-        if (screenWidth <= 0 || screenHeight <= 0) {
-            return false
-        }
-
-        val matched =
-            nodes.any { node ->
-                node.isVisibleToUser &&
-                    node.depth > 0 &&
-                    node.isInstagramSurfaceCandidate() &&
-                    node.width >= screenWidth * 0.72f &&
-                    node.height >= screenHeight * 0.70f
-            }
-
-        if (matched) {
-            matchedSignals += DetectorSignal.VERTICAL_FULLSCREEN
-        }
-
-        return matched
-    }
-
-    private fun AccessibilityTreeSnapshot.hasRepeatedVerticalFeed(matchedSignals: MutableSet<DetectorSignal>): Boolean {
-        val screenWidth = maxWidth
-        val screenHeight = maxHeight
-        if (screenWidth <= 0 || screenHeight <= 0) {
-            return false
-        }
-
-        val matched =
-            nodes.any { node ->
-                node.isVisibleToUser &&
-                    node.isScrollable &&
-                    node.width >= screenWidth * 0.72f &&
-                    node.height >= screenHeight * 0.65f
-            }
-
-        if (matched) {
-            matchedSignals += DetectorSignal.REPEATED_VERTICAL_FEED
-        }
-
-        return matched
-    }
+    private fun AccessibilityTreeSnapshot.hasRepeatedVerticalFeed(matchedSignals: MutableSet<DetectorSignal>): Boolean =
+        hasRepeatedVerticalFeedSignal(matchedSignals)
 
     private fun isHighConfidenceReels(
         hasReelsIdentifier: Boolean,
@@ -190,59 +109,12 @@ class InstagramReelsDetector : ShortVideoDetector {
         return hasReelsIdentifier || hasReelContainer && hasRepeatedVerticalFeed
     }
 
-    private fun String?.containsAny(vararg needles: String): Boolean {
-        val normalized = this?.lowercase(Locale.US) ?: return false
-        return needles.any { normalized.contains(it) }
-    }
-
     private fun AccessibilityNodeSignal.isInstagramSurfaceCandidate(): Boolean =
         isScrollable ||
-            viewIdResourceName.containsAny("clips", "reel", "reels", "player", "video") ||
-            className.containsAny("viewpager", "framelayout")
+            viewIdResourceName.containsAnyIgnoringCase("clips", "reel", "reels", "player", "video") ||
+            className.containsAnyIgnoringCase("viewpager", "framelayout")
 
     companion object {
         const val INSTAGRAM_PACKAGE = "com.instagram.android"
-
-        private val reelsSignals = setOf("reel", "reels", "рілс", "рилс")
-        private val instagramActionSignals =
-            setOf(
-                "like",
-                "me gusta",
-                "gefällt mir",
-                "подобається",
-                "нравится",
-                "comments",
-                "comment",
-                "comentar",
-                "kommentieren",
-                "коментар",
-                "коментарі",
-                "коментувати",
-                "комментарий",
-                "комментарии",
-                "комментировать",
-                "share",
-                "compartir",
-                "teilen",
-                "поділитися",
-                "поширити",
-                "поделиться",
-                "send",
-                "enviar",
-                "senden",
-                "надіслати",
-                "отправить",
-                "save",
-                "guardar",
-                "speichern",
-                "зберегти",
-                "сохранить",
-                "audio",
-                "more",
-                "mehr",
-                "більше",
-                "еще",
-                "ещё",
-            )
     }
 }

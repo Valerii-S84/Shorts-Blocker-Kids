@@ -23,10 +23,10 @@ Project-specific facts for Shorts Blocker Kids.
 
 | Purpose | Command | Notes |
 |---|---|---|
-| Test | `ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:testDebugUnitTest` | JVM unit tests |
-| Lint | `ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:lintDebug` | Android lint for debug variant |
-| Build | `ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:assembleDebug` | Produces debug APK under `app/build/outputs/apk/debug/` |
-| Dev / Run | `ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:assembleDebug && adb install -r app/build/outputs/apk/debug/app-debug.apk` | Requires a real Android device or emulator visible through `adb devices` |
+| Test | `gradle :app:testDebugUnitTest` | JVM unit tests; requires `ANDROID_HOME` or `ANDROID_SDK_ROOT` |
+| Lint | `gradle :app:lintDebug` | Android lint for debug variant; requires `ANDROID_HOME` or `ANDROID_SDK_ROOT` |
+| Build | `gradle :app:assembleDebug` | Produces debug APK under `app/build/outputs/apk/debug/`; requires `ANDROID_HOME` or `ANDROID_SDK_ROOT` |
+| Dev / Run | `gradle :app:assembleDebug && adb install -r app/build/outputs/apk/debug/app-debug.apk` | Requires a real Android device or emulator visible through `adb devices` |
 
 ## 4. External dependencies
 
@@ -34,7 +34,7 @@ Project-specific facts for Shorts Blocker Kids.
 |---|---|---|---|
 | Google Maven repository | Android and Compose dependencies | Gradle build-time dependency resolution | Declared in `settings.gradle.kts` |
 | Maven Central | JUnit and library dependencies | Gradle build-time dependency resolution | Declared in `settings.gradle.kts` |
-| Android SDK at `/home/serputko/Android/Sdk` | Build, lint, APK install, adb tooling | Local filesystem and USB device tooling | Commands set `ANDROID_HOME` explicitly |
+| Android SDK | Build, lint, APK install, adb tooling | Local filesystem and USB device tooling | Set `ANDROID_HOME` or `ANDROID_SDK_ROOT` before Android commands |
 | YouTube Android app | Manual AccessibilityService detector calibration target | Installed app on local test device | No backend integration with YouTube |
 
 ## 5. Project constraints

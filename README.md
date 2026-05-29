@@ -38,17 +38,17 @@ testing.
 Local commands use:
 
 ```bash
-ANDROID_HOME=/home/serputko/Android/Sdk
+export ANDROID_HOME=/path/to/Android/Sdk
 ```
 
-Adjust `ANDROID_HOME` if the SDK is installed elsewhere.
+`ANDROID_SDK_ROOT` can be used instead when `ANDROID_HOME` is not set.
 
 ## Build
 
 ```bash
-ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew :app:assembleDebug
-ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew :app:assembleRelease
-ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew :app:bundleRelease
+./gradlew :app:assembleDebug
+./gradlew :app:assembleRelease
+./gradlew :app:bundleRelease
 ./gradlew :billing-backend:test
 ./gradlew :billing-backend:run
 ```
@@ -72,7 +72,7 @@ Do not commit keystores or `keystore.properties`.
 Current release decisions:
 
 - `versionName = 0.1.0` and `versionCode = 1` are intentionally kept for the first controlled release candidate line.
-- `isMinifyEnabled = false` is intentionally kept until release-device regression coverage is complete for the AccessibilityService detector path.
+- `release` builds use R8 minification and resource shrinking.
 - Google Play publishing remains out of scope for this repository state.
 - Production billing backend credentials must be supplied through runtime
   environment variables and must not be committed.
@@ -80,22 +80,22 @@ Current release decisions:
 ## Test And Lint
 
 ```bash
-ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew :app:testDebugUnitTest
-ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew :app:jacocoDebugUnitTestReport :app:jacocoDebugUnitTestCoverageVerification
-ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew :app:lintDebug
-ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew :app:ktlintCheck
+./gradlew :app:testDebugUnitTest
+./gradlew :app:jacocoDebugUnitTestReport :app:jacocoDebugUnitTestCoverageVerification
+./gradlew :app:lintDebug
+./gradlew :app:ktlintCheck
 ```
 
 Full local foundation check:
 
 ```bash
-ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew :app:ktlintCheck :app:assembleDebug :app:assembleRelease :app:testDebugUnitTest :app:jacocoDebugUnitTestCoverageVerification :app:lintDebug
+./gradlew :app:ktlintCheck :app:assembleDebug :app:assembleRelease :app:testDebugUnitTest :app:jacocoDebugUnitTestCoverageVerification :app:lintDebug
 ```
 
 Full local release readiness check:
 
 ```bash
-ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew :app:ktlintCheck :app:assembleDebug :app:assembleRelease :app:bundleRelease :app:testDebugUnitTest :app:jacocoDebugUnitTestCoverageVerification :app:lintDebug :app:lintRelease
+./gradlew :app:ktlintCheck :app:assembleDebug :app:assembleRelease :app:bundleRelease :app:testDebugUnitTest :app:jacocoDebugUnitTestCoverageVerification :app:lintDebug :app:lintRelease
 ```
 
 ## Install On A Device
@@ -103,7 +103,7 @@ ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew :app:ktlintCheck :app:assemble
 Connect a device or emulator visible in `adb devices`, then run:
 
 ```bash
-ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew :app:assembleDebug
+./gradlew :app:assembleDebug
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
@@ -137,7 +137,7 @@ Android release builds can opt into backend verification with:
 
 ```bash
 SBK_BILLING_BACKEND_BASE_URL=https://billing.example.com \
-ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew :app:bundleRelease
+./gradlew :app:bundleRelease
 ```
 
 ## Known Limitation

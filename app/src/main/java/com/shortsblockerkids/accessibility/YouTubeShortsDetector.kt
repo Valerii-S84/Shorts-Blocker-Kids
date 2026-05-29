@@ -1,7 +1,5 @@
 package com.shortsblockerkids.accessibility
 
-import java.util.Locale
-
 class YouTubeShortsDetector : ShortVideoDetector {
     override val platform: SupportedPlatform = SupportedPlatform.YOUTUBE_SHORTS
     override val supportedPackages: Set<String> =
@@ -23,13 +21,13 @@ class YouTubeShortsDetector : ShortVideoDetector {
         val hasRepeatedVerticalFeed = snapshot.hasRepeatedVerticalFeed(matchedSignals)
 
         val score =
-            listOf(
+            weightedScore(
                 hasShortsIdentifier to 2,
                 hasReelContainer to 3,
                 hasActionRail to 2,
                 hasVerticalFullscreen to 1,
                 hasRepeatedVerticalFeed to 1,
-            ).sumOf { (matched, points) -> if (matched) points else 0 }
+            )
 
         val confidence =
             when {
@@ -45,19 +43,14 @@ class YouTubeShortsDetector : ShortVideoDetector {
                 else -> Confidence.NONE
             }
 
-        return DetectionResult(
-            isShorts = confidence == Confidence.HIGH,
-            confidence = confidence,
-            reasons = matchedSignals.map { it.reason },
-            matchedSignals = matchedSignals.map { it.id },
-        )
+        return detectionResult(confidence, matchedSignals)
     }
 
     private fun AccessibilityTreeSnapshot.hasShortsIdentifier(matchedSignals: MutableSet<DetectorSignal>): Boolean {
         val matched =
             nodes.any { node ->
-                node.contentDescriptionSignals.contains("shorts") ||
-                    node.viewIdResourceName.containsAny("shorts")
+                node.contentDescriptionSignals.any { it in ShortVideoTextSignals.shortsIdentifiers } ||
+                    node.viewIdResourceName.containsAnyIgnoringCase("shorts")
             }
 
         if (matched) {
@@ -70,7 +63,7 @@ class YouTubeShortsDetector : ShortVideoDetector {
     private fun AccessibilityTreeSnapshot.hasReelContainer(matchedSignals: MutableSet<DetectorSignal>): Boolean {
         val matched =
             nodes.any { node ->
-                node.viewIdResourceName.containsAny(
+                node.viewIdResourceName.containsAnyIgnoringCase(
                     "reel",
                     "reel_watch_sequence",
                     "reel_player_page",
@@ -88,95 +81,18 @@ class YouTubeShortsDetector : ShortVideoDetector {
         return matched
     }
 
-    private fun AccessibilityTreeSnapshot.hasShortsActionRail(matchedSignals: MutableSet<DetectorSignal>): Boolean {
-        val screenWidth = screenRight
-        val screenHeight = screenBottom
-        if (screenWidth <= 0 || screenHeight <= 0) {
-            return false
-        }
+    private fun AccessibilityTreeSnapshot.hasShortsActionRail(matchedSignals: MutableSet<DetectorSignal>): Boolean =
+        hasActionRailSignal(
+            actionSignals = ShortVideoTextSignals.youtubeActions,
+            matchedSignals = matchedSignals,
+            minVerticalSpreadRatio = YOUTUBE_ACTION_RAIL_MIN_VERTICAL_SPREAD_RATIO,
+        )
 
-        val actionNodes =
-            nodes.filter { node ->
-                node.isVisibleToUser &&
-                    node.contentDescriptionSignals.any { it in shortsActionSignals }
-            }
+    private fun AccessibilityTreeSnapshot.hasVerticalFullscreen(matchedSignals: MutableSet<DetectorSignal>): Boolean =
+        hasVerticalFullscreenSignal(matchedSignals) { it.isShortsSurfaceCandidate() }
 
-        val actionSignals =
-            actionNodes
-                .flatMap { it.contentDescriptionSignals }
-                .filter { it in shortsActionSignals }
-                .distinct()
-
-        val rightSideActionCount =
-            actionNodes.count { node ->
-                node.centerX >= screenWidth * 0.62f
-            }
-
-        val verticalSpread =
-            actionNodes
-                .map { it.centerY }
-                .let { centers ->
-                    val top = centers.minOrNull() ?: 0
-                    val bottom = centers.maxOrNull() ?: 0
-                    bottom - top
-                }
-
-        val matched =
-            actionSignals.size >= 3 &&
-                rightSideActionCount >= 3 &&
-                verticalSpread >= screenHeight * 0.25f
-        if (matched) {
-            matchedSignals += DetectorSignal.ACTION_RAIL
-        }
-
-        return matched
-    }
-
-    private fun AccessibilityTreeSnapshot.hasVerticalFullscreen(matchedSignals: MutableSet<DetectorSignal>): Boolean {
-        val screenWidth = maxWidth
-        val screenHeight = maxHeight
-        if (screenWidth <= 0 || screenHeight <= 0) {
-            return false
-        }
-
-        val matched =
-            nodes.any { node ->
-                node.isVisibleToUser &&
-                    node.isShortsSurfaceCandidate() &&
-                    node.depth > 0 &&
-                    node.width >= screenWidth * 0.72f &&
-                    node.height >= screenHeight * 0.70f
-            }
-
-        if (matched) {
-            matchedSignals += DetectorSignal.VERTICAL_FULLSCREEN
-        }
-
-        return matched
-    }
-
-    private fun AccessibilityTreeSnapshot.hasRepeatedVerticalFeed(matchedSignals: MutableSet<DetectorSignal>): Boolean {
-        val screenWidth = maxWidth
-        val screenHeight = maxHeight
-        if (screenWidth <= 0 || screenHeight <= 0) {
-            return false
-        }
-
-        val matched =
-            nodes.any { node ->
-                node.isVisibleToUser &&
-                    node.isScrollable &&
-                    node.width >= screenWidth * 0.72f &&
-                    node.height >= screenHeight * 0.65f &&
-                    node.isShortsSurfaceCandidate()
-            }
-
-        if (matched) {
-            matchedSignals += DetectorSignal.REPEATED_VERTICAL_FEED
-        }
-
-        return matched
-    }
+    private fun AccessibilityTreeSnapshot.hasRepeatedVerticalFeed(matchedSignals: MutableSet<DetectorSignal>): Boolean =
+        hasRepeatedVerticalFeedSignal(matchedSignals) { it.isShortsSurfaceCandidate() }
 
     private fun isHighConfidenceShorts(
         hasShortsIdentifier: Boolean,
@@ -198,51 +114,11 @@ class YouTubeShortsDetector : ShortVideoDetector {
             hasRepeatedVerticalFeed
     }
 
-    private fun String?.containsAny(vararg needles: String): Boolean {
-        val normalized = this?.lowercase(Locale.US) ?: return false
-        return needles.any { normalized.contains(it) }
-    }
-
     private fun AccessibilityNodeSignal.isShortsSurfaceCandidate(): Boolean =
-        viewIdResourceName.containsAny("reel", "shorts") ||
-            className.containsAny("viewpager")
+        viewIdResourceName.containsAnyIgnoringCase("reel", "shorts") ||
+            className.containsAnyIgnoringCase("viewpager")
 
     companion object {
         const val YOUTUBE_PACKAGE = "com.google.android.youtube"
-
-        private val shortsActionSignals =
-            setOf(
-                "like",
-                "me gusta",
-                "gefällt mir",
-                "подобається",
-                "нравится",
-                "dislike",
-                "не подобається",
-                "не нравится",
-                "comment",
-                "comments",
-                "comentar",
-                "kommentieren",
-                "коментар",
-                "коментарі",
-                "коментувати",
-                "комментарий",
-                "комментарии",
-                "комментировать",
-                "share",
-                "compartir",
-                "teilen",
-                "поділитися",
-                "поширити",
-                "поделиться",
-                "remix",
-                "ремікс",
-                "ремикс",
-                "subscribe",
-                "abonnieren",
-                "підписатися",
-                "подписаться",
-            )
     }
 }

@@ -4,12 +4,10 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-ANDROID_HOME="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/home/serputko/Android/Sdk}}"
-ANDROID_SDK_ROOT="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+. "$ROOT_DIR/scripts/android_env.sh"
 AVD_NAME="${AVD_NAME:-ShortsBlocker_Pixel_API35}"
 DEVICE_PROFILE="${DEVICE_PROFILE:-pixel_6}"
 SYSTEM_IMAGE="${SYSTEM_IMAGE:-system-images;android-35;google_apis_playstore;x86_64}"
-export ANDROID_HOME ANDROID_SDK_ROOT
 
 AVDMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager"
 

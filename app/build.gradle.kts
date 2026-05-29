@@ -100,7 +100,9 @@ android {
                 signingConfig = signingConfigs.getByName("release")
             }
             isDebuggable = false
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
             buildConfigField("boolean", "ACCESSIBILITY_DEBUG_TOOLS_ENABLED", "false")
             buildConfigField("boolean", "BILLING_CLIENT_ONLY_TEST_MODE", "false")
         }

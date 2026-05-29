@@ -136,29 +136,38 @@ class BillingBackendServer(
         val startedAtMillis = System.currentTimeMillis()
         val context = RequestContext(UUID.randomUUID().toString(), endpoint.path)
         var statusCode = 500
+        var failureType: String? = null
         try {
             exchange.requireExactPath(endpoint.path)
             exchange.requireHttpsIfNeeded(endpoint)
             exchange.requireRateLimit(endpoint)
             statusCode = block(exchange, context)
         } catch (exception: TooManyRequestsException) {
+            failureType = exception.failureType()
             statusCode = exchange.respond(429, JsonBodies.errorResponse("Rate limit exceeded"), context)
         } catch (exception: RequestTooLargeException) {
+            failureType = exception.failureType()
             statusCode = exchange.respond(413, JsonBodies.errorResponse("Request body too large"), context)
         } catch (exception: PurchaseNotFoundException) {
+            failureType = exception.failureType()
             statusCode = exchange.respond(404, JsonBodies.errorResponse(exception.message ?: "Purchase not found"), context)
         } catch (exception: InvalidPurchaseTokenException) {
+            failureType = exception.failureType()
             statusCode = exchange.respond(400, JsonBodies.errorResponse(exception.message ?: "Invalid purchase token"), context)
         } catch (exception: IllegalArgumentException) {
+            failureType = exception.failureType()
             statusCode = exchange.respond(400, JsonBodies.errorResponse(exception.message ?: "Bad request"), context)
         } catch (exception: BillingBackendUnavailableException) {
+            failureType = exception.failureType()
             statusCode = exchange.respond(503, JsonBodies.errorResponse("Billing backend temporarily unavailable"), context)
         } catch (exception: IllegalStateException) {
+            failureType = exception.failureType()
             statusCode = exchange.respond(503, JsonBodies.errorResponse("Billing backend temporarily unavailable"), context)
         } catch (exception: Exception) {
+            failureType = exception.failureType()
             statusCode = exchange.respond(500, JsonBodies.errorResponse("Internal billing backend error"), context)
         } finally {
-            logRequest(exchange, context, statusCode, startedAtMillis)
+            logRequest(exchange, context, statusCode, startedAtMillis, failureType)
             exchange.close()
         }
     }
@@ -168,6 +177,7 @@ class BillingBackendServer(
         context: RequestContext,
         statusCode: Int,
         startedAtMillis: Long,
+        failureType: String?,
     ) {
         val fields =
             context.auditFields(
@@ -175,6 +185,7 @@ class BillingBackendServer(
                 "status" to statusCode,
                 "duration_ms" to (System.currentTimeMillis() - startedAtMillis),
                 "remote_addr" to exchange.remoteAddress.address.hostAddress,
+                "error_type" to failureType,
             )
         if (statusCode >= 500) {
             logger.warn("http.request.completed", fields)
@@ -185,6 +196,8 @@ class BillingBackendServer(
             logger.audit("billing.request.failed", fields)
         }
     }
+
+    private fun Throwable.failureType(): String = javaClass.simpleName.ifBlank { "Exception" }
 
     private fun HttpExchange.requireMethod(method: String) {
         require(requestMethod == method) { "Expected $method" }
