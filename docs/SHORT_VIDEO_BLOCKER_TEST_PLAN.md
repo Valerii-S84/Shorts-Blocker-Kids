@@ -313,6 +313,9 @@ Play Console setup:
 - License tester configured.
 - Subscription product configured.
 - Base plan configured.
+- Privacy Policy URL configured as `https://movashield.de/privacy`.
+- RTDN webhook configured as
+  `https://billing.movashield.de/billing/play/rtdn`.
 - Test card flows available.
 
 App-side tests:
@@ -350,8 +353,8 @@ Required backend tests:
   billing technical data.
 - `GET /entitlement/status` returns active, canceled-active, grace, on-hold,
   expired, revoked, and unknown states without exposing purchase tokens.
-- `POST /billing/play/rtdn` rejects requests without the configured runtime
-  shared secret.
+- `POST /billing/play/rtdn` rejects production requests without authenticated
+  Pub/Sub push config.
 - RTDN `messageId` handling is idempotent.
 - Backend logs and stored records do not include child data, app usage history,
   accessibility tree dumps, URLs, video titles, account names, messages,
@@ -367,8 +370,8 @@ Code gates:
 - `ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:lintDebug`
 - `ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:lintRelease`
 - `ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:assembleDebug`
-- `ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:assembleRelease`
-- `ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:bundleRelease`
+- `SBK_BILLING_BACKEND_BASE_URL=https://billing.movashield.de ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:assembleRelease`
+- `SBK_BILLING_BACKEND_BASE_URL=https://billing.movashield.de ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:bundleRelease`
 - `ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:jacocoDebugUnitTestCoverageVerification`
 - JaCoCo branch coverage must be at least 90.00%; instruction and line coverage
   gates must not be lower than the previous baseline.
@@ -380,15 +383,15 @@ Manual gates:
 - Full Accessibility disclosure video recorded.
 - Real-device QA completed for every supported app.
 - Billing test matrix completed.
-- Backend verification test matrix is not applicable unless a future approved
-  backend exists.
+- Backend verification test matrix runs against
+  `https://billing.movashield.de` after live DNS/TLS deployment.
 - Privacy permissions audit completed for release merged manifest.
 - No unsupported permissions.
 - No raw Accessibility logs in release.
 
 Policy gates:
 
-- Privacy Policy URL hosted and accurate.
+- Privacy Policy URL `https://movashield.de/privacy` hosted and accurate.
 - Data Safety form complete.
 - Accessibility declaration complete.
 - Target Audience and Content complete.

@@ -1,8 +1,9 @@
 # Shorts Blocker Kids Play Billing Backend Runbook
 
-Status: Repository production flow prepared. Android release builds now require
-an HTTPS billing backend URL. Live deployment, Play Console RTDN setup, and
-license-tester evidence remain pending.
+Status: Repository production flow prepared for `movashield.de`. Android
+release builds now require the canonical HTTPS billing backend URL. Live DNS,
+TLS, Play Console RTDN setup, and license-tester evidence remain pending until
+the owner/server deployment is configured and verified.
 
 Date: May 28, 2026
 
@@ -36,7 +37,7 @@ Required outside the repository:
 ```text
 SBK_ENV=production
 SBK_BACKEND_PORT=8080
-SBK_PUBLIC_BASE_URL=https://billing.example.com
+SBK_PUBLIC_BASE_URL=https://billing.movashield.de
 SBK_REQUIRE_HTTPS=true
 SBK_PACKAGE_NAME=com.shortsblockerkids
 SBK_PLAY_SUBSCRIPTION_PRODUCT_ID=shorts_blocker_kids_monthly
@@ -44,12 +45,37 @@ SBK_DATABASE_URL=jdbc:postgresql://billing-db:5432/shorts_blocker_kids
 SBK_DATABASE_USER=<runtime database user>
 SBK_DATABASE_PASSWORD=<runtime database password>
 GOOGLE_APPLICATION_CREDENTIALS=/run/secrets/google-service-account.json
-SBK_RTDN_PUBSUB_AUDIENCE=https://billing.example.com/billing/play/rtdn
+SBK_RTDN_PUBSUB_AUDIENCE=https://billing.movashield.de/billing/play/rtdn
 SBK_RTDN_PUBSUB_SERVICE_ACCOUNT_EMAIL=<pubsub push service account email>
 ```
 
 Do not commit service-account JSON, runtime secrets, keystores, database
 passwords, or production environment files.
+
+Canonical public values:
+
+```text
+Public website URL: https://movashield.de
+Privacy Policy URL: https://movashield.de/privacy
+Production billing backend base URL: https://billing.movashield.de
+RTDN webhook URL: https://billing.movashield.de/billing/play/rtdn
+Publisher: Valerii Serputko
+Public privacy/support contact: svalerii535@gmail.com
+```
+
+## Production Domain Requirements
+
+The repository does not prove that the domain is live. Before Play Console
+submission, the owner/server operator must configure and verify:
+
+- DNS: `billing.movashield.de` points to the production backend edge/server.
+- HTTPS: `billing.movashield.de` serves a valid TLS certificate for that host.
+- Reverse proxy: Caddy, Nginx, or another HTTPS edge forwards traffic to the
+  backend process and sets `X-Forwarded-Proto: https`.
+- Backend health: `GET https://billing.movashield.de/health`.
+- Billing verify: `POST https://billing.movashield.de/billing/play/verify`.
+- Entitlement status: `GET https://billing.movashield.de/entitlement/status`.
+- RTDN: `POST https://billing.movashield.de/billing/play/rtdn`.
 
 ## Local Commands
 
@@ -72,7 +98,7 @@ uses `GET /health` for container healthchecks.
 Production-configured Android build:
 
 ```bash
-SBK_BILLING_BACKEND_BASE_URL=https://billing.example.com \
+SBK_BILLING_BACKEND_BASE_URL=https://billing.movashield.de \
 ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew :app:bundleRelease
 ```
 
@@ -86,6 +112,15 @@ is separate proof that Google Play Billing and production backend verification
 continue to work without them.
 
 ## Endpoints
+
+Production public endpoints:
+
+```text
+GET  https://billing.movashield.de/health
+POST https://billing.movashield.de/billing/play/verify
+GET  https://billing.movashield.de/entitlement/status
+POST https://billing.movashield.de/billing/play/rtdn
+```
 
 ```http
 GET /health
@@ -228,6 +263,38 @@ Required edge controls:
 - optional IP allowlisting where hosting supports it;
 - healthcheck access limited to deployment or monitoring systems.
 
+## Production Smoke Tests
+
+Run these only after DNS, TLS, reverse proxy, runtime secrets, and PostgreSQL
+are configured on the production server:
+
+```bash
+dig +short movashield.de
+dig +short billing.movashield.de
+openssl s_client -connect billing.movashield.de:443 -servername billing.movashield.de </dev/null
+curl -fsS https://billing.movashield.de/health
+curl -fsS 'https://billing.movashield.de/entitlement/status?install_id=smoke-install-id'
+```
+
+`POST /billing/play/verify` requires a real Play purchase token from a license
+tester flow. Use the Play-installed internal testing build:
+
+```bash
+curl -fsS -X POST https://billing.movashield.de/billing/play/verify \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "install_id": "license-tester-install-id",
+    "package_name": "com.shortsblockerkids",
+    "product_id": "shorts_blocker_kids_monthly",
+    "purchase_token": "<play-license-tester-token>",
+    "app_version": "0.1.0"
+  }'
+```
+
+`POST /billing/play/rtdn` must be verified through authenticated Pub/Sub push
+from Play Console. Do not fake production RTDN success with the local
+`X-SBK-RTDN-Secret` fallback.
+
 ## Privacy Boundary
 
 Allowed backend data:
@@ -272,6 +339,7 @@ Application rollback:
 ```bash
 ./scripts/backend_rollback_compose.sh <previous-backend-image>
 curl -fsS http://127.0.0.1:8080/health
+curl -fsS https://billing.movashield.de/health
 ```
 
 Data rollback:

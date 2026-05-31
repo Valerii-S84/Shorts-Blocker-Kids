@@ -25,14 +25,18 @@ internal test runbook stay aligned.
 Package name: com.shortsblockerkids
 Version name: 0.1.0
 Version code: 1
-AAB: pending
-AAB SHA-256: pending
+AAB: app/build/outputs/bundle/release/app-release.aab
+AAB SHA-256: 43e1d1f0397f9ecd2296dcddd3893d888541edc019f43a1017e326a12932932b
+Production billing backend URL: https://billing.movashield.de
+RTDN webhook URL: https://billing.movashield.de/billing/play/rtdn
+Privacy Policy URL: https://movashield.de/privacy
+Publisher / developer name: Valerii Serputko
+Public contact email: svalerii535@gmail.com
 ```
 
-The Play-bound AAB must be rebuilt with a real HTTPS
-`SBK_BILLING_BACKEND_BASE_URL`. After it is built, update this file and
-`docs/SHORTS_BLOCKER_PLAY_BILLING_INTERNAL_TEST_RUNBOOK.md` before Play
-testing.
+This local AAB was built with
+`SBK_BILLING_BACKEND_BASE_URL=https://billing.movashield.de`. Play Console
+upload and Play App Signing acceptance are still not verified.
 
 ## Subscription Product
 
@@ -128,5 +132,7 @@ Confirm these remain true after Play Console setup:
 - no ads;
 - no analytics SDK;
 - billing backend is deployed only for Play purchase verification and RTDN;
-- Privacy Policy explains Google Play Billing and local entitlement storage;
+- Privacy Policy URL is `https://movashield.de/privacy` and explains Google
+  Play Billing, backend verification at `https://billing.movashield.de`, and
+  local entitlement storage;
 - Data Safety answers match the Billing SDK, permissions, and local data.

@@ -23,8 +23,9 @@ Subscriptions are handled through Google Play Billing. There are no website,
 Stripe, manual license key, or external payment flows in the Play-distributed
 app.
 
-Release artifacts require `SBK_BILLING_BACKEND_BASE_URL` at build time and the
-value must be an HTTPS URL. Debug builds can still omit that value and use the
+Release artifacts require `SBK_BILLING_BACKEND_BASE_URL` at build time. The
+canonical production value is `https://billing.movashield.de`, and the value
+must be an HTTPS URL. Debug builds can still omit that value and use the
 client-only Google Play Billing path for internal testing.
 
 ## Requirements
@@ -46,8 +47,8 @@ export ANDROID_HOME=/path/to/Android/Sdk
 
 ```bash
 ./gradlew :app:assembleDebug
-./gradlew :app:assembleRelease
-./gradlew :app:bundleRelease
+SBK_BILLING_BACKEND_BASE_URL=https://billing.movashield.de ./gradlew :app:assembleRelease
+SBK_BILLING_BACKEND_BASE_URL=https://billing.movashield.de ./gradlew :app:bundleRelease
 ./gradlew :billing-backend:test
 ./gradlew :billing-backend:run
 ```
@@ -88,12 +89,14 @@ Current release decisions:
 Full local foundation check:
 
 ```bash
+SBK_BILLING_BACKEND_BASE_URL=https://billing.movashield.de \
 ./gradlew :app:ktlintCheck :app:assembleDebug :app:assembleRelease :app:testDebugUnitTest :app:jacocoDebugUnitTestCoverageVerification :app:lintDebug
 ```
 
 Full local release readiness check:
 
 ```bash
+SBK_BILLING_BACKEND_BASE_URL=https://billing.movashield.de \
 ./gradlew :app:ktlintCheck :app:assembleDebug :app:assembleRelease :app:bundleRelease :app:testDebugUnitTest :app:jacocoDebugUnitTestCoverageVerification :app:lintDebug :app:lintRelease
 ```
 
@@ -135,13 +138,14 @@ SBK_RTDN_SHARED_SECRET=...
 Android release builds can opt into backend verification with:
 
 ```bash
-SBK_BILLING_BACKEND_BASE_URL=https://billing.example.com \
+SBK_BILLING_BACKEND_BASE_URL=https://billing.movashield.de \
 ./gradlew :app:bundleRelease
 ```
 
 `assembleRelease` and `bundleRelease` fail closed when the backend URL is blank
 or not HTTPS. This prevents a Play-bound build from shipping with subscription
-purchase UI but no backend entitlement verification.
+purchase UI but no backend entitlement verification. Placeholder domains are
+not production backend URLs for this app.
 
 ## Known Limitation
 

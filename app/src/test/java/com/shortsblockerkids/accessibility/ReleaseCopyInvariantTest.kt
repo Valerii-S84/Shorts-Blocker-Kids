@@ -64,6 +64,32 @@ class ReleaseCopyInvariantTest {
     }
 
     @Test
+    fun productionFacingDocsUseMovashieldCanonicalUrls() {
+        val productionDocs =
+            listOf(
+                repoFile("README.md").readText(),
+                repoFile(".env.example").readText(),
+                repoFile("docs/SHORTS_BLOCKER_AAB_RELEASE_READINESS.md").readText(),
+                repoFile("docs/SHORTS_BLOCKER_PLAY_BILLING_BACKEND_RUNBOOK.md").readText(),
+                repoFile("docs/SHORTS_BLOCKER_PLAY_CONSOLE_PREPARATION_PACKAGE.md").readText(),
+                repoFile("docs/SHORTS_BLOCKER_PLAY_CONSOLE_BILLING_CONFIG.md").readText(),
+                repoFile("docs/SHORTS_BLOCKER_PLAY_POLICY_PACKAGE.md").readText(),
+                repoFile("docs/SHORTS_BLOCKER_PRIVACY_POLICY_DRAFT.md").readText(),
+            )
+
+        productionDocs.forEach { text ->
+            assertTrue(text.contains("https://billing.movashield.de"))
+            assertFalse(text.contains("billing.example.com"))
+        }
+
+        val combinedDocs = productionDocs.joinToString(separator = "\n")
+        assertTrue(combinedDocs.contains("https://movashield.de/privacy"))
+        assertTrue(combinedDocs.contains("https://billing.movashield.de/billing/play/rtdn"))
+        assertTrue(combinedDocs.contains("Valerii Serputko"))
+        assertTrue(combinedDocs.contains("svalerii535@gmail.com"))
+    }
+
+    @Test
     fun privacyCopyDeniesSensitiveChildAndAccessibilityDataCollection() {
         val privacySources =
             listOf(

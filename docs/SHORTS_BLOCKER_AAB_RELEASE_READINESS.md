@@ -33,10 +33,21 @@ supplied as an HTTPS URL. This is wired through
 `packageRelease`, and `bundleRelease` when the backend URL is blank or not
 HTTPS.
 
+Canonical production values for the current release line:
+
+```text
+Public website URL: https://movashield.de
+Privacy Policy URL: https://movashield.de/privacy
+Publisher / developer name: Valerii Serputko
+Public contact email: svalerii535@gmail.com
+Production billing backend base URL: https://billing.movashield.de
+RTDN webhook URL: https://billing.movashield.de/billing/play/rtdn
+```
+
 Expected production-configured release command:
 
 ```bash
-SBK_BILLING_BACKEND_BASE_URL=https://<production-billing-host> \
+SBK_BILLING_BACKEND_BASE_URL=https://billing.movashield.de \
 ANDROID_HOME=/home/serputko/Android/Sdk \
 ANDROID_SDK_ROOT=/home/serputko/Android/Sdk \
 ./gradlew :app:lintRelease :app:assembleRelease :app:bundleRelease
@@ -56,6 +67,84 @@ remain documented release permissions. They are merged from the Google Play
 Billing dependency graph and are also required for production backend
 verification. Do not remove either permission until a separate dependency and
 runtime proof shows removal is safe.
+
+## May 31, 2026 Movashield Production Domain Evidence
+
+Release gate validation:
+
+```text
+blank SBK_BILLING_BACKEND_BASE_URL: failed as expected
+http://billing.movashield.de: failed as expected
+not-a-url: failed as expected
+https://billing.movashield.de: passed
+```
+
+Verification/build command:
+
+```bash
+SBK_BILLING_BACKEND_BASE_URL=https://billing.movashield.de \
+ANDROID_HOME=/home/serputko/Android/Sdk \
+ANDROID_SDK_ROOT=/home/serputko/Android/Sdk \
+./gradlew :app:testDebugUnitTest :billing-backend:test \
+  :app:ktlintCheck :billing-backend:ktlintCheck \
+  :app:lintRelease :app:assembleRelease :app:bundleRelease
+```
+
+Result:
+
+```text
+BUILD SUCCESSFUL in 4m 28s
+112 actionable tasks: 112 executed
+app unit tests: tests=233 failures=0 errors=0 skipped=0
+backend tests: tests=31 failures=0 errors=0 skipped=0
+lintRelease: passed with existing warnings
+```
+
+Release artifacts:
+
+```text
+app/build/outputs/apk/release/app-release.apk     1,709,314 bytes
+app/build/outputs/bundle/release/app-release.aab  3,617,812 bytes
+```
+
+SHA-256:
+
+```text
+d176570ae344ba8d4b877dc4ac61ed1711e18b7b9e5f818a173fe48d548a2ed4  app/build/outputs/apk/release/app-release.apk
+43e1d1f0397f9ecd2296dcddd3893d888541edc019f43a1017e326a12932932b  app/build/outputs/bundle/release/app-release.aab
+```
+
+Release `BuildConfig`:
+
+```text
+APPLICATION_ID="com.shortsblockerkids"
+BUILD_TYPE="release"
+VERSION_CODE=1
+VERSION_NAME="0.1.0"
+BILLING_BACKEND_BASE_URL="https://billing.movashield.de"
+```
+
+Source state at verification time:
+
+```text
+source_commit_before_task=68d914f91bbc942f9900033840572be349d3973c
+git_status=modified working tree before final commit
+```
+
+Live domain verification:
+
+```text
+dig: not available in this shell
+getent hosts movashield.de: 185.181.104.242
+getent hosts billing.movashield.de: 46.225.181.45
+openssl s_client billing.movashield.de:443: failed, tlsv1 alert internal error
+curl https://billing.movashield.de/health: failed, TLS alert internal error
+curl https://movashield.de/privacy: failed, could not connect to server
+```
+
+Conclusion: DNS records are visible locally, but HTTPS/TLS and backend health
+are not verified. Live domain readiness is blocked by owner/server DNS/TLS/web
+hosting configuration.
 
 ## May 24, 2026 Release Gate Refresh
 
@@ -288,14 +377,15 @@ ACCESSIBILITY_DEBUG_TOOLS_ENABLED = false
 - Configure Play App Signing and upload key flow.
 - Upload `app-release.aab` to internal testing.
 - Confirm Play Console accepts the AAB.
-- Add hosted Privacy Policy URL.
+- Submit Privacy Policy URL `https://movashield.de/privacy`.
 - Complete Data Safety form.
 - Complete Accessibility declaration.
 - Upload Accessibility review demo video.
 - Add store screenshots and feature graphic.
 - Execute `docs/SHORTS_BLOCKER_PLAY_BILLING_INTERNAL_TEST_RUNBOOK.md` after the
   subscription product and internal testing track are active.
-- Deploy and verify the billing backend before a production-configured AAB.
+- Deploy and verify the billing backend at `https://billing.movashield.de`
+  before Play production rollout.
 - Use `docs/SHORTS_BLOCKER_PLAY_CONSOLE_BILLING_CONFIG.md` for the exact
   subscription product/base-plan values.
 - Run final smoke QA on the exact AAB-derived install from Play internal

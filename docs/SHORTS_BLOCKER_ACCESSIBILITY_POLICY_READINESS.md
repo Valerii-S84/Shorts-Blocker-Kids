@@ -1,7 +1,8 @@
 # Shorts Blocker Kids Accessibility Policy Readiness
 
-Status: Partial. Repository-side Play review package is prepared; external
-Play Console submission and demo video URL are pending.
+Status: Partial. Repository-side Play review package is prepared for
+`movashield.de`; external Play Console submission, live Privacy Policy URL
+verification, and demo video URL are pending.
 
 ## Scope
 
@@ -31,8 +32,9 @@ Current interpretation:
 - Document AccessibilityService use in the Google Play listing.
 - Keep Data Safety and Privacy Policy consistent with the shipped build.
 - Complete the Play Console Accessibility permission declaration before review.
-- Treat Accessibility review as blocked until the hosted Privacy Policy URL,
-  Play Data Safety answers, and review demo video are final.
+- Treat Accessibility review as blocked until `https://movashield.de/privacy`
+  is live, Play Data Safety answers are submitted, and the review demo video is
+  final.
 
 ## In-App Prominent Disclosure
 
@@ -64,7 +66,7 @@ Policy blocker status:
 - repository copy and gating are prepared;
 - Play Console declaration is not submitted;
 - demo video URL is not submitted;
-- final hosted Privacy Policy URL is not submitted;
+- `https://movashield.de/privacy` is not submitted or verified live yet;
 - real-device QA remains required before TikTok main, Instagram Reels, and
   Facebook Reels are claimed as fully supported in store copy.
 
@@ -138,7 +140,7 @@ The Privacy Policy should state:
 - The app works locally on the phone.
 - The app has no account system.
 - Backend behavior is limited to Google Play subscription verification and
-  entitlement status.
+  entitlement status at `https://billing.movashield.de`.
 - Protection rules are stored on the device.
 - Parent PIN is stored as hash and salt metadata, not plain text.
 - The app uses AccessibilityService to detect supported short-video surfaces
@@ -213,7 +215,7 @@ claimed.
 
 ## Not Yet Completed Outside The Repo
 
-- Final hosted Privacy Policy URL.
+- Publish, verify, and submit `https://movashield.de/privacy`.
 - Play Console developer account ownership/legal entity details remain
   owner-dependent if Google Play requires fields beyond the current personal
   developer / publisher name `Valerii Serputko` and public privacy contact

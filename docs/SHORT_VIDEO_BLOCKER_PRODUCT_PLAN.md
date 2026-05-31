@@ -136,10 +136,11 @@ Initial subscription proposal:
 - Restore purchases support.
 - Subscription management through Google Play.
 
-Backend verification is planned for production hardening, but the backend must
-store only billing technical data and must not receive child viewing history,
-short-video events, Accessibility tree dumps, video titles, URLs, messages,
-screen recordings, audio, location, contacts, or browsing history.
+Production backend verification uses `https://billing.movashield.de`, but the
+backend must store only billing technical data and must not receive child
+viewing history, short-video events, Accessibility tree dumps, video titles,
+URLs, messages, screen recordings, audio, location, contacts, or browsing
+history.
 
 ## Implementation Phases
 
@@ -161,7 +162,7 @@ screen recordings, audio, location, contacts, or browsing history.
    - Run unit, integration, lint, release build, and real-device app matrix.
    - Verify no child viewing history or unsupported data leaves the device.
 5. Production / Play Store package:
-   - Finalize Privacy Policy URL.
+   - Use Privacy Policy URL `https://movashield.de/privacy`.
    - Complete Data Safety and Accessibility declarations.
    - Record demo video.
    - Upload AAB.

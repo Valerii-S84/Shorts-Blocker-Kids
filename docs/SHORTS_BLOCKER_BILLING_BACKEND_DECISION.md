@@ -36,7 +36,8 @@ The current app implements:
 - pending/cancel/error handling;
 - restore purchases through `queryPurchasesAsync`;
 - local entitlement cache with 72-hour offline grace;
-- optional backend verification through `SBK_BILLING_BACKEND_BASE_URL`;
+- release backend verification through
+  `SBK_BILLING_BACKEND_BASE_URL=https://billing.movashield.de`;
 - backend `POST /billing/play/verify`;
 - backend `GET /entitlement/status`;
 - backend `POST /billing/play/rtdn`;
@@ -45,8 +46,9 @@ The current app implements:
 - backend acknowledgement after verified active entitlement;
 - hashed purchase-token storage in the backend store.
 
-The app still supports client-only Billing when no backend URL is configured so
-Play internal testing can continue before backend deployment.
+Debug builds still support client-only Billing when no backend URL is
+configured so internal development can continue before backend deployment.
+Release builds fail closed without a valid HTTPS backend URL.
 
 ## Backend Benefits
 
@@ -109,10 +111,11 @@ Do not mark Billing `Done` for production until backend deployment is verified:
 ### Required before production
 
 - HTTPS deployment;
+- DNS/TLS verified for `https://billing.movashield.de`;
 - Google Play Developer API credentials stored outside the repository;
 - `GOOGLE_APPLICATION_CREDENTIALS` configured on the backend runtime;
-- `SBK_RTDN_SHARED_SECRET` configured on the backend runtime and edge;
-- Play Console RTDN Pub/Sub push configured;
+- Play Console RTDN Pub/Sub authenticated push configured to
+  `https://billing.movashield.de/billing/play/rtdn`;
 - durable entitlement storage and backup policy;
 - rate limiting / edge protection;
 - secure logging rules excluding child/app-usage data;

@@ -1,9 +1,16 @@
 # Shorts Blocker Kids Privacy Policy Draft
 
-Status: Draft for hosting. Public privacy contact and personal developer /
-publisher name are filled for the current Google Play submission path.
+Status: Draft for publication at `https://movashield.de/privacy`. Public
+privacy/support contact and personal developer / publisher name are filled for
+the current Google Play submission path. Live hosting still must be verified
+before Play Console submission.
 
 Effective date: May 24, 2026
+
+Public website: https://movashield.de
+Privacy Policy URL: https://movashield.de/privacy
+Support/privacy contact: svalerii535@gmail.com
+Developer / publisher: Valerii Serputko
 
 ## Overview
 
@@ -23,7 +30,7 @@ app-side support is:
 The app works locally on the device for protection behavior. It does not
 require an account. For production subscription verification, the app may use a
 billing backend limited to Google Play purchase verification and entitlement
-status.
+status at `https://billing.movashield.de`.
 
 ## Accessibility Service
 
@@ -62,8 +69,10 @@ Google Play Billing adds `android.permission.INTERNET` and
 `android.permission.ACCESS_NETWORK_STATE` through the Billing SDK. The app does
 not use analytics, ads, account, or cloud sync network flow.
 
-Google Play Billing and backend subscription verification may send only billing
-technical data needed to verify and maintain subscription access:
+Google Play Billing and production backend subscription verification may send
+only billing technical data needed to verify and maintain subscription access.
+The production backend base URL configured for release builds is
+`https://billing.movashield.de`.
 
 - random app installation ID;
 - app package name and app version;
@@ -101,5 +110,7 @@ Android settings.
 ## Contact
 
 Privacy contact: svalerii535@gmail.com
+
+Support contact: svalerii535@gmail.com
 
 Developer / publisher: Valerii Serputko
