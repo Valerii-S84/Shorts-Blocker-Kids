@@ -47,6 +47,10 @@ keystore.properties
 .DS_Store
 Thumbs.db
 
+# Website build outputs
+website/dist/
+website/node_modules/
+
 # Kotlin / Java compiler artifacts
 *.class
 *.dex

@@ -1,8 +1,8 @@
 # Shorts Blocker Kids Play Policy Package
 
-Status: Partial. Repository-side policy package prepared for `shortsblockerkids.de`;
-external Play Console submission, live Privacy Policy URL verification, and
-demo video URL are pending.
+Status: Partial. Repository-side policy package and static website source are
+prepared for `shortsblockerkids.de`; external Play Console submission, live
+Privacy Policy URL verification, and demo video URL are pending.
 
 Current Play Console submission source:
 
@@ -189,6 +189,18 @@ Standalone draft:
 
 ```text
 docs/SHORTS_BLOCKER_PRIVACY_POLICY_DRAFT.md
+```
+
+Website source:
+
+```text
+website/src/pages/privacy.mjs
+```
+
+Deployment notes:
+
+```text
+docs/SHORTS_BLOCKER_WEBSITE_DEPLOYMENT.md
 ```
 
 The hosted Privacy Policy must be public, active, non-PDF, non-geofenced, and

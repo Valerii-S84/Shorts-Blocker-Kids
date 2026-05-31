@@ -3,12 +3,12 @@
 Project-specific language and framework conventions for Shorts Blocker Kids.
 
 primary_language: Kotlin
-active_sections: Kotlin / Android, Gradle Kotlin DSL, Android XML, Markdown, Tests and fixtures
+active_sections: Kotlin / Android, Gradle Kotlin DSL, Android XML, Markdown, HTML / CSS, JavaScript, Tests and fixtures
 fallback: if a language or framework is introduced later, follow the existing local style and add a project-specific section before making broad style changes.
 
 ## Active languages
 
-- Languages in scope: Kotlin, Gradle Kotlin DSL, Android XML, Markdown
+- Languages in scope: Kotlin, Gradle Kotlin DSL, Android XML, Markdown, HTML, CSS, JavaScript
 
 ## Kotlin / Android
 
@@ -40,9 +40,24 @@ fallback: if a language or framework is introduced later, follow the existing lo
 
 - Not used in this repo.
 
+## HTML / CSS
+
+- Public website source lives under `website/`.
+- Keep static pages accessible, mobile-first, and dependency-light.
+- Do not publish fake user counts, fake testimonials, unsupported app support
+  claims, or direct APK download as the primary install action.
+- Keep public website copy aligned with Play Console docs and current app
+  behavior.
+
 ## JavaScript / TypeScript
 
-- Not used in this repo.
+- Use dependency-free JavaScript for the static website unless a task explicitly
+  approves a frontend dependency.
+- Keep build and smoke scripts under `website/scripts`.
+- Do not put secrets, backend admin URLs, Play Developer API details, or private
+  metrics credentials in frontend code.
+- Metrics UI must fail closed to neutral copy unless a verified real-data
+  endpoint is configured.
 
 ## Go
 
@@ -61,7 +76,7 @@ fallback: if a language or framework is introduced later, follow the existing lo
 
 - Test frameworks: JUnit 4 JVM unit tests under `app/src/test/java`
 - Fixture / mock conventions: keep detector and security fixtures small, explicit, and local to the test file unless reused by multiple tests
-- Required test suites before close-out: for Android code changes run `gradle :app:assembleDebug :app:testDebugUnitTest :app:lintDebug` with `ANDROID_HOME` or `ANDROID_SDK_ROOT` set; for `.agent/project`-only changes reread changed files and verify no template placeholders remain
+- Required test suites before close-out: for Android code changes run `gradle :app:assembleDebug :app:testDebugUnitTest :app:lintDebug` with `ANDROID_HOME` or `ANDROID_SDK_ROOT` set; for website changes run `cd website && npm run check && npm run build && npm run smoke`; for `.agent/project`-only changes reread changed files and verify no template placeholders remain
 
 ## Framework or repo-specific exceptions
 

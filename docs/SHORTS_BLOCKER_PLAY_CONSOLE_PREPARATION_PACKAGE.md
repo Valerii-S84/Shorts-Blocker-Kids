@@ -162,10 +162,14 @@ Hosting requirements for this package:
 
 Website readiness:
 
-- full marketing website: optional;
-- live HTTPS Privacy Policy page: required;
-- support page: recommended and listed for Play Console support;
-- root page: recommended for public trust.
+- website source is implemented under `website/`;
+- local website build and smoke command:
+  `cd website && npm run check && npm run build && npm run smoke`;
+- deployment instructions:
+  `docs/SHORTS_BLOCKER_WEBSITE_DEPLOYMENT.md`;
+- live HTTPS Privacy Policy page: required before Play submission;
+- support page: required for the current support URL;
+- root page: required for public trust and Play review context.
 
 Required live URLs before Play submission:
 
@@ -174,6 +178,11 @@ https://shortsblockerkids.de
 https://shortsblockerkids.de/privacy
 https://shortsblockerkids.de/support
 ```
+
+The website CTA must stay `Coming soon on Google Play` until a live Google Play
+or testing URL is available. Do not add fake reviews, fake user counts, direct
+APK download as the primary install path, or website/Stripe payment CTAs for
+the Play-distributed app.
 
 ## Data Safety Draft Answers
 

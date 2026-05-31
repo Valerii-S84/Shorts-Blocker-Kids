@@ -23,6 +23,12 @@ Subscriptions are handled through Google Play Billing. There are no website,
 Stripe, manual license key, or external payment flows in the Play-distributed
 app.
 
+The public product website source lives under `website/` and is intended for
+`https://shortsblockerkids.de`, including the Play Console Privacy Policy URL
+`https://shortsblockerkids.de/privacy` and support URL
+`https://shortsblockerkids.de/support`. The website does not offer direct APK
+download as the primary install action.
+
 Release artifacts require `SBK_BILLING_BACKEND_BASE_URL` at build time. The
 canonical production value is `https://billing.shortsblockerkids.de`. Debug
 builds can still omit that value and use the client-only Google Play Billing
@@ -84,6 +90,7 @@ Current release decisions:
 ./gradlew :app:jacocoDebugUnitTestReport :app:jacocoDebugUnitTestCoverageVerification
 ./gradlew :app:lintDebug
 ./gradlew :app:ktlintCheck
+cd website && npm run check && npm run build && npm run smoke
 ```
 
 Full local foundation check:

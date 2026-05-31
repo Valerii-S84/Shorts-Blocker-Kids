@@ -391,6 +391,8 @@ Manual gates:
 
 Policy gates:
 
+- Website static checks pass:
+  `cd website && npm run check && npm run build && npm run smoke`.
 - Privacy Policy URL `https://shortsblockerkids.de/privacy` hosted and accurate.
 - Data Safety form complete.
 - Accessibility declaration complete.

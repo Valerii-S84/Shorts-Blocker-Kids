@@ -1,11 +1,13 @@
 # Shorts Blocker Kids Privacy Policy Draft
 
-Status: Draft for publication at `https://shortsblockerkids.de/privacy`. Public
-privacy/support contact and personal developer / publisher name are filled for
-the current Google Play submission path. Live hosting still must be verified
-before Play Console submission.
+Status: Draft aligned with website source for publication at
+`https://shortsblockerkids.de/privacy`. Public privacy/support contact and
+personal developer / publisher name are filled for the current Google Play
+submission path. Live hosting still must be verified before Play Console
+submission.
 
-Effective date: May 24, 2026
+Effective date: May 31, 2026
+Website source: `website/src/pages/privacy.mjs`
 
 Public website: https://shortsblockerkids.de
 Privacy Policy URL: https://shortsblockerkids.de/privacy
@@ -16,8 +18,8 @@ Developer / publisher: Valerii Serputko
 ## Overview
 
 Shorts Blocker Kids is a parental digital wellbeing app that helps parents
-block supported short-video surfaces on a child's Android phone. Current
-app-side support is:
+reduce children's exposure to supported short-video surfaces on an Android
+phone. Current app-side support is:
 
 | Platform | Status |
 |---|---|
@@ -45,8 +47,10 @@ runs locally on the device.
 
 ## Local Data
 
-Shorts Blocker Kids stores protection settings and parent PIN hash metadata
-locally on the device. The parent PIN is not stored as plain text.
+Shorts Blocker Kids stores protection settings, enabled platform choices,
+temporary allow timing, Accessibility disclosure acceptance, free-test state,
+billing entitlement status, and parent PIN hash metadata locally on the device.
+The parent PIN is not stored as plain text.
 
 The app does not store watch history, video titles, URLs, comments, account
 names, messages, screen recordings, audio, location, contacts, browsing history,
@@ -79,7 +83,9 @@ The production backend base URL configured for release builds is
 - app package name and app version;
 - Google Play subscription product ID;
 - Google Play purchase token;
-- entitlement verification timestamp and status.
+- entitlement verification timestamp and status;
+- active-until time where available;
+- processed Real-time Developer Notification message IDs for idempotency.
 
 The billing backend stores entitlement state, verification timestamps,
 processed RTDN message IDs, and a hashed purchase token. It must not receive
@@ -107,6 +113,13 @@ active. If that permission is turned off or the app is removed, blocking stops.
 
 To remove local app data, uninstall Shorts Blocker Kids or clear the app data in
 Android settings.
+
+Billing entitlement records are retained only as needed for subscription
+verification, fraud prevention, Real-time Developer Notification idempotency,
+support, accounting, and legal retention needs.
+
+Support emails may be retained for as long as needed to handle the request and
+maintain support history.
 
 ## Contact
 
