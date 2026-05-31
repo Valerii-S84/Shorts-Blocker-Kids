@@ -9,13 +9,14 @@ import { fileURLToPath } from "node:url";
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const distDir = path.join(rootDir, "dist");
 const previewDir = path.join(rootDir, "preview");
+const screenshotSuffix = parseScreenshotSuffix();
 
 const screenshots = [
-  { path: "/", fileName: "home-desktop.png", width: 1440, height: 1200, mobile: false },
-  { path: "/", fileName: "home-tablet.png", width: 820, height: 1200, mobile: true },
-  { path: "/", fileName: "home-mobile.png", width: 390, height: 1200, mobile: true },
-  { path: "/privacy", fileName: "privacy-desktop.png", width: 1440, height: 1200, mobile: false },
-  { path: "/support", fileName: "support-desktop.png", width: 1440, height: 1200, mobile: false },
+  { path: "/", fileName: screenshotName("home-desktop.png"), width: 1440, height: 1200, mobile: false },
+  { path: "/", fileName: screenshotName("home-tablet.png"), width: 820, height: 1200, mobile: true },
+  { path: "/", fileName: screenshotName("home-mobile.png"), width: 390, height: 1200, mobile: true },
+  { path: "/privacy", fileName: screenshotName("privacy-desktop.png"), width: 1440, height: 1200, mobile: false },
+  { path: "/support", fileName: screenshotName("support-desktop.png"), width: 1440, height: 1200, mobile: false },
 ];
 
 let chromeError = "";
@@ -68,6 +69,21 @@ async function assertDistExists() {
   } catch {
     throw new Error("Run npm run build before capturing screenshots.");
   }
+}
+
+function screenshotName(fileName) {
+  if (!screenshotSuffix) {
+    return fileName;
+  }
+  return fileName.replace(/\.png$/, `${screenshotSuffix}.png`);
+}
+
+function parseScreenshotSuffix() {
+  const suffixArg = process.argv.find((arg) => arg.startsWith("--suffix="));
+  if (suffixArg) {
+    return suffixArg.slice("--suffix=".length);
+  }
+  return process.env.SCREENSHOT_SUFFIX ?? "";
 }
 
 async function startServer() {

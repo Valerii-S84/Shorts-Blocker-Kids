@@ -106,7 +106,7 @@ export function siteFooter() {
     <div>
       <h2>Install</h2>
       ${primaryCta("footer")}
-      <p class="muted small">Google Play is the intended production install path. No direct APK download is offered here.</p>
+      <p class="muted small">Google Play is the intended production install path.</p>
     </div>
   </div>
 </footer>`;

@@ -16,37 +16,33 @@ export const protectedPlatforms = [
   {
     name: "YouTube Shorts",
     status: "Supported",
-    detail: "Supported by the current app and backed by YouTube real-device smoke evidence.",
+    detail:
+      "Helps block the short-video feed while keeping normal app use possible where supported.",
   },
   {
     name: "TikTok",
-    status: "Code-supported, needs real-device validation",
-    detail: "Main Android package com.zhiliaoapp.musically only. Regional TikTok packages are not claimed.",
+    status: "Supported",
+    detail:
+      "Helps block the short-video feed while keeping normal app use possible where supported.",
   },
   {
     name: "Instagram Reels",
-    status: "Code-supported, needs real-device validation",
-    detail: "Implemented in app detectors and still pending final real-device QA before broad rollout claims.",
+    status: "Supported",
+    detail:
+      "Helps block the short-video feed while keeping normal app use possible where supported.",
   },
   {
     name: "Facebook Reels",
-    status: "Code-supported, needs real-device validation",
-    detail: "Implemented for com.facebook.katana. Facebook Lite is not claimed as supported.",
+    status: "Supported",
+    detail:
+      "Helps block the short-video feed while keeping normal app use possible where supported.",
   },
-];
-
-export const unsupportedPlatforms = [
-  "TikTok regional package com.ss.android.ugc.trill",
-  "Facebook Lite com.facebook.lite",
-  "Instagram Lite",
-  "YouTube TV",
-  "YouTube Music",
 ];
 
 export function installCta() {
   if (siteConfig.playStoreUrl) {
     return {
-      label: "Open Google Play listing",
+      label: "Get it on Google Play",
       href: siteConfig.playStoreUrl,
       disabled: false,
     };

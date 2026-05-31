@@ -23,16 +23,16 @@ export function renderTermsPage() {
     <p>The app is not intended for secret surveillance, spyware, or hidden monitoring. Parents should use it transparently and in compliance with applicable rules.</p>
 
     <h2>Service Limitations</h2>
-    <p>The app does not claim to block every video, every app, every short-video surface, or every attempt to disable protection. Blocking depends on the app being installed, Protection being ON, parent setup being complete, and Android Accessibility Service remaining enabled.</p>
+    <p>The app focuses on supported short-video surfaces. Blocking depends on the app being installed, Protection being ON, parent setup being complete, and Android Accessibility Service remaining enabled.</p>
 
     <h2>Subscriptions</h2>
     <p>Subscriptions for the Play-distributed app are intended to be handled through Google Play Billing. Google Play controls purchase, cancellation, refund, and subscription management flows where applicable.</p>
 
     <h2>Website</h2>
-    <p>This website provides product, privacy, and support information. It does not provide a direct APK download as the primary install path and does not expose billing backend admin or debug information.</p>
+    <p>This website provides product, privacy, and support information. Public app installation is intended to stay with Google Play.</p>
 
     <h2>Changes</h2>
-    <p>The app and website may change as support, Play review, and public testing progress. Privacy-impacting changes should be reflected in the Privacy Policy.</p>
+    <p>The app and website may change as product support and public testing progress. Privacy-impacting changes should be reflected in the Privacy Policy.</p>
 
     <h2>Contact</h2>
     <p>Contact <a href="mailto:${siteConfig.contactEmail}">${siteConfig.contactEmail}</a> for support or terms questions.</p>

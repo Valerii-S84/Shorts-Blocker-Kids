@@ -17,6 +17,7 @@ export function renderPrivacyPage() {
 </section>
 <section class="legal-section">
   <div class="container narrow legal-copy">
+    ${privacyToc()}
     ${identitySection()}
     ${overviewSection()}
     ${dataCollectedSection()}
@@ -45,21 +46,40 @@ export function renderPrivacyPage() {
 }
 
 function identitySection() {
-  return `<h2>Who We Are</h2>
+  return `<h2 id="who-we-are">Who We Are</h2>
 <p><strong>App:</strong> ${siteConfig.appName}</p>
 <p><strong>Publisher:</strong> ${siteConfig.publisher}</p>
 <p><strong>Website:</strong> <a href="${siteConfig.canonicalDomain}">${siteConfig.canonicalDomain}</a></p>
 <p><strong>Privacy and support contact:</strong> <a href="mailto:${siteConfig.contactEmail}">${siteConfig.contactEmail}</a></p>`;
 }
 
+function privacyToc() {
+  const items = [
+    ["Who We Are", "#who-we-are"],
+    ["Overview", "#overview"],
+    ["Data Stored", "#data-stored"],
+    ["Data Not Collected", "#data-not-collected"],
+    ["AccessibilityService Use", "#accessibility"],
+    ["Billing", "#billing"],
+    ["Contact", "#contact"],
+  ];
+
+  return `<nav class="legal-toc" aria-label="Privacy Policy sections">
+  <strong>On this page</strong>
+  <div>
+    ${items.map(([label, href]) => `<a href="${href}">${label}</a>`).join("")}
+  </div>
+</nav>`;
+}
+
 function overviewSection() {
-  return `<h2>Overview</h2>
-<p>${siteConfig.appName} helps parents reduce children's exposure to supported short-form video surfaces on an Android phone. The app is positioned as a parental control helper. It is not designed for hidden monitoring, child profiling, spyware, or surveillance.</p>
+  return `<h2 id="overview">Overview</h2>
+<p>${siteConfig.appName} helps parents reduce children's exposure to supported short-form video surfaces on an Android phone. It is a parental control helper for setting clear boundaries around short-video feeds.</p>
 <p>Protection behavior runs locally on the device. The app does not require an account. Production subscription access may use Google Play Billing and a billing backend at <a href="${siteConfig.billingBackendUrl}">${siteConfig.billingBackendUrl}</a> for purchase verification and entitlement status only.</p>`;
 }
 
 function dataCollectedSection() {
-  return `<h2>What Data Is Collected Or Stored</h2>
+  return `<h2 id="data-stored">What Data Is Collected Or Stored</h2>
 <h3>Local app data on the device</h3>
 <p>The app stores local settings needed for protection, including whether protection is enabled, which supported platforms are enabled, temporary allow timing, Accessibility disclosure acceptance, free-test state, billing entitlement status, and parent PIN hash metadata.</p>
 <p>The parent PIN is not stored as plain text. The app stores hash and salt metadata so it can verify the PIN locally.</p>
@@ -79,7 +99,7 @@ function dataCollectedSection() {
 }
 
 function dataNotCollectedSection() {
-  return `<h2>What Is Not Collected</h2>
+  return `<h2 id="data-not-collected">What Is Not Collected</h2>
 <p>${siteConfig.appName} does not collect, transmit, sell, or share child data or supported-app activity. In particular, the current app does not collect:</p>
 <ul>
   <li>watch history;</li>
@@ -94,14 +114,14 @@ function dataNotCollectedSection() {
 }
 
 function accessibilitySection() {
-  return `<h2>AccessibilityService Use</h2>
+  return `<h2 id="accessibility">AccessibilityService Use</h2>
 <p>${siteConfig.appName} uses Android AccessibilityService to detect when a supported short-video surface is open and to show a blocking overlay when protection is enabled.</p>
 <p>Android does not provide a normal app API for detecting these surfaces inside other apps. AccessibilityService allows local inspection of supported app UI state so the blocker can work.</p>
-<p>Accessibility processing runs locally on the device. The service is not used to read private messages, collect child activity, record the screen, capture audio, or send Accessibility content to a server. The app's current supported-package scope is YouTube, TikTok main, Instagram, and Facebook main app packages as documented in the app and Play readiness docs.</p>`;
+<p>Accessibility processing runs locally on the device. The service is not used to read private messages, collect child activity, record the screen, capture audio, or send Accessibility content to a server.</p>`;
 }
 
 function billingSection() {
-  return `<h2>Payments And Billing Backend</h2>
+  return `<h2 id="billing">Payments And Billing Backend</h2>
 <p>Subscriptions are handled through Google Play Billing. Google Play may process payment and subscription data under Google's own terms and privacy rules.</p>
 <p>The app does not store payment card data, billing addresses, bank details, or payment account credentials.</p>
 <p>Production release builds are configured to use the billing backend origin <a href="${siteConfig.billingBackendUrl}">${siteConfig.billingBackendUrl}</a> for Google Play purchase verification and entitlement status. The billing backend is separate from the public website and must not receive child data, supported app activity, video titles, URLs, messages, screen recordings, audio, location, contacts, browsing history, or raw Accessibility tree dumps.</p>`;
@@ -141,12 +161,14 @@ function rightsSection() {
 function limitsSection() {
   return `<h2>Important Limitations</h2>
 <p>Blocking works only when Protection is ON, the parent setup is complete, and Android Accessibility Service is active. If Accessibility permission is turned off or the app is removed, blocking stops.</p>
-<p>The app does not claim to block every video or every short-video surface in every app.</p>`;
+<p>The app focuses on supported short-video surfaces, not every video or every app.</p>`;
 }
 
 function contactSection() {
-  return `<h2>Contact</h2>
-<p>Privacy and support contact: <a href="mailto:${siteConfig.contactEmail}">${siteConfig.contactEmail}</a></p>
-<p>Publisher: ${siteConfig.publisher}</p>
-<p>${secondaryCta("Support page", "/support")}</p>`;
+  return `<h2 id="contact">Contact</h2>
+<div class="contact-block">
+  <p><strong>Privacy and support contact:</strong> <a href="mailto:${siteConfig.contactEmail}">${siteConfig.contactEmail}</a></p>
+  <p><strong>Publisher:</strong> ${siteConfig.publisher}</p>
+  <p>${secondaryCta("Support page", "/support")}</p>
+</div>`;
 }
