@@ -12,6 +12,12 @@ npm run smoke
 
 The build output is written to `website/dist/`.
 
+## Preview Artifacts
+
+Preview screenshots under `website/preview/` are intentionally tracked as
+visual review evidence for public website revisions. Generated production build
+output stays untracked under `website/dist/`.
+
 ## Release State
 
 The current public install CTA is `Coming soon on Google Play` because no live
