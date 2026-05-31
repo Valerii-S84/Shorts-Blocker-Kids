@@ -1,15 +1,46 @@
-name: Android
+name: CI
 
 on:
   pull_request:
   push:
     branches:
       - main
-      - master
+
+permissions:
+  contents: read
 
 jobs:
-  build:
-    name: Build and test
+  website:
+    name: Website
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install website dependencies
+        working-directory: website
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Check website
+        working-directory: website
+        run: npm run check
+
+      - name: Build website
+        working-directory: website
+        run: npm run build
+
+      - name: Smoke test website
+        working-directory: website
+        run: npm run smoke
+
+  android:
+    name: Android App
     runs-on: ubuntu-latest
 
     steps:
@@ -30,10 +61,107 @@ jobs:
         run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
 
       - name: Make Gradle wrapper executable
-        run: chmod +x ./gradlew
+        run: chmod u+x ./gradlew
 
-      - name: Static analysis
-        run: ./gradlew :app:ktlintCheck
+      - name: Run app unit tests
+        run: ./gradlew :app:testDebugUnitTest
 
-      - name: Build, test, and lint
-        run: ./gradlew :app:assembleDebug :app:assembleRelease :app:testDebugUnitTest :app:lintDebug
+      - name: Run app static checks
+        run: ./gradlew :app:ktlintCheck :app:lintDebug
+
+      - name: Validate release config fails closed
+        run: |
+          set +e
+          env -u SBK_BILLING_BACKEND_BASE_URL ./gradlew :app:validateProductionReleaseConfig
+          status=$?
+          if [ "$status" -eq 0 ]; then
+            echo "Release config validation unexpectedly passed without SBK_BILLING_BACKEND_BASE_URL."
+            exit 1
+          fi
+          echo "Release config validation failed without SBK_BILLING_BACKEND_BASE_URL as expected."
+
+      - name: Validate production release config
+        env:
+          SBK_BILLING_BACKEND_BASE_URL: https://billing.shortsblockerkids.de
+        run: ./gradlew :app:validateProductionReleaseConfig
+
+  billing-backend:
+    name: Billing Backend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: Make Gradle wrapper executable
+        run: chmod u+x ./gradlew
+
+      - name: Test backend
+        run: ./gradlew :billing-backend:test
+
+      - name: Check backend formatting
+        run: ./gradlew :billing-backend:ktlintCheck
+
+  security:
+    name: Security Hygiene
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Check tracked sensitive filenames
+        run: |
+          tracked_env_files="$(
+            git ls-files |
+              grep -E '(^|/)\.env($|\.)' |
+              grep -vE '(^|/)\.env\.example$' || true
+          )"
+          tracked_secret_files="$(
+            git ls-files |
+              grep -Ei '(^|/)keystore\.properties$|\.((jks)|(keystore)|(p12)|(pem)|(key)|(der))$|service-account|client_secret|google.*credentials|credentials\.json|secret\.json' || true
+          )"
+
+          if [ -n "$tracked_env_files" ] || [ -n "$tracked_secret_files" ]; then
+            echo "Tracked sensitive filenames detected:"
+            printf '%s\n' "$tracked_env_files" "$tracked_secret_files" | sed '/^$/d'
+            exit 1
+          fi
+
+      - name: Scan tracked files for high-confidence secret patterns
+        run: |
+          matches="$(
+            git grep -I -n -E '(gh[pousr]_[A-Za-z0-9_]{36,}|github_pat_[A-Za-z0-9_]{20,}|AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{35}|ya29\.[0-9A-Za-z_-]+|sk-[A-Za-z0-9_-]{20,}|-----BEGIN [A-Z ]*PRIVATE KEY-----)' -- . ':!*.png' ':!*.jpg' ':!*.jpeg' ':!*.webp' ':!*.jar' || true
+          )"
+
+          if [ -n "$matches" ]; then
+            echo "High-confidence secret pattern candidates detected:"
+            printf '%s\n' "$matches" | sed -E 's/^([^:]+):([0-9]+):.*/\1:\2/'
+            exit 1
+          fi
+
+  git-hygiene:
+    name: Git Hygiene
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check whitespace errors
+        run: |
+          git diff --check
+          if [ -n "${GITHUB_BASE_REF:-}" ]; then
+            git diff --check "origin/${GITHUB_BASE_REF}...HEAD"
+          else
+            git diff-tree --check --root --no-commit-id -r HEAD
+          fi
