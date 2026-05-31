@@ -185,7 +185,7 @@ Required release steps:
 Release command target:
 
 ```bash
-ANDROID_HOME=/home/serputko/Android/Sdk gradle clean \
+ANDROID_HOME=/path/to/Android/Sdk gradle clean \
   :app:assembleRelease \
   :app:bundleRelease \
   :app:lintRelease \

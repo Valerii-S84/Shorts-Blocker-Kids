@@ -26,7 +26,7 @@ Not completed:
 
 - OS: Ubuntu 24.04.3 LTS on WSL2.
 - Kernel: Linux `6.6.87.2-microsoft-standard-WSL2`.
-- ANDROID_HOME used: `/home/serputko/Android/Sdk`.
+- ANDROID_HOME used: `/path/to/Android/Sdk`.
 - Android SDK packages installed:
   - `build-tools;36.0.0`
   - `emulator` 36.5.11
@@ -40,7 +40,7 @@ Not completed:
 
 Emulator blockers:
 
-- `/home/serputko/Android/Sdk/emulator/emulator -version` failed with missing host library `libnss3.so`.
+- `/path/to/Android/Sdk/emulator/emulator -version` failed with missing host library `libnss3.so`.
 - `scripts/android_start_emulator.sh` started the emulator launcher, but the x86_64 emulator exited before adb connection because the current user is not in the `kvm` group and x86_64 emulation requires hardware acceleration.
 - `/dev/kvm` exists, but permissions are `root:kvm`, and user `serputko` is not a member of `kvm`.
 
@@ -113,7 +113,7 @@ Blocked:
 Start command:
 
 ```bash
-ANDROID_HOME=/home/serputko/Android/Sdk ./scripts/android_start_emulator.sh
+ANDROID_HOME=/path/to/Android/Sdk ./scripts/android_start_emulator.sh
 ```
 
 Result:
@@ -203,7 +203,7 @@ Created:
 ADB install command:
 
 ```bash
-ANDROID_HOME=/home/serputko/Android/Sdk /home/serputko/Android/Sdk/platform-tools/adb install -r dist/ShortsBlockerKids-debug.apk
+ANDROID_HOME=/path/to/Android/Sdk /path/to/Android/Sdk/platform-tools/adb install -r dist/ShortsBlockerKids-debug.apk
 ```
 
 ## Verification
@@ -211,19 +211,19 @@ ANDROID_HOME=/home/serputko/Android/Sdk /home/serputko/Android/Sdk/platform-tool
 SDK package install command:
 
 ```bash
-yes | env -u HTTP_PROXY -u HTTPS_PROXY -u http_proxy -u https_proxy ANDROID_HOME=/home/serputko/Android/Sdk ANDROID_SDK_ROOT=/home/serputko/Android/Sdk /home/serputko/Android/Sdk/cmdline-tools/latest/bin/sdkmanager --install "emulator" "platforms;android-35" "system-images;android-35;google_apis_playstore;x86_64"
+yes | env -u HTTP_PROXY -u HTTPS_PROXY -u http_proxy -u https_proxy ANDROID_HOME=/path/to/Android/Sdk ANDROID_SDK_ROOT=/path/to/Android/Sdk /path/to/Android/Sdk/cmdline-tools/latest/bin/sdkmanager --install "emulator" "platforms;android-35" "system-images;android-35;google_apis_playstore;x86_64"
 ```
 
 AVD create command:
 
 ```bash
-printf 'no\n' | ANDROID_HOME=/home/serputko/Android/Sdk ANDROID_SDK_ROOT=/home/serputko/Android/Sdk sh /home/serputko/Android/Sdk/cmdline-tools/latest/bin/avdmanager create avd --force --name ShortsBlocker_Pixel_API35 --package 'system-images;android-35;google_apis_playstore;x86_64' --device pixel_6
+printf 'no\n' | ANDROID_HOME=/path/to/Android/Sdk ANDROID_SDK_ROOT=/path/to/Android/Sdk sh /path/to/Android/Sdk/cmdline-tools/latest/bin/avdmanager create avd --force --name ShortsBlocker_Pixel_API35 --package 'system-images;android-35;google_apis_playstore;x86_64' --device pixel_6
 ```
 
 Build, unit test, and lint:
 
 ```bash
-ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
+ANDROID_HOME=/path/to/Android/Sdk ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
 ```
 
 Result:
@@ -236,8 +236,8 @@ Script verification:
 
 ```bash
 ./scripts/android_create_avd.sh
-ANDROID_HOME=/home/serputko/Android/Sdk ./scripts/android_run_checks.sh
-ANDROID_HOME=/home/serputko/Android/Sdk ./scripts/android_start_emulator.sh
+ANDROID_HOME=/path/to/Android/Sdk ./scripts/android_run_checks.sh
+ANDROID_HOME=/path/to/Android/Sdk ./scripts/android_start_emulator.sh
 ```
 
 Results:
@@ -315,6 +315,6 @@ Required host actions:
 - Add user `serputko` to the `kvm` group or otherwise grant `/dev/kvm` access.
 - Install the missing host library that provides `libnss3.so`.
 - Reopen the shell/session after group changes.
-- Run `ANDROID_HOME=/home/serputko/Android/Sdk ./scripts/android_start_emulator.sh`.
-- Run `ANDROID_HOME=/home/serputko/Android/Sdk ./scripts/android_install_debug.sh`.
+- Run `ANDROID_HOME=/path/to/Android/Sdk ./scripts/android_start_emulator.sh`.
+- Run `ANDROID_HOME=/path/to/Android/Sdk ./scripts/android_install_debug.sh`.
 - Complete the emulator onboarding/PIN/dashboard/accessibility/overlay checklist.

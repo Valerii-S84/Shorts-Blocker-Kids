@@ -20,7 +20,7 @@ No product code, permissions, dependencies, backend, account, analytics, billing
 ## Environment
 
 - OS: Ubuntu 24.04.3 LTS on WSL2.
-- Android SDK: `/home/serputko/Android/Sdk`.
+- Android SDK: `/path/to/Android/Sdk`.
 - Emulator version: `36.5.11.0`.
 - AVD: `ShortsBlocker_Pixel_API35`.
 - Emulator device: `emulator-5554`.
@@ -35,7 +35,7 @@ No product code, permissions, dependencies, backend, account, analytics, billing
 The project script was attempted first:
 
 ```bash
-ANDROID_HOME=/home/serputko/Android/Sdk ANDROID_SDK_ROOT=/home/serputko/Android/Sdk ./scripts/android_start_emulator.sh
+ANDROID_HOME=/path/to/Android/Sdk ANDROID_SDK_ROOT=/path/to/Android/Sdk ./scripts/android_start_emulator.sh
 ```
 
 Result:
@@ -46,7 +46,7 @@ Result:
 The documented Phase 1E `sg kvm` path was used:
 
 ```bash
-sg kvm -c 'ANDROID_HOME=/home/serputko/Android/Sdk ANDROID_SDK_ROOT=/home/serputko/Android/Sdk /home/serputko/Android/Sdk/emulator/emulator -avd ShortsBlocker_Pixel_API35 -netdelay none -netspeed full -no-snapshot -no-boot-anim -no-window'
+sg kvm -c 'ANDROID_HOME=/path/to/Android/Sdk ANDROID_SDK_ROOT=/path/to/Android/Sdk /path/to/Android/Sdk/emulator/emulator -avd ShortsBlocker_Pixel_API35 -netdelay none -netspeed full -no-snapshot -no-boot-anim -no-window'
 ```
 
 Result:
@@ -67,7 +67,7 @@ Observed emulator instability:
 Command:
 
 ```bash
-ADB=/home/serputko/Android/Sdk/platform-tools/adb
+ADB=/path/to/Android/Sdk/platform-tools/adb
 $ADB install -r app/build/outputs/apk/debug/app-debug.apk
 $ADB shell pm clear com.shortsblockerkids
 $ADB shell monkey -p com.shortsblockerkids -c android.intent.category.LAUNCHER 1

@@ -18,7 +18,7 @@ No product logic, backend, account, analytics, billing, or feature behavior was 
 ## Environment
 
 - OS: Ubuntu 24.04.3 LTS on WSL2.
-- Android SDK: `/home/serputko/Android/Sdk`.
+- Android SDK: `/path/to/Android/Sdk`.
 - Emulator version: `36.5.11.0`.
 - AVD: `ShortsBlocker_Pixel_API35`.
 - AVD image: Google Play Android 15 / API 35 / x86_64.
@@ -82,7 +82,7 @@ Current-session caveat:
 Command used:
 
 ```bash
-sg kvm -c 'ANDROID_HOME=/home/serputko/Android/Sdk ANDROID_SDK_ROOT=/home/serputko/Android/Sdk /home/serputko/Android/Sdk/emulator/emulator -avd ShortsBlocker_Pixel_API35 -netdelay none -netspeed full -no-snapshot -no-boot-anim -no-window'
+sg kvm -c 'ANDROID_HOME=/path/to/Android/Sdk ANDROID_SDK_ROOT=/path/to/Android/Sdk /path/to/Android/Sdk/emulator/emulator -avd ShortsBlocker_Pixel_API35 -netdelay none -netspeed full -no-snapshot -no-boot-anim -no-window'
 ```
 
 Result:
@@ -99,7 +99,7 @@ emulator-5554    device
 Install command:
 
 ```bash
-ANDROID_HOME=/home/serputko/Android/Sdk /home/serputko/Android/Sdk/platform-tools/adb install -r app/build/outputs/apk/debug/app-debug.apk
+ANDROID_HOME=/path/to/Android/Sdk /path/to/Android/Sdk/platform-tools/adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
 Result:
@@ -113,7 +113,7 @@ package:com.shortsblockerkids
 Launch command:
 
 ```bash
-ANDROID_HOME=/home/serputko/Android/Sdk /home/serputko/Android/Sdk/platform-tools/adb shell am start -n com.shortsblockerkids/.MainActivity
+ANDROID_HOME=/path/to/Android/Sdk /path/to/Android/Sdk/platform-tools/adb shell am start -n com.shortsblockerkids/.MainActivity
 ```
 
 Result:
@@ -151,7 +151,7 @@ dist/ShortsBlockerKids-debug.apk: OK
 Build, unit tests, and lint:
 
 ```bash
-ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
+ANDROID_HOME=/path/to/Android/Sdk ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
 ```
 
 Result:
@@ -216,8 +216,8 @@ Phase 1F: emulator UI validation.
 Run after reopening WSL so `groups` includes `kvm` without `sg`:
 
 ```bash
-ANDROID_HOME=/home/serputko/Android/Sdk ./scripts/android_start_emulator.sh
-ANDROID_HOME=/home/serputko/Android/Sdk ./scripts/android_install_debug.sh
+ANDROID_HOME=/path/to/Android/Sdk ./scripts/android_start_emulator.sh
+ANDROID_HOME=/path/to/Android/Sdk ./scripts/android_install_debug.sh
 ```
 
 Then manually verify onboarding, PIN, dashboard, Accessibility Service state, Detector Playground, and debug overlay trigger on the emulator.

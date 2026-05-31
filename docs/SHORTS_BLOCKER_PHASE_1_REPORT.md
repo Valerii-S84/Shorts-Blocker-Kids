@@ -128,7 +128,7 @@ Scenarios:
 Build command:
 
 ```bash
-ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:assembleDebug :app:testDebugUnitTest
+ANDROID_HOME=/path/to/Android/Sdk gradle :app:assembleDebug :app:testDebugUnitTest
 ```
 
 Result:
@@ -140,7 +140,7 @@ Result:
 Lint command:
 
 ```bash
-ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:lintDebug
+ANDROID_HOME=/path/to/Android/Sdk gradle :app:lintDebug
 ```
 
 Result:
@@ -150,7 +150,7 @@ Result:
 Device check:
 
 ```bash
-ANDROID_HOME=/home/serputko/Android/Sdk /home/serputko/Android/Sdk/platform-tools/adb devices
+ANDROID_HOME=/path/to/Android/Sdk /path/to/Android/Sdk/platform-tools/adb devices
 ```
 
 Result:

@@ -15,6 +15,6 @@ emulator runtime notes:
 - Current shell may require sg kvm until re-login picks up kvm group membership
 
 build commands used:
-- ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
+- ANDROID_HOME=/path/to/Android/Sdk ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
 - cp app/build/outputs/apk/debug/app-debug.apk dist/ShortsBlockerKids-debug.apk
 - sha256sum dist/ShortsBlockerKids-debug.apk > dist/ShortsBlockerKids-debug.apk.sha256

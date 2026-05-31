@@ -7,7 +7,7 @@ Use this fallback if the Android Emulator cannot run reliably inside WSL2.
 From the repo root in WSL2:
 
 ```bash
-ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
+ANDROID_HOME=/path/to/Android/Sdk ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
 mkdir -p dist
 cp app/build/outputs/apk/debug/app-debug.apk dist/ShortsBlockerKids-debug.apk
 sha256sum dist/ShortsBlockerKids-debug.apk > dist/ShortsBlockerKids-debug.apk.sha256

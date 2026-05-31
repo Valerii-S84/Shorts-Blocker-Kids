@@ -12,9 +12,9 @@ Status: Partial
 ## Command
 
 ```bash
-ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew :app:processDebugMainManifest
-ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew :app:processReleaseMainManifest
-ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew :app:bundleRelease
+ANDROID_HOME=/path/to/Android/Sdk ./gradlew :app:processDebugMainManifest
+ANDROID_HOME=/path/to/Android/Sdk ./gradlew :app:processReleaseMainManifest
+ANDROID_HOME=/path/to/Android/Sdk ./gradlew :app:bundleRelease
 ```
 
 Merged manifests inspected:

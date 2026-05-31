@@ -70,8 +70,8 @@ Production-configured local build:
 
 ```bash
 SBK_BILLING_BACKEND_BASE_URL=https://billing.shortsblockerkids.de \
-ANDROID_HOME=/home/serputko/Android/Sdk \
-ANDROID_SDK_ROOT=/home/serputko/Android/Sdk \
+ANDROID_HOME=/path/to/Android/Sdk \
+ANDROID_SDK_ROOT=/path/to/Android/Sdk \
 ./gradlew :app:testDebugUnitTest :billing-backend:test \
   :app:ktlintCheck :billing-backend:ktlintCheck \
   :app:lintRelease :app:assembleRelease :app:bundleRelease
@@ -205,8 +205,8 @@ license-tester purchase/restore/lifecycle flows
 Android release gate after stale artifact cleanup:
 
 ```bash
-ANDROID_HOME=/home/serputko/Android/Sdk \
-ANDROID_SDK_ROOT=/home/serputko/Android/Sdk \
+ANDROID_HOME=/path/to/Android/Sdk \
+ANDROID_SDK_ROOT=/path/to/Android/Sdk \
 ./gradlew :app:clean
 ```
 
@@ -219,8 +219,8 @@ BUILD SUCCESSFUL in 1m 45s
 Release AAB build without a real backend URL was intentionally blocked:
 
 ```bash
-ANDROID_HOME=/home/serputko/Android/Sdk \
-ANDROID_SDK_ROOT=/home/serputko/Android/Sdk \
+ANDROID_HOME=/path/to/Android/Sdk \
+ANDROID_SDK_ROOT=/path/to/Android/Sdk \
 ./gradlew :app:bundleRelease
 ```
 
@@ -249,7 +249,7 @@ during the May 29 cleanup.
 Command:
 
 ```bash
-ANDROID_HOME=/home/serputko/Android/Sdk \
+ANDROID_HOME=/path/to/Android/Sdk \
   ./gradlew clean :app:assembleRelease :app:bundleRelease
 ```
 
@@ -306,7 +306,7 @@ BILLING_BACKEND_BASE_URL=""
 Additional local gate:
 
 ```bash
-ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew :app:lintRelease
+ANDROID_HOME=/path/to/Android/Sdk ./gradlew :app:lintRelease
 ```
 
 Result:
@@ -347,7 +347,7 @@ com.facebook.orca
 Targeted support-matrix, unsupported-alias, and billing-backend unit tests:
 
 ```bash
-ANDROID_HOME=/home/serputko/Android/Sdk \
+ANDROID_HOME=/path/to/Android/Sdk \
   ./gradlew :app:testDebugUnitTest \
   --tests com.shortsblockerkids.accessibility.PlatformSupportMatrixTest \
   --tests com.shortsblockerkids.accessibility.DetectorBranchHardeningTest \
@@ -401,7 +401,7 @@ Source-level gate:
 Targeted tests:
 
 ```bash
-ANDROID_HOME=/home/serputko/Android/Sdk \
+ANDROID_HOME=/path/to/Android/Sdk \
   ./gradlew :app:testDebugUnitTest \
   --tests com.shortsblockerkids.feature.onboarding.AccessibilityPermissionFlowTest \
   --tests com.shortsblockerkids.accessibility.ReleaseCopyInvariantTest

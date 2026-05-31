@@ -364,18 +364,18 @@ Required backend tests:
 
 Code gates:
 
-- `ANDROID_HOME=/home/serputko/Android/Sdk gradle ktlintCheck`
-- `ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:testDebugUnitTest`
-- `ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:connectedDebugAndroidTest`
-- `ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:lintDebug`
-- `ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:lintRelease`
-- `ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:assembleDebug`
-- `SBK_BILLING_BACKEND_BASE_URL=https://billing.shortsblockerkids.de ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:assembleRelease`
-- `SBK_BILLING_BACKEND_BASE_URL=https://billing.shortsblockerkids.de ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:bundleRelease`
-- `ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:jacocoDebugUnitTestCoverageVerification`
+- `ANDROID_HOME=/path/to/Android/Sdk gradle ktlintCheck`
+- `ANDROID_HOME=/path/to/Android/Sdk gradle :app:testDebugUnitTest`
+- `ANDROID_HOME=/path/to/Android/Sdk gradle :app:connectedDebugAndroidTest`
+- `ANDROID_HOME=/path/to/Android/Sdk gradle :app:lintDebug`
+- `ANDROID_HOME=/path/to/Android/Sdk gradle :app:lintRelease`
+- `ANDROID_HOME=/path/to/Android/Sdk gradle :app:assembleDebug`
+- `SBK_BILLING_BACKEND_BASE_URL=https://billing.shortsblockerkids.de ANDROID_HOME=/path/to/Android/Sdk gradle :app:assembleRelease`
+- `SBK_BILLING_BACKEND_BASE_URL=https://billing.shortsblockerkids.de ANDROID_HOME=/path/to/Android/Sdk gradle :app:bundleRelease`
+- `ANDROID_HOME=/path/to/Android/Sdk gradle :app:jacocoDebugUnitTestCoverageVerification`
 - JaCoCo branch coverage must be at least 90.00%; instruction and line coverage
   gates must not be lower than the previous baseline.
-- `ANDROID_HOME=/home/serputko/Android/Sdk gradle localQualityGate` aggregates
+- `ANDROID_HOME=/path/to/Android/Sdk gradle localQualityGate` aggregates
   the local gate when an emulator is available.
 
 Manual gates:

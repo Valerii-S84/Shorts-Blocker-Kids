@@ -30,7 +30,7 @@ Not completed:
 Command:
 
 ```bash
-ANDROID_HOME=/home/serputko/Android/Sdk /home/serputko/Android/Sdk/platform-tools/adb devices
+ANDROID_HOME=/path/to/Android/Sdk /path/to/Android/Sdk/platform-tools/adb devices
 ```
 
 Result:
@@ -149,13 +149,13 @@ Required manual setup checklist:
 3. Confirm the phone appears in:
 
 ```bash
-ANDROID_HOME=/home/serputko/Android/Sdk /home/serputko/Android/Sdk/platform-tools/adb devices
+ANDROID_HOME=/path/to/Android/Sdk /path/to/Android/Sdk/platform-tools/adb devices
 ```
 
 4. Install the generated APK:
 
 ```bash
-ANDROID_HOME=/home/serputko/Android/Sdk /home/serputko/Android/Sdk/platform-tools/adb install -r app/build/outputs/apk/debug/app-debug.apk
+ANDROID_HOME=/path/to/Android/Sdk /path/to/Android/Sdk/platform-tools/adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
 5. Open Shorts Blocker Kids.
@@ -192,7 +192,7 @@ ANDROID_HOME=/home/serputko/Android/Sdk /home/serputko/Android/Sdk/platform-tool
 Build / unit test / lint command:
 
 ```bash
-ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
+ANDROID_HOME=/path/to/Android/Sdk gradle :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
 ```
 
 Result:

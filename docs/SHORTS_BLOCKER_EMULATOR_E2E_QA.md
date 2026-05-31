@@ -41,7 +41,7 @@ Instrumentation tests:
 Run on a connected emulator:
 
 ```bash
-ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:connectedDebugAndroidTest
+ANDROID_HOME=/path/to/Android/Sdk gradle :app:connectedDebugAndroidTest
 ```
 
 The `:app:connectedDebugAndroidTest` task depends on `installFakeSocialApps`,
@@ -50,7 +50,7 @@ which builds and installs all fake target apps first.
 Fixture-only install:
 
 ```bash
-ANDROID_HOME=/home/serputko/Android/Sdk gradle installFakeSocialApps
+ANDROID_HOME=/path/to/Android/Sdk gradle installFakeSocialApps
 ```
 
 ## Emulator E2E Scenarios
@@ -165,22 +165,22 @@ It is not a substitute for final QA on a real phone with real social apps.
 ## Full Local Verification Command Set
 
 ```bash
-ANDROID_HOME=/home/serputko/Android/Sdk gradle ktlintCheck
-ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:testDebugUnitTest
-ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:connectedDebugAndroidTest
-ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:lintDebug
-ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:lintRelease
-ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:assembleDebug
-ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:assembleRelease
-ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:bundleRelease
-ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:jacocoDebugUnitTestReport
-ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:jacocoDebugUnitTestCoverageVerification
+ANDROID_HOME=/path/to/Android/Sdk gradle ktlintCheck
+ANDROID_HOME=/path/to/Android/Sdk gradle :app:testDebugUnitTest
+ANDROID_HOME=/path/to/Android/Sdk gradle :app:connectedDebugAndroidTest
+ANDROID_HOME=/path/to/Android/Sdk gradle :app:lintDebug
+ANDROID_HOME=/path/to/Android/Sdk gradle :app:lintRelease
+ANDROID_HOME=/path/to/Android/Sdk gradle :app:assembleDebug
+ANDROID_HOME=/path/to/Android/Sdk gradle :app:assembleRelease
+ANDROID_HOME=/path/to/Android/Sdk gradle :app:bundleRelease
+ANDROID_HOME=/path/to/Android/Sdk gradle :app:jacocoDebugUnitTestReport
+ANDROID_HOME=/path/to/Android/Sdk gradle :app:jacocoDebugUnitTestCoverageVerification
 ```
 
 The aggregate local gate is also available:
 
 ```bash
-ANDROID_HOME=/home/serputko/Android/Sdk gradle localQualityGate
+ANDROID_HOME=/path/to/Android/Sdk gradle localQualityGate
 ```
 
 It depends on ktlint, unit tests, emulator E2E, debug/release lint,

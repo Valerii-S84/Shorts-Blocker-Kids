@@ -38,7 +38,7 @@ accepted with a bounded reason.
 ## Accepted Debt
 
 - Historical audit/evidence docs still contain local paths such as
-  `/home/serputko/Android/Sdk` and `/mnt/c/...`.
+  `/path/to/Android/Sdk` and `/mnt/c/...`.
   Reason: those files record dated local verification evidence. Current
   executable scripts, Gradle tasks, README commands, and `.agent/project`
   commands use `ANDROID_HOME` / `ANDROID_SDK_ROOT` instead of a hardcoded local

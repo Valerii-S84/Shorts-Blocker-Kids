@@ -35,7 +35,7 @@ Toolchain:
 Gradle 9.4.1
 Kotlin 2.3.0
 Launcher JVM 17.0.19
-Android SDK / ANDROID_HOME=/home/serputko/Android/Sdk
+Android SDK / ANDROID_HOME=/path/to/Android/Sdk
 ```
 
 ## Build Artifacts
@@ -43,7 +43,7 @@ Android SDK / ANDROID_HOME=/home/serputko/Android/Sdk
 Command:
 
 ```bash
-ANDROID_HOME=/home/serputko/Android/Sdk \
+ANDROID_HOME=/path/to/Android/Sdk \
   ./gradlew --rerun-tasks :app:assembleDebug :app:assembleRelease :app:bundleRelease
 ```
 
@@ -84,12 +84,12 @@ executed the checks instead of only returning cached/up-to-date task results.
 
 | Gate | Command | Result |
 | --- | --- | --- |
-| App unit tests | `ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew --rerun-tasks :app:testDebugUnitTest` | `BUILD SUCCESSFUL in 2m 28s`; 26 tasks executed |
-| Backend tests | `ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew --rerun-tasks :billing-backend:test` | `BUILD SUCCESSFUL in 45s`; 4 tasks executed |
-| Lint debug | `ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew --rerun-tasks :app:lintDebug` | `BUILD SUCCESSFUL in 2m 33s`; 29 tasks executed |
-| Lint release | `ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew --rerun-tasks :app:lintRelease` | `BUILD SUCCESSFUL in 1m 41s`; 16 tasks executed |
-| ktlint | `ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew --rerun-tasks :app:ktlintCheck :billing-backend:ktlintCheck` | `BUILD SUCCESSFUL in 27s`; 20 tasks executed |
-| Coverage verification | `ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew --rerun-tasks :app:jacocoDebugUnitTestCoverageVerification` | `BUILD SUCCESSFUL in 2m 36s`; 28 tasks executed |
+| App unit tests | `ANDROID_HOME=/path/to/Android/Sdk ./gradlew --rerun-tasks :app:testDebugUnitTest` | `BUILD SUCCESSFUL in 2m 28s`; 26 tasks executed |
+| Backend tests | `ANDROID_HOME=/path/to/Android/Sdk ./gradlew --rerun-tasks :billing-backend:test` | `BUILD SUCCESSFUL in 45s`; 4 tasks executed |
+| Lint debug | `ANDROID_HOME=/path/to/Android/Sdk ./gradlew --rerun-tasks :app:lintDebug` | `BUILD SUCCESSFUL in 2m 33s`; 29 tasks executed |
+| Lint release | `ANDROID_HOME=/path/to/Android/Sdk ./gradlew --rerun-tasks :app:lintRelease` | `BUILD SUCCESSFUL in 1m 41s`; 16 tasks executed |
+| ktlint | `ANDROID_HOME=/path/to/Android/Sdk ./gradlew --rerun-tasks :app:ktlintCheck :billing-backend:ktlintCheck` | `BUILD SUCCESSFUL in 27s`; 20 tasks executed |
+| Coverage verification | `ANDROID_HOME=/path/to/Android/Sdk ./gradlew --rerun-tasks :app:jacocoDebugUnitTestCoverageVerification` | `BUILD SUCCESSFUL in 2m 36s`; 28 tasks executed |
 | Build release bundle | included in artifact build command above as `:app:bundleRelease` | `BUILD SUCCESSFUL in 3m 34s`; `:app:bundleRelease` executed |
 
 Test result summaries:

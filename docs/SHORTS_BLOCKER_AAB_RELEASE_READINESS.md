@@ -49,8 +49,8 @@ Expected production-configured release command:
 
 ```bash
 SBK_BILLING_BACKEND_BASE_URL=https://billing.shortsblockerkids.de \
-ANDROID_HOME=/home/serputko/Android/Sdk \
-ANDROID_SDK_ROOT=/home/serputko/Android/Sdk \
+ANDROID_HOME=/path/to/Android/Sdk \
+ANDROID_SDK_ROOT=/path/to/Android/Sdk \
 ./gradlew :app:lintRelease :app:assembleRelease :app:bundleRelease
 ```
 
@@ -88,8 +88,8 @@ Verification/build command:
 
 ```bash
 SBK_BILLING_BACKEND_BASE_URL=https://billing.shortsblockerkids.de \
-ANDROID_HOME=/home/serputko/Android/Sdk \
-ANDROID_SDK_ROOT=/home/serputko/Android/Sdk \
+ANDROID_HOME=/path/to/Android/Sdk \
+ANDROID_SDK_ROOT=/path/to/Android/Sdk \
 ./gradlew :app:testDebugUnitTest :billing-backend:test \
   :app:ktlintCheck :billing-backend:ktlintCheck \
   :app:lintRelease :app:assembleRelease :app:bundleRelease
@@ -162,9 +162,9 @@ readiness is blocked by owner DNS/hosting/server setup.
 Release gate command:
 
 ```bash
-sg kvm -c 'set -e; cd "/mnt/c/Users/User/Desktop/Shorts Blocker Kids"; \
-  export ANDROID_HOME=/home/serputko/Android/Sdk \
-  ANDROID_SDK_ROOT=/home/serputko/Android/Sdk; \
+sg kvm -c 'set -e; cd "/path/to/Shorts-Blocker-Kids"; \
+  export ANDROID_HOME=/path/to/Android/Sdk \
+  ANDROID_SDK_ROOT=/path/to/Android/Sdk; \
   ./scripts/android_start_emulator.sh; ./gradlew localQualityGate'
 ```
 
@@ -243,14 +243,14 @@ Runtime process: pid 2372
 AAB-derived emulator smoke:
 
 ```bash
-BUNDLETOOL_CP=$(find /home/serputko/.gradle/caches/modules-2/files-2.1 -name '*.jar' | paste -sd ':' -)
+BUNDLETOOL_CP=$(find $HOME/.gradle/caches/modules-2/files-2.1 -name '*.jar' | paste -sd ':' -)
 java -cp "$BUNDLETOOL_CP" com.android.tools.build.bundletool.BundleToolMain \
   build-apks \
   --bundle=app/build/outputs/bundle/release/app-release.aab \
   --output=app/build/outputs/bundle/release/app-release-universal.apks \
   --mode=universal \
   --overwrite \
-  --aapt2=/home/serputko/Android/Sdk/build-tools/36.0.0/aapt2
+  --aapt2=/path/to/Android/Sdk/build-tools/36.0.0/aapt2
 java -cp "$BUNDLETOOL_CP" com.android.tools.build.bundletool.BundleToolMain \
   install-apks \
   --apks=app/build/outputs/bundle/release/app-release-universal.apks
@@ -295,9 +295,9 @@ the release gate result because `lintRelease` completed successfully.
 ## Command
 
 ```bash
-sg kvm -c 'set -e; cd "/mnt/c/Users/User/Desktop/Shorts Blocker Kids"; \
-  export ANDROID_HOME=/home/serputko/Android/Sdk \
-  ANDROID_SDK_ROOT=/home/serputko/Android/Sdk; \
+sg kvm -c 'set -e; cd "/path/to/Shorts-Blocker-Kids"; \
+  export ANDROID_HOME=/path/to/Android/Sdk \
+  ANDROID_SDK_ROOT=/path/to/Android/Sdk; \
   ./scripts/android_start_emulator.sh; ./gradlew localQualityGate'
 ```
 

@@ -119,7 +119,7 @@ Production-configured Android build:
 
 ```bash
 SBK_BILLING_BACKEND_BASE_URL=https://billing.shortsblockerkids.de \
-ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew :app:bundleRelease
+ANDROID_HOME=/path/to/Android/Sdk ./gradlew :app:bundleRelease
 ```
 
 Release builds fail closed when `SBK_BILLING_BACKEND_BASE_URL` is blank,

@@ -20,7 +20,7 @@
 From the repo root:
 
 ```bash
-ANDROID_HOME=/home/serputko/Android/Sdk /home/serputko/Android/Sdk/platform-tools/adb install -r dist/ShortsBlockerKids-debug.apk
+ANDROID_HOME=/path/to/Android/Sdk /path/to/Android/Sdk/platform-tools/adb install -r dist/ShortsBlockerKids-debug.apk
 ```
 
 If the phone appears as `unauthorized`:
@@ -30,7 +30,7 @@ If the phone appears as `unauthorized`:
 3. Run:
 
 ```bash
-ANDROID_HOME=/home/serputko/Android/Sdk /home/serputko/Android/Sdk/platform-tools/adb devices
+ANDROID_HOME=/path/to/Android/Sdk /path/to/Android/Sdk/platform-tools/adb devices
 ```
 
 Expected:
