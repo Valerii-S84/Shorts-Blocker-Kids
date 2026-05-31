@@ -39,7 +39,11 @@ fun buildConfigString(value: String): String = "\"${value.replace("\\", "\\\\").
 
 fun isProductionBackendUrl(value: String): Boolean {
     val uri = runCatching { URI(value.trim()) }.getOrNull() ?: return false
-    return uri.scheme.equals("https", ignoreCase = true) && !uri.host.isNullOrBlank()
+    return uri.scheme == "https" &&
+        uri.host == "billing.shortsblockerkids.de" &&
+        uri.path.isNullOrBlank() &&
+        uri.rawQuery == null &&
+        uri.rawFragment == null
 }
 
 val billingBackendBaseUrl =
@@ -154,7 +158,7 @@ val validateProductionReleaseConfig by tasks.registering {
             "SBK_BILLING_BACKEND_BASE_URL is required for release builds."
         }
         check(isProductionBackendUrl(billingBackendBaseUrl)) {
-            "SBK_BILLING_BACKEND_BASE_URL must be an https URL with a host for release builds."
+            "SBK_BILLING_BACKEND_BASE_URL must be https://billing.shortsblockerkids.de for release builds."
         }
     }
 }

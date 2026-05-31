@@ -1,6 +1,6 @@
 # Shorts Blocker Kids Play Billing Backend Runbook
 
-Status: Repository production flow prepared for `movashield.de`. Android
+Status: Repository production flow prepared for `shortsblockerkids.de`. Android
 release builds now require the canonical HTTPS billing backend URL. Live DNS,
 TLS, Play Console RTDN setup, and license-tester evidence remain pending until
 the owner/server deployment is configured and verified.
@@ -37,7 +37,7 @@ Required outside the repository:
 ```text
 SBK_ENV=production
 SBK_BACKEND_PORT=8080
-SBK_PUBLIC_BASE_URL=https://billing.movashield.de
+SBK_PUBLIC_BASE_URL=https://billing.shortsblockerkids.de
 SBK_REQUIRE_HTTPS=true
 SBK_PACKAGE_NAME=com.shortsblockerkids
 SBK_PLAY_SUBSCRIPTION_PRODUCT_ID=shorts_blocker_kids_monthly
@@ -45,7 +45,7 @@ SBK_DATABASE_URL=jdbc:postgresql://billing-db:5432/shorts_blocker_kids
 SBK_DATABASE_USER=<runtime database user>
 SBK_DATABASE_PASSWORD=<runtime database password>
 GOOGLE_APPLICATION_CREDENTIALS=/run/secrets/google-service-account.json
-SBK_RTDN_PUBSUB_AUDIENCE=https://billing.movashield.de/billing/play/rtdn
+SBK_RTDN_PUBSUB_AUDIENCE=https://billing.shortsblockerkids.de/billing/play/rtdn
 SBK_RTDN_PUBSUB_SERVICE_ACCOUNT_EMAIL=<pubsub push service account email>
 ```
 
@@ -55,10 +55,11 @@ passwords, or production environment files.
 Canonical public values:
 
 ```text
-Public website URL: https://movashield.de
-Privacy Policy URL: https://movashield.de/privacy
-Production billing backend base URL: https://billing.movashield.de
-RTDN webhook URL: https://billing.movashield.de/billing/play/rtdn
+Public website URL: https://shortsblockerkids.de
+Privacy Policy URL: https://shortsblockerkids.de/privacy
+Support URL: https://shortsblockerkids.de/support
+Production billing backend base URL: https://billing.shortsblockerkids.de
+RTDN webhook URL: https://billing.shortsblockerkids.de/billing/play/rtdn
 Publisher: Valerii Serputko
 Public privacy/support contact: svalerii535@gmail.com
 ```
@@ -68,14 +69,33 @@ Public privacy/support contact: svalerii535@gmail.com
 The repository does not prove that the domain is live. Before Play Console
 submission, the owner/server operator must configure and verify:
 
-- DNS: `billing.movashield.de` points to the production backend edge/server.
-- HTTPS: `billing.movashield.de` serves a valid TLS certificate for that host.
+- DNS: `shortsblockerkids.de` points to the public website host.
+- DNS: `billing.shortsblockerkids.de` points to the production backend edge/server.
+- HTTPS: `billing.shortsblockerkids.de` serves a valid TLS certificate for that host.
 - Reverse proxy: Caddy, Nginx, or another HTTPS edge forwards traffic to the
   backend process and sets `X-Forwarded-Proto: https`.
-- Backend health: `GET https://billing.movashield.de/health`.
-- Billing verify: `POST https://billing.movashield.de/billing/play/verify`.
-- Entitlement status: `GET https://billing.movashield.de/entitlement/status`.
-- RTDN: `POST https://billing.movashield.de/billing/play/rtdn`.
+- Website: `GET https://shortsblockerkids.de` returns the public root page.
+- Privacy page: `GET https://shortsblockerkids.de/privacy` returns the live
+  Privacy Policy.
+- Support page: `GET https://shortsblockerkids.de/support` returns public
+  support information.
+- Backend health: `GET https://billing.shortsblockerkids.de/health`.
+- Billing verify: `POST https://billing.shortsblockerkids.de/billing/play/verify`.
+- Entitlement status: `GET https://billing.shortsblockerkids.de/entitlement/status`.
+- RTDN: `POST https://billing.shortsblockerkids.de/billing/play/rtdn`.
+
+## Website Requirements
+
+A full marketing website is optional for the current Play submission path. A
+live HTTPS Privacy Policy page is required before Play submission. A support
+page and root page are recommended and should be verified before upload:
+
+```text
+Required before Play submission:
+https://shortsblockerkids.de
+https://shortsblockerkids.de/privacy
+https://shortsblockerkids.de/support
+```
 
 ## Local Commands
 
@@ -98,13 +118,13 @@ uses `GET /health` for container healthchecks.
 Production-configured Android build:
 
 ```bash
-SBK_BILLING_BACKEND_BASE_URL=https://billing.movashield.de \
+SBK_BILLING_BACKEND_BASE_URL=https://billing.shortsblockerkids.de \
 ANDROID_HOME=/home/serputko/Android/Sdk ./gradlew :app:bundleRelease
 ```
 
-Release builds fail closed when `SBK_BILLING_BACKEND_BASE_URL` is blank or is
-not an HTTPS URL. Debug builds may omit the backend URL for internal client-only
-Billing Library testing.
+Release builds fail closed when `SBK_BILLING_BACKEND_BASE_URL` is blank,
+non-HTTPS, invalid, or not `https://billing.shortsblockerkids.de`. Debug builds
+may omit the backend URL for internal client-only Billing Library testing.
 
 Do not remove `android.permission.INTERNET` or
 `android.permission.ACCESS_NETWORK_STATE` from the release manifest until there
@@ -116,10 +136,10 @@ continue to work without them.
 Production public endpoints:
 
 ```text
-GET  https://billing.movashield.de/health
-POST https://billing.movashield.de/billing/play/verify
-GET  https://billing.movashield.de/entitlement/status
-POST https://billing.movashield.de/billing/play/rtdn
+GET  https://billing.shortsblockerkids.de/health
+POST https://billing.shortsblockerkids.de/billing/play/verify
+GET  https://billing.shortsblockerkids.de/entitlement/status
+POST https://billing.shortsblockerkids.de/billing/play/rtdn
 ```
 
 ```http
@@ -269,18 +289,18 @@ Run these only after DNS, TLS, reverse proxy, runtime secrets, and PostgreSQL
 are configured on the production server:
 
 ```bash
-dig +short movashield.de
-dig +short billing.movashield.de
-openssl s_client -connect billing.movashield.de:443 -servername billing.movashield.de </dev/null
-curl -fsS https://billing.movashield.de/health
-curl -fsS 'https://billing.movashield.de/entitlement/status?install_id=smoke-install-id'
+dig +short shortsblockerkids.de
+dig +short billing.shortsblockerkids.de
+openssl s_client -connect billing.shortsblockerkids.de:443 -servername billing.shortsblockerkids.de </dev/null
+curl -fsS https://billing.shortsblockerkids.de/health
+curl -fsS 'https://billing.shortsblockerkids.de/entitlement/status?install_id=smoke-install-id'
 ```
 
 `POST /billing/play/verify` requires a real Play purchase token from a license
 tester flow. Use the Play-installed internal testing build:
 
 ```bash
-curl -fsS -X POST https://billing.movashield.de/billing/play/verify \
+curl -fsS -X POST https://billing.shortsblockerkids.de/billing/play/verify \
   -H 'Content-Type: application/json' \
   -d '{
     "install_id": "license-tester-install-id",
@@ -339,7 +359,7 @@ Application rollback:
 ```bash
 ./scripts/backend_rollback_compose.sh <previous-backend-image>
 curl -fsS http://127.0.0.1:8080/health
-curl -fsS https://billing.movashield.de/health
+curl -fsS https://billing.shortsblockerkids.de/health
 ```
 
 Data rollback:

@@ -131,7 +131,7 @@ Pending verification:
   `SBK_BILLING_BACKEND_BASE_URL`.
 - [ ] Backend is deployed behind HTTPS with runtime credentials.
 - [ ] RTDN Pub/Sub push is configured in Play Console and pointed to
-  `https://billing.movashield.de/billing/play/rtdn`.
+  `https://billing.shortsblockerkids.de/billing/play/rtdn`.
 - [ ] Durable production storage and backup policy are configured for entitlement records.
 - [ ] Backend rate limiting / edge protection is configured in deployment.
 - [ ] End-to-end Play tester verification is recorded against deployed backend.
@@ -147,7 +147,7 @@ Pending verification:
 - Play Console billing configuration sheet is prepared.
 - Backend verification decision document is prepared.
 - Backend verification baseline is implemented locally and production release
-  docs use `https://billing.movashield.de`.
+  docs use `https://billing.shortsblockerkids.de`.
 - Billing cannot be approved for production release until Play product setup,
   backend deployment, RTDN configuration, license tester QA, and subscription
   lifecycle QA are complete.

@@ -313,9 +313,9 @@ Play Console setup:
 - License tester configured.
 - Subscription product configured.
 - Base plan configured.
-- Privacy Policy URL configured as `https://movashield.de/privacy`.
+- Privacy Policy URL configured as `https://shortsblockerkids.de/privacy`.
 - RTDN webhook configured as
-  `https://billing.movashield.de/billing/play/rtdn`.
+  `https://billing.shortsblockerkids.de/billing/play/rtdn`.
 - Test card flows available.
 
 App-side tests:
@@ -370,8 +370,8 @@ Code gates:
 - `ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:lintDebug`
 - `ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:lintRelease`
 - `ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:assembleDebug`
-- `SBK_BILLING_BACKEND_BASE_URL=https://billing.movashield.de ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:assembleRelease`
-- `SBK_BILLING_BACKEND_BASE_URL=https://billing.movashield.de ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:bundleRelease`
+- `SBK_BILLING_BACKEND_BASE_URL=https://billing.shortsblockerkids.de ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:assembleRelease`
+- `SBK_BILLING_BACKEND_BASE_URL=https://billing.shortsblockerkids.de ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:bundleRelease`
 - `ANDROID_HOME=/home/serputko/Android/Sdk gradle :app:jacocoDebugUnitTestCoverageVerification`
 - JaCoCo branch coverage must be at least 90.00%; instruction and line coverage
   gates must not be lower than the previous baseline.
@@ -384,14 +384,14 @@ Manual gates:
 - Real-device QA completed for every supported app.
 - Billing test matrix completed.
 - Backend verification test matrix runs against
-  `https://billing.movashield.de` after live DNS/TLS deployment.
+  `https://billing.shortsblockerkids.de` after live DNS/TLS deployment.
 - Privacy permissions audit completed for release merged manifest.
 - No unsupported permissions.
 - No raw Accessibility logs in release.
 
 Policy gates:
 
-- Privacy Policy URL `https://movashield.de/privacy` hosted and accurate.
+- Privacy Policy URL `https://shortsblockerkids.de/privacy` hosted and accurate.
 - Data Safety form complete.
 - Accessibility declaration complete.
 - Target Audience and Content complete.

@@ -26,16 +26,17 @@ Package name: com.shortsblockerkids
 Version name: 0.1.0
 Version code: 1
 AAB: app/build/outputs/bundle/release/app-release.aab
-AAB SHA-256: 43e1d1f0397f9ecd2296dcddd3893d888541edc019f43a1017e326a12932932b
-Production billing backend URL: https://billing.movashield.de
-RTDN webhook URL: https://billing.movashield.de/billing/play/rtdn
-Privacy Policy URL: https://movashield.de/privacy
+AAB SHA-256: 5e43fdde71a959add94ed38e732162f54124ff38d3e882aa4225781c30237f44
+Production billing backend URL: https://billing.shortsblockerkids.de
+RTDN webhook URL: https://billing.shortsblockerkids.de/billing/play/rtdn
+Privacy Policy URL: https://shortsblockerkids.de/privacy
+Support URL: https://shortsblockerkids.de/support
 Publisher / developer name: Valerii Serputko
 Public contact email: svalerii535@gmail.com
 ```
 
 This local AAB was built with
-`SBK_BILLING_BACKEND_BASE_URL=https://billing.movashield.de`. Play Console
+`SBK_BILLING_BACKEND_BASE_URL=https://billing.shortsblockerkids.de`. Play Console
 upload and Play App Signing acceptance are still not verified.
 
 ## Subscription Product
@@ -132,7 +133,7 @@ Confirm these remain true after Play Console setup:
 - no ads;
 - no analytics SDK;
 - billing backend is deployed only for Play purchase verification and RTDN;
-- Privacy Policy URL is `https://movashield.de/privacy` and explains Google
-  Play Billing, backend verification at `https://billing.movashield.de`, and
+- Privacy Policy URL is `https://shortsblockerkids.de/privacy` and explains Google
+  Play Billing, backend verification at `https://billing.shortsblockerkids.de`, and
   local entitlement storage;
 - Data Safety answers match the Billing SDK, permissions, and local data.

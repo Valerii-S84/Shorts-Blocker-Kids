@@ -64,7 +64,7 @@ class ReleaseCopyInvariantTest {
     }
 
     @Test
-    fun productionFacingDocsUseMovashieldCanonicalUrls() {
+    fun productionFacingDocsUseShortsBlockerKidsCanonicalUrls() {
         val productionDocs =
             listOf(
                 repoFile("README.md").readText(),
@@ -78,13 +78,16 @@ class ReleaseCopyInvariantTest {
             )
 
         productionDocs.forEach { text ->
-            assertTrue(text.contains("https://billing.movashield.de"))
+            assertTrue(text.contains("https://billing.shortsblockerkids.de"))
+            assertFalse(text.contains("movashield.de"))
             assertFalse(text.contains("billing.example.com"))
         }
 
         val combinedDocs = productionDocs.joinToString(separator = "\n")
-        assertTrue(combinedDocs.contains("https://movashield.de/privacy"))
-        assertTrue(combinedDocs.contains("https://billing.movashield.de/billing/play/rtdn"))
+        assertTrue(combinedDocs.contains("https://shortsblockerkids.de"))
+        assertTrue(combinedDocs.contains("https://shortsblockerkids.de/privacy"))
+        assertTrue(combinedDocs.contains("https://shortsblockerkids.de/support"))
+        assertTrue(combinedDocs.contains("https://billing.shortsblockerkids.de/billing/play/rtdn"))
         assertTrue(combinedDocs.contains("Valerii Serputko"))
         assertTrue(combinedDocs.contains("svalerii535@gmail.com"))
     }
@@ -137,7 +140,7 @@ class ReleaseCopyInvariantTest {
 
         assertTrue(buildConfig.contains("validateProductionReleaseConfig"))
         assertTrue(buildConfig.contains("SBK_BILLING_BACKEND_BASE_URL is required for release builds."))
-        assertTrue(buildConfig.contains("SBK_BILLING_BACKEND_BASE_URL must be an https URL with a host"))
+        assertTrue(buildConfig.contains("SBK_BILLING_BACKEND_BASE_URL must be https://billing.shortsblockerkids.de"))
         assertTrue(buildConfig.contains("\"assembleRelease\""))
         assertTrue(buildConfig.contains("\"bundleRelease\""))
     }

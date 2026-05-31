@@ -255,7 +255,7 @@ Play Console vitals and tester reports as the initial feedback channels.
 
 ## Required External Artifacts
 
-- Hosted Privacy Policy URL: `https://movashield.de/privacy`.
+- Hosted Privacy Policy URL: `https://shortsblockerkids.de/privacy`.
 - Completed Data Safety form.
 - Completed Accessibility declaration.
 - Demo video URL.

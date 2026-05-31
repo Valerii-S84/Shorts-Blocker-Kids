@@ -31,7 +31,7 @@ class BackendConfigTest {
                 BackendConfig.fromEnvironment(
                     mapOf(
                         "SBK_ENV" to "production",
-                        "SBK_PUBLIC_BASE_URL" to "http://billing.movashield.de",
+                        "SBK_PUBLIC_BASE_URL" to "http://billing.shortsblockerkids.de",
                     ),
                 )
             }.exceptionOrNull() as ConfigurationException
@@ -50,10 +50,10 @@ class BackendConfigTest {
             BackendConfig.fromEnvironment(
                 mapOf(
                     "SBK_ENV" to "production",
-                    "SBK_PUBLIC_BASE_URL" to "https://billing.movashield.de",
+                    "SBK_PUBLIC_BASE_URL" to "https://billing.shortsblockerkids.de",
                     "SBK_DATABASE_URL" to "jdbc:postgresql://db:5432/shorts_blocker_kids",
                     "GOOGLE_APPLICATION_CREDENTIALS" to credentialsFile.absolutePath,
-                    "SBK_RTDN_PUBSUB_AUDIENCE" to "https://billing.movashield.de/billing/play/rtdn",
+                    "SBK_RTDN_PUBSUB_AUDIENCE" to "https://billing.shortsblockerkids.de/billing/play/rtdn",
                     "SBK_RTDN_PUBSUB_SERVICE_ACCOUNT_EMAIL" to "pubsub@example.iam.gserviceaccount.com",
                 ),
             )
@@ -70,11 +70,11 @@ class BackendConfigTest {
                 BackendConfig.fromEnvironment(
                     mapOf(
                         "SBK_ENV" to "production",
-                        "SBK_PUBLIC_BASE_URL" to "https://billing.movashield.de",
+                        "SBK_PUBLIC_BASE_URL" to "https://billing.shortsblockerkids.de",
                         "SBK_REQUIRE_HTTPS" to "false",
                         "SBK_DATABASE_URL" to "jdbc:postgresql://db:5432/shorts_blocker_kids",
                         "GOOGLE_APPLICATION_CREDENTIALS" to credentialsFile.absolutePath,
-                        "SBK_RTDN_PUBSUB_AUDIENCE" to "https://billing.movashield.de/billing/play/rtdn",
+                        "SBK_RTDN_PUBSUB_AUDIENCE" to "https://billing.shortsblockerkids.de/billing/play/rtdn",
                         "SBK_RTDN_PUBSUB_SERVICE_ACCOUNT_EMAIL" to "pubsub@example.iam.gserviceaccount.com",
                     ),
                 )

@@ -1,6 +1,6 @@
 # Shorts Blocker Kids Play Console Preparation Package
 
-Status: Prepared locally for `movashield.de`. External Play Console entry,
+Status: Prepared locally for `shortsblockerkids.de`. External Play Console entry,
 Accessibility demo video URL, live DNS/TLS verification, and Play Console
 submission remain pending.
 
@@ -21,13 +21,14 @@ Subscription product ID: shorts_blocker_kids_monthly
 Account system: none
 Ads: none
 Analytics: none
-Release AAB status: build with SBK_BILLING_BACKEND_BASE_URL=https://billing.movashield.de
-Public website URL: https://movashield.de
-Privacy Policy URL: https://movashield.de/privacy
+Release AAB status: build with SBK_BILLING_BACKEND_BASE_URL=https://billing.shortsblockerkids.de
+Public website URL: https://shortsblockerkids.de
+Privacy Policy URL: https://shortsblockerkids.de/privacy
+Support URL: https://shortsblockerkids.de/support
 Publisher / developer name: Valerii Serputko
 Public contact email: svalerii535@gmail.com
-Production billing backend URL: https://billing.movashield.de
-RTDN webhook URL: https://billing.movashield.de/billing/play/rtdn
+Production billing backend URL: https://billing.shortsblockerkids.de
+RTDN webhook URL: https://billing.shortsblockerkids.de/billing/play/rtdn
 ```
 
 Current behavior to keep consistent across every Play Console answer:
@@ -46,7 +47,7 @@ Current behavior to keep consistent across every Play Console answer:
   account names, comments, messages, audio, screen recordings, location,
   contacts, browsing history, or raw Accessibility tree dumps.
 - Network use is limited to Google Play Billing and production billing backend
-  verification/RTDN through `https://billing.movashield.de` in production
+  verification/RTDN through `https://billing.shortsblockerkids.de` in production
   release builds.
 
 ## Official Sources Checked
@@ -131,7 +132,7 @@ real-device QA before final rollout claims.
 
 Do not upload release notes that claim the backend is live until DNS, TLS,
 reverse proxy, and Play RTDN are verified for
-`https://billing.movashield.de`.
+`https://billing.shortsblockerkids.de`.
 
 ## Privacy Policy
 
@@ -144,7 +145,8 @@ docs/SHORTS_BLOCKER_PRIVACY_POLICY_DRAFT.md
 Play Console field:
 
 ```text
-Privacy Policy URL: https://movashield.de/privacy
+Privacy Policy URL: https://shortsblockerkids.de/privacy
+Support URL: https://shortsblockerkids.de/support
 ```
 
 Hosting requirements for this package:
@@ -153,10 +155,25 @@ Hosting requirements for this package:
 - no login, geofence, PDF-only access, or blocked crawlers;
 - developer/publisher name: `Valerii Serputko`;
 - privacy contact: `svalerii535@gmail.com`;
-- support/contact: use `svalerii535@gmail.com` unless the owner publishes and
-  verifies `https://movashield.de/contact`;
+- support/contact: use `svalerii535@gmail.com` and publish support information
+  at `https://shortsblockerkids.de/support`;
 - text must match the shipped app, Billing SDK, backend behavior, and
   AccessibilityService use.
+
+Website readiness:
+
+- full marketing website: optional;
+- live HTTPS Privacy Policy page: required;
+- support page: recommended and listed for Play Console support;
+- root page: recommended for public trust.
+
+Required live URLs before Play submission:
+
+```text
+https://shortsblockerkids.de
+https://shortsblockerkids.de/privacy
+https://shortsblockerkids.de/support
+```
 
 ## Data Safety Draft Answers
 
@@ -169,7 +186,7 @@ Overview answers:
 |---|---|
 | Does the app collect or share any required user data types? | Yes, for Google Play Billing/backend entitlement verification only. |
 | Is user data shared? | No sale or developer sharing of child data. Verify final Google Play Billing SDK disclosure before submission. |
-| Is all collected user data encrypted in transit? | Yes, only after the app uses HTTPS Google endpoints and the live production backend at `https://billing.movashield.de`. Do not submit before HTTPS backend is verified live. |
+| Is all collected user data encrypted in transit? | Yes, only after the app uses HTTPS Google endpoints and the live production backend at `https://billing.shortsblockerkids.de`. Do not submit before HTTPS backend is verified live. |
 | Can users request deletion? | Local app data can be deleted by clearing app data/uninstalling. Server billing entitlement deletion/support requests use the privacy contact, subject to subscription, fraud prevention, RTDN idempotency, and legal retention needs. |
 | Is data collection optional? | Billing/backend verification data is required for paid subscription entitlement. Accessibility detection data is processed locally and is not transmitted off device. |
 
@@ -204,7 +221,7 @@ Do not declare these as collected by the app/backend unless behavior changes:
 Security/privacy flags:
 
 ```text
-Data encrypted in transit: Yes, once https://billing.movashield.de is deployed and verified.
+Data encrypted in transit: Yes, once https://billing.shortsblockerkids.de is deployed and verified.
 Data is processed ephemerally: purchase token is used during verification; backend stores hashed purchase token and entitlement records.
 Data is required: Yes for paid entitlement verification.
 User account creation: No.
@@ -215,7 +232,7 @@ Backend explanation for Play Console:
 
 ```text
 Premium entitlement is verified through the production billing backend at
-https://billing.movashield.de. The backend verifies Google Play purchase tokens,
+https://billing.shortsblockerkids.de. The backend verifies Google Play purchase tokens,
 stores entitlement records, hashed purchase tokens, and processed RTDN message
 IDs, and does not receive child activity, Accessibility tree dumps, watch
 history, video titles, URLs, account names, comments, messages, audio, screen
@@ -391,12 +408,12 @@ Tester setup instructions:
 Before internal release:
 
 - Build release AAB with
-  `SBK_BILLING_BACKEND_BASE_URL=https://billing.movashield.de`.
+  `SBK_BILLING_BACKEND_BASE_URL=https://billing.shortsblockerkids.de`.
 - Confirm `docs/SHORTS_BLOCKER_FINAL_RC_FREEZE_EVIDENCE.md` records the AAB
   hash and backend URL origin.
 - Confirm backend `/health`, migrations, backup/restore, RTDN readiness, and
   rollback evidence are current.
-- Publish and verify Privacy Policy at `https://movashield.de/privacy`.
+- Publish and verify Privacy Policy at `https://shortsblockerkids.de/privacy`.
 - Upload Accessibility demo video and store the URL.
 - Complete store listing draft from this package.
 - Complete App content drafts: Data Safety, Accessibility declaration, Target
@@ -497,12 +514,12 @@ Minimum Play Console readiness evidence:
 
 ## Submission Blockers
 
-- Live DNS/TLS/backend health for `https://billing.movashield.de` are not yet
+- Live DNS/TLS/backend health for `https://billing.shortsblockerkids.de` are not yet
   verified.
 - A Play-uploaded release AAB with
-  `SBK_BILLING_BACKEND_BASE_URL=https://billing.movashield.de` is not yet
+  `SBK_BILLING_BACKEND_BASE_URL=https://billing.shortsblockerkids.de` is not yet
   accepted by Play Console.
-- `https://movashield.de/privacy` must be published and verified live before
+- `https://shortsblockerkids.de/privacy` must be published and verified live before
   submission.
 - Accessibility demo video URL is TBD.
 - Play Console Data Safety form is not submitted.

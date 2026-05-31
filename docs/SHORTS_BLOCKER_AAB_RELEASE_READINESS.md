@@ -28,26 +28,27 @@ the Play internal testing track.
 ## May 29, 2026 Production Backend Gate
 
 Release artifacts now fail closed unless `SBK_BILLING_BACKEND_BASE_URL` is
-supplied as an HTTPS URL. This is wired through
+supplied as the canonical HTTPS backend origin. This is wired through
 `validateProductionReleaseConfig`, which blocks `assembleRelease`,
-`packageRelease`, and `bundleRelease` when the backend URL is blank or not
-HTTPS.
+`packageRelease`, and `bundleRelease` when the backend URL is blank,
+non-HTTPS, invalid, or not the canonical backend origin.
 
 Canonical production values for the current release line:
 
 ```text
-Public website URL: https://movashield.de
-Privacy Policy URL: https://movashield.de/privacy
+Public website URL: https://shortsblockerkids.de
+Privacy Policy URL: https://shortsblockerkids.de/privacy
+Support URL: https://shortsblockerkids.de/support
 Publisher / developer name: Valerii Serputko
 Public contact email: svalerii535@gmail.com
-Production billing backend base URL: https://billing.movashield.de
-RTDN webhook URL: https://billing.movashield.de/billing/play/rtdn
+Production billing backend base URL: https://billing.shortsblockerkids.de
+RTDN webhook URL: https://billing.shortsblockerkids.de/billing/play/rtdn
 ```
 
 Expected production-configured release command:
 
 ```bash
-SBK_BILLING_BACKEND_BASE_URL=https://billing.movashield.de \
+SBK_BILLING_BACKEND_BASE_URL=https://billing.shortsblockerkids.de \
 ANDROID_HOME=/home/serputko/Android/Sdk \
 ANDROID_SDK_ROOT=/home/serputko/Android/Sdk \
 ./gradlew :app:lintRelease :app:assembleRelease :app:bundleRelease
@@ -57,7 +58,10 @@ Release fail-closed behavior:
 
 - blank backend URL: build fails before release artifact generation;
 - non-HTTPS backend URL: build fails before release artifact generation;
-- configured HTTPS backend URL: release build proceeds and embeds the URL in
+- invalid backend URL: build fails before release artifact generation;
+- non-canonical HTTPS backend URL: build fails before release artifact
+  generation;
+- configured canonical backend URL: release build proceeds and embeds the URL in
   release `BuildConfig.BILLING_BACKEND_BASE_URL`;
 - backend verification or refresh failure in the app records a non-active
   entitlement snapshot instead of retaining a stale active grant.
@@ -68,21 +72,22 @@ Billing dependency graph and are also required for production backend
 verification. Do not remove either permission until a separate dependency and
 runtime proof shows removal is safe.
 
-## May 31, 2026 Movashield Production Domain Evidence
+## May 31, 2026 Shorts Blocker Kids Production Domain Evidence
 
 Release gate validation:
 
 ```text
 blank SBK_BILLING_BACKEND_BASE_URL: failed as expected
-http://billing.movashield.de: failed as expected
+http://billing.shortsblockerkids.de: failed as expected
 not-a-url: failed as expected
-https://billing.movashield.de: passed
+non-canonical HTTPS backend URL: failed as expected
+https://billing.shortsblockerkids.de: passed
 ```
 
 Verification/build command:
 
 ```bash
-SBK_BILLING_BACKEND_BASE_URL=https://billing.movashield.de \
+SBK_BILLING_BACKEND_BASE_URL=https://billing.shortsblockerkids.de \
 ANDROID_HOME=/home/serputko/Android/Sdk \
 ANDROID_SDK_ROOT=/home/serputko/Android/Sdk \
 ./gradlew :app:testDebugUnitTest :billing-backend:test \
@@ -93,25 +98,28 @@ ANDROID_SDK_ROOT=/home/serputko/Android/Sdk \
 Result:
 
 ```text
-BUILD SUCCESSFUL in 4m 28s
-112 actionable tasks: 112 executed
+BUILD SUCCESSFUL in 2m 15s
+112 actionable tasks: 35 executed, 77 up-to-date
 app unit tests: tests=233 failures=0 errors=0 skipped=0
 backend tests: tests=31 failures=0 errors=0 skipped=0
+ktlintCheck: passed
 lintRelease: passed with existing warnings
+assembleRelease: passed
+bundleRelease: passed
 ```
 
 Release artifacts:
 
 ```text
 app/build/outputs/apk/release/app-release.apk     1,709,314 bytes
-app/build/outputs/bundle/release/app-release.aab  3,617,812 bytes
+app/build/outputs/bundle/release/app-release.aab  3,618,118 bytes
 ```
 
 SHA-256:
 
 ```text
-d176570ae344ba8d4b877dc4ac61ed1711e18b7b9e5f818a173fe48d548a2ed4  app/build/outputs/apk/release/app-release.apk
-43e1d1f0397f9ecd2296dcddd3893d888541edc019f43a1017e326a12932932b  app/build/outputs/bundle/release/app-release.aab
+97c7ee78aad74c4d3539e032205c151b14f5f66f3a8557488954843c03768c20  app/build/outputs/apk/release/app-release.apk
+5e43fdde71a959add94ed38e732162f54124ff38d3e882aa4225781c30237f44  app/build/outputs/bundle/release/app-release.aab
 ```
 
 Release `BuildConfig`:
@@ -121,30 +129,33 @@ APPLICATION_ID="com.shortsblockerkids"
 BUILD_TYPE="release"
 VERSION_CODE=1
 VERSION_NAME="0.1.0"
-BILLING_BACKEND_BASE_URL="https://billing.movashield.de"
+BILLING_BACKEND_BASE_URL="https://billing.shortsblockerkids.de"
 ```
 
 Source state at verification time:
 
 ```text
-source_commit_before_task=68d914f91bbc942f9900033840572be349d3973c
+source_commit_before_task=ba9b263cfd7e3124a86b0c9e6125ac621e46ceca
 git_status=modified working tree before final commit
+final_task_commit=recorded in final report after commit
 ```
 
 Live domain verification:
 
 ```text
 dig: not available in this shell
-getent hosts movashield.de: 185.181.104.242
-getent hosts billing.movashield.de: 46.225.181.45
-openssl s_client billing.movashield.de:443: failed, tlsv1 alert internal error
-curl https://billing.movashield.de/health: failed, TLS alert internal error
-curl https://movashield.de/privacy: failed, could not connect to server
+getent hosts shortsblockerkids.de: 185.181.104.242
+getent hosts billing.shortsblockerkids.de: 185.181.104.242
+openssl s_client billing.shortsblockerkids.de:443: failed, connection refused
+curl https://shortsblockerkids.de: failed, could not connect to server
+curl https://shortsblockerkids.de/privacy: failed, could not connect to server
+curl https://shortsblockerkids.de/support: failed, could not connect to server
+curl https://billing.shortsblockerkids.de/health: failed, could not connect to server
 ```
 
-Conclusion: DNS records are visible locally, but HTTPS/TLS and backend health
-are not verified. Live domain readiness is blocked by owner/server DNS/TLS/web
-hosting configuration.
+Conclusion: DNS records are visible locally, but HTTPS/TLS, public root,
+Privacy Policy, support page, and backend health are not verified. Live domain
+readiness is blocked by owner DNS/hosting/server setup.
 
 ## May 24, 2026 Release Gate Refresh
 
@@ -377,14 +388,14 @@ ACCESSIBILITY_DEBUG_TOOLS_ENABLED = false
 - Configure Play App Signing and upload key flow.
 - Upload `app-release.aab` to internal testing.
 - Confirm Play Console accepts the AAB.
-- Submit Privacy Policy URL `https://movashield.de/privacy`.
+- Submit Privacy Policy URL `https://shortsblockerkids.de/privacy`.
 - Complete Data Safety form.
 - Complete Accessibility declaration.
 - Upload Accessibility review demo video.
 - Add store screenshots and feature graphic.
 - Execute `docs/SHORTS_BLOCKER_PLAY_BILLING_INTERNAL_TEST_RUNBOOK.md` after the
   subscription product and internal testing track are active.
-- Deploy and verify the billing backend at `https://billing.movashield.de`
+- Deploy and verify the billing backend at `https://billing.shortsblockerkids.de`
   before Play production rollout.
 - Use `docs/SHORTS_BLOCKER_PLAY_CONSOLE_BILLING_CONFIG.md` for the exact
   subscription product/base-plan values.

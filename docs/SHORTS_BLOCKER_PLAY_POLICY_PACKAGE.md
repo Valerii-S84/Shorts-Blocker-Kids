@@ -1,6 +1,6 @@
 # Shorts Blocker Kids Play Policy Package
 
-Status: Partial. Repository-side policy package prepared for `movashield.de`;
+Status: Partial. Repository-side policy package prepared for `shortsblockerkids.de`;
 external Play Console submission, live Privacy Policy URL verification, and
 demo video URL are pending.
 
@@ -23,8 +23,8 @@ This package is for the current Shorts Blocker Kids build:
 - Parent PIN can temporarily allow access for 5, 10, or 15 minutes.
 - No account system.
 - Billing backend only for Google Play purchase verification and RTDN.
-- Production backend origin: `https://billing.movashield.de`.
-- RTDN webhook URL: `https://billing.movashield.de/billing/play/rtdn`.
+- Production backend origin: `https://billing.shortsblockerkids.de`.
+- RTDN webhook URL: `https://billing.shortsblockerkids.de/billing/play/rtdn`.
 - No analytics.
 - No ads.
 - No watch history storage.
@@ -193,7 +193,7 @@ docs/SHORTS_BLOCKER_PRIVACY_POLICY_DRAFT.md
 
 The hosted Privacy Policy must be public, active, non-PDF, non-geofenced, and
 must include the developer or company name plus a privacy contact. Canonical
-publication URL: `https://movashield.de/privacy`.
+publication URL: `https://shortsblockerkids.de/privacy`.
 
 Draft text:
 
@@ -202,8 +202,9 @@ Draft text:
 
 Effective date: May 24, 2026
 
-Public website: https://movashield.de
-Privacy Policy URL: https://movashield.de/privacy
+Public website: https://shortsblockerkids.de
+Privacy Policy URL: https://shortsblockerkids.de/privacy
+Support URL: https://shortsblockerkids.de/support
 Support/privacy contact: svalerii535@gmail.com
 
 Shorts Blocker Kids is a parental digital wellbeing app that helps parents
@@ -212,7 +213,7 @@ block supported short-video surfaces on a child's Android phone.
 The app works locally on the device for protection behavior. It does not
 require an account. For production subscription verification, the app may use a
 billing backend limited to Google Play purchase verification and entitlement
-status at https://billing.movashield.de.
+status at https://billing.shortsblockerkids.de.
 
 Shorts Blocker Kids uses Android AccessibilityService to detect when supported
 short-video surfaces are open. YouTube Shorts is supported. TikTok main,
@@ -320,12 +321,12 @@ To test:
 
 ## External Submission Blockers
 
-- Publish and verify `https://movashield.de/privacy`.
+- Publish and verify `https://shortsblockerkids.de/privacy`.
 - Use the same public privacy/support contact: `svalerii535@gmail.com`.
 - Play Console developer / publisher name for the current personal developer
   release: `Valerii Serputko`.
 - RTDN webhook URL in Play Console:
-  `https://billing.movashield.de/billing/play/rtdn`.
+  `https://billing.shortsblockerkids.de/billing/play/rtdn`.
 - Play Console Data Safety form submission.
 - Play Console Accessibility declaration submission.
 - Demo video recording and URL.

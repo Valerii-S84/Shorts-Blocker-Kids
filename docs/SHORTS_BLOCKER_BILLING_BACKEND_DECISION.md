@@ -37,7 +37,7 @@ The current app implements:
 - restore purchases through `queryPurchasesAsync`;
 - local entitlement cache with 72-hour offline grace;
 - release backend verification through
-  `SBK_BILLING_BACKEND_BASE_URL=https://billing.movashield.de`;
+  `SBK_BILLING_BACKEND_BASE_URL=https://billing.shortsblockerkids.de`;
 - backend `POST /billing/play/verify`;
 - backend `GET /entitlement/status`;
 - backend `POST /billing/play/rtdn`;
@@ -111,11 +111,11 @@ Do not mark Billing `Done` for production until backend deployment is verified:
 ### Required before production
 
 - HTTPS deployment;
-- DNS/TLS verified for `https://billing.movashield.de`;
+- DNS/TLS verified for `https://billing.shortsblockerkids.de`;
 - Google Play Developer API credentials stored outside the repository;
 - `GOOGLE_APPLICATION_CREDENTIALS` configured on the backend runtime;
 - Play Console RTDN Pub/Sub authenticated push configured to
-  `https://billing.movashield.de/billing/play/rtdn`;
+  `https://billing.shortsblockerkids.de/billing/play/rtdn`;
 - durable entitlement storage and backup policy;
 - rate limiting / edge protection;
 - secure logging rules excluding child/app-usage data;

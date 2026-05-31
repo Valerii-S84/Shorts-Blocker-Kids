@@ -3,7 +3,7 @@
 Status: Partial. May 24 local release freeze evidence was recorded from a
 clean `main` checkout. The May 29 backend deploy attempt verified local
 production-like Compose mechanics. The May 31 update applies the canonical
-`movashield.de` production domain values; live DNS/TLS/backend deployment and
+`shortsblockerkids.de` production domain values; live DNS/TLS/backend deployment and
 Play Console acceptance remain outside the local repository proof.
 
 Date: May 24, 2026
@@ -32,18 +32,19 @@ modified=scripts/backend_backup.sh
 modified=scripts/backend_restore.sh
 ```
 
-## May 31 Movashield Production Domain Readiness
+## May 31 Shorts Blocker Kids Production Domain Readiness
 
 Canonical production values applied in repository docs and release config:
 
 ```text
-Public domain: movashield.de
-Public website URL: https://movashield.de
-Privacy Policy URL: https://movashield.de/privacy
+Public domain: shortsblockerkids.de
+Public website URL: https://shortsblockerkids.de
+Privacy Policy URL: https://shortsblockerkids.de/privacy
+Support URL: https://shortsblockerkids.de/support
 Publisher / developer name: Valerii Serputko
 Public contact email: svalerii535@gmail.com
-Production billing backend base URL: https://billing.movashield.de
-RTDN webhook URL: https://billing.movashield.de/billing/play/rtdn
+Production billing backend base URL: https://billing.shortsblockerkids.de
+RTDN webhook URL: https://billing.shortsblockerkids.de/billing/play/rtdn
 ```
 
 Release config gate:
@@ -52,20 +53,23 @@ Release config gate:
 env -u SBK_BILLING_BACKEND_BASE_URL ... :app:validateProductionReleaseConfig
 failed as expected: SBK_BILLING_BACKEND_BASE_URL is required for release builds.
 
-SBK_BILLING_BACKEND_BASE_URL=http://billing.movashield.de ... :app:validateProductionReleaseConfig
-failed as expected: SBK_BILLING_BACKEND_BASE_URL must be an https URL with a host for release builds.
+SBK_BILLING_BACKEND_BASE_URL=http://billing.shortsblockerkids.de ... :app:validateProductionReleaseConfig
+failed as expected: SBK_BILLING_BACKEND_BASE_URL must be https://billing.shortsblockerkids.de for release builds.
 
 SBK_BILLING_BACKEND_BASE_URL=not-a-url ... :app:validateProductionReleaseConfig
-failed as expected: SBK_BILLING_BACKEND_BASE_URL must be an https URL with a host for release builds.
+failed as expected: SBK_BILLING_BACKEND_BASE_URL must be https://billing.shortsblockerkids.de for release builds.
 
-SBK_BILLING_BACKEND_BASE_URL=https://billing.movashield.de ... :app:validateProductionReleaseConfig
+non-canonical HTTPS backend URL ... :app:validateProductionReleaseConfig
+failed as expected: SBK_BILLING_BACKEND_BASE_URL must be https://billing.shortsblockerkids.de for release builds.
+
+SBK_BILLING_BACKEND_BASE_URL=https://billing.shortsblockerkids.de ... :app:validateProductionReleaseConfig
 passed.
 ```
 
 Production-configured local build:
 
 ```bash
-SBK_BILLING_BACKEND_BASE_URL=https://billing.movashield.de \
+SBK_BILLING_BACKEND_BASE_URL=https://billing.shortsblockerkids.de \
 ANDROID_HOME=/home/serputko/Android/Sdk \
 ANDROID_SDK_ROOT=/home/serputko/Android/Sdk \
 ./gradlew :app:testDebugUnitTest :billing-backend:test \
@@ -76,16 +80,21 @@ ANDROID_SDK_ROOT=/home/serputko/Android/Sdk \
 Result:
 
 ```text
-BUILD SUCCESSFUL in 4m 28s
+BUILD SUCCESSFUL in 2m 15s
+112 actionable tasks: 35 executed, 77 up-to-date
 app unit tests: tests=233 failures=0 errors=0 skipped=0
 backend tests: tests=31 failures=0 errors=0 skipped=0
+ktlintCheck: passed
+lintRelease: passed
+assembleRelease: passed
+bundleRelease: passed
 ```
 
 Artifacts:
 
 ```text
-d176570ae344ba8d4b877dc4ac61ed1711e18b7b9e5f818a173fe48d548a2ed4  app/build/outputs/apk/release/app-release.apk
-43e1d1f0397f9ecd2296dcddd3893d888541edc019f43a1017e326a12932932b  app/build/outputs/bundle/release/app-release.aab
+97c7ee78aad74c4d3539e032205c151b14f5f66f3a8557488954843c03768c20  app/build/outputs/apk/release/app-release.apk
+5e43fdde71a959add94ed38e732162f54124ff38d3e882aa4225781c30237f44  app/build/outputs/bundle/release/app-release.aab
 ```
 
 Release `BuildConfig`:
@@ -95,30 +104,33 @@ APPLICATION_ID="com.shortsblockerkids"
 BUILD_TYPE="release"
 VERSION_CODE=1
 VERSION_NAME="0.1.0"
-BILLING_BACKEND_BASE_URL="https://billing.movashield.de"
+BILLING_BACKEND_BASE_URL="https://billing.shortsblockerkids.de"
 ```
 
 Source state captured before final task commit:
 
 ```text
-commit=68d914f91bbc942f9900033840572be349d3973c
-git_status=modified working tree for movashield readiness changes
+source_commit_before_task=ba9b263cfd7e3124a86b0c9e6125ac621e46ceca
+git_status=modified working tree for shortsblockerkids readiness changes
+final_task_commit=recorded in final report after commit
 ```
 
 Live DNS/TLS/health verification:
 
 ```text
 dig: not available in this shell
-getent hosts movashield.de: 185.181.104.242
-getent hosts billing.movashield.de: 46.225.181.45
-openssl s_client billing.movashield.de:443: failed, tlsv1 alert internal error
-curl https://billing.movashield.de/health: failed, TLS alert internal error
-curl https://movashield.de/privacy: failed, could not connect to server
+getent hosts shortsblockerkids.de: 185.181.104.242
+getent hosts billing.shortsblockerkids.de: 185.181.104.242
+openssl s_client billing.shortsblockerkids.de:443: failed, connection refused
+curl https://shortsblockerkids.de: failed, could not connect to server
+curl https://shortsblockerkids.de/privacy: failed, could not connect to server
+curl https://shortsblockerkids.de/support: failed, could not connect to server
+curl https://billing.shortsblockerkids.de/health: failed, could not connect to server
 ```
 
-Live domain conclusion: DNS resolves locally, but HTTPS/TLS, backend health,
-and public Privacy Policy hosting are not verified. This is blocked by
-owner/server DNS/TLS/web hosting setup, not by local repository tasks.
+Live domain conclusion: DNS resolves locally, but HTTPS/TLS, public root,
+Privacy Policy, support page, and backend health are not verified. This is
+blocked by owner DNS/hosting/server setup, not by local repository tasks.
 
 ## May 29 Backend Production Deploy Readiness Attempt
 

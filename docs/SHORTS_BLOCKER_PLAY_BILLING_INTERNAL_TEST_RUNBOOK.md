@@ -47,9 +47,9 @@ Subscription product ID: shorts_blocker_kids_monthly
 Billing library: com.android.billingclient:billing-ktx:9.0.0
 Product type: subscription
 Current proposed price: EUR 2.20/month
-Production billing backend URL: https://billing.movashield.de
-RTDN webhook URL: https://billing.movashield.de/billing/play/rtdn
-Privacy Policy URL: https://movashield.de/privacy
+Production billing backend URL: https://billing.shortsblockerkids.de
+RTDN webhook URL: https://billing.shortsblockerkids.de/billing/play/rtdn
+Privacy Policy URL: https://shortsblockerkids.de/privacy
 ```
 
 The product ID in Play Console must match
@@ -140,8 +140,8 @@ For every required scenario, record:
 ```text
 Status: Local artifact present.
 Path: app/build/outputs/bundle/release/app-release.aab
-SHA-256: 43e1d1f0397f9ecd2296dcddd3893d888541edc019f43a1017e326a12932932b
-Backend URL embedded by release BuildConfig: https://billing.movashield.de
+SHA-256: 5e43fdde71a959add94ed38e732162f54124ff38d3e882aa4225781c30237f44
+Backend URL embedded by release BuildConfig: https://billing.shortsblockerkids.de
 Requirement before Play testing: upload this AAB or a newer validated AAB to
 the Play internal testing track, then verify Play App Signing acceptance.
 ```
@@ -156,7 +156,7 @@ Billing can move from `Partial` to `Done` only when:
 - internal testing AAB is installable from Play;
 - BIL-01 through BIL-16 are recorded;
 - backend verification is deployed and the app build uses
-  `SBK_BILLING_BACKEND_BASE_URL=https://billing.movashield.de`;
+  `SBK_BILLING_BACKEND_BASE_URL=https://billing.shortsblockerkids.de`;
 - RTDN delivery is configured and verified against the deployed backend;
 - no non-Play payment path is visible in the Play-distributed app;
 - Privacy Policy, Data Safety, and store listing copy still match the shipped

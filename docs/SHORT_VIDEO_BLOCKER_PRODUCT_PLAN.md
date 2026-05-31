@@ -136,7 +136,7 @@ Initial subscription proposal:
 - Restore purchases support.
 - Subscription management through Google Play.
 
-Production backend verification uses `https://billing.movashield.de`, but the
+Production backend verification uses `https://billing.shortsblockerkids.de`, but the
 backend must store only billing technical data and must not receive child
 viewing history, short-video events, Accessibility tree dumps, video titles,
 URLs, messages, screen recordings, audio, location, contacts, or browsing
@@ -162,7 +162,7 @@ history.
    - Run unit, integration, lint, release build, and real-device app matrix.
    - Verify no child viewing history or unsupported data leaves the device.
 5. Production / Play Store package:
-   - Use Privacy Policy URL `https://movashield.de/privacy`.
+   - Use Privacy Policy URL `https://shortsblockerkids.de/privacy`.
    - Complete Data Safety and Accessibility declarations.
    - Record demo video.
    - Upload AAB.
