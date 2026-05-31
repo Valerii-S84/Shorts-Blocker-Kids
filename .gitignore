@@ -39,6 +39,10 @@ keystore.properties
 *.env
 *secret*
 *credentials*
+*service-account*
+*google-service*
+client_secret*.json
+google-services.json
 
 # Logs and temporary files
 *.log

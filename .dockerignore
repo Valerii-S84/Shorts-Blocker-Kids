@@ -15,6 +15,10 @@ build/
 *.env
 *secret*
 *credentials*
+*service-account*
+*google-service*
+client_secret*.json
+google-services.json
 keystore.properties
 *.jks
 *.keystore

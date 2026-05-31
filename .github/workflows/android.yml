@@ -126,7 +126,7 @@ jobs:
           )"
           tracked_secret_files="$(
             git ls-files |
-              grep -Ei '(^|/)keystore\.properties$|\.((jks)|(keystore)|(p12)|(pem)|(key)|(der))$|service-account|client_secret|google.*credentials|credentials\.json|secret\.json' || true
+              grep -Ei '(^|/)keystore\.properties$|\.((jks)|(keystore)|(p12)|(pem)|(key)|(der))$|service-account|google-service|client_secret|google.*credentials|credentials\.json|secret\.json' || true
           )"
 
           if [ -n "$tracked_env_files" ] || [ -n "$tracked_secret_files" ]; then
