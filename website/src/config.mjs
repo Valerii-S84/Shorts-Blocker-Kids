@@ -46,7 +46,7 @@ export const unsupportedPlatforms = [
 export function installCta() {
   if (siteConfig.playStoreUrl) {
     return {
-      label: "Get it on Google Play",
+      label: "Open Google Play listing",
       href: siteConfig.playStoreUrl,
       disabled: false,
     };

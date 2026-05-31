@@ -6,6 +6,7 @@
   "scripts": {
     "check": "node scripts/check.mjs",
     "build": "node scripts/build.mjs",
+    "screenshots": "node scripts/capture-screenshots.mjs",
     "smoke": "npm run build --silent && node scripts/smoke-test.mjs"
   }
 }

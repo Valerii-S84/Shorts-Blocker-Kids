@@ -59,8 +59,8 @@ ${supportedAppsSection()}
 ${howItWorksSection()}
 ${trustSection()}
 ${metricsSection()}
-${videoSection()}
-${testimonialsSection()}
+${reviewReadinessSection()}
+${feedbackPolicySection()}
 ${faqSection()}
 ${finalCtaSection()}`;
 
@@ -79,6 +79,10 @@ function heroSection() {
   return `<section class="hero">
   <div class="container hero-grid">
     <div class="hero-copy">
+      <div class="hero-brandmark">
+        <img src="/assets/app-icon.png" alt="${siteConfig.appName} app icon" width="68" height="68">
+        <span>${siteConfig.appName}</span>
+      </div>
       ${sectionEyebrow("Parental short-video control for Android")}
       <h1>${siteConfig.appName}</h1>
       <p class="lead">Help reduce a child's exposure to short-form video feeds such as Shorts, Reels, TikTok, and similar endless-scroll surfaces, without pretending to be a surveillance tool.</p>
@@ -177,13 +181,15 @@ function solutionSection() {
 }
 
 function supportedAppsSection() {
-  const supportedRows = protectedPlatforms
+  const supportedCards = protectedPlatforms
     .map(
-      (platform) => `<tr>
-      <th scope="row">${platform.name}</th>
-      <td>${platform.status}</td>
-      <td>${platform.detail}</td>
-    </tr>`,
+      (platform) => `<article class="platform-card">
+      <div>
+        <h3>${platform.name}</h3>
+        <span class="platform-status">${platform.status}</span>
+      </div>
+      <p>${platform.detail}</p>
+    </article>`,
     )
     .join("");
 
@@ -191,19 +197,8 @@ function supportedAppsSection() {
   <div class="container">
     ${sectionEyebrow("Supported apps")}
     <h2>Support claims stay tied to current app evidence.</h2>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th scope="col">Surface</th>
-            <th scope="col">Current status</th>
-            <th scope="col">Notes</th>
-          </tr>
-        </thead>
-        <tbody>${supportedRows}</tbody>
-      </table>
-    </div>
-    <p class="muted">Not currently claimed: ${unsupportedPlatforms.join("; ")}.</p>
+    <div class="platform-grid">${supportedCards}</div>
+    <p class="muted unsupported-note">Not currently claimed: ${unsupportedPlatforms.join("; ")}.</p>
   </div>
 </section>`;
 }
@@ -273,28 +268,29 @@ function metricsSection() {
 </section>`;
 }
 
-function videoSection() {
-  return `<section class="page-section" id="video">
+function reviewReadinessSection() {
+  return `<section class="page-section" id="review-readiness">
   <div class="container video-grid">
     <div>
-      ${sectionEyebrow("Demo video")}
-      <h2>Product walkthrough space is reserved.</h2>
-      <p>A public demo video will be added after the Play review walkthrough is recorded and approved for publication. No demo claim is made before the video exists.</p>
+      ${sectionEyebrow("Review readiness")}
+      <h2>Public proof is published only when it exists.</h2>
+      <p>The website is prepared for Play review and owner review without pretending that a public demo, public install count, or Play listing already exists.</p>
     </div>
-    <div class="video-placeholder" role="img" aria-label="Demo video placeholder">
-      <div class="play-mark"></div>
-      <span>Demo video coming later</span>
+    <div class="review-panel" aria-label="Current public proof status">
+      <div><strong>Google Play listing</strong><span>Coming soon</span></div>
+      <div><strong>Public demo video</strong><span>Not published yet</span></div>
+      <div><strong>User testimonials</strong><span>Not published yet</span></div>
     </div>
   </div>
 </section>`;
 }
 
-function testimonialsSection() {
+function feedbackPolicySection() {
   return `<section class="page-section section-alt" id="feedback">
   <div class="container feedback-empty">
-    ${sectionEyebrow("Parent feedback")}
-    <h2>Feedback will be added after public testing.</h2>
-    <p>No testimonials or user quotes are published until they come from real parents and are approved for use.</p>
+    ${sectionEyebrow("Parent feedback policy")}
+    <h2>No fabricated social proof.</h2>
+    <p>Testimonials, ratings, and usage numbers are not shown until they come from real testing or a real public listing and are approved for publication.</p>
   </div>
 </section>`;
 }
