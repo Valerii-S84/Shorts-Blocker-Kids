@@ -24,10 +24,10 @@ phone. Current app-side support is:
 | Platform | Status |
 |---|---|
 | YouTube Shorts | supported |
-| TikTok main `com.zhiliaoapp.musically` | supported by code; needs real-device QA |
+| TikTok short-video feed `com.zhiliaoapp.musically` | supported |
 | TikTok regional `com.ss.android.ugc.trill` | not supported |
-| Instagram Reels | supported by code; needs real-device QA |
-| Facebook Reels | supported by code; needs real-device QA |
+| Instagram Reels | supported |
+| Facebook Reels | supported |
 | Facebook Lite `com.facebook.lite` | not supported |
 
 The app works locally on the device for protection behavior. It does not
@@ -44,6 +44,15 @@ temporarily allow access.
 
 AccessibilityService is used only for the app's blocking function. Detection
 runs locally on the device.
+
+## Tamper Protection
+
+Optional Device Admin tamper protection can make Shorts Blocker Kids harder to
+uninstall while it is active. It does not replace AccessibilityService. It does
+not block Android Settings, wipe the device, lock the screen, reset passwords,
+change hidden system settings, or manage other apps. If someone tries to disable
+Device Admin status, Android shows a warning before allowing admin status to be
+turned off.
 
 ## Local Data
 
@@ -107,12 +116,13 @@ addresses, or payment account details.
 ## Limitations
 
 Blocking works only when Protection is ON and Android Accessibility Service is
-active. If that permission is turned off or the app is removed, blocking stops.
+active. Optional Device Admin tamper protection can make uninstall harder while
+active, but if Accessibility permission is turned off, blocking stops.
 
 ## Removing Local Data
 
-To remove local app data, uninstall Shorts Blocker Kids or clear the app data in
-Android settings.
+To remove local app data, disable Device Admin tamper protection if it is active,
+then uninstall Shorts Blocker Kids or clear the app data in Android settings.
 
 Billing entitlement records are retained only as needed for subscription
 verification, fraud prevention, Real-time Developer Notification idempotency,

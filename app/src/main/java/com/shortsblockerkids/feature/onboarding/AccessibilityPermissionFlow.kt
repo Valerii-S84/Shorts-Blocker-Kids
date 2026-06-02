@@ -3,7 +3,7 @@ package com.shortsblockerkids.feature.onboarding
 import com.shortsblockerkids.core.storage.AppSettings
 
 object AccessibilityPermissionFlow {
-    fun destinationAfterPinCreated(): AccessibilitySetupDestination = AccessibilitySetupDestination.Disclosure
+    fun destinationAfterPinCreated(): AccessibilitySetupDestination = AccessibilitySetupDestination.ProtectedApps
 
     fun destinationAfterParentUnlock(
         settings: AppSettings,
@@ -45,6 +45,7 @@ enum class AccessibilitySettingsRequest {
 }
 
 enum class AccessibilitySetupDestination {
+    ProtectedApps,
     Disclosure,
     EnableAccessibility,
     Dashboard,

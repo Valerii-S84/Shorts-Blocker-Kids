@@ -5,20 +5,19 @@ Status: Active test plan. The current support matrix is:
 | Platform | Status |
 |---|---|
 | YouTube Shorts | supported |
-| TikTok main `com.zhiliaoapp.musically` | supported by code; needs real-device QA |
+| TikTok short-video feed `com.zhiliaoapp.musically` | supported |
 | TikTok regional `com.ss.android.ugc.trill` | not supported |
-| Instagram Reels | supported by code; needs real-device QA |
-| Facebook Reels | supported by code; needs real-device QA |
+| Instagram Reels | supported |
+| Facebook Reels | supported |
 | Facebook Lite `com.facebook.lite` | not supported |
 
-Fixture unit tests exist for the supported and code-supported surfaces, and
-real-device QA is still required before production for TikTok main, Instagram
-Reels, and Facebook Reels.
+Fixture unit tests exist for the supported surfaces. Real-device QA remains
+required before Play submission for every protected platform.
 
 ## Test Goals
 
 - Preserve current YouTube Shorts blocker behavior.
-- Prove each new platform detector before enabling it.
+- Prove each protected platform detector, toggle, and QA checklist.
 - Prove shared overlay, parent PIN, and temporary allow across supported apps.
 - Prove Accessibility disclosure and consent cannot be bypassed.
 - Prove local billing entitlement states before production rollout.
@@ -121,8 +120,8 @@ between fake apps. It is still a controlled fixture
 environment and does not replace final real-device QA against the real YouTube,
 TikTok, Instagram, and Facebook apps.
 
-Per-platform enable/disable is not currently an automated E2E scenario because
-the shipped product has a global protection toggle, not per-platform settings.
+Per-platform enable/disable is covered by unit and manual QA; add automated E2E
+coverage when the fixture app can reliably drive those toggles through Compose.
 
 ## Accessibility Flow Tests
 
@@ -140,6 +139,8 @@ Required scenarios:
 - Back/home/navigation away from disclosure is not treated as consent.
 - `isAccessibilityTool=true` is not set unless product positioning changes to a
   true disability-assistance tool.
+- Optional Device Admin tamper protection has a separate parent-facing
+  disclosure before Android Device Admin settings open.
 
 ## Manual Real-Device QA
 
@@ -167,6 +168,8 @@ Manual setup:
 6. Enable AccessibilityService.
 7. Confirm dashboard status.
 8. Test each supported app.
+9. Optionally enable Device Admin tamper protection through its separate
+   disclosure.
 
 Manual privacy checks:
 
@@ -293,10 +296,12 @@ Facebook package `com.facebook.katana`:
 Cross-platform checks:
 
 - Dashboard lists exactly the protected platforms shipped in the build.
-- Accessibility disclosure names YouTube Shorts as supported, marks TikTok main,
-  Instagram Reels, and Facebook Reels as code-supported pending real-device QA,
-  and states that TikTok regional and Facebook Lite are not supported.
+- Accessibility disclosure names YouTube Shorts, TikTok short-video feed,
+  Instagram Reels, and Facebook Reels, and states that TikTok regional and
+  Facebook Lite are not supported.
 - Disabling AccessibilityService stops blocking in every target app.
+- Disabling Device Admin shows the tamper-protection warning before admin is
+  turned off.
 - No raw Accessibility tree, video title, URL, account name, message, or watch
   history is stored or exported.
 

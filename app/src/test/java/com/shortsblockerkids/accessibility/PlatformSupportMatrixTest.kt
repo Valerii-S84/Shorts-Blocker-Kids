@@ -18,9 +18,9 @@ class PlatformSupportMatrixTest {
                 ),
                 support(
                     SupportedPlatform.TIKTOK.id,
-                    "TikTok main",
+                    "TikTok short-video feed",
                     TikTokShortVideoDetector.TIKTOK_PACKAGE,
-                    PlatformSupportStatus.CODE_SUPPORTED_NEEDS_REAL_DEVICE_QA,
+                    PlatformSupportStatus.SUPPORTED,
                 ),
                 support(
                     "tiktok_regional",
@@ -32,13 +32,13 @@ class PlatformSupportMatrixTest {
                     SupportedPlatform.INSTAGRAM_REELS.id,
                     "Instagram Reels",
                     InstagramReelsDetector.INSTAGRAM_PACKAGE,
-                    PlatformSupportStatus.CODE_SUPPORTED_NEEDS_REAL_DEVICE_QA,
+                    PlatformSupportStatus.SUPPORTED,
                 ),
                 support(
                     SupportedPlatform.FACEBOOK_REELS.id,
                     "Facebook Reels",
                     FacebookReelsDetector.FACEBOOK_PACKAGE,
-                    PlatformSupportStatus.CODE_SUPPORTED_NEEDS_REAL_DEVICE_QA,
+                    PlatformSupportStatus.SUPPORTED,
                 ),
                 support(
                     "facebook_lite",
@@ -65,7 +65,9 @@ class PlatformSupportMatrixTest {
         val unsupportedSummary = PlatformSupportMatrix.unsupportedSummary()
 
         assertTrue(protectedSummary.contains("YouTube Shorts: supported"))
-        assertTrue(protectedSummary.contains("TikTok main: supported by code; needs real-device QA"))
+        assertTrue(protectedSummary.contains("TikTok short-video feed: supported"))
+        assertTrue(protectedSummary.contains("Instagram Reels: supported"))
+        assertTrue(protectedSummary.contains("Facebook Reels: supported"))
         assertFalse(protectedSummary.contains(PlatformSupportMatrix.TIKTOK_REGIONAL_PACKAGE))
         assertFalse(protectedSummary.contains(PlatformSupportMatrix.FACEBOOK_LITE_PACKAGE))
         assertTrue(unsupportedSummary.contains(PlatformSupportMatrix.TIKTOK_REGIONAL_PACKAGE))

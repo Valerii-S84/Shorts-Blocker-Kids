@@ -11,13 +11,21 @@ class ReleaseCopyInvariantTest {
         val readme = repoFile("README.md").readText()
 
         assertTrue(readme.contains("YouTube Shorts | supported"))
-        assertTrue(readme.contains("TikTok main `com.zhiliaoapp.musically` | supported by code; needs real-device QA"))
-        assertTrue(readme.contains("TikTok regional `com.ss.android.ugc.trill` | not supported"))
+        assertTrue(
+            readme.contains("TikTok short-video feed `com.zhiliaoapp.musically` | supported"),
+        )
+        assertTrue(readme.contains("Instagram Reels | supported"))
+        assertTrue(readme.contains("Facebook Reels | supported"))
+        assertTrue(
+            readme.contains("TikTok regional `com.ss.android.ugc.trill` | not supported"),
+        )
         assertTrue(readme.contains("Facebook Lite `com.facebook.lite` | not supported"))
+        assertTrue(readme.contains("Optional Device Admin tamper protection"))
+        assertFalse(readme.contains("YouTube-only"))
     }
 
     @Test
-    fun inAppPrivacyAndDisclosureCopyDoNotOverclaimSupport() {
+    fun inAppPrivacyAndDisclosureCopyMatchFullPlatformScope() {
         val disclosure =
             repoFile(
                 "app/src/main/java/com/shortsblockerkids/feature/onboarding/AccessibilityDisclosureScreen.kt",
@@ -27,13 +35,18 @@ class ReleaseCopyInvariantTest {
                 "app/src/main/java/com/shortsblockerkids/feature/privacy/PrivacyPolicyScreen.kt",
             ).readText()
 
-        listOf(disclosure, privacy).forEach { text ->
-            assertTrue(text.contains("real-device"))
-            assertTrue(text.contains("QA"))
+        listOf(disclosure, privacy).map(::normalizedText).forEach { text ->
+            assertTrue(text.contains("YouTube Shorts"))
+            assertTrue(text.contains("TikTok short-video feed"))
+            assertTrue(text.contains("Instagram Reels"))
+            assertTrue(text.contains("Facebook Reels"))
             assertTrue(text.contains("com.ss.android.ugc.trill"))
             assertTrue(text.contains("Facebook"))
             assertTrue(text.contains("Lite"))
             assertTrue(text.contains("not supported"))
+            assertFalse(text.contains("needs real-device QA"))
+            assertFalse(text.contains("code-level detectors"))
+            assertFalse(text.contains("YouTube-only"))
             assertFalse(text.contains("supports all"))
             assertFalse(text.contains("blocks all"))
         }
@@ -44,9 +57,34 @@ class ReleaseCopyInvariantTest {
         val privacyPolicy = repoFile("docs/SHORTS_BLOCKER_PRIVACY_POLICY_DRAFT.md").readText()
 
         assertTrue(privacyPolicy.contains("YouTube Shorts | supported"))
-        assertTrue(privacyPolicy.contains("TikTok main `com.zhiliaoapp.musically` | supported by code; needs real-device QA"))
-        assertTrue(privacyPolicy.contains("TikTok regional `com.ss.android.ugc.trill` | not supported"))
+        assertTrue(
+            privacyPolicy.contains("TikTok short-video feed `com.zhiliaoapp.musically` | supported"),
+        )
+        assertTrue(privacyPolicy.contains("Instagram Reels | supported"))
+        assertTrue(privacyPolicy.contains("Facebook Reels | supported"))
+        assertTrue(
+            privacyPolicy.contains("TikTok regional `com.ss.android.ugc.trill` | not supported"),
+        )
         assertTrue(privacyPolicy.contains("Facebook Lite `com.facebook.lite` | not supported"))
+        assertTrue(privacyPolicy.contains("Optional Device Admin tamper protection"))
+        assertFalse(privacyPolicy.contains("needs real-device QA"))
+    }
+
+    @Test
+    fun manifestDeclaresTransparentDeviceAdminTamperProtection() {
+        val manifest = repoFile("app/src/main/AndroidManifest.xml").readText()
+        val strings = repoFile("app/src/main/res/values/strings.xml").readText()
+        val deviceAdmin = repoFile("app/src/main/res/xml/tamper_protection_device_admin.xml").readText()
+
+        assertTrue(manifest.contains(".core.tamper.TamperProtectionReceiver"))
+        assertTrue(manifest.contains("android.permission.BIND_DEVICE_ADMIN"))
+        assertTrue(manifest.contains("@xml/tamper_protection_device_admin"))
+        assertTrue(deviceAdmin.contains("<uses-policies />"))
+        assertTrue(strings.contains("does not replace Accessibility protection"))
+        assertTrue(strings.contains("does not block Settings"))
+        assertTrue(
+            strings.contains("Disabling it can allow Shorts Blocker Kids to be uninstalled"),
+        )
     }
 
     @Test

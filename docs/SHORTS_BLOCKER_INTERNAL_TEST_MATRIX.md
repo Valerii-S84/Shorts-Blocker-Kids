@@ -40,7 +40,7 @@ Required coverage:
 | App | Package | Version tested | Target surface | Non-target surfaces | Result |
 |---|---|---|---|---|---|
 | YouTube | `com.google.android.youtube` | TBD | Shorts | normal video, Home, Search, comments, profile/account | Pending |
-| TikTok main | `com.zhiliaoapp.musically` | TBD | For You | Profile, Search, Settings, Inbox, comments where available | Pending |
+| TikTok short-video feed | `com.zhiliaoapp.musically` | TBD | For You | Profile, Search, Settings, Inbox, comments where available | Pending |
 | Instagram | `com.instagram.android` | TBD | Reels | Feed, Profile, Story, Comments, Direct/messages, Search, Settings | Pending |
 | Facebook | `com.facebook.katana` | TBD | Reels | Feed, Profile, Groups, Comments, Search, Settings, Messages | Pending |
 
@@ -106,5 +106,6 @@ External evidence still to collect:
 
 - Play internal testing install evidence.
 - Real-device TikTok, Instagram, and Facebook detector evidence.
+- Device Admin tamper protection disclosure and disable-warning evidence.
 - Play Billing tester lifecycle evidence.
 - Deployed backend RTDN and durable storage evidence.

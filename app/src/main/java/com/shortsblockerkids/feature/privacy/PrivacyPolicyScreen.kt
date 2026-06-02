@@ -47,10 +47,18 @@ fun PrivacyPolicyScreen(
             body =
                 "The app uses Android Accessibility Service to detect supported " +
                     "short-video surfaces and show a blocking overlay when protection " +
-                    "is enabled. YouTube Shorts is supported. TikTok main, Instagram " +
-                    "Reels, and Facebook Reels have code-level detectors and still need " +
-                    "real-device QA. TikTok regional package com.ss.android.ugc.trill " +
-                    "and Facebook Lite are not supported.",
+                    "is enabled. The protected surfaces are YouTube Shorts, TikTok " +
+                    "short-video feed, Instagram Reels, and Facebook Reels. TikTok " +
+                    "regional package com.ss.android.ugc.trill and Facebook Lite are " +
+                    "not supported.",
+        )
+        PrivacySection(
+            title = "Tamper protection",
+            body =
+                "Optional Device Admin tamper protection can make Shorts Blocker " +
+                    "Kids harder to uninstall while it is active. It does not replace " +
+                    "Accessibility Service, block Android Settings, wipe the device, " +
+                    "or perform hidden system actions.",
         )
         PrivacySection(
             title = "Local data",
@@ -80,7 +88,7 @@ fun PrivacyPolicyScreen(
             body =
                 "Blocking works when Protection is ON and Android Accessibility " +
                     "Service is active. If that permission is turned off or the " +
-                    "app is removed, blocking stops.",
+                    "app is removed after tamper protection is disabled, blocking stops.",
         )
         Button(
             onClick = onBack,

@@ -51,9 +51,11 @@ function setupCard() {
   <ol>
     <li>Install ${siteConfig.appName} from the intended Google Play path when it is available.</li>
     <li>Open the app and create the parent PIN.</li>
+    <li>Select protected apps: YouTube, TikTok, Instagram, and Facebook.</li>
     <li>Review the Accessibility permission explanation.</li>
     <li>Enable Shorts Blocker Kids Protection in Android Accessibility settings.</li>
-    <li>Return to the app, choose protected apps, and confirm Protection is ON.</li>
+    <li>Return to the app and confirm Protection is ON.</li>
+    <li>Optionally enable Device Admin tamper protection after its separate disclosure.</li>
   </ol>
 </article>`;
 }

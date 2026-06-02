@@ -29,7 +29,7 @@ Capture evidence for each device and each app run:
 | Platform | Package | Expected supported surface |
 |---|---|---|
 | YouTube | `com.google.android.youtube` | Shorts |
-| TikTok main | `com.zhiliaoapp.musically` | For You |
+| TikTok short-video feed | `com.zhiliaoapp.musically` | For You |
 | Instagram | `com.instagram.android` | Reels |
 | Facebook | `com.facebook.katana` | Reels |
 
@@ -59,11 +59,15 @@ Run on at least:
 1. Fresh install or clear app data.
 2. Open Shorts Blocker Kids.
 3. Create parent PIN.
-4. Review the Accessibility disclosure.
-5. Decline once and verify Android Accessibility settings do not open.
-6. Reopen setup, accept disclosure, and enable the AccessibilityService.
-7. Confirm dashboard shows active protection.
-8. Confirm temporary allow is inactive before each app scenario.
+4. Select protected apps: YouTube, TikTok, Instagram, and Facebook.
+5. Review the Accessibility disclosure.
+6. Decline once and verify Android Accessibility settings do not open.
+7. Reopen setup, accept disclosure, and enable the AccessibilityService.
+8. Confirm dashboard shows a green active checklist for parent PIN, protected
+   apps, disclosure, and Accessibility Service.
+9. Optionally open Tamper Protection, read the separate disclosure, and enable
+   Device Admin from the Android confirmation screen.
+10. Confirm temporary allow is inactive before each app scenario.
 
 ## YouTube
 
@@ -87,6 +91,9 @@ Evidence:
 - Video showing Shorts blocked.
 - Video or screenshots showing normal video, Home, Search, and Profile are not
   blocked.
+- Toggle YouTube off in Shorts Blocker Kids and verify YouTube Shorts no longer
+  blocks while other selected platforms remain protected. Toggle YouTube back
+  on before continuing.
 
 ## TikTok
 
@@ -112,6 +119,9 @@ Evidence:
 - Video showing For You blocked.
 - Video or screenshots showing Profile, Search, and Settings are not blocked.
 - Target package and app version.
+- Toggle TikTok off in Shorts Blocker Kids and verify the For You feed no
+  longer blocks while other selected platforms remain protected. Toggle TikTok
+  back on before continuing.
 
 ## Instagram
 
@@ -136,6 +146,9 @@ Evidence:
 - Video showing Reels blocked.
 - Video or screenshots showing Feed, Profile, and Story are not blocked.
 - Target package and app version.
+- Toggle Instagram off in Shorts Blocker Kids and verify Reels no longer blocks
+  while other selected platforms remain protected. Toggle Instagram back on
+  before continuing.
 
 ## Facebook
 
@@ -164,6 +177,9 @@ Evidence:
 - Video showing Reels blocked.
 - Video or screenshots showing Feed, Profile, and Groups are not blocked.
 - Target package and app version.
+- Toggle Facebook off in Shorts Blocker Kids and verify Reels no longer blocks
+  while other selected platforms remain protected. Toggle Facebook back on
+  before continuing.
 
 ## Cross-App Scenarios
 
@@ -180,6 +196,8 @@ Run these at least once per device:
 - Re-enable global Protection: supported short-video screens block again.
 - Disable AccessibilityService: no blocking occurs and dashboard reports
   inactive protection.
+- If Device Admin tamper protection is active, request admin disable in Android
+  settings and verify the warning appears before admin is turned off.
 
 ## Billing And Backend Scenarios
 
@@ -206,6 +224,8 @@ The real-device QA pass is complete only when:
 
 - Every supported app has one positive blocking video.
 - Every supported app has non-blocking evidence for the listed normal screens.
+- Each supported app's enable/disable toggle has evidence that disabling the
+  app prevents blocking only for that platform.
 - Unsupported packages are not claimed as supported.
 - No duplicate overlay, overlay flicker, or Back/Home loop is observed.
 - Device model, Android version, Shorts Blocker Kids build, target package, and

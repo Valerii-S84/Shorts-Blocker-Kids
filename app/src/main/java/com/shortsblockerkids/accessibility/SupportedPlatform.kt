@@ -15,7 +15,7 @@ data class SupportedPlatform(
         val TIKTOK =
             SupportedPlatform(
                 id = AppSettings.TIKTOK_PLATFORM_ID,
-                displayName = "TikTok main",
+                displayName = "TikTok short-video feed",
             )
         val INSTAGRAM_REELS =
             SupportedPlatform(
@@ -42,7 +42,6 @@ enum class PlatformSupportStatus(
     val label: String,
 ) {
     SUPPORTED("supported"),
-    CODE_SUPPORTED_NEEDS_REAL_DEVICE_QA("supported by code; needs real-device QA"),
     NOT_SUPPORTED("not supported"),
 }
 
@@ -67,9 +66,9 @@ object PlatformSupportMatrix {
             ),
             PlatformSupportEntry(
                 platformId = SupportedPlatform.TIKTOK.id,
-                platformName = "TikTok main",
+                platformName = "TikTok short-video feed",
                 packageName = TikTokShortVideoDetector.TIKTOK_PACKAGE,
-                status = PlatformSupportStatus.CODE_SUPPORTED_NEEDS_REAL_DEVICE_QA,
+                status = PlatformSupportStatus.SUPPORTED,
             ),
             PlatformSupportEntry(
                 platformId = "tiktok_regional",
@@ -81,13 +80,13 @@ object PlatformSupportMatrix {
                 platformId = SupportedPlatform.INSTAGRAM_REELS.id,
                 platformName = "Instagram Reels",
                 packageName = InstagramReelsDetector.INSTAGRAM_PACKAGE,
-                status = PlatformSupportStatus.CODE_SUPPORTED_NEEDS_REAL_DEVICE_QA,
+                status = PlatformSupportStatus.SUPPORTED,
             ),
             PlatformSupportEntry(
                 platformId = SupportedPlatform.FACEBOOK_REELS.id,
                 platformName = "Facebook Reels",
                 packageName = FacebookReelsDetector.FACEBOOK_PACKAGE,
-                status = PlatformSupportStatus.CODE_SUPPORTED_NEEDS_REAL_DEVICE_QA,
+                status = PlatformSupportStatus.SUPPORTED,
             ),
             PlatformSupportEntry(
                 platformId = "facebook_lite",

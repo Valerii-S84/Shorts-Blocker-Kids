@@ -2,9 +2,13 @@
 <resources>
     <string name="app_name">Shorts Blocker Kids</string>
     <string name="accessibility_service_label">Shorts Blocker Kids Protection</string>
-    <string name="accessibility_service_description">Detects supported short-video surfaces locally when protection is enabled and closes the blocking screen after you leave them.</string>
+    <string name="accessibility_service_description">Detects YouTube Shorts, TikTok short-video feed, Instagram Reels, and Facebook Reels locally when protection is enabled and closes the blocking screen after you leave them.</string>
     <string name="blocking_overlay_title">Short video blocked</string>
     <string name="blocking_overlay_message">Parent PIN is required to allow short videos or change protection.</string>
     <string name="blocking_overlay_exit_shorts">Exit to phone home</string>
     <string name="blocking_overlay_enter_pin">Enter PIN</string>
+    <string name="tamper_protection_label">Shorts Blocker Kids Tamper Protection</string>
+    <string name="tamper_protection_description">Optional parent-controlled Device Admin protection that makes uninstall harder while active.</string>
+    <string name="tamper_protection_system_explanation">Optional tamper protection makes Shorts Blocker Kids harder to uninstall while active. It does not replace Accessibility protection and does not block Settings or perform hidden system actions.</string>
+    <string name="tamper_protection_disable_warning">Tamper protection is active. Disabling it can allow Shorts Blocker Kids to be uninstalled or protection to be changed without the parent PIN.</string>
 </resources>

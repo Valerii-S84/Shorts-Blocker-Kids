@@ -23,7 +23,7 @@ For the full product, disclosure must state:
 - The app uses Android AccessibilityService.
 - The app detects supported short-video surfaces:
   - YouTube Shorts;
-  - TikTok short-video feed or TikTok usage if app-level fallback is shipped;
+  - TikTok short-video feed;
   - Instagram Reels;
   - Facebook Reels.
 - The app shows a blocking overlay.
@@ -33,6 +33,8 @@ For the full product, disclosure must state:
 - Rules and PIN protection are stored locally.
 - If backend/billing is included, backend receives only billing technical data.
 - Blocking depends on Android AccessibilityService being enabled.
+- Optional Device Admin tamper protection is disclosed separately and only makes
+  uninstall harder while admin is active.
 
 Consent rules:
 
@@ -52,9 +54,9 @@ Suggested declaration answer for app functionality:
 ```text
 Short Video Blocker uses Android AccessibilityService to detect supported
 short-video surfaces on a child device, including YouTube Shorts, TikTok
-short-video feed or disclosed TikTok usage blocking, Instagram Reels, and
-Facebook Reels. When a blocked surface is detected and protection is enabled,
-the app shows a blocking overlay. A parent PIN can temporarily allow access.
+short-video feed, Instagram Reels, and Facebook Reels. When a blocked surface
+is detected and protection is enabled, the app shows a blocking overlay. A
+parent PIN can temporarily allow access.
 ```
 
 Data answer:
@@ -67,9 +69,8 @@ messages, screen recordings, audio, location, contacts, browsing history, or raw
 Accessibility tree dumps.
 ```
 
-If TikTok support uses app-level fallback instead of feed-specific detection,
-the declaration and disclosure must say TikTok usage blocking, not only
-short-video feed blocking.
+Device Admin tamper protection must be described separately from the
+AccessibilityService declaration. It does not replace AccessibilityService.
 
 ## Privacy Policy Requirements
 
@@ -144,28 +145,28 @@ Required video for Accessibility review:
 
 1. Open the app from launcher.
 2. Show onboarding and parent PIN creation.
-3. Show the full Accessibility disclosure; scroll slowly if needed.
-4. Tap decline / `Not now`.
-5. Show that Android Accessibility settings do not open.
-6. Trigger setup again.
-7. Show disclosure again.
-8. Tap affirmative consent.
-9. Tap open settings.
-10. Enable the app AccessibilityService in Android settings.
-11. Return to the app and show protection status.
-12. Open YouTube Shorts and show blocker overlay.
-13. Use `Exit to phone home`.
-14. Open TikTok target surface and show blocker overlay, if implemented.
-15. Open Instagram Reels and show blocker overlay, if implemented.
-16. Open Facebook Reels and show blocker overlay, if implemented.
-17. Tap parent PIN action.
-18. Enter parent PIN.
-19. Select temporary allow: 5, 10, or 15 minutes.
-20. Show temporary allow behavior.
-21. Show that non-target surfaces are not blocked where applicable.
-
-If a supported platform is not implemented in the submitted build, omit that
-platform from video, disclosure, declaration, and store listing.
+3. Select protected apps: YouTube, TikTok, Instagram, and Facebook.
+4. Show the full Accessibility disclosure; scroll slowly if needed.
+5. Tap decline / `Not now`.
+6. Show that Android Accessibility settings do not open.
+7. Trigger setup again.
+8. Show disclosure again.
+9. Tap affirmative consent.
+10. Tap open settings.
+11. Enable the app AccessibilityService in Android settings.
+12. Return to the app and show protection status.
+13. Open YouTube Shorts and show blocker overlay.
+14. Use `Exit to phone home`.
+15. Open TikTok short-video feed and show blocker overlay.
+16. Open Instagram Reels and show blocker overlay.
+17. Open Facebook Reels and show blocker overlay.
+18. Tap parent PIN action.
+19. Enter parent PIN.
+20. Select temporary allow: 5, 10, or 15 minutes.
+21. Show temporary allow behavior.
+22. Show that non-target surfaces are not blocked where applicable.
+23. Show optional Device Admin tamper protection disclosure and Android
+    confirmation screen.
 
 ## AAB Pipeline
 

@@ -6,9 +6,9 @@ import org.junit.Test
 
 class AccessibilityPermissionFlowTest {
     @Test
-    fun pinCreationShowsDisclosureBeforePermissionSetup() {
+    fun pinCreationShowsProtectedAppSelectionBeforeDisclosure() {
         assertEquals(
-            AccessibilitySetupDestination.Disclosure,
+            AccessibilitySetupDestination.ProtectedApps,
             AccessibilityPermissionFlow.destinationAfterPinCreated(),
         )
     }
