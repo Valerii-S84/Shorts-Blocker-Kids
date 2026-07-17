@@ -40,8 +40,10 @@ Current behavior to keep consistent across every Play Console answer:
 
 - The app helps parents block supported short-video surfaces on a child's
   Android phone.
-- YouTube Shorts, TikTok short-video feed, Instagram Reels, and Facebook Reels
-  are supported protected surfaces.
+- YouTube Shorts is supported and has prior real-device smoke evidence.
+- TikTok short-video feed, Instagram Reels, and Facebook Reels are included with
+  detector/unit coverage and require real-device QA before they are
+  production-verified.
 - TikTok regional package `com.ss.android.ugc.trill`, Facebook Lite,
   Instagram Lite, YouTube TV, and YouTube Music are not supported.
 - Protection depends on Android Accessibility Service and the app's Protection

@@ -168,10 +168,18 @@ class ReleaseCopyInvariantTest {
     }
 
     @Test
-    fun playConsoleStoreListingKeepsExpandedPlatformQaCaveat() {
+    fun playConsoleCopyKeepsExpandedPlatformQaCaveat() {
         val preparationPackage =
             repoFile("docs/SHORTS_BLOCKER_PLAY_CONSOLE_PREPARATION_PACKAGE.md").readText()
+        val currentBehavior =
+            preparationPackage
+                .substringAfter("Current behavior to keep consistent across every Play Console answer:")
+                .substringBefore("## Official Sources Checked")
 
+        assertTrue(currentBehavior.contains("prior real-device smoke evidence"))
+        assertTrue(currentBehavior.contains("detector/unit coverage"))
+        assertTrue(currentBehavior.contains("require real-device QA before they are"))
+        assertTrue(currentBehavior.contains("production-verified"))
         assertTrue(preparationPackage.contains("Current app-side support:"))
         assertTrue(preparationPackage.contains("must keep the real-device QA"))
         assertTrue(preparationPackage.contains("full device matrix records evidence"))

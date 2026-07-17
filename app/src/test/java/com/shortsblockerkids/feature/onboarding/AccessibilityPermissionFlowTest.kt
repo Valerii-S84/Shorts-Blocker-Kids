@@ -46,19 +46,19 @@ class AccessibilityPermissionFlowTest {
     }
 
     @Test
-    fun protectionSetupCannotBypassDisclosureAfterParentUnlock() {
+    fun resumedProtectionSetupReturnsToAppSelectionBeforeDisclosure() {
         val settingsWithoutConsent = pinCreatedSettings(accessibilityDisclosureAccepted = false)
         val settingsWithConsent = pinCreatedSettings(accessibilityDisclosureAccepted = true)
 
         assertEquals(
-            AccessibilitySetupDestination.Disclosure,
+            AccessibilitySetupDestination.ProtectedApps,
             AccessibilityPermissionFlow.destinationAfterParentUnlock(
                 settings = settingsWithoutConsent,
                 pendingTemporaryAllow = false,
             ),
         )
         assertEquals(
-            AccessibilitySetupDestination.Disclosure,
+            AccessibilitySetupDestination.ProtectedApps,
             AccessibilityPermissionFlow.destinationAfterParentUnlock(
                 settings = settingsWithoutConsent,
                 pendingTemporaryAllow = true,

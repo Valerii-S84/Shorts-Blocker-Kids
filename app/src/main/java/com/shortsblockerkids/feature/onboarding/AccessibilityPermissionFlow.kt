@@ -10,7 +10,7 @@ object AccessibilityPermissionFlow {
         pendingTemporaryAllow: Boolean,
     ): AccessibilitySetupDestination {
         if (!settings.accessibilityDisclosureAccepted) {
-            return AccessibilitySetupDestination.Disclosure
+            return AccessibilitySetupDestination.ProtectedApps
         }
 
         return if (pendingTemporaryAllow) {
