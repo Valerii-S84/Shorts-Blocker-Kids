@@ -226,7 +226,7 @@ Draft text:
 ```text
 # Privacy Policy
 
-Effective date: May 24, 2026
+Effective date: July 17, 2026
 
 Public website: https://shortsblockerkids.de
 Privacy Policy URL: https://shortsblockerkids.de/privacy
@@ -269,8 +269,9 @@ records, processed RTDN message IDs, and a hashed purchase token.
 Blocking works only when Protection is ON and Android Accessibility Service is
 active. If that permission is turned off or the app is removed, blocking stops.
 
-To remove local app data, uninstall Shorts Blocker Kids or clear the app data in
-Android settings.
+To remove local app data, disable Device Admin tamper protection first if it is
+active, then uninstall Shorts Blocker Kids or clear the app data in Android
+settings.
 
 Privacy contact: svalerii535@gmail.com
 Support contact: svalerii535@gmail.com

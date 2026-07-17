@@ -14,10 +14,10 @@ App name: Shorts Blocker Kids
 Package name: com.shortsblockerkids
 Version name: 0.1.0
 Version code: 1
-Upload AAB: app/build/outputs/bundle/release/app-release.aab
-Upload AAB size: 3,629,462 bytes
-Upload AAB SHA-256: 126be877072bc018535c3b842e09227801041c45fdd29cd6e70d507abafc1d7f
-Upload source commit: b5e559f44bdd289d87d20ad52f8e7fa78f79ef92
+Upload AAB: pending rebuild from reviewed source
+Upload AAB size: pending
+Upload AAB SHA-256: pending
+Upload source commit: pending
 Min SDK: 26
 Target SDK: 36
 Category candidate: Parenting
@@ -26,7 +26,7 @@ Subscription product ID: shorts_blocker_kids_monthly
 Account system: none
 Ads: none
 Analytics: none
-Release AAB status: build with SBK_BILLING_BACKEND_BASE_URL=https://billing.shortsblockerkids.de
+Release AAB status: stale local artifact must not be uploaded; rebuild with SBK_BILLING_BACKEND_BASE_URL=https://billing.shortsblockerkids.de
 Public website URL: https://shortsblockerkids.de
 Privacy Policy URL: https://shortsblockerkids.de/privacy
 Support URL: https://shortsblockerkids.de/support
