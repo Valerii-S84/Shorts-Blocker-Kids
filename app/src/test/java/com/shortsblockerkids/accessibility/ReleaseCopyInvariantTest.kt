@@ -12,10 +12,13 @@ class ReleaseCopyInvariantTest {
 
         assertTrue(readme.contains("YouTube Shorts | supported"))
         assertTrue(
-            readme.contains("TikTok short-video feed `com.zhiliaoapp.musically` | supported"),
+            readme.contains(
+                "TikTok short-video feed `com.zhiliaoapp.musically` | " +
+                    "supported by code; needs real-device QA",
+            ),
         )
-        assertTrue(readme.contains("Instagram Reels | supported"))
-        assertTrue(readme.contains("Facebook Reels | supported"))
+        assertTrue(readme.contains("Instagram Reels | supported by code; needs real-device QA"))
+        assertTrue(readme.contains("Facebook Reels | supported by code; needs real-device QA"))
         assertTrue(
             readme.contains("TikTok regional `com.ss.android.ugc.trill` | not supported"),
         )
@@ -60,16 +63,23 @@ class ReleaseCopyInvariantTest {
         assertFalse(privacyPolicy.contains("Effective date: May 31, 2026"))
         assertTrue(privacyPolicy.contains("YouTube Shorts | supported"))
         assertTrue(
-            privacyPolicy.contains("TikTok short-video feed `com.zhiliaoapp.musically` | supported"),
+            privacyPolicy.contains(
+                "TikTok short-video feed `com.zhiliaoapp.musically` | " +
+                    "supported by code; needs real-device QA",
+            ),
         )
-        assertTrue(privacyPolicy.contains("Instagram Reels | supported"))
-        assertTrue(privacyPolicy.contains("Facebook Reels | supported"))
+        assertTrue(
+            privacyPolicy.contains("Instagram Reels | supported by code; needs real-device QA"),
+        )
+        assertTrue(
+            privacyPolicy.contains("Facebook Reels | supported by code; needs real-device QA"),
+        )
         assertTrue(
             privacyPolicy.contains("TikTok regional `com.ss.android.ugc.trill` | not supported"),
         )
         assertTrue(privacyPolicy.contains("Facebook Lite `com.facebook.lite` | not supported"))
         assertTrue(privacyPolicy.contains("Optional Device Admin tamper protection"))
-        assertFalse(privacyPolicy.contains("needs real-device QA"))
+        assertTrue(privacyPolicy.contains("needs real-device QA"))
     }
 
     @Test

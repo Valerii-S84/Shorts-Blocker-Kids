@@ -42,6 +42,7 @@ enum class PlatformSupportStatus(
     val label: String,
 ) {
     SUPPORTED("supported"),
+    SUPPORTED_BY_CODE_NEEDS_REAL_DEVICE_QA("supported by code; needs real-device QA"),
     NOT_SUPPORTED("not supported"),
 }
 
@@ -68,7 +69,7 @@ object PlatformSupportMatrix {
                 platformId = SupportedPlatform.TIKTOK.id,
                 platformName = "TikTok short-video feed",
                 packageName = TikTokShortVideoDetector.TIKTOK_PACKAGE,
-                status = PlatformSupportStatus.SUPPORTED,
+                status = PlatformSupportStatus.SUPPORTED_BY_CODE_NEEDS_REAL_DEVICE_QA,
             ),
             PlatformSupportEntry(
                 platformId = "tiktok_regional",
@@ -80,13 +81,13 @@ object PlatformSupportMatrix {
                 platformId = SupportedPlatform.INSTAGRAM_REELS.id,
                 platformName = "Instagram Reels",
                 packageName = InstagramReelsDetector.INSTAGRAM_PACKAGE,
-                status = PlatformSupportStatus.SUPPORTED,
+                status = PlatformSupportStatus.SUPPORTED_BY_CODE_NEEDS_REAL_DEVICE_QA,
             ),
             PlatformSupportEntry(
                 platformId = SupportedPlatform.FACEBOOK_REELS.id,
                 platformName = "Facebook Reels",
                 packageName = FacebookReelsDetector.FACEBOOK_PACKAGE,
-                status = PlatformSupportStatus.SUPPORTED,
+                status = PlatformSupportStatus.SUPPORTED_BY_CODE_NEEDS_REAL_DEVICE_QA,
             ),
             PlatformSupportEntry(
                 platformId = "facebook_lite",

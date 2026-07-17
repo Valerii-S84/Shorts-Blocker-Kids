@@ -24,10 +24,10 @@ phone. Current app-side support is:
 | Platform | Status |
 |---|---|
 | YouTube Shorts | supported |
-| TikTok short-video feed `com.zhiliaoapp.musically` | supported |
+| TikTok short-video feed `com.zhiliaoapp.musically` | supported by code; needs real-device QA |
 | TikTok regional `com.ss.android.ugc.trill` | not supported |
-| Instagram Reels | supported |
-| Facebook Reels | supported |
+| Instagram Reels | supported by code; needs real-device QA |
+| Facebook Reels | supported by code; needs real-device QA |
 | Facebook Lite `com.facebook.lite` | not supported |
 
 The app works locally on the device for protection behavior. It does not

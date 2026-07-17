@@ -7,10 +7,10 @@ Accessibility Service. Current platform support:
 | Platform | Status |
 |---|---|
 | YouTube Shorts | supported |
-| TikTok short-video feed `com.zhiliaoapp.musically` | supported |
+| TikTok short-video feed `com.zhiliaoapp.musically` | supported by code; needs real-device QA |
 | TikTok regional `com.ss.android.ugc.trill` | not supported |
-| Instagram Reels | supported |
-| Facebook Reels | supported |
+| Instagram Reels | supported by code; needs real-device QA |
+| Facebook Reels | supported by code; needs real-device QA |
 | Facebook Lite `com.facebook.lite` | not supported |
 
 The app has no account system and no analytics. Google Play Billing adds
