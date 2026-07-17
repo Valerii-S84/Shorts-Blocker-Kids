@@ -6,7 +6,7 @@ personal developer / publisher name are filled for the current Google Play
 submission path. Live hosting still must be verified before Play Console
 submission.
 
-Effective date: May 31, 2026
+Effective date: July 17, 2026
 Website source: `website/src/pages/privacy.mjs`
 
 Public website: https://shortsblockerkids.de

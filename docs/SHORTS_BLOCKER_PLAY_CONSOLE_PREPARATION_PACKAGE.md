@@ -5,7 +5,7 @@ Support, Terms, root, and backend health URLs were verified on July 17, 2026.
 External Play Console entry, Accessibility demo video URL, and Play Console
 submission remain pending.
 
-Date: May 29, 2026
+Date: July 17, 2026
 
 ## Current App Facts
 
@@ -97,13 +97,19 @@ detected, the app shows a blocking screen. A parent can temporarily allow
 access with the PIN. Optional Device Admin tamper protection can make uninstall
 harder while active after a separate parent-facing disclosure.
 
-Current support:
-- YouTube Shorts is supported.
-- TikTok short-video feed is supported.
-- Instagram Reels is supported.
-- Facebook Reels is supported.
+Current app-side support:
+- YouTube Shorts is supported and has prior real-device smoke evidence.
+- TikTok short-video feed, Instagram Reels, and Facebook Reels are included in
+  this build with detector/unit coverage and must keep the real-device QA
+  caveat until the full device matrix records evidence.
 - TikTok regional, Facebook Lite, Instagram Lite, YouTube TV, and YouTube Music
   are not supported.
+
+Real-device QA caveat:
+Do not submit production Play listing copy that presents TikTok, Instagram
+Reels, or Facebook Reels as fully production-verified until the QA matrix in
+`docs/SHORTS_BLOCKER_REAL_DEVICE_QA_CHECKLIST.md` has recorded passing evidence.
+Internal testers should verify those surfaces during Play testing.
 
 What the app does:
 - blocks supported short-video surfaces when Protection is ON;
