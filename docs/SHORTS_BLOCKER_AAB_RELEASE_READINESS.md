@@ -1,8 +1,9 @@
 # Shorts Blocker Kids AAB Release Readiness
 
-Status: Partial. Local release pipeline passes, release APK smoke passes, and
-bundletool AAB-derived emulator install smoke passes. Play Console upload and
-Play App Signing validation remain pending.
+Status: Partial. A fresh signed AAB for Internal Testing is present locally.
+Older local release pipeline, release APK smoke, and bundletool AAB-derived
+emulator install evidence remain historical. Play Console upload and Play App
+Signing validation remain pending.
 
 ## Scope
 
@@ -24,6 +25,51 @@ It covers:
 It does not cover Play Console upload, Play App Signing acceptance, production
 review, billing tester flows, or final signed release-candidate device QA from
 the Play internal testing track.
+
+## July 17, 2026 Fresh Signed AAB Upload Artifact
+
+This is the current local artifact for the Play Console Internal Testing upload
+package. It supersedes older local AAB hashes in the May sections for
+upload/testing purposes; the May sections remain historical release evidence.
+
+```text
+Source commit: b5e559f44bdd289d87d20ad52f8e7fa78f79ef92
+Package name: com.shortsblockerkids
+Version name: 0.1.0
+Version code: 1
+AAB: app/build/outputs/bundle/release/app-release.aab
+AAB size: 3,629,462 bytes
+AAB SHA-256: 126be877072bc018535c3b842e09227801041c45fdd29cd6e70d507abafc1d7f
+Backend URL embedded by release BuildConfig: https://billing.shortsblockerkids.de
+```
+
+Verification performed for this artifact refresh:
+
+```text
+Get-Item app/build/outputs/bundle/release/app-release.aab
+Get-FileHash -Algorithm SHA256 app/build/outputs/bundle/release/app-release.aab
+Read generated release BuildConfig.java
+Read release merged manifest output metadata
+```
+
+Live HTTPS smoke verification on July 17, 2026:
+
+```text
+https://shortsblockerkids.de/         200
+https://shortsblockerkids.de/privacy  200
+https://shortsblockerkids.de/support  200
+https://shortsblockerkids.de/terms    200
+https://www.shortsblockerkids.de/privacy  200
+https://billing.shortsblockerkids.de/health  200 {"status":"ok"}
+```
+
+Not performed in this documentation refresh:
+
+- AAB rebuild;
+- Play Console upload;
+- Play App Signing acceptance;
+- Play-installed real-device smoke;
+- independent AAB signature verification with `jarsigner` in this shell.
 
 ## May 29, 2026 Production Backend Gate
 
@@ -153,9 +199,10 @@ curl https://shortsblockerkids.de/support: failed, could not connect to server
 curl https://billing.shortsblockerkids.de/health: failed, could not connect to server
 ```
 
-Conclusion: DNS records are visible locally, but HTTPS/TLS, public root,
-Privacy Policy, support page, and backend health are not verified. Live domain
-readiness is blocked by owner DNS/hosting/server setup.
+Historical May 31 conclusion: DNS records were visible locally, but HTTPS/TLS,
+public root, Privacy Policy, support page, and backend health were not verified
+in that shell. The July 17, 2026 external HTTPS smoke above supersedes this for
+current public URL reachability.
 
 ## May 24, 2026 Release Gate Refresh
 
@@ -388,15 +435,15 @@ ACCESSIBILITY_DEBUG_TOOLS_ENABLED = false
 - Configure Play App Signing and upload key flow.
 - Upload `app-release.aab` to internal testing.
 - Confirm Play Console accepts the AAB.
-- Submit Privacy Policy URL `https://shortsblockerkids.de/privacy`.
+- Submit the verified Privacy Policy URL `https://shortsblockerkids.de/privacy`.
 - Complete Data Safety form.
 - Complete Accessibility declaration.
 - Upload Accessibility review demo video.
 - Add store screenshots and feature graphic.
 - Execute `docs/SHORTS_BLOCKER_PLAY_BILLING_INTERNAL_TEST_RUNBOOK.md` after the
   subscription product and internal testing track are active.
-- Deploy and verify the billing backend at `https://billing.shortsblockerkids.de`
-  before Play production rollout.
+- Complete Google Play service-account credentials, RTDN configuration, and
+  purchase verification evidence before Play production rollout.
 - Use `docs/SHORTS_BLOCKER_PLAY_CONSOLE_BILLING_CONFIG.md` for the exact
   subscription product/base-plan values.
 - Run final smoke QA on the exact AAB-derived install from Play internal

@@ -1,7 +1,8 @@
 # Shorts Blocker Kids Play Console Preparation Package
 
-Status: Prepared locally for `shortsblockerkids.de`. External Play Console entry,
-Accessibility demo video URL, live DNS/TLS verification, and Play Console
+Status: Prepared locally for `shortsblockerkids.de`. Public HTTPS Privacy,
+Support, Terms, root, and backend health URLs were verified on July 17, 2026.
+External Play Console entry, Accessibility demo video URL, and Play Console
 submission remain pending.
 
 Date: May 29, 2026
@@ -13,6 +14,10 @@ App name: Shorts Blocker Kids
 Package name: com.shortsblockerkids
 Version name: 0.1.0
 Version code: 1
+Upload AAB: app/build/outputs/bundle/release/app-release.aab
+Upload AAB size: 3,629,462 bytes
+Upload AAB SHA-256: 126be877072bc018535c3b842e09227801041c45fdd29cd6e70d507abafc1d7f
+Upload source commit: b5e559f44bdd289d87d20ad52f8e7fa78f79ef92
 Min SDK: 26
 Target SDK: 36
 Category candidate: Parenting
@@ -175,9 +180,9 @@ Website readiness:
   `cd website && npm run check && npm run build && npm run smoke`;
 - deployment instructions:
   `docs/SHORTS_BLOCKER_WEBSITE_DEPLOYMENT.md`;
-- live HTTPS Privacy Policy page: required before Play submission;
-- support page: required for the current support URL;
-- root page: required for public trust and Play review context.
+- live HTTPS Privacy Policy page: verified on July 17, 2026;
+- support page: verified on July 17, 2026;
+- root page: verified on July 17, 2026.
 
 Required live URLs before Play submission:
 
@@ -185,6 +190,16 @@ Required live URLs before Play submission:
 https://shortsblockerkids.de
 https://shortsblockerkids.de/privacy
 https://shortsblockerkids.de/support
+```
+
+Live URL verification on July 17, 2026:
+
+```text
+https://shortsblockerkids.de/         200
+https://shortsblockerkids.de/privacy  200
+https://shortsblockerkids.de/support  200
+https://shortsblockerkids.de/terms    200
+https://billing.shortsblockerkids.de/health  200 {"status":"ok"}
 ```
 
 The website CTA must stay `Coming soon on Google Play` until a live Google Play
@@ -440,7 +455,8 @@ Before internal release:
   hash and backend URL origin.
 - Confirm backend `/health`, migrations, backup/restore, RTDN readiness, and
   rollback evidence are current.
-- Publish and verify Privacy Policy at `https://shortsblockerkids.de/privacy`.
+- Re-check the verified Privacy Policy URL
+  `https://shortsblockerkids.de/privacy` before final Play submission.
 - Upload Accessibility demo video and store the URL.
 - Complete store listing draft from this package.
 - Complete App content drafts: Data Safety, Accessibility declaration, Target
@@ -546,13 +562,9 @@ Minimum Play Console readiness evidence:
 
 ## Submission Blockers
 
-- Live DNS/TLS/backend health for `https://billing.shortsblockerkids.de` are not yet
-  verified.
 - A Play-uploaded release AAB with
   `SBK_BILLING_BACKEND_BASE_URL=https://billing.shortsblockerkids.de` is not yet
   accepted by Play Console.
-- `https://shortsblockerkids.de/privacy` must be published and verified live before
-  submission.
 - Accessibility demo video URL is TBD.
 - Play Console Data Safety form is not submitted.
 - Play Console Accessibility declaration is not submitted.

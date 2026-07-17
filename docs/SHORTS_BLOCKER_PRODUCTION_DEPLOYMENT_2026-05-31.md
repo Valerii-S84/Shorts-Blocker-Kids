@@ -1,6 +1,8 @@
 # Shorts Blocker Kids Production Deployment - 2026-05-31
 
-Status: Partial.
+Status: Partial. July 17, 2026 public HTTPS smoke verifies root, Privacy,
+Support, Terms, `www` Privacy, and billing backend health. Google Play
+credentials, RTDN, real purchase flows, and real-device QA remain pending.
 
 ## Scope
 
@@ -14,6 +16,10 @@ Public DNS is only partially aligned:
 - `billing.shortsblockerkids.de` resolves to `46.225.181.45` from the server.
 - `shortsblockerkids.de` still resolves to `185.181.104.242`, so apex HTTPS is
   not live on the deployed host yet.
+
+July 17, 2026 external HTTPS smoke supersedes the deployment-time apex
+reachability concern for public Play review URLs. The deployment-time DNS notes
+above remain historical context from May 31, 2026.
 
 ## Server Paths
 
@@ -208,6 +214,17 @@ https://billing.shortsblockerkids.de/health  200 {"status":"ok"}
 https://shortsblockerkids.de                 failed: apex DNS points to 185.181.104.242
 ```
 
+July 17, 2026 external HTTPS recheck:
+
+```text
+https://shortsblockerkids.de/                 200
+https://shortsblockerkids.de/privacy          200
+https://shortsblockerkids.de/support          200
+https://shortsblockerkids.de/terms            200
+https://www.shortsblockerkids.de/privacy      200
+https://billing.shortsblockerkids.de/health   200 {"status":"ok"}
+```
+
 Existing production checks after Caddy reload:
 
 ```text
@@ -261,10 +278,6 @@ Do not stop other compose projects and do not prune Docker volumes or networks.
 
 ## Remaining Blockers
 
-- Apex `shortsblockerkids.de` DNS must point to `46.225.181.45`.
-- Local resolver used during deployment still resolved all three SBK domains to
-  `185.181.104.242`; server resolver already resolves `www` and `billing` to
-  `46.225.181.45`.
 - Google Play service-account credentials are missing.
 - Pub/Sub authenticated RTDN config is missing.
 - Real Google Play purchase/license-tester flow was not verified.

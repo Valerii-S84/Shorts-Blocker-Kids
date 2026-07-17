@@ -1,8 +1,9 @@
 # Shorts Blocker Kids Play Policy Package
 
 Status: Partial. Repository-side policy package and static website source are
-prepared for `shortsblockerkids.de`; external Play Console submission, live
-Privacy Policy URL verification, and demo video URL are pending.
+prepared for `shortsblockerkids.de`; live Privacy Policy URL verification
+passed on July 17, 2026. External Play Console submission and demo video URL
+are pending.
 
 Current Play Console submission source:
 
@@ -354,7 +355,8 @@ To test:
 
 ## External Submission Blockers
 
-- Publish and verify `https://shortsblockerkids.de/privacy`.
+- Submit the verified `https://shortsblockerkids.de/privacy` URL in Play
+  Console.
 - Use the same public privacy/support contact: `svalerii535@gmail.com`.
 - Play Console developer / publisher name for the current personal developer
   release: `Valerii Serputko`.

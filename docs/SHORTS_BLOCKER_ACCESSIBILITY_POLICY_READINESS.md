@@ -1,8 +1,8 @@
 # Shorts Blocker Kids Accessibility Policy Readiness
 
 Status: Partial. Repository-side Play review package is prepared for
-`shortsblockerkids.de`; external Play Console submission, live Privacy Policy URL
-verification, and demo video URL are pending.
+`shortsblockerkids.de`; the live Privacy Policy URL was verified on
+July 17, 2026. External Play Console submission and demo video URL are pending.
 
 ## Scope
 
@@ -37,9 +37,9 @@ Current interpretation:
 - Keep optional Device Admin tamper protection in a separate parent/guardian
   flow; do not use AccessibilityService to block Android Settings or perform
   hidden system actions.
-- Treat Accessibility review as blocked until `https://shortsblockerkids.de/privacy`
-  is live, Play Data Safety answers are submitted, and the review demo video is
-  final.
+- Treat Accessibility review as blocked until the verified Privacy Policy URL
+  is submitted in Play Console, Play Data Safety answers are submitted, and the
+  review demo video is final.
 
 ## In-App Prominent Disclosure
 
@@ -72,7 +72,8 @@ Policy blocker status:
 - repository copy and gating are prepared;
 - Play Console declaration is not submitted;
 - demo video URL is not submitted;
-- `https://shortsblockerkids.de/privacy` is not submitted or verified live yet;
+- `https://shortsblockerkids.de/privacy` was verified live on July 17, 2026 but
+  is not submitted in Play Console yet;
 - real-device QA evidence for all four protected platforms must be recorded
   before Play submission.
 
@@ -235,7 +236,8 @@ Facebook Reels before Play submission.
 
 ## Not Yet Completed Outside The Repo
 
-- Publish, verify, and submit `https://shortsblockerkids.de/privacy`.
+- Submit the verified `https://shortsblockerkids.de/privacy` URL in Play
+  Console.
 - Play Console developer account ownership/legal entity details remain
   owner-dependent if Google Play requires fields beyond the current personal
   developer / publisher name `Valerii Serputko` and public privacy contact

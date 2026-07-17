@@ -3,6 +3,7 @@
 Status: Prepared. External Play Console execution is pending.
 
 Date: May 24, 2026
+Artifact refreshed: July 17, 2026
 
 ## Scope
 
@@ -140,7 +141,9 @@ For every required scenario, record:
 ```text
 Status: Local artifact present.
 Path: app/build/outputs/bundle/release/app-release.aab
-SHA-256: 5e43fdde71a959add94ed38e732162f54124ff38d3e882aa4225781c30237f44
+Size: 3,629,462 bytes
+SHA-256: 126be877072bc018535c3b842e09227801041c45fdd29cd6e70d507abafc1d7f
+Source commit: b5e559f44bdd289d87d20ad52f8e7fa78f79ef92
 Backend URL embedded by release BuildConfig: https://billing.shortsblockerkids.de
 Requirement before Play testing: upload this AAB or a newer validated AAB to
 the Play internal testing track, then verify Play App Signing acceptance.

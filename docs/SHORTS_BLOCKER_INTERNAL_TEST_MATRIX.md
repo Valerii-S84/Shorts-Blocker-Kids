@@ -5,6 +5,7 @@ from this repository; Play internal testing and real-device evidence must be
 recorded by testers.
 
 Date: May 24, 2026
+Release artifact refreshed: July 17, 2026
 
 ## Release Under Test
 
@@ -13,7 +14,10 @@ Package: com.shortsblockerkids
 Version name: 0.1.0
 Version code: 1
 AAB: app/build/outputs/bundle/release/app-release.aab
-AAB SHA-256: 2fee86da1e3b423d4c20007a7bf95d7fb829e11c97559ec2865cb2a8f723d23d
+AAB size: 3,629,462 bytes
+AAB SHA-256: 126be877072bc018535c3b842e09227801041c45fdd29cd6e70d507abafc1d7f
+Source commit: b5e559f44bdd289d87d20ad52f8e7fa78f79ef92
+Backend URL: https://billing.shortsblockerkids.de
 ```
 
 ## Device Matrix

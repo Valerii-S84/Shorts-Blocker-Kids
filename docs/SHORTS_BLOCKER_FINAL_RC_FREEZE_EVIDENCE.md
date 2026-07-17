@@ -9,6 +9,15 @@ Play Console acceptance remain outside the local repository proof.
 Date: May 24, 2026
 Updated: May 31, 2026
 
+Current upload artifact note: the fresh signed AAB for Play Console Internal
+Testing is now recorded in `docs/SHORTS_BLOCKER_AAB_RELEASE_READINESS.md`.
+Hashes in this freeze-evidence file are historical May 2026 release-gate
+evidence and are not the current upload artifact hash.
+
+Current public HTTPS note: root, Privacy Policy, Support, Terms, `www` Privacy
+Policy, and backend `/health` were verified externally on July 17, 2026. The
+May connection failures below are historical deployment-time evidence.
+
 ## Source State
 
 Pre-build working tree state:
@@ -128,9 +137,10 @@ curl https://shortsblockerkids.de/support: failed, could not connect to server
 curl https://billing.shortsblockerkids.de/health: failed, could not connect to server
 ```
 
-Live domain conclusion: DNS resolves locally, but HTTPS/TLS, public root,
-Privacy Policy, support page, and backend health are not verified. This is
-blocked by owner DNS/hosting/server setup, not by local repository tasks.
+Historical May 31 live domain conclusion: DNS resolved locally, but HTTPS/TLS,
+public root, Privacy Policy, support page, and backend health were not verified
+in that shell. The July 17, 2026 external HTTPS smoke above supersedes this for
+current public URL reachability.
 
 ## May 29 Backend Production Deploy Readiness Attempt
 
