@@ -9,8 +9,10 @@ Play Console acceptance remain outside the local repository proof.
 Date: May 24, 2026
 Updated: May 31, 2026
 
-Current upload artifact note: the fresh signed AAB for Play Console Internal
-Testing is now recorded in `docs/SHORTS_BLOCKER_AAB_RELEASE_READINESS.md`.
+Current upload artifact note: the previously recorded signed AAB predates
+reviewed source changes and must not be uploaded to Play Console Internal
+Testing. A fresh production-configured signed AAB, its hash, and its source
+commit are pending; see `docs/SHORTS_BLOCKER_AAB_RELEASE_READINESS.md`.
 Hashes in this freeze-evidence file are historical May 2026 release-gate
 evidence and are not the current upload artifact hash.
 

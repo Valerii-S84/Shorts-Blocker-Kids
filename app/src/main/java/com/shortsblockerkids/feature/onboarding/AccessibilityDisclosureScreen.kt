@@ -46,7 +46,10 @@ fun AccessibilityDisclosureScreen(
                     "protected short-video surfaces are open and show a blocking overlay. " +
                     "The protected surfaces are YouTube Shorts, TikTok short-video feed, " +
                     "Instagram Reels, and Facebook Reels. TikTok regional package " +
-                    "com.ss.android.ugc.trill and Facebook Lite are not supported.\n\n" +
+                    "com.ss.android.ugc.trill and Facebook Lite are not supported. " +
+                    "YouTube Shorts has prior real-device smoke evidence. TikTok, " +
+                    "Instagram Reels, and Facebook Reels have detector and unit coverage, " +
+                    "but still require real-device QA before they are production-verified.\n\n" +
                     "When short videos are blocked, the parent PIN can temporarily allow " +
                     "access. Without the parent PIN, the blocking overlay stays active " +
                     "while a protected short-video surface is open.\n\n" +
