@@ -311,6 +311,7 @@ class BillingBackendServer(
             config: BackendConfig,
             store: EntitlementStorage = EntitlementStorageFactory.create(config),
             verifier: PlaySubscriptionVerifier? = null,
+            rateLimiter: RateLimiter = RateLimiter(),
         ): BillingBackendServer {
             val server = HttpServer.create(InetSocketAddress(config.bindAddress, config.port), 0)
             val backend =
@@ -319,6 +320,7 @@ class BillingBackendServer(
                     store = store,
                     verifierProvider = { verifier ?: GooglePlayDeveloperApiClient(GooglePlayAuth.load(config)) },
                     server = server,
+                    rateLimiter = rateLimiter,
                 )
             server.createContext(Endpoint.HEALTH.path) { backend.handle(it, Endpoint.HEALTH, backend::health) }
             server.createContext(Endpoint.VERIFY.path) { backend.handle(it, Endpoint.VERIFY, backend::verify) }

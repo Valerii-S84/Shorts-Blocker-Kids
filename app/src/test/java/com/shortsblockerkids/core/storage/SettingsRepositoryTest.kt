@@ -1,8 +1,10 @@
 package com.shortsblockerkids.core.storage
 
 import androidx.datastore.core.DataStore
+import androidx.datastore.core.okio.OkioStorage
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.PreferencesSerializer
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
@@ -17,6 +19,8 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import okio.FileSystem
+import okio.Path.Companion.toOkioPath
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -513,8 +517,13 @@ class SettingsRepositoryTest {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         scopes += scope
         return PreferenceDataStoreFactory.create(
+            storage =
+                OkioStorage(
+                    fileSystem = FileSystem.SYSTEM,
+                    serializer = PreferencesSerializer,
+                    producePath = { File(temporaryFolder.root, "$name.preferences_pb").toOkioPath() },
+                ),
             scope = scope,
-            produceFile = { File(temporaryFolder.root, "$name.preferences_pb") },
         )
     }
 
