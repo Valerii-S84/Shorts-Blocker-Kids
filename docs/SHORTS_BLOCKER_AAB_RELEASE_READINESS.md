@@ -1,9 +1,10 @@
 # Shorts Blocker Kids AAB Release Readiness
 
-Status: Partial. A fresh signed AAB for Internal Testing is present locally.
-Older local release pipeline, release APK smoke, and bundletool AAB-derived
-emulator install evidence remain historical. Play Console upload and Play App
-Signing validation remain pending.
+Status: Partial. The locally present signed AAB predates reviewed app-source
+changes and must not be uploaded to Internal Testing. Older local release
+pipeline, release APK smoke, and bundletool AAB-derived emulator install
+evidence remain historical. A fresh signed AAB, Play Console upload, and Play
+App Signing validation remain pending.
 
 ## Scope
 
@@ -26,24 +27,25 @@ It does not cover Play Console upload, Play App Signing acceptance, production
 review, billing tester flows, or final signed release-candidate device QA from
 the Play internal testing track.
 
-## July 17, 2026 Fresh Signed AAB Upload Artifact
+## July 17, 2026 Historical Signed AAB Artifact
 
-This is the current local artifact for the Play Console Internal Testing upload
-package. It supersedes older local AAB hashes in the May sections for
-upload/testing purposes; the May sections remain historical release evidence.
+This local artifact was built before later reviewed app-source changes. It is
+retained only as historical evidence and must not be uploaded to Play Console.
+Rebuild the signed AAB from the reviewed source, then replace the source commit,
+size, and SHA-256 in every current Internal Testing document before upload.
 
 ```text
 Source commit: b5e559f44bdd289d87d20ad52f8e7fa78f79ef92
 Package name: com.shortsblockerkids
 Version name: 0.1.0
 Version code: 1
-AAB: app/build/outputs/bundle/release/app-release.aab
-AAB size: 3,629,462 bytes
-AAB SHA-256: 126be877072bc018535c3b842e09227801041c45fdd29cd6e70d507abafc1d7f
+Historical AAB: app/build/outputs/bundle/release/app-release.aab
+Historical AAB size: 3,629,462 bytes
+Historical AAB SHA-256: 126be877072bc018535c3b842e09227801041c45fdd29cd6e70d507abafc1d7f
 Backend URL embedded by release BuildConfig: https://billing.shortsblockerkids.de
 ```
 
-Verification performed for this artifact refresh:
+Historical verification performed for this artifact:
 
 ```text
 Get-Item app/build/outputs/bundle/release/app-release.aab
