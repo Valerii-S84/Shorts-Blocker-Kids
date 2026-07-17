@@ -1,10 +1,11 @@
 # Shorts Blocker Kids Internal Test Matrix
 
-Status: Ready for internal testing execution. Local automated gates can be run
-from this repository; Play internal testing and real-device evidence must be
-recorded by testers.
+Status: Prepared for internal testing execution. The signed AAB must be rebuilt
+from the reviewed source before Play upload; Play internal testing and
+real-device evidence must then be recorded by testers.
 
 Date: May 24, 2026
+Release artifact status updated: July 17, 2026
 
 ## Release Under Test
 
@@ -12,8 +13,11 @@ Date: May 24, 2026
 Package: com.shortsblockerkids
 Version name: 0.1.0
 Version code: 1
-AAB: app/build/outputs/bundle/release/app-release.aab
-AAB SHA-256: 2fee86da1e3b423d4c20007a7bf95d7fb829e11c97559ec2865cb2a8f723d23d
+AAB: pending rebuild from reviewed source
+AAB size: pending
+AAB SHA-256: pending
+Source commit: pending
+Backend URL: pending verification in the rebuilt release artifact
 ```
 
 ## Device Matrix
@@ -40,7 +44,7 @@ Required coverage:
 | App | Package | Version tested | Target surface | Non-target surfaces | Result |
 |---|---|---|---|---|---|
 | YouTube | `com.google.android.youtube` | TBD | Shorts | normal video, Home, Search, comments, profile/account | Pending |
-| TikTok main | `com.zhiliaoapp.musically` | TBD | For You | Profile, Search, Settings, Inbox, comments where available | Pending |
+| TikTok short-video feed | `com.zhiliaoapp.musically` | TBD | For You | Profile, Search, Settings, Inbox, comments where available | Pending |
 | Instagram | `com.instagram.android` | TBD | Reels | Feed, Profile, Story, Comments, Direct/messages, Search, Settings | Pending |
 | Facebook | `com.facebook.katana` | TBD | Reels | Feed, Profile, Groups, Comments, Search, Settings, Messages | Pending |
 
@@ -106,5 +110,6 @@ External evidence still to collect:
 
 - Play internal testing install evidence.
 - Real-device TikTok, Instagram, and Facebook detector evidence.
+- Device Admin tamper protection disclosure and disable-warning evidence.
 - Play Billing tester lifecycle evidence.
 - Deployed backend RTDN and durable storage evidence.

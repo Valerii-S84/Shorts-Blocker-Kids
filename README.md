@@ -2,12 +2,12 @@
 
 Shorts Blocker Kids is a local-only Android app for blocking supported
 short-video surfaces on a child's phone with a parent PIN and Android
-Accessibility Service. Current platform support is intentionally narrow:
+Accessibility Service. Current platform support:
 
 | Platform | Status |
 |---|---|
 | YouTube Shorts | supported |
-| TikTok main `com.zhiliaoapp.musically` | supported by code; needs real-device QA |
+| TikTok short-video feed `com.zhiliaoapp.musically` | supported by code; needs real-device QA |
 | TikTok regional `com.ss.android.ugc.trill` | not supported |
 | Instagram Reels | supported by code; needs real-device QA |
 | Facebook Reels | supported by code; needs real-device QA |
@@ -150,7 +150,10 @@ After installing, enable the Accessibility Service manually in Android settings.
 - No watch history storage
 - No screen recording
 - No microphone, camera, location, contacts, or SMS permissions
-- No aggressive anti-uninstall behavior
+- Optional Device Admin tamper protection is transparent, parent-facing, and
+  used only to make uninstall harder while admin is active. It does not replace
+  Accessibility protection, block Android Settings, or perform hidden system
+  actions.
 
 ## Billing Backend
 
@@ -181,5 +184,6 @@ for this app.
 ## Known Limitation
 
 Short-video blocking works when Protection is ON and Android Accessibility
-Service is active. If the system permission is turned off or the app is removed,
-blocking stops.
+Service is active. Optional Device Admin tamper protection can make uninstall
+harder while active, but if Accessibility permission is turned off, blocking
+stops.

@@ -3,6 +3,7 @@
 Status: Prepared. External Play Console execution is pending.
 
 Date: May 24, 2026
+Artifact status updated: July 17, 2026
 
 ## Scope
 
@@ -138,15 +139,19 @@ For every required scenario, record:
 ## Current Artifact
 
 ```text
-Status: Local artifact present.
-Path: app/build/outputs/bundle/release/app-release.aab
-SHA-256: 5e43fdde71a959add94ed38e732162f54124ff38d3e882aa4225781c30237f44
-Backend URL embedded by release BuildConfig: https://billing.shortsblockerkids.de
-Requirement before Play testing: upload this AAB or a newer validated AAB to
-the Play internal testing track, then verify Play App Signing acceptance.
+Status: Rebuild required; the local artifact predates reviewed app-source changes.
+Path: pending
+Size: pending
+SHA-256: pending
+Source commit: pending
+Backend URL embedded by release BuildConfig: pending verification
+Requirement before Play testing: rebuild and validate the signed AAB from the
+reviewed source, record its provenance here, upload that exact AAB to the Play
+internal testing track, then verify Play App Signing acceptance.
 ```
 
-If the AAB is rebuilt, replace the path and SHA-256 here before testing.
+Record the rebuilt AAB path, size, SHA-256, source commit, and embedded backend
+URL here before testing.
 
 ## Pass Gate
 

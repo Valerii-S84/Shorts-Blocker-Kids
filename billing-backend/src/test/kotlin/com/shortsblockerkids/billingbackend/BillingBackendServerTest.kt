@@ -319,6 +319,7 @@ class BillingBackendServerTest {
                     backendConfig(
                         rateLimits = RateLimitConfig(verifyPerMinute = 1),
                     ),
+                rateLimiter = RateLimiter(nowMillis = { 1_000L }),
             )
         post(
             url = "http://127.0.0.1:${backend.port}/billing/play/verify",
@@ -388,11 +389,13 @@ class BillingBackendServerTest {
     private fun startBackend(
         verifier: PlaySubscriptionVerifier = FakeVerifier(),
         config: BackendConfig = backendConfig(),
+        rateLimiter: RateLimiter = RateLimiter(),
     ): BillingBackendServer {
         val backend =
             BillingBackendServer.create(
                 config = config,
                 verifier = verifier,
+                rateLimiter = rateLimiter,
             )
         backend.start()
         startedServers.add(backend)

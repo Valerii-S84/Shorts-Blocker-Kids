@@ -23,6 +23,7 @@ export function renderPrivacyPage() {
     ${dataCollectedSection()}
     ${dataNotCollectedSection()}
     ${accessibilitySection()}
+    ${tamperProtectionSection()}
     ${billingSection()}
     ${childrenSection()}
     ${sharingSection()}
@@ -60,6 +61,7 @@ function privacyToc() {
     ["Data Stored", "#data-stored"],
     ["Data Not Collected", "#data-not-collected"],
     ["AccessibilityService Use", "#accessibility"],
+    ["Device Admin", "#tamper-protection"],
     ["Billing", "#billing"],
     ["Contact", "#contact"],
   ];
@@ -115,9 +117,15 @@ function dataNotCollectedSection() {
 
 function accessibilitySection() {
   return `<h2 id="accessibility">AccessibilityService Use</h2>
-<p>${siteConfig.appName} uses Android AccessibilityService to detect when a supported short-video surface is open and to show a blocking overlay when protection is enabled.</p>
+<p>${siteConfig.appName} uses Android AccessibilityService to detect when YouTube Shorts, TikTok short-video feed, Instagram Reels, or Facebook Reels is open and to show a blocking overlay when protection is enabled.</p>
 <p>Android does not provide a normal app API for detecting these surfaces inside other apps. AccessibilityService allows local inspection of supported app UI state so the blocker can work.</p>
 <p>Accessibility processing runs locally on the device. The service is not used to read private messages, collect child activity, record the screen, capture audio, or send Accessibility content to a server.</p>`;
+}
+
+function tamperProtectionSection() {
+  return `<h2 id="tamper-protection">Device Admin Tamper Protection</h2>
+<p>Optional Device Admin tamper protection can make ${siteConfig.appName} harder to uninstall while it is active. It is enabled only after a separate parent-facing disclosure and the Android Device Admin confirmation screen.</p>
+<p>Device Admin tamper protection does not replace AccessibilityService, block Android Settings, wipe the device, lock the screen, reset passwords, change hidden system settings, or manage other apps. If someone tries to disable Device Admin status, Android shows a warning first.</p>`;
 }
 
 function billingSection() {
@@ -154,13 +162,13 @@ function securitySection() {
 
 function rightsSection() {
   return `<h2>Your Choices And Rights</h2>
-<p>You can remove local app data by clearing the app data in Android settings or uninstalling the app. You can contact the publisher about privacy, support, or billing entitlement records at <a href="mailto:${siteConfig.contactEmail}">${siteConfig.contactEmail}</a>.</p>
+<p>You can remove local app data by clearing the app data in Android settings or uninstalling the app. If Device Admin tamper protection is active, turn it off first in Android settings. You can contact the publisher about privacy, support, or billing entitlement records at <a href="mailto:${siteConfig.contactEmail}">${siteConfig.contactEmail}</a>.</p>
 <p>Google Play purchases, cancellations, and refunds are handled through Google Play. Use Google Play subscription management for subscription changes where applicable.</p>`;
 }
 
 function limitsSection() {
   return `<h2>Important Limitations</h2>
-<p>Blocking works only when Protection is ON, the parent setup is complete, and Android Accessibility Service is active. If Accessibility permission is turned off or the app is removed, blocking stops.</p>
+<p>Blocking works only when Protection is ON, the parent setup is complete, and Android Accessibility Service is active. Optional Device Admin tamper protection can make uninstall harder while active, but if Accessibility permission is turned off, blocking stops.</p>
 <p>The app focuses on supported short-video surfaces, not every video or every app.</p>`;
 }
 

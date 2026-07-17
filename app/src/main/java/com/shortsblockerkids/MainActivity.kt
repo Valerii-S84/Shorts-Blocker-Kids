@@ -23,6 +23,7 @@ import com.shortsblockerkids.core.billing.HttpBillingBackendClient
 import com.shortsblockerkids.core.billing.PlayBillingRepository
 import com.shortsblockerkids.core.storage.AppSettings
 import com.shortsblockerkids.core.storage.SettingsRepository
+import com.shortsblockerkids.core.tamper.TamperProtectionStatus
 import com.shortsblockerkids.feature.blocking.TemporaryAllowCompletion
 import com.shortsblockerkids.feature.blocking.TemporaryAllowFlowController
 import com.shortsblockerkids.feature.blocking.TemporaryAllowScreen
@@ -34,10 +35,12 @@ import com.shortsblockerkids.feature.onboarding.AccessibilityPermissionFlow
 import com.shortsblockerkids.feature.onboarding.AccessibilitySettingsRequest
 import com.shortsblockerkids.feature.onboarding.AccessibilitySetupDestination
 import com.shortsblockerkids.feature.onboarding.EnableAccessibilityScreen
+import com.shortsblockerkids.feature.onboarding.ProtectedAppsScreen
 import com.shortsblockerkids.feature.onboarding.WelcomeScreen
 import com.shortsblockerkids.feature.pin.PinEntryScreen
 import com.shortsblockerkids.feature.pin.PinSetupScreen
 import com.shortsblockerkids.feature.privacy.PrivacyPolicyScreen
+import com.shortsblockerkids.feature.tamper.TamperProtectionDisclosureScreen
 import com.shortsblockerkids.ui.theme.ShortsBlockerKidsTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -53,6 +56,7 @@ class MainActivity : ComponentActivity() {
     private val activityScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val settingsState = mutableStateOf(AppSettings())
     private val accessibilityEnabledState = mutableStateOf(false)
+    private val tamperProtectionEnabledState = mutableStateOf(false)
     private val temporaryAllowRequestState = mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -86,6 +90,7 @@ class MainActivity : ComponentActivity() {
                     ShortsBlockerKidsApp(
                         settings = settingsState.value,
                         isAccessibilityServiceEnabled = accessibilityEnabledState.value,
+                        isTamperProtectionEnabled = tamperProtectionEnabledState.value,
                         isTemporaryAllowRequested = temporaryAllowRequestState.value,
                         billingUiState = billingUiState,
                         repository = settingsRepository,
@@ -99,6 +104,7 @@ class MainActivity : ComponentActivity() {
                             billingRepository.openManageSubscription(this@MainActivity)
                         },
                         onOpenAccessibilitySettings = ::openAccessibilitySettings,
+                        onOpenTamperProtectionSettings = ::openTamperProtectionSettings,
                         onStateChanged = ::refreshState,
                         onTemporaryAllowFlowClosed = ::closeTemporaryAllowRequest,
                         onTemporaryAllowRequestConsumed = {
@@ -161,10 +167,15 @@ class MainActivity : ComponentActivity() {
 
     private fun refreshState() {
         accessibilityEnabledState.value = AccessibilityServiceStatus.isEnabled(this)
+        tamperProtectionEnabledState.value = TamperProtectionStatus.isActive(this)
     }
 
     private fun openAccessibilitySettings() {
         startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+    }
+
+    private fun openTamperProtectionSettings() {
+        startActivity(TamperProtectionStatus.enableIntent(this))
     }
 
     private fun closeTemporaryAllowRequest() {
@@ -182,6 +193,7 @@ class MainActivity : ComponentActivity() {
 private fun ShortsBlockerKidsApp(
     settings: AppSettings,
     isAccessibilityServiceEnabled: Boolean,
+    isTamperProtectionEnabled: Boolean,
     isTemporaryAllowRequested: Boolean,
     billingUiState: BillingUiState,
     repository: SettingsRepository,
@@ -189,6 +201,7 @@ private fun ShortsBlockerKidsApp(
     onRestorePurchases: () -> Unit,
     onManageSubscription: () -> Unit,
     onOpenAccessibilitySettings: () -> Unit,
+    onOpenTamperProtectionSettings: () -> Unit,
     onStateChanged: () -> Unit,
     onTemporaryAllowFlowClosed: () -> Unit,
     onTemporaryAllowRequestConsumed: () -> Unit,
@@ -288,6 +301,20 @@ private fun ShortsBlockerKidsApp(
                     },
                 )
 
+            AppScreen.ProtectedApps ->
+                ProtectedAppsScreen(
+                    settings = settings,
+                    onPlatformEnabledChanged = { platformId, enabled ->
+                        coroutineScope.launch {
+                            repository.setPlatformEnabled(platformId, enabled)
+                            onStateChanged()
+                        }
+                    },
+                    onContinue = {
+                        screen = AppScreen.AccessibilityDisclosure
+                    },
+                )
+
             AppScreen.AccessibilityDisclosure ->
                 AccessibilityDisclosureScreen(
                     onAccept = {
@@ -330,6 +357,7 @@ private fun ShortsBlockerKidsApp(
                 DashboardScreen(
                     settings = settings,
                     isAccessibilityServiceEnabled = isAccessibilityServiceEnabled,
+                    isTamperProtectionEnabled = isTamperProtectionEnabled,
                     billingUiState = billingUiState,
                     onProtectionChanged = { enabled ->
                         if (enabled) {
@@ -375,6 +403,9 @@ private fun ShortsBlockerKidsApp(
                     onOpenPrivacyPolicy = {
                         screen = AppScreen.PrivacyPolicy
                     },
+                    onOpenTamperProtection = {
+                        screen = AppScreen.TamperProtectionDisclosure
+                    },
                     onOpenDebugQa =
                         if (BuildConfig.ACCESSIBILITY_DEBUG_TOOLS_ENABLED) {
                             { screen = AppScreen.DetectorQa }
@@ -386,6 +417,16 @@ private fun ShortsBlockerKidsApp(
             AppScreen.PrivacyPolicy ->
                 PrivacyPolicyScreen(
                     onBack = {
+                        screen = AppScreen.Dashboard
+                    },
+                )
+
+            AppScreen.TamperProtectionDisclosure ->
+                TamperProtectionDisclosureScreen(
+                    isTamperProtectionEnabled = isTamperProtectionEnabled,
+                    onEnableTamperProtection = onOpenTamperProtectionSettings,
+                    onBack = {
+                        onStateChanged()
                         screen = AppScreen.Dashboard
                     },
                 )
@@ -446,6 +487,7 @@ private fun unlockedDestination(
 
 private fun AccessibilitySetupDestination.toAppScreen(): AppScreen =
     when (this) {
+        AccessibilitySetupDestination.ProtectedApps -> AppScreen.ProtectedApps
         AccessibilitySetupDestination.Disclosure -> AppScreen.AccessibilityDisclosure
         AccessibilitySetupDestination.EnableAccessibility -> AppScreen.EnableAccessibility
         AccessibilitySetupDestination.Dashboard -> AppScreen.Dashboard
@@ -472,10 +514,12 @@ private enum class AppScreen {
     Welcome,
     PinSetup,
     PinEntry,
+    ProtectedApps,
     AccessibilityDisclosure,
     EnableAccessibility,
     Dashboard,
     PrivacyPolicy,
+    TamperProtectionDisclosure,
     TemporaryAllow,
     DetectorQa,
 }

@@ -1,8 +1,9 @@
 # Short Video Blocker Detection Strategy
 
-Status: Active app-side strategy. YouTube Shorts, TikTok primary package,
+Status: Active app-side strategy. YouTube Shorts, TikTok short-video feed,
 Instagram Reels, and Facebook Reels detectors are implemented with fixture unit
-tests. Real-device QA is still required before production readiness is claimed.
+tests and are in the protected-platform release scope. Real-device QA evidence
+is still required before Play submission.
 
 ## Detection Principles
 
@@ -24,14 +25,14 @@ Primary target package names:
 | Platform | Package name | Blocking target |
 |---|---|---|
 | YouTube | `com.google.android.youtube` | YouTube Shorts |
-| TikTok | `com.zhiliaoapp.musically` | TikTok primary short-video feed |
+| TikTok | `com.zhiliaoapp.musically` | TikTok short-video feed |
 | TikTok regional variant | `com.ss.android.ugc.trill` | Not enabled; requires separate regional QA |
 | Instagram | `com.instagram.android` | Instagram Reels |
 | Facebook | `com.facebook.katana` | Facebook Reels |
 | Facebook Lite | `com.facebook.lite` | Not enabled; requires separate Lite QA |
 
-The initial production target should focus on the primary package names. Any
-regional or Lite package must be separately tested before being enabled.
+The protected release target focuses on the primary package names. Any regional
+or Lite package must be separately tested before being enabled.
 
 ## Event Strategy
 

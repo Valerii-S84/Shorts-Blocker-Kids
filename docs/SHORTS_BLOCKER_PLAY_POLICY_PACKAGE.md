@@ -1,8 +1,9 @@
 # Shorts Blocker Kids Play Policy Package
 
 Status: Partial. Repository-side policy package and static website source are
-prepared for `shortsblockerkids.de`; external Play Console submission, live
-Privacy Policy URL verification, and demo video URL are pending.
+prepared for `shortsblockerkids.de`; live Privacy Policy URL verification
+passed on July 17, 2026. External Play Console submission and demo video URL
+are pending.
 
 Current Play Console submission source:
 
@@ -16,11 +17,15 @@ This package is for the current Shorts Blocker Kids build:
 
 - Android app for blocking supported short-video surfaces.
 - Local-only rules and parent PIN.
-- Android Accessibility Service detects YouTube Shorts, TikTok, Instagram
-  Reels, and Facebook Reels when the corresponding supported app is active.
+- Android Accessibility Service detects YouTube Shorts, TikTok short-video
+  feed, Instagram Reels, and Facebook Reels when the corresponding supported
+  app is active.
 - Blocking overlay appears when a supported short-video surface is detected and
   protection is enabled.
 - Parent PIN can temporarily allow access for 5, 10, or 15 minutes.
+- Optional Device Admin tamper protection can make uninstall harder while admin
+  is active. It is disclosed separately, does not replace Accessibility Service,
+  and does not block Settings or perform hidden system actions.
 - No account system.
 - Billing backend only for Google Play purchase verification and RTDN.
 - Production backend origin: `https://billing.shortsblockerkids.de`.
@@ -48,7 +53,9 @@ This package is for the current Shorts Blocker Kids build:
 - Google Play AccessibilityService API policy:
   <https://support.google.com/googleplay/android-developer/answer/10964491>
 - Google Play Permissions and APIs that Access Sensitive Information:
-  <https://support.google.com/googleplay/android-developer/answer/9888170>
+  <https://support.google.com/googleplay/android-developer/answer/16558241>
+- Android DeviceAdminReceiver documentation:
+  <https://developer.android.com/reference/android/app/admin/DeviceAdminReceiver>
 - Google Play User Data policy:
   <https://support.google.com/googleplay/android-developer/answer/9888076>
 - Google Play Data safety guidance:
@@ -71,6 +78,9 @@ Policy interpretation for this app:
   permissions, and data handling.
 - Any paid Play-distributed access to app functionality must use Google Play
   Billing.
+- Device Admin tamper protection must remain an explicit parent/guardian flow
+  and must not be used to hide settings access or perform undisclosed system
+  actions.
 
 ## Play Accessibility Declaration Draft
 
@@ -85,11 +95,11 @@ Core feature:
 ```text
 Shorts Blocker Kids is a parental digital wellbeing app. It uses Android
 AccessibilityService to detect supported short-video surfaces on the child's
-phone. YouTube Shorts is supported. TikTok main, Instagram Reels, and Facebook
-Reels have code-level detectors and still need real-device QA. TikTok regional
-package com.ss.android.ugc.trill and Facebook Lite are not supported. When a
-supported short-video surface is detected and protection is enabled, the app
-shows a blocking overlay. A parent PIN can temporarily allow access.
+phone: YouTube Shorts, TikTok short-video feed, Instagram Reels, and Facebook
+Reels. TikTok regional package com.ss.android.ugc.trill and Facebook Lite are
+not supported. When a supported short-video surface is detected and protection
+is enabled, the app shows a blocking overlay. A parent PIN can temporarily
+allow access.
 ```
 
 Why AccessibilityService is needed:
@@ -122,25 +132,29 @@ designed as a disability support tool and should not set isAccessibilityTool=tru
 
 1. Open Shorts Blocker Kids from the launcher.
 2. Create a parent PIN.
-3. Show the full Accessibility disclosure.
-4. Tap `Not now` and show that Android Accessibility settings do not open.
-5. Open setup again and show the disclosure again.
-6. Tap `I agree and continue`.
-7. Tap `Open Settings`.
-8. Enable `Shorts Blocker Kids Protection` in Android Accessibility settings.
-9. Return to the app and show protection status.
-10. Open a normal YouTube video and show that it is not blocked.
-11. Open YouTube Shorts and show that the blocking overlay appears.
-12. Run and record the TikTok main, Instagram Reels, and Facebook Reels
-    real-device QA scenarios before claiming full support for those surfaces.
-13. Tap `Exit to phone home` and show that the device returns to the home
+3. Select protected apps: YouTube, TikTok, Instagram, and Facebook.
+4. Show the full Accessibility disclosure.
+5. Tap `Not now` and show that Android Accessibility settings do not open.
+6. Open setup again and show the disclosure again.
+7. Tap `I agree and continue`.
+8. Tap `Open Settings`.
+9. Enable `Shorts Blocker Kids Protection` in Android Accessibility settings.
+10. Return to the app and show the green setup checklist and protection status.
+11. Open a normal YouTube video and show that it is not blocked.
+12. Open YouTube Shorts and show that the blocking overlay appears.
+13. Open TikTok short-video feed and show that the blocking overlay appears.
+14. Open Instagram Reels and show that the blocking overlay appears.
+15. Open Facebook Reels and show that the blocking overlay appears.
+16. Tap `Exit to phone home` and show that the device returns to the home
     screen.
-14. Open a supported short-video surface again.
-15. Tap `Enter PIN`.
-16. Enter the parent PIN.
-17. Select 5 minutes and show temporary allow behavior.
-18. Repeat or briefly show the 10 and 15 minute options.
-19. End by showing the dashboard status and the honest limitation text.
+17. Open a supported short-video surface again.
+18. Tap `Enter PIN`.
+19. Enter the parent PIN.
+20. Select 5 minutes and show temporary allow behavior.
+21. Repeat or briefly show the 10 and 15 minute options.
+22. Open the Device Admin tamper protection screen, show the separate
+    disclosure, and show the Android Device Admin confirmation screen.
+23. End by showing the dashboard status and the honest limitation text.
 
 Add captions if the system Accessibility settings flow or overlay behavior is
 not obvious in the recording.
@@ -212,7 +226,7 @@ Draft text:
 ```text
 # Privacy Policy
 
-Effective date: May 24, 2026
+Effective date: July 17, 2026
 
 Public website: https://shortsblockerkids.de
 Privacy Policy URL: https://shortsblockerkids.de/privacy
@@ -228,12 +242,13 @@ billing backend limited to Google Play purchase verification and entitlement
 status at https://billing.shortsblockerkids.de.
 
 Shorts Blocker Kids uses Android AccessibilityService to detect when supported
-short-video surfaces are open. YouTube Shorts is supported. TikTok main,
-Instagram Reels, and Facebook Reels have code-level detectors and still need
-real-device QA. TikTok regional package com.ss.android.ugc.trill and Facebook
-Lite are not supported. When a supported short-video surface is detected and
-protection is enabled, the app shows a blocking overlay. A parent PIN can
-temporarily allow access.
+short-video surfaces are open: YouTube Shorts, TikTok short-video feed,
+Instagram Reels, and Facebook Reels. TikTok regional package
+com.ss.android.ugc.trill and Facebook Lite are not supported. When a supported
+short-video surface is detected and protection is enabled, the app shows a
+blocking overlay. A parent PIN can temporarily allow access. Optional Device
+Admin tamper protection can make uninstall harder while active and is disclosed
+separately to the parent.
 
 The app stores protection settings and parent PIN hash metadata locally on the
 device. The parent PIN is not stored as plain text.
@@ -254,8 +269,9 @@ records, processed RTDN message IDs, and a hashed purchase token.
 Blocking works only when Protection is ON and Android Accessibility Service is
 active. If that permission is turned off or the app is removed, blocking stops.
 
-To remove local app data, uninstall Shorts Blocker Kids or clear the app data in
-Android settings.
+To remove local app data, disable Device Admin tamper protection first if it is
+active, then uninstall Shorts Blocker Kids or clear the app data in Android
+settings.
 
 Privacy contact: svalerii535@gmail.com
 Support contact: svalerii535@gmail.com
@@ -278,19 +294,23 @@ Shorts Blocker Kids helps parents block supported short-video surfaces on a
 child's Android phone.
 
 Set a parent PIN, enable protection, and turn on the Android Accessibility
-Service. YouTube Shorts is supported. TikTok main, Instagram Reels, and
-Facebook Reels have code-level detectors and still need real-device QA. TikTok
-regional package com.ss.android.ugc.trill and Facebook Lite are not supported.
-When a supported short-video surface is detected, Shorts Blocker Kids shows a
-blocking screen. A parent can temporarily allow access with the PIN.
+Service. Select protected apps: YouTube, TikTok, Instagram, and Facebook.
+Shorts Blocker Kids protects YouTube Shorts, TikTok short-video feed,
+Instagram Reels, and Facebook Reels. TikTok regional package
+com.ss.android.ugc.trill and Facebook Lite are not supported. When a supported
+short-video surface is detected, Shorts Blocker Kids shows a blocking screen.
+A parent can temporarily allow access with the PIN. Optional Device Admin
+tamper protection can make uninstall harder while active after a separate
+parent-facing disclosure.
 
 What the app does:
-- blocks YouTube Shorts;
-- includes code-level detectors for TikTok main, Instagram Reels, and Facebook
-  Reels that still require real-device QA before full support is claimed;
+- blocks YouTube Shorts, TikTok short-video feed, Instagram Reels, and Facebook
+  Reels;
 - keeps normal YouTube videos and non-target app screens available;
 - uses a parent PIN for protection changes and temporary allow;
 - stores rules locally on the phone.
+- optionally uses transparent Device Admin tamper protection to make uninstall
+  harder while admin is active.
 
 Privacy:
 - no account;
@@ -317,23 +337,27 @@ To test:
 1. Install the app.
 2. Open Shorts Blocker Kids.
 3. Create a parent PIN.
-4. Review the Accessibility disclosure.
-5. Tap I agree and continue.
-6. Open Android Accessibility settings from the app.
-7. Enable Shorts Blocker Kids Protection.
-8. Return to the app and confirm Protection is ON.
-9. Open YouTube and play a normal video; it should not be blocked.
-10. Open YouTube Shorts; the blocking overlay should appear.
-11. For TikTok main, Instagram Reels, and Facebook Reels, run the real-device
-    QA scenarios before claiming full support.
-12. Tap Exit to phone home to leave the blocked surface.
-13. Open a supported short-video surface again, tap Enter PIN, enter the parent
+4. Select protected apps: YouTube, TikTok, Instagram, and Facebook.
+5. Review the Accessibility disclosure.
+6. Tap I agree and continue.
+7. Open Android Accessibility settings from the app.
+8. Enable Shorts Blocker Kids Protection.
+9. Return to the app and confirm Protection is ON.
+10. Open YouTube and play a normal video; it should not be blocked.
+11. Open YouTube Shorts; the blocking overlay should appear.
+12. Open TikTok short-video feed, Instagram Reels, and Facebook Reels; the
+    blocking overlay should appear for each protected surface.
+13. Tap Exit to phone home to leave the blocked surface.
+14. Open a supported short-video surface again, tap Enter PIN, enter the parent
     PIN, and choose 5, 10, or 15 minutes for temporary allow.
+15. Optionally open Tamper Protection, read the separate disclosure, and enable
+    Device Admin from the Android confirmation screen.
 ```
 
 ## External Submission Blockers
 
-- Publish and verify `https://shortsblockerkids.de/privacy`.
+- Submit the verified `https://shortsblockerkids.de/privacy` URL in Play
+  Console.
 - Use the same public privacy/support contact: `svalerii535@gmail.com`.
 - Play Console developer / publisher name for the current personal developer
   release: `Valerii Serputko`.

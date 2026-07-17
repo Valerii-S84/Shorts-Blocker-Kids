@@ -1,10 +1,11 @@
 # Shorts Blocker Kids Play Console Preparation Package
 
-Status: Prepared locally for `shortsblockerkids.de`. External Play Console entry,
-Accessibility demo video URL, live DNS/TLS verification, and Play Console
+Status: Prepared locally for `shortsblockerkids.de`. Public HTTPS Privacy,
+Support, Terms, root, and backend health URLs were verified on July 17, 2026.
+External Play Console entry, Accessibility demo video URL, and Play Console
 submission remain pending.
 
-Date: May 29, 2026
+Date: July 17, 2026
 
 ## Current App Facts
 
@@ -13,6 +14,10 @@ App name: Shorts Blocker Kids
 Package name: com.shortsblockerkids
 Version name: 0.1.0
 Version code: 1
+Upload AAB: pending rebuild from reviewed source
+Upload AAB size: pending
+Upload AAB SHA-256: pending
+Upload source commit: pending
 Min SDK: 26
 Target SDK: 36
 Category candidate: Parenting
@@ -21,7 +26,7 @@ Subscription product ID: shorts_blocker_kids_monthly
 Account system: none
 Ads: none
 Analytics: none
-Release AAB status: build with SBK_BILLING_BACKEND_BASE_URL=https://billing.shortsblockerkids.de
+Release AAB status: stale local artifact must not be uploaded; rebuild with SBK_BILLING_BACKEND_BASE_URL=https://billing.shortsblockerkids.de
 Public website URL: https://shortsblockerkids.de
 Privacy Policy URL: https://shortsblockerkids.de/privacy
 Support URL: https://shortsblockerkids.de/support
@@ -35,13 +40,17 @@ Current behavior to keep consistent across every Play Console answer:
 
 - The app helps parents block supported short-video surfaces on a child's
   Android phone.
-- YouTube Shorts is supported.
-- TikTok main, Instagram Reels, and Facebook Reels have code-level detectors
-  and still need full real-device QA before final rollout claims.
+- YouTube Shorts is supported and has prior real-device smoke evidence.
+- TikTok short-video feed, Instagram Reels, and Facebook Reels are included with
+  detector/unit coverage and require real-device QA before they are
+  production-verified.
 - TikTok regional package `com.ss.android.ugc.trill`, Facebook Lite,
   Instagram Lite, YouTube TV, and YouTube Music are not supported.
 - Protection depends on Android Accessibility Service and the app's Protection
   setting being enabled.
+- Optional Device Admin tamper protection can make uninstall harder while admin
+  is active. It is disclosed separately, does not replace Accessibility Service,
+  and does not block Settings or perform hidden system actions.
 - Rules and PIN hash metadata are stored locally on the device.
 - The app does not collect child activity, watch history, video titles, URLs,
   account names, comments, messages, audio, screen recordings, location,
@@ -84,22 +93,33 @@ Shorts Blocker Kids helps parents block supported short-video surfaces on a
 child's Android phone.
 
 Set a parent PIN, enable protection, and turn on Shorts Blocker Kids
-Protection in Android Accessibility settings. When a supported short-video
-surface is detected, the app shows a blocking screen. A parent can temporarily
-allow access with the PIN.
+Protection in Android Accessibility settings. Select protected apps: YouTube,
+TikTok, Instagram, and Facebook. When a supported short-video surface is
+detected, the app shows a blocking screen. A parent can temporarily allow
+access with the PIN. Optional Device Admin tamper protection can make uninstall
+harder while active after a separate parent-facing disclosure.
 
-Current support:
-- YouTube Shorts is supported.
-- TikTok main, Instagram Reels, and Facebook Reels are implemented in code and
-  must pass final real-device QA before broad rollout claims.
+Current app-side support:
+- YouTube Shorts is supported and has prior real-device smoke evidence.
+- TikTok short-video feed, Instagram Reels, and Facebook Reels are included in
+  this build with detector/unit coverage and must keep the real-device QA
+  caveat until the full device matrix records evidence.
 - TikTok regional, Facebook Lite, Instagram Lite, YouTube TV, and YouTube Music
   are not supported.
+
+Real-device QA caveat:
+Do not submit production Play listing copy that presents TikTok, Instagram
+Reels, or Facebook Reels as fully production-verified until the QA matrix in
+`docs/SHORTS_BLOCKER_REAL_DEVICE_QA_CHECKLIST.md` has recorded passing evidence.
+Internal testers should verify those surfaces during Play testing.
 
 What the app does:
 - blocks supported short-video surfaces when Protection is ON;
 - keeps normal YouTube videos and non-target app screens available;
 - uses a parent PIN for protection changes and temporary allow;
 - stores protection settings locally on the phone;
+- optionally uses transparent Device Admin tamper protection to make uninstall
+  harder while admin is active;
 - uses Google Play Billing for the subscription.
 
 Privacy:
@@ -124,10 +144,11 @@ production-configured AAB is built:
 
 ```text
 Initial Play testing release for Shorts Blocker Kids. Includes parent PIN
-setup, Accessibility disclosure and consent, YouTube Shorts blocking, temporary
-allow options, Google Play Billing integration, and production billing backend
-readiness gates. TikTok main, Instagram Reels, and Facebook Reels remain in
-real-device QA before final rollout claims.
+setup, protected app selection for YouTube, TikTok, Instagram, and Facebook,
+Accessibility disclosure and consent, blocking for YouTube Shorts, TikTok
+short-video feed, Instagram Reels, and Facebook Reels, temporary allow options,
+optional Device Admin tamper protection, Google Play Billing integration, and
+production billing backend readiness gates.
 ```
 
 Do not upload release notes that claim the backend is live until DNS, TLS,
@@ -167,9 +188,9 @@ Website readiness:
   `cd website && npm run check && npm run build && npm run smoke`;
 - deployment instructions:
   `docs/SHORTS_BLOCKER_WEBSITE_DEPLOYMENT.md`;
-- live HTTPS Privacy Policy page: required before Play submission;
-- support page: required for the current support URL;
-- root page: required for public trust and Play review context.
+- live HTTPS Privacy Policy page: verified on July 17, 2026;
+- support page: verified on July 17, 2026;
+- root page: verified on July 17, 2026.
 
 Required live URLs before Play submission:
 
@@ -177,6 +198,16 @@ Required live URLs before Play submission:
 https://shortsblockerkids.de
 https://shortsblockerkids.de/privacy
 https://shortsblockerkids.de/support
+```
+
+Live URL verification on July 17, 2026:
+
+```text
+https://shortsblockerkids.de/         200
+https://shortsblockerkids.de/privacy  200
+https://shortsblockerkids.de/support  200
+https://shortsblockerkids.de/terms    200
+https://billing.shortsblockerkids.de/health  200 {"status":"ok"}
 ```
 
 The website CTA must stay `Coming soon on Google Play` until a live Google Play
@@ -268,10 +299,9 @@ Core feature that requires AccessibilityService:
 ```text
 Shorts Blocker Kids uses Android AccessibilityService to detect supported
 short-video surfaces on a child's Android phone when Protection is enabled.
-YouTube Shorts is supported. TikTok main, Instagram Reels, and Facebook Reels
-have code-level detectors and still need full real-device QA before final
-rollout claims. When a supported short-video surface is detected, the app shows
-a blocking overlay. A parent PIN can temporarily allow access.
+The protected surfaces are YouTube Shorts, TikTok short-video feed, Instagram
+Reels, and Facebook Reels. When a supported short-video surface is detected,
+the app shows a blocking overlay. A parent PIN can temporarily allow access.
 ```
 
 Why AccessibilityService is needed:
@@ -303,15 +333,20 @@ Demo video must show:
 
 1. app launch;
 2. parent PIN setup;
-3. full Accessibility disclosure;
-4. decline path where Android Accessibility settings do not open;
-5. affirmative consent path;
-6. enabling `Shorts Blocker Kids Protection` in Android Accessibility settings;
-7. dashboard status after enablement;
-8. normal YouTube video not blocked;
-9. YouTube Shorts blocked;
-10. exit to phone home;
-11. PIN temporary allow flow.
+3. protected app selection for YouTube, TikTok, Instagram, and Facebook;
+4. full Accessibility disclosure;
+5. decline path where Android Accessibility settings do not open;
+6. affirmative consent path;
+7. enabling `Shorts Blocker Kids Protection` in Android Accessibility settings;
+8. green dashboard checklist after enablement;
+9. normal YouTube video not blocked;
+10. YouTube Shorts blocked;
+11. TikTok short-video feed blocked;
+12. Instagram Reels blocked;
+13. Facebook Reels blocked;
+14. exit to phone home;
+15. PIN temporary allow flow;
+16. optional Device Admin tamper protection disclosure and Android confirmation.
 
 ## Content Rating Notes
 
@@ -381,17 +416,23 @@ To review the app:
 1. Install Shorts Blocker Kids from the Play testing track.
 2. Open the app.
 3. Create any 4-digit parent PIN.
-4. Read the Accessibility disclosure.
-5. Tap Not now once to verify Android Accessibility settings do not open.
-6. Start setup again, tap I agree and continue, then open Android
+4. Select protected apps: YouTube, TikTok, Instagram, and Facebook.
+5. Read the Accessibility disclosure.
+6. Tap Not now once to verify Android Accessibility settings do not open.
+7. Start setup again, tap I agree and continue, then open Android
    Accessibility settings.
-7. Enable Shorts Blocker Kids Protection.
-8. Return to the app and confirm protection status is active.
-9. Open YouTube and play a normal video; it should not be blocked.
-10. Open YouTube Shorts; the blocking overlay should appear.
-11. Tap Exit to phone home.
-12. Open YouTube Shorts again, tap Enter PIN, enter the PIN created in step 3,
+8. Enable Shorts Blocker Kids Protection.
+9. Return to the app and confirm protection status is active.
+10. Open YouTube and play a normal video; it should not be blocked.
+11. Open YouTube Shorts; the blocking overlay should appear.
+12. Open TikTok short-video feed, Instagram Reels, and Facebook Reels; the
+    blocking overlay should appear for each protected surface.
+13. Tap Exit to phone home.
+14. Open a protected short-video surface again, tap Enter PIN, enter the PIN
+    created in step 3,
     and choose a 5, 10, or 15 minute temporary allow option.
+15. Optionally open Tamper Protection, read the separate disclosure, and enable
+    Device Admin from the Android confirmation screen.
 
 The app has no username/password login. Subscription access is through Google
 Play Billing. If review needs access behind the subscription paywall, use a
@@ -422,7 +463,8 @@ Before internal release:
   hash and backend URL origin.
 - Confirm backend `/health`, migrations, backup/restore, RTDN readiness, and
   rollback evidence are current.
-- Publish and verify Privacy Policy at `https://shortsblockerkids.de/privacy`.
+- Re-check the verified Privacy Policy URL
+  `https://shortsblockerkids.de/privacy` before final Play submission.
 - Upload Accessibility demo video and store the URL.
 - Complete store listing draft from this package.
 - Complete App content drafts: Data Safety, Accessibility declaration, Target
@@ -452,7 +494,11 @@ Internal test execution:
 - Accessibility disclosure decline and accept paths.
 - YouTube normal video not blocked.
 - YouTube Shorts blocked.
+- TikTok short-video feed blocked.
+- Instagram Reels blocked.
+- Facebook Reels blocked.
 - Parent PIN temporary allow 5, 10, and 15 minutes.
+- Optional Device Admin tamper protection disclosure and enable flow.
 
 Evidence to record:
 
@@ -513,23 +559,20 @@ Minimum Play Console readiness evidence:
 - Android 12, 13, 14, 15, and current target Android version where available;
 - YouTube Shorts positive blocking evidence;
 - normal YouTube video non-blocking evidence;
-- TikTok main, Instagram Reels, and Facebook Reels retested before claiming
-  final support for those surfaces;
+- TikTok short-video feed, Instagram Reels, and Facebook Reels positive
+  blocking evidence;
 - unsupported packages remain not claimed;
 - Accessibility Service disable stops blocking and dashboard reports inactive
   protection;
+- Device Admin disable warning appears when admin is turned off;
 - no duplicate overlay, flicker, or Back/Home loop;
 - Billing/backend scenarios run on the Play-installed internal testing build.
 
 ## Submission Blockers
 
-- Live DNS/TLS/backend health for `https://billing.shortsblockerkids.de` are not yet
-  verified.
 - A Play-uploaded release AAB with
   `SBK_BILLING_BACKEND_BASE_URL=https://billing.shortsblockerkids.de` is not yet
   accepted by Play Console.
-- `https://shortsblockerkids.de/privacy` must be published and verified live before
-  submission.
 - Accessibility demo video URL is TBD.
 - Play Console Data Safety form is not submitted.
 - Play Console Accessibility declaration is not submitted.

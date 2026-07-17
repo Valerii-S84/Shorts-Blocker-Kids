@@ -38,7 +38,7 @@ const faqItems = [
   {
     question: "Can my child disable it?",
     answer:
-      "Android allows a device user to turn off Accessibility permission or uninstall apps. Shorts Blocker Kids uses a parent PIN for in-app settings and temporary allow, but it does not use aggressive anti-uninstall behavior.",
+      "Android allows a device user to turn off Accessibility permission. Shorts Blocker Kids uses a parent PIN for in-app settings and temporary allow. Optional Device Admin tamper protection can make uninstall harder while it is active, after a separate parent-facing disclosure.",
   },
   {
     question: "Does it require internet?",
@@ -208,8 +208,9 @@ function howItWorksSection() {
   const steps = [
     ["Install the app", "Google Play launch is being prepared. The public install path will stay with Google Play."],
     ["Create the parent PIN", "Set the PIN used for protected settings and temporary allow."],
-    ["Enable Accessibility permission", "Review the permission disclosure and enable Shorts Blocker Kids Protection in Android settings."],
     ["Choose protected apps", "Turn on protection for YouTube Shorts, TikTok, Instagram Reels, and Facebook Reels."],
+    ["Enable Accessibility permission", "Review the permission disclosure and enable Shorts Blocker Kids Protection in Android settings."],
+    ["Optional tamper protection", "Enable Device Admin tamper protection after its separate parent-facing disclosure."],
     ["Protection starts", "When a supported short-video surface opens, the blocker appears and asks for the parent PIN."],
   ];
 

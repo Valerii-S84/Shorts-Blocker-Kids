@@ -11,13 +11,24 @@ class ReleaseCopyInvariantTest {
         val readme = repoFile("README.md").readText()
 
         assertTrue(readme.contains("YouTube Shorts | supported"))
-        assertTrue(readme.contains("TikTok main `com.zhiliaoapp.musically` | supported by code; needs real-device QA"))
-        assertTrue(readme.contains("TikTok regional `com.ss.android.ugc.trill` | not supported"))
+        assertTrue(
+            readme.contains(
+                "TikTok short-video feed `com.zhiliaoapp.musically` | " +
+                    "supported by code; needs real-device QA",
+            ),
+        )
+        assertTrue(readme.contains("Instagram Reels | supported by code; needs real-device QA"))
+        assertTrue(readme.contains("Facebook Reels | supported by code; needs real-device QA"))
+        assertTrue(
+            readme.contains("TikTok regional `com.ss.android.ugc.trill` | not supported"),
+        )
         assertTrue(readme.contains("Facebook Lite `com.facebook.lite` | not supported"))
+        assertTrue(readme.contains("Optional Device Admin tamper protection"))
+        assertFalse(readme.contains("YouTube-only"))
     }
 
     @Test
-    fun inAppPrivacyAndDisclosureCopyDoNotOverclaimSupport() {
+    fun inAppPrivacyAndDisclosureCopyMatchFullPlatformScope() {
         val disclosure =
             repoFile(
                 "app/src/main/java/com/shortsblockerkids/feature/onboarding/AccessibilityDisclosureScreen.kt",
@@ -27,13 +38,18 @@ class ReleaseCopyInvariantTest {
                 "app/src/main/java/com/shortsblockerkids/feature/privacy/PrivacyPolicyScreen.kt",
             ).readText()
 
-        listOf(disclosure, privacy).forEach { text ->
-            assertTrue(text.contains("real-device"))
-            assertTrue(text.contains("QA"))
+        listOf(disclosure, privacy).map(::normalizedText).forEach { text ->
+            assertTrue(text.contains("YouTube Shorts"))
+            assertTrue(text.contains("TikTok short-video feed"))
+            assertTrue(text.contains("Instagram Reels"))
+            assertTrue(text.contains("Facebook Reels"))
             assertTrue(text.contains("com.ss.android.ugc.trill"))
             assertTrue(text.contains("Facebook"))
             assertTrue(text.contains("Lite"))
             assertTrue(text.contains("not supported"))
+            assertFalse(text.contains("needs real-device QA"))
+            assertFalse(text.contains("code-level detectors"))
+            assertFalse(text.contains("YouTube-only"))
             assertFalse(text.contains("supports all"))
             assertFalse(text.contains("blocks all"))
         }
@@ -43,10 +59,69 @@ class ReleaseCopyInvariantTest {
     fun privacyPolicyDraftMatchesThePlatformSupportMatrix() {
         val privacyPolicy = repoFile("docs/SHORTS_BLOCKER_PRIVACY_POLICY_DRAFT.md").readText()
 
+        assertTrue(privacyPolicy.contains("Effective date: July 17, 2026"))
+        assertFalse(privacyPolicy.contains("Effective date: May 31, 2026"))
         assertTrue(privacyPolicy.contains("YouTube Shorts | supported"))
-        assertTrue(privacyPolicy.contains("TikTok main `com.zhiliaoapp.musically` | supported by code; needs real-device QA"))
-        assertTrue(privacyPolicy.contains("TikTok regional `com.ss.android.ugc.trill` | not supported"))
+        assertTrue(
+            privacyPolicy.contains(
+                "TikTok short-video feed `com.zhiliaoapp.musically` | " +
+                    "supported by code; needs real-device QA",
+            ),
+        )
+        assertTrue(
+            privacyPolicy.contains("Instagram Reels | supported by code; needs real-device QA"),
+        )
+        assertTrue(
+            privacyPolicy.contains("Facebook Reels | supported by code; needs real-device QA"),
+        )
+        assertTrue(
+            privacyPolicy.contains("TikTok regional `com.ss.android.ugc.trill` | not supported"),
+        )
         assertTrue(privacyPolicy.contains("Facebook Lite `com.facebook.lite` | not supported"))
+        assertTrue(privacyPolicy.contains("Optional Device Admin tamper protection"))
+        assertTrue(privacyPolicy.contains("needs real-device QA"))
+    }
+
+    @Test
+    fun websitePrivacyPolicyDateMatchesDeviceAdminDisclosureRelease() {
+        val config = repoFile("website/src/config.mjs").readText()
+        val privacyPage = repoFile("website/src/pages/privacy.mjs").readText()
+        val smokeTest = repoFile("website/scripts/smoke-test.mjs").readText()
+
+        assertTrue(config.contains("lastUpdated: \"July 17, 2026\""))
+        assertFalse(config.contains("lastUpdated: \"May 31, 2026\""))
+        assertTrue(privacyPage.contains("Device Admin Tamper Protection"))
+        assertTrue(smokeTest.contains("Last updated: July 17, 2026"))
+        assertTrue(smokeTest.contains("Device Admin Tamper Protection"))
+    }
+
+    @Test
+    fun manifestDeclaresTransparentDeviceAdminTamperProtection() {
+        val manifest = repoFile("app/src/main/AndroidManifest.xml").readText()
+        val strings = repoFile("app/src/main/res/values/strings.xml").readText()
+        val deviceAdmin = repoFile("app/src/main/res/xml/tamper_protection_device_admin.xml").readText()
+
+        assertTrue(manifest.contains(".core.tamper.TamperProtectionReceiver"))
+        assertTrue(manifest.contains("android.permission.BIND_DEVICE_ADMIN"))
+        assertTrue(manifest.contains("@xml/tamper_protection_device_admin"))
+        assertTrue(deviceAdmin.contains("<uses-policies />"))
+        assertTrue(strings.contains("does not replace Accessibility protection"))
+        assertTrue(strings.contains("does not block Settings"))
+        assertTrue(
+            strings.contains("Disabling it can allow Shorts Blocker Kids to be uninstalled"),
+        )
+    }
+
+    @Test
+    fun protectedAppsSetupScreenIsScrollableBeforeAccessibilitySetup() {
+        val protectedAppsScreen =
+            repoFile(
+                "app/src/main/java/com/shortsblockerkids/feature/onboarding/ProtectedAppsScreen.kt",
+            ).readText()
+
+        assertTrue(protectedAppsScreen.contains("import androidx.compose.foundation.rememberScrollState"))
+        assertTrue(protectedAppsScreen.contains("import androidx.compose.foundation.verticalScroll"))
+        assertTrue(protectedAppsScreen.contains(".verticalScroll(rememberScrollState())"))
     }
 
     @Test
@@ -90,6 +165,52 @@ class ReleaseCopyInvariantTest {
         assertTrue(combinedDocs.contains("https://billing.shortsblockerkids.de/billing/play/rtdn"))
         assertTrue(combinedDocs.contains("Valerii Serputko"))
         assertTrue(combinedDocs.contains("svalerii535@gmail.com"))
+    }
+
+    @Test
+    fun playConsoleCopyKeepsExpandedPlatformQaCaveat() {
+        val preparationPackage =
+            repoFile("docs/SHORTS_BLOCKER_PLAY_CONSOLE_PREPARATION_PACKAGE.md").readText()
+        val currentBehavior =
+            preparationPackage
+                .substringAfter("Current behavior to keep consistent across every Play Console answer:")
+                .substringBefore("## Official Sources Checked")
+
+        assertTrue(currentBehavior.contains("prior real-device smoke evidence"))
+        assertTrue(currentBehavior.contains("detector/unit coverage"))
+        assertTrue(currentBehavior.contains("require real-device QA before they are"))
+        assertTrue(currentBehavior.contains("production-verified"))
+        assertTrue(preparationPackage.contains("Current app-side support:"))
+        assertTrue(preparationPackage.contains("must keep the real-device QA"))
+        assertTrue(preparationPackage.contains("full device matrix records evidence"))
+        assertTrue(preparationPackage.contains("Internal testers should verify those surfaces"))
+        assertFalse(preparationPackage.contains("- TikTok short-video feed is supported."))
+        assertFalse(preparationPackage.contains("- Instagram Reels is supported."))
+        assertFalse(preparationPackage.contains("- Facebook Reels is supported."))
+    }
+
+    @Test
+    fun publicProductionDeploymentEvidenceOmitsHostIdentifiers() {
+        val productionEvidence =
+            repoFile("docs/SHORTS_BLOCKER_PRODUCTION_DEPLOYMENT_2026-05-31.md").readText()
+        val rawIpAddress = Regex("\\b(?:\\d{1,3}\\.){3}\\d{1,3}\\b")
+
+        assertTrue(productionEvidence.contains("Public Hostnames Verified"))
+        assertTrue(productionEvidence.contains("intentionally omitted"))
+        assertFalse(rawIpAddress.containsMatchIn(productionEvidence))
+        listOf(
+            "valerchik.de",
+            "api.valerchik.de",
+            "/opt/",
+            "/var/www",
+            "/etc/",
+            "/root/",
+            "127.0.0.1",
+            "Dockerized Caddy",
+            "docker compose",
+        ).forEach { forbidden ->
+            assertFalse("public deployment evidence contains $forbidden", productionEvidence.contains(forbidden))
+        }
     }
 
     @Test

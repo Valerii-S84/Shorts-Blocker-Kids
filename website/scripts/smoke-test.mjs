@@ -30,6 +30,7 @@ const forbiddenPatterns = [
 
 await assertFilesExist();
 await assertHtmlInvariants();
+await assertPrivacyPolicyInvariants();
 await assertRoutesServe();
 console.log("Website smoke test passed.");
 
@@ -59,6 +60,13 @@ async function assertHtmlInvariants() {
       }
     });
   }
+}
+
+async function assertPrivacyPolicyInvariants() {
+  const relativePath = "privacy/index.html";
+  const content = await fs.readFile(path.join(distDir, relativePath), "utf8");
+  assertIncludes(content, "Last updated: July 17, 2026", relativePath);
+  assertIncludes(content, "Device Admin Tamper Protection", relativePath);
 }
 
 async function assertRoutesServe() {

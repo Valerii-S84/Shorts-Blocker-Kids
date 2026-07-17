@@ -33,6 +33,7 @@ import com.shortsblockerkids.core.storage.AppSettings
 fun DashboardScreen(
     settings: AppSettings,
     isAccessibilityServiceEnabled: Boolean,
+    isTamperProtectionEnabled: Boolean,
     billingUiState: BillingUiState,
     onProtectionChanged: (Boolean) -> Unit,
     onPlatformEnabledChanged: (String, Boolean) -> Unit,
@@ -41,6 +42,7 @@ fun DashboardScreen(
     onManageSubscription: () -> Unit,
     onOpenAccessibilitySettings: () -> Unit,
     onOpenPrivacyPolicy: () -> Unit,
+    onOpenTamperProtection: () -> Unit,
     onOpenDebugQa: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
@@ -88,6 +90,24 @@ fun DashboardScreen(
                         )
                     },
                 )
+                Text(
+                    text = "Setup checklist",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                ChecklistRow("Parent PIN", settings.isPinCreated)
+                ChecklistRow("Protected apps selected", settings.hasEnabledPlatforms)
+                ChecklistRow(
+                    "Accessibility disclosure accepted",
+                    settings.accessibilityDisclosureAccepted,
+                )
+                ChecklistRow("Accessibility Service active", isAccessibilityServiceEnabled)
+                ChecklistRow(
+                    label = "Device Admin tamper protection",
+                    isComplete = isTamperProtectionEnabled,
+                    incompleteLabel = "optional",
+                    isOptional = true,
+                )
                 StatusRow("Platform support", PlatformSupportMatrix.protectedSummary())
                 StatusRow("Enabled apps", enabledAppsLabel(settings))
                 PlatformSupportMatrix.protectedEntries.forEach { entry ->
@@ -133,6 +153,14 @@ fun DashboardScreen(
                         "Protection permission missing"
                     },
                 )
+                StatusRow(
+                    "Tamper protection",
+                    if (isTamperProtectionEnabled) {
+                        "active"
+                    } else {
+                        "optional inactive"
+                    },
+                )
                 StatusRow("Protection status", entitlementState.protectionLabel())
                 if (freeTestState == EntitlementState.FREE_TEST_EXPIRED && !hasBillingEntitlement) {
                     ErrorText("Free test period ended. ${BillingAvailability.DEFERRED_MESSAGE}")
@@ -156,10 +184,11 @@ fun DashboardScreen(
                 Text(
                     text =
                         "Shorts Blocker Kids works when Protection is ON and Android " +
-                            "Accessibility Service is active. YouTube Shorts is verified in " +
-                            "code. TikTok main, Instagram Reels, and Facebook Reels have " +
-                            "code-level detectors and still need real-device QA. If the " +
-                            "permission is turned off or the app is removed, blocking stops.",
+                            "Accessibility Service is active for YouTube Shorts, TikTok " +
+                            "short-video feed, Instagram Reels, and Facebook Reels. " +
+                            "Optional Device Admin tamper protection can make uninstall " +
+                            "harder while active. If Accessibility permission is turned off, " +
+                            "blocking stops.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.secondary,
                 )
@@ -193,6 +222,19 @@ fun DashboardScreen(
         ) {
             Text("Privacy Policy")
         }
+        Spacer(modifier = Modifier.height(12.dp))
+        OutlinedButton(
+            onClick = onOpenTamperProtection,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(
+                if (isTamperProtectionEnabled) {
+                    "Review Tamper Protection"
+                } else {
+                    "Enable Tamper Protection"
+                },
+            )
+        }
         onOpenDebugQa?.let { openDebugQa ->
             Spacer(modifier = Modifier.height(12.dp))
             OutlinedButton(
@@ -202,6 +244,44 @@ fun DashboardScreen(
                 Text("Local QA")
             }
         }
+    }
+}
+
+@Composable
+private fun ChecklistRow(
+    label: String,
+    isComplete: Boolean,
+    incompleteLabel: String = "missing",
+    isOptional: Boolean = false,
+) {
+    val status =
+        when {
+            isComplete -> "active"
+            isOptional -> incompleteLabel
+            else -> incompleteLabel
+        }
+    val color =
+        when {
+            isComplete -> MaterialTheme.colorScheme.primary
+            isOptional -> MaterialTheme.colorScheme.secondary
+            else -> MaterialTheme.colorScheme.error
+        }
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.weight(1f),
+        )
+        Text(
+            text = status,
+            style = MaterialTheme.typography.bodyMedium,
+            color = color,
+            fontWeight = FontWeight.SemiBold,
+        )
     }
 }
 

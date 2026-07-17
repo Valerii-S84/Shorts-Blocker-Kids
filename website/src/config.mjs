@@ -4,7 +4,7 @@ export const siteConfig = {
   billingBackendUrl: "https://billing.shortsblockerkids.de",
   publisher: "Valerii Serputko",
   contactEmail: "svalerii535@gmail.com",
-  lastUpdated: "May 31, 2026",
+  lastUpdated: "July 17, 2026",
   playStoreUrl: "",
   betaTestingUrl: "",
   releaseState: "coming-soon",

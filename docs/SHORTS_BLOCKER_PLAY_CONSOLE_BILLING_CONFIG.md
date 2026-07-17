@@ -3,6 +3,7 @@
 Status: Prepared. Must be entered and verified in Play Console.
 
 Date: May 24, 2026
+Artifact status updated: July 17, 2026
 
 ## Scope
 
@@ -25,8 +26,10 @@ internal test runbook stay aligned.
 Package name: com.shortsblockerkids
 Version name: 0.1.0
 Version code: 1
-AAB: app/build/outputs/bundle/release/app-release.aab
-AAB SHA-256: 5e43fdde71a959add94ed38e732162f54124ff38d3e882aa4225781c30237f44
+AAB: pending rebuild from reviewed source
+AAB size: pending
+AAB SHA-256: pending
+Source commit: pending
 Production billing backend URL: https://billing.shortsblockerkids.de
 RTDN webhook URL: https://billing.shortsblockerkids.de/billing/play/rtdn
 Privacy Policy URL: https://shortsblockerkids.de/privacy

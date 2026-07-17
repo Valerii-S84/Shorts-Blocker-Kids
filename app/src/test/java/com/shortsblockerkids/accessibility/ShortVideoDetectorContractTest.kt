@@ -599,7 +599,7 @@ class ShortVideoDetectorContractTest {
                         ),
                 ),
                 PlatformCase(
-                    name = "TikTok main",
+                    name = "TikTok short-video feed",
                     detector = TikTokShortVideoDetector(),
                     packageName = TikTokShortVideoDetector.TIKTOK_PACKAGE,
                     shortVideoContainerViewId = "com.zhiliaoapp.musically:id/aweme_feed_view_pager",
