@@ -11,4 +11,49 @@
     <string name="tamper_protection_description">Optional parent-controlled Device Admin protection that makes uninstall harder while active.</string>
     <string name="tamper_protection_system_explanation">Optional tamper protection makes Shorts Blocker Kids harder to uninstall while active. It does not replace Accessibility protection and does not block Settings or perform hidden system actions.</string>
     <string name="tamper_protection_disable_warning">Tamper protection is active. Disabling it can allow Shorts Blocker Kids to be uninstalled or protection to be changed without the parent PIN.</string>
+
+    <!-- Welcome -->
+    <string name="welcome_title">Shorts Blocker Kids</string>
+    <string name="welcome_subtitle">Blocks supported short-video surfaces on a child’s phone.\nNo account. No server. Parent PIN only.</string>
+    <string name="welcome_start">Start</string>
+
+    <!-- PIN setup -->
+    <string name="pin_setup_title">Create Parent PIN</string>
+    <string name="pin_input_label">PIN</string>
+    <string name="pin_confirmation_input_label">Confirm PIN</string>
+    <string name="pin_setup_submit">Create PIN</string>
+    <string name="pin_setup_error_invalid_length">PIN must be 4-6 digits.</string>
+    <string name="pin_setup_error_weak_pin">Choose a stronger PIN.</string>
+    <string name="pin_setup_error_confirmation_mismatch">PIN confirmation does not match.</string>
+
+    <!-- PIN entry -->
+    <string name="pin_entry_title">Enter Parent PIN</string>
+    <string name="pin_entry_submit">Unlock</string>
+    <string name="pin_entry_error_incomplete">Enter the 4-6 digit PIN.</string>
+    <string name="pin_entry_error_not_configured">PIN is not configured.</string>
+    <plurals name="pin_entry_attempts_remaining">
+        <item quantity="one">Wrong PIN. %1$d attempt left.</item>
+        <item quantity="other">Wrong PIN. %1$d attempts left.</item>
+    </plurals>
+    <plurals name="pin_entry_lockout_minutes">
+        <item quantity="one">PIN locked. Try again in %1$d min.</item>
+        <item quantity="other">PIN locked. Try again in %1$d min.</item>
+    </plurals>
+
+    <!-- Temporary allow -->
+    <string name="temporary_allow_title">Allow short videos</string>
+    <string name="temporary_allow_description">Allow protected short-video apps on this phone for:</string>
+    <string name="temporary_allow_cancel">Cancel</string>
+    <plurals name="temporary_allow_duration_minutes">
+        <item quantity="one">%1$d minute</item>
+        <item quantity="other">%1$d minutes</item>
+    </plurals>
+
+    <!-- Accessibility setup -->
+    <string name="enable_accessibility_title">Enable Protection</string>
+    <string name="enable_accessibility_instructions">1. Tap Open Settings.\n2. Find Shorts Blocker Kids.\n3. Turn the service on.\n4. Return to this app.</string>
+    <string name="enable_accessibility_status_enabled">Protection permission enabled</string>
+    <string name="enable_accessibility_status_disabled">Protection permission missing</string>
+    <string name="enable_accessibility_open_settings">Open Settings</string>
+    <string name="enable_accessibility_confirm_enabled">I enabled it</string>
 </resources>

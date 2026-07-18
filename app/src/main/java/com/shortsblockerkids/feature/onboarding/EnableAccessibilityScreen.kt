@@ -14,8 +14,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.shortsblockerkids.R
 
 @Composable
 fun EnableAccessibilityScreen(
@@ -33,26 +35,22 @@ fun EnableAccessibilityScreen(
         horizontalAlignment = Alignment.Start,
     ) {
         Text(
-            text = "Enable Protection",
+            text = stringResource(R.string.enable_accessibility_title),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text =
-                "1. Tap Open Settings.\n" +
-                    "2. Find Shorts Blocker Kids.\n" +
-                    "3. Turn the service on.\n" +
-                    "4. Return to this app.",
+            text = stringResource(R.string.enable_accessibility_instructions),
             style = MaterialTheme.typography.bodyLarge,
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
             text =
                 if (isAccessibilityServiceEnabled) {
-                    "Protection permission enabled"
+                    stringResource(R.string.enable_accessibility_status_enabled)
                 } else {
-                    "Protection permission missing"
+                    stringResource(R.string.enable_accessibility_status_disabled)
                 },
             style = MaterialTheme.typography.bodyMedium,
             color =
@@ -67,14 +65,14 @@ fun EnableAccessibilityScreen(
             onClick = onOpenAccessibilitySettings,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text("Open Settings")
+            Text(stringResource(R.string.enable_accessibility_open_settings))
         }
         Spacer(modifier = Modifier.height(12.dp))
         OutlinedButton(
             onClick = onEnabled,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text("I enabled it")
+            Text(stringResource(R.string.enable_accessibility_confirm_enabled))
         }
     }
 }

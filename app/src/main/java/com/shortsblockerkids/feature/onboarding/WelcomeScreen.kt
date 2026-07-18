@@ -13,8 +13,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.shortsblockerkids.R
 
 @Composable
 fun WelcomeScreen(
@@ -30,15 +32,13 @@ fun WelcomeScreen(
         horizontalAlignment = Alignment.Start,
     ) {
         Text(
-            text = "Shorts Blocker Kids",
+            text = stringResource(R.string.welcome_title),
             style = MaterialTheme.typography.headlineLarge,
             fontWeight = FontWeight.Bold,
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text =
-                "Blocks supported short-video surfaces on a child’s phone.\n" +
-                    "No account. No server. Parent PIN only.",
+            text = stringResource(R.string.welcome_subtitle),
             style = MaterialTheme.typography.bodyLarge,
         )
         Spacer(modifier = Modifier.height(32.dp))
@@ -46,7 +46,7 @@ fun WelcomeScreen(
             onClick = onStart,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text("Start")
+            Text(stringResource(R.string.welcome_start))
         }
     }
 }
