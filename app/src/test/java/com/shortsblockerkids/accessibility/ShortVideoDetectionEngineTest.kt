@@ -100,7 +100,7 @@ class ShortVideoDetectionEngineTest {
             )
         val futureDetector =
             RecordingDetector(
-                platform = SupportedPlatform(id = "future_platform", displayName = "Future Platform"),
+                platform = SupportedPlatform(id = "future_platform"),
                 supportedPackages = setOf(FUTURE_PACKAGE),
                 result = blockingResult(),
             )

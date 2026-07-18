@@ -19,9 +19,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.shortsblockerkids.R
 import com.shortsblockerkids.accessibility.PlatformSupportMatrix
+import com.shortsblockerkids.accessibility.PlatformSupportStatus
 import com.shortsblockerkids.core.billing.BillingAvailability
 import com.shortsblockerkids.core.billing.BillingCopy
 import com.shortsblockerkids.core.billing.BillingUiState
@@ -69,7 +73,7 @@ fun DashboardScreen(
         horizontalAlignment = Alignment.Start,
     ) {
         Text(
-            text = "Short Video Protection",
+            text = stringResource(R.string.dashboard_title),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
         )
@@ -80,7 +84,7 @@ fun DashboardScreen(
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 ProtectionRow(
-                    label = "Short Video Protection",
+                    label = stringResource(R.string.dashboard_title),
                     value = protectionSwitchLabel(settings, isProtectionLocked),
                     control = {
                         Switch(
@@ -91,33 +95,48 @@ fun DashboardScreen(
                     },
                 )
                 Text(
-                    text = "Setup checklist",
+                    text = stringResource(R.string.dashboard_setup_checklist),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                 )
-                ChecklistRow("Parent PIN", settings.isPinCreated)
-                ChecklistRow("Protected apps selected", settings.hasEnabledPlatforms)
                 ChecklistRow(
-                    "Accessibility disclosure accepted",
+                    stringResource(R.string.dashboard_checklist_parent_pin),
+                    settings.isPinCreated,
+                )
+                ChecklistRow(
+                    stringResource(R.string.dashboard_checklist_protected_apps),
+                    settings.hasEnabledPlatforms,
+                )
+                ChecklistRow(
+                    stringResource(R.string.dashboard_checklist_accessibility_disclosure),
                     settings.accessibilityDisclosureAccepted,
                 )
-                ChecklistRow("Accessibility Service active", isAccessibilityServiceEnabled)
                 ChecklistRow(
-                    label = "Device Admin tamper protection",
+                    stringResource(R.string.dashboard_checklist_accessibility_service),
+                    isAccessibilityServiceEnabled,
+                )
+                ChecklistRow(
+                    label = stringResource(R.string.dashboard_checklist_tamper_protection),
                     isComplete = isTamperProtectionEnabled,
-                    incompleteLabel = "optional",
+                    incompleteLabel = stringResource(R.string.status_optional),
                     isOptional = true,
                 )
-                StatusRow("Platform support", PlatformSupportMatrix.protectedSummary())
-                StatusRow("Enabled apps", enabledAppsLabel(settings))
+                StatusRow(
+                    stringResource(R.string.dashboard_platform_support),
+                    protectedPlatformSummary(),
+                )
+                StatusRow(
+                    stringResource(R.string.dashboard_enabled_apps),
+                    enabledAppsLabel(settings),
+                )
                 PlatformSupportMatrix.protectedEntries.forEach { entry ->
                     ProtectionRow(
-                        label = entry.platformName,
+                        label = stringResource(entry.platformNameRes),
                         value =
                             if (settings.isPlatformEnabled(entry.platformId)) {
-                                "enabled"
+                                stringResource(R.string.status_enabled)
                             } else {
-                                "disabled"
+                                stringResource(R.string.status_disabled)
                             },
                         control = {
                             Switch(
@@ -129,47 +148,72 @@ fun DashboardScreen(
                         },
                     )
                 }
-                StatusRow("Not supported", PlatformSupportMatrix.unsupportedSummary())
-                StatusRow("PIN", if (settings.isPinCreated) "created" else "not created")
                 StatusRow(
-                    "Free test",
+                    stringResource(R.string.dashboard_not_supported),
+                    unsupportedPlatformSummary(),
+                )
+                StatusRow(
+                    stringResource(R.string.dashboard_pin),
+                    if (settings.isPinCreated) {
+                        stringResource(R.string.status_created)
+                    } else {
+                        stringResource(R.string.status_not_created)
+                    },
+                )
+                StatusRow(
+                    stringResource(R.string.dashboard_free_test),
                     freeTestState.dashboardLabel(),
                 )
                 settings.freeTestDaysRemaining(nowMillis)?.let { daysRemaining ->
-                    StatusRow("Days remaining", "$daysRemaining days remaining")
+                    StatusRow(
+                        stringResource(R.string.dashboard_days_remaining_label),
+                        pluralStringResource(
+                            R.plurals.dashboard_days_remaining,
+                            daysRemaining,
+                            daysRemaining,
+                        ),
+                    )
                 }
                 StatusRow(
-                    "Subscription",
+                    stringResource(R.string.dashboard_subscription),
                     BillingCopy.subscriptionStatusLabel(
                         hasBillingEntitlement = settings.hasBillingEntitlement(nowMillis),
                         billingUiState = billingUiState,
                     ),
                 )
                 StatusRow(
-                    "Protection permission",
+                    stringResource(R.string.dashboard_protection_permission),
                     if (isAccessibilityServiceEnabled) {
-                        "enabled"
+                        stringResource(R.string.status_enabled)
                     } else {
-                        "Protection permission missing"
+                        stringResource(R.string.status_protection_permission_missing)
                     },
                 )
                 StatusRow(
-                    "Tamper protection",
+                    stringResource(R.string.dashboard_tamper_protection),
                     if (isTamperProtectionEnabled) {
-                        "active"
+                        stringResource(R.string.status_active)
                     } else {
-                        "optional inactive"
+                        stringResource(R.string.status_optional_inactive)
                     },
                 )
-                StatusRow("Protection status", entitlementState.protectionLabel())
+                StatusRow(
+                    stringResource(R.string.dashboard_protection_status),
+                    entitlementState.protectionLabel(),
+                )
                 if (freeTestState == EntitlementState.FREE_TEST_EXPIRED && !hasBillingEntitlement) {
-                    ErrorText("Free test period ended. ${BillingAvailability.DEFERRED_MESSAGE}")
+                    ErrorText(
+                        stringResource(
+                            R.string.error_free_test_ended_with_detail,
+                            BillingAvailability.DEFERRED_MESSAGE,
+                        ),
+                    )
                 }
                 if (!isAccessibilityServiceEnabled) {
-                    ErrorText("Protection permission missing")
+                    ErrorText(stringResource(R.string.error_protection_permission_missing))
                 }
                 if (!settings.hasEnabledPlatforms) {
-                    ErrorText("No protected apps selected")
+                    ErrorText(stringResource(R.string.error_no_protected_apps_selected))
                 }
                 if (!isProtectionActive) {
                     val inactiveMessage =
@@ -182,13 +226,7 @@ fun DashboardScreen(
                     ErrorText(inactiveMessage)
                 }
                 Text(
-                    text =
-                        "Shorts Blocker Kids works when Protection is ON and Android " +
-                            "Accessibility Service is active for YouTube Shorts, TikTok " +
-                            "short-video feed, Instagram Reels, and Facebook Reels. " +
-                            "Optional Device Admin tamper protection can make uninstall " +
-                            "harder while active. If Accessibility permission is turned off, " +
-                            "blocking stops.",
+                    text = stringResource(R.string.dashboard_description),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.secondary,
                 )
@@ -209,9 +247,9 @@ fun DashboardScreen(
         ) {
             Text(
                 if (settings.accessibilityDisclosureAccepted) {
-                    "Open Accessibility Settings"
+                    stringResource(R.string.dashboard_open_accessibility_settings)
                 } else {
-                    "Review Accessibility Disclosure"
+                    stringResource(R.string.dashboard_review_accessibility_disclosure)
                 },
             )
         }
@@ -220,7 +258,7 @@ fun DashboardScreen(
             onClick = onOpenPrivacyPolicy,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text("Privacy Policy")
+            Text(stringResource(R.string.dashboard_privacy_policy))
         }
         Spacer(modifier = Modifier.height(12.dp))
         OutlinedButton(
@@ -229,9 +267,9 @@ fun DashboardScreen(
         ) {
             Text(
                 if (isTamperProtectionEnabled) {
-                    "Review Tamper Protection"
+                    stringResource(R.string.dashboard_review_tamper_protection)
                 } else {
-                    "Enable Tamper Protection"
+                    stringResource(R.string.dashboard_enable_tamper_protection)
                 },
             )
         }
@@ -241,7 +279,7 @@ fun DashboardScreen(
                 onClick = openDebugQa,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text("Local QA")
+                Text(stringResource(R.string.dashboard_local_qa))
             }
         }
     }
@@ -251,14 +289,13 @@ fun DashboardScreen(
 private fun ChecklistRow(
     label: String,
     isComplete: Boolean,
-    incompleteLabel: String = "missing",
+    incompleteLabel: String? = null,
     isOptional: Boolean = false,
 ) {
     val status =
         when {
-            isComplete -> "active"
-            isOptional -> incompleteLabel
-            else -> incompleteLabel
+            isComplete -> stringResource(R.string.status_active)
+            else -> incompleteLabel ?: stringResource(R.string.status_missing)
         }
     val color =
         when {
@@ -285,6 +322,7 @@ private fun ChecklistRow(
     }
 }
 
+@Composable
 private fun protectionInactiveMessage(
     settings: AppSettings,
     isAccessibilityServiceEnabled: Boolean,
@@ -295,77 +333,127 @@ private fun protectionInactiveMessage(
         settings.freeTestState(nowMillis) == EntitlementState.FREE_TEST_EXPIRED &&
         !hasBillingEntitlement
     ) {
-        return "Free test expired"
+        return stringResource(R.string.error_free_test_expired)
     }
 
     if (!settings.protectionEnabled) {
-        return "Protection inactive. Turn Protection ON to block short videos."
+        return stringResource(R.string.error_protection_inactive_disabled)
     }
 
     if (!settings.hasEnabledPlatforms) {
-        return "Protection inactive. Enable at least one protected app."
+        return stringResource(R.string.error_protection_inactive_no_apps)
     }
 
     if (!isAccessibilityServiceEnabled) {
-        return "Protection inactive. Enable Accessibility Service."
+        return stringResource(R.string.error_protection_inactive_accessibility)
     }
 
     if (settings.isTemporarilyAllowed(nowMillis)) {
-        return "Protection inactive during temporary allow."
+        return stringResource(R.string.error_protection_inactive_temporary_allow)
     }
 
     if (settings.freeTestState(nowMillis) == EntitlementState.FREE_TEST_NOT_STARTED) {
-        return "Free test has not started. Enable protection permission to start " +
-            "the 20-day test."
+        return stringResource(R.string.error_free_test_not_started)
     }
 
-    return "Protection inactive. Complete setup to block short videos."
+    return stringResource(R.string.error_protection_inactive_setup)
 }
 
+@Composable
 private fun enabledAppsLabel(settings: AppSettings): String {
-    val enabledNames =
-        PlatformSupportMatrix.protectedEntries
-            .filter { entry -> settings.isPlatformEnabled(entry.platformId) }
-            .map { it.platformName }
+    val enabledNames = mutableListOf<String>()
+    for (entry in PlatformSupportMatrix.protectedEntries) {
+        if (settings.isPlatformEnabled(entry.platformId)) {
+            enabledNames += stringResource(entry.platformNameRes)
+        }
+    }
 
     return if (enabledNames.isEmpty()) {
-        "none"
+        stringResource(R.string.status_none)
     } else {
         enabledNames.joinToString()
     }
 }
 
+@Composable
+private fun protectedPlatformSummary(): String {
+    val summaries = mutableListOf<String>()
+    for (entry in PlatformSupportMatrix.protectedEntries) {
+        summaries +=
+            stringResource(
+                R.string.platform_status_item_format,
+                stringResource(entry.platformNameRes),
+                platformStatusLabel(entry.status),
+            )
+    }
+    return summaries.joinToString()
+}
+
+@Composable
+private fun unsupportedPlatformSummary(): String {
+    val summaries = mutableListOf<String>()
+    for (entry in PlatformSupportMatrix.unsupportedEntries) {
+        summaries +=
+            stringResource(
+                R.string.platform_unsupported_item_format,
+                stringResource(entry.platformNameRes),
+                entry.packageName,
+            )
+    }
+    return summaries.joinToString()
+}
+
+@Composable
+private fun platformStatusLabel(status: PlatformSupportStatus): String =
+    when (status) {
+        PlatformSupportStatus.SUPPORTED ->
+            stringResource(R.string.platform_status_supported)
+        PlatformSupportStatus.SUPPORTED_BY_CODE_NEEDS_REAL_DEVICE_QA ->
+            stringResource(R.string.platform_status_supported_needs_qa)
+        PlatformSupportStatus.NOT_SUPPORTED ->
+            stringResource(R.string.platform_status_not_supported)
+    }
+
+@Composable
 private fun EntitlementState.dashboardLabel(): String =
     when (this) {
-        EntitlementState.FREE_TEST_NOT_STARTED -> "not started"
-        EntitlementState.FREE_TEST_ACTIVE -> "Free test active"
-        EntitlementState.FREE_TEST_EXPIRED -> "Free test expired"
-        EntitlementState.SUBSCRIPTION_ACTIVE -> "Subscription active"
-        EntitlementState.PROTECTION_PERMISSION_MISSING -> "Protection permission missing"
-        EntitlementState.PROTECTION_ACTIVE -> "Protection active"
-        EntitlementState.PROTECTION_LOCKED -> "Protection locked"
+        EntitlementState.FREE_TEST_NOT_STARTED -> stringResource(R.string.status_not_started)
+        EntitlementState.FREE_TEST_ACTIVE -> stringResource(R.string.status_free_test_active)
+        EntitlementState.FREE_TEST_EXPIRED -> stringResource(R.string.status_free_test_expired)
+        EntitlementState.SUBSCRIPTION_ACTIVE -> stringResource(R.string.status_subscription_active)
+        EntitlementState.PROTECTION_PERMISSION_MISSING ->
+            stringResource(R.string.status_protection_permission_missing)
+        EntitlementState.PROTECTION_ACTIVE -> stringResource(R.string.status_protection_active)
+        EntitlementState.PROTECTION_LOCKED -> stringResource(R.string.status_protection_locked)
     }
 
+@Composable
 private fun EntitlementState.protectionLabel(): String =
     when (this) {
-        EntitlementState.PROTECTION_ACTIVE -> "Protection active"
-        EntitlementState.PROTECTION_PERMISSION_MISSING -> "Protection permission missing"
-        EntitlementState.PROTECTION_LOCKED -> "Protection locked"
-        EntitlementState.FREE_TEST_ACTIVE -> "inactive"
-        EntitlementState.FREE_TEST_NOT_STARTED -> "not started"
-        EntitlementState.FREE_TEST_EXPIRED -> "Free test expired"
-        EntitlementState.SUBSCRIPTION_ACTIVE -> "inactive"
+        EntitlementState.PROTECTION_ACTIVE -> stringResource(R.string.status_protection_active)
+        EntitlementState.PROTECTION_PERMISSION_MISSING ->
+            stringResource(R.string.status_protection_permission_missing)
+        EntitlementState.PROTECTION_LOCKED -> stringResource(R.string.status_protection_locked)
+        EntitlementState.FREE_TEST_ACTIVE -> stringResource(R.string.status_inactive)
+        EntitlementState.FREE_TEST_NOT_STARTED -> stringResource(R.string.status_not_started)
+        EntitlementState.FREE_TEST_EXPIRED -> stringResource(R.string.status_free_test_expired)
+        EntitlementState.SUBSCRIPTION_ACTIVE -> stringResource(R.string.status_inactive)
     }
 
+@Composable
 private fun protectionSwitchLabel(
     settings: AppSettings,
     isProtectionLocked: Boolean,
 ): String {
     if (isProtectionLocked) {
-        return "LOCKED"
+        return stringResource(R.string.status_locked)
     }
 
-    return if (settings.protectionEnabled) "ON" else "OFF"
+    return if (settings.protectionEnabled) {
+        stringResource(R.string.status_on)
+    } else {
+        stringResource(R.string.status_off)
+    }
 }
 
 @Composable
@@ -391,7 +479,7 @@ private fun BillingActions(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
-                text = "Google Play subscription",
+                text = stringResource(R.string.dashboard_google_play_subscription),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
             )
@@ -410,7 +498,7 @@ private fun BillingActions(
                     onClick = onManageSubscription,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text("Manage subscription")
+                    Text(stringResource(R.string.dashboard_manage_subscription))
                 }
             } else {
                 Button(
@@ -418,7 +506,7 @@ private fun BillingActions(
                     enabled = billingUiState.canStartPurchase && !billingUiState.isPurchaseInProgress,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text("Subscribe with Google Play")
+                    Text(stringResource(R.string.dashboard_subscribe_google_play))
                 }
             }
             OutlinedButton(
@@ -426,7 +514,7 @@ private fun BillingActions(
                 enabled = !billingUiState.isLoading && !billingUiState.isPurchaseInProgress,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text("Restore purchases")
+                Text(stringResource(R.string.dashboard_restore_purchases))
             }
         }
     }

@@ -1,5 +1,6 @@
 package com.shortsblockerkids.feature.debug
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -21,9 +22,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.shortsblockerkids.BuildConfig
+import com.shortsblockerkids.R
 import com.shortsblockerkids.accessibility.AccessibilityNodeSignal
 import com.shortsblockerkids.accessibility.AccessibilityTreeSnapshot
 import com.shortsblockerkids.accessibility.DetectionResult
@@ -50,12 +53,16 @@ fun DetectorPlaygroundScreen(
             isProtectionPermissionGranted = isAccessibilityServiceEnabled,
             nowMillis = nowMillis,
         )
-    var selectedResult by remember {
+    val noScenarioName = stringResource(R.string.debug_no_scenario)
+    val notRequestedMessage = stringResource(R.string.debug_not_requested)
+    val snapshotRequestedMessage = stringResource(R.string.debug_snapshot_requested)
+    val overlayRequestedMessage = stringResource(R.string.debug_overlay_requested)
+    var selectedResult by remember(noScenarioName, notRequestedMessage) {
         mutableStateOf(
             PlaygroundResult(
-                name = "No scenario",
+                name = noScenarioName,
                 result = DetectionResult.None,
-                overlayMessage = "not requested",
+                overlayMessage = notRequestedMessage,
             ),
         )
     }
@@ -69,7 +76,7 @@ fun DetectorPlaygroundScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text(
-            text = "Detector Playground",
+            text = stringResource(R.string.debug_detector_playground_title),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
         )
@@ -78,29 +85,55 @@ fun DetectorPlaygroundScreen(
                 modifier = Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                QaRow("Detected package", RuntimeProtectionState.lastDetectorResultText() ?: "disabled")
-                QaRow("Protection mode", settings.selectedMode.name)
-                QaRow("Blocking decision", RuntimeProtectionState.lastBlockingDecisionText() ?: "disabled")
-                QaRow("Entitlement", entitlementState.name)
-                QaRow("Subscription state", settings.billingEntitlementState.name)
-                QaRow("Backend", if (BuildConfig.BILLING_BACKEND_BASE_URL.isBlank()) "disabled" else "enabled")
-                QaRow("Billing UI", billingUiState.statusMessage)
-                QaRow("Protection permission", if (isAccessibilityServiceEnabled) "enabled" else "missing")
+                QaRow(
+                    stringResource(R.string.debug_detected_package),
+                    RuntimeProtectionState.lastDetectorResultText()
+                        ?: stringResource(R.string.debug_disabled),
+                )
+                QaRow(stringResource(R.string.debug_protection_mode), settings.selectedMode.name)
+                QaRow(
+                    stringResource(R.string.debug_blocking_decision),
+                    RuntimeProtectionState.lastBlockingDecisionText()
+                        ?: stringResource(R.string.debug_disabled),
+                )
+                QaRow(stringResource(R.string.debug_entitlement), entitlementState.name)
+                QaRow(
+                    stringResource(R.string.debug_subscription_state),
+                    settings.billingEntitlementState.name,
+                )
+                QaRow(
+                    stringResource(R.string.debug_backend),
+                    if (BuildConfig.BILLING_BACKEND_BASE_URL.isBlank()) {
+                        stringResource(R.string.debug_disabled)
+                    } else {
+                        stringResource(R.string.debug_enabled)
+                    },
+                )
+                QaRow(stringResource(R.string.debug_billing_ui), billingUiState.statusMessage)
+                QaRow(
+                    stringResource(R.string.debug_protection_permission),
+                    if (isAccessibilityServiceEnabled) {
+                        stringResource(R.string.debug_enabled)
+                    } else {
+                        stringResource(R.string.debug_missing)
+                    },
+                )
             }
         }
         scenarios.forEach { scenario ->
+            val scenarioName = stringResource(scenario.nameRes)
             Button(
                 onClick = {
                     selectedResult =
                         PlaygroundResult(
-                            name = scenario.name,
+                            name = scenarioName,
                             result = detector.detect(scenario.packageName, scenario.snapshot),
                             overlayMessage = selectedResult.overlayMessage,
                         )
                 },
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text(scenario.name)
+                Text(scenarioName)
             }
         }
         Card(modifier = Modifier.fillMaxWidth()) {
@@ -108,13 +141,43 @@ fun DetectorPlaygroundScreen(
                 modifier = Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Text("Scenario: ${selectedResult.name}")
-                Text("confidence: ${selectedResult.result.confidence}")
-                Text("reasons: ${selectedResult.result.reasons}")
-                Text("signals: ${selectedResult.result.matchedSignals}")
-                Text("wouldBlock: ${selectedResult.result.shouldBlock}")
-                Text("testOverlay: ${selectedResult.overlayMessage}")
-                Text("snapshot: ${RuntimeProtectionState.lastDebugSnapshotText()}")
+                Text(stringResource(R.string.debug_scenario_format, selectedResult.name))
+                Text(
+                    stringResource(
+                        R.string.debug_confidence_format,
+                        selectedResult.result.confidence,
+                    ),
+                )
+                Text(
+                    stringResource(
+                        R.string.debug_reasons_format,
+                        selectedResult.result.reasons,
+                    ),
+                )
+                Text(
+                    stringResource(
+                        R.string.debug_signals_format,
+                        selectedResult.result.matchedSignals,
+                    ),
+                )
+                Text(
+                    stringResource(
+                        R.string.debug_would_block_format,
+                        selectedResult.result.shouldBlock,
+                    ),
+                )
+                Text(
+                    stringResource(
+                        R.string.debug_test_overlay_format,
+                        selectedResult.overlayMessage,
+                    ),
+                )
+                Text(
+                    stringResource(
+                        R.string.debug_snapshot_format,
+                        RuntimeProtectionState.lastDebugSnapshotText().toString(),
+                    ),
+                )
             }
         }
         Button(
@@ -122,24 +185,24 @@ fun DetectorPlaygroundScreen(
                 RuntimeProtectionState.requestDebugSnapshot()
                 selectedResult =
                     selectedResult.copy(
-                        overlayMessage = "snapshot requested; open YouTube to capture next event",
+                        overlayMessage = snapshotRequestedMessage,
                     )
             },
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text("Capture YouTube UI Snapshot")
+            Text(stringResource(R.string.debug_capture_youtube_snapshot))
         }
         Button(
             onClick = {
                 RuntimeProtectionState.requestDebugOverlay()
                 selectedResult =
                     selectedResult.copy(
-                        overlayMessage = "overlay requested; open YouTube to consume next event",
+                        overlayMessage = overlayRequestedMessage,
                     )
             },
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text("Request Test Overlay")
+            Text(stringResource(R.string.debug_request_test_overlay))
         }
         Spacer(modifier = Modifier.height(8.dp))
         Row(modifier = Modifier.fillMaxWidth()) {
@@ -147,7 +210,7 @@ fun DetectorPlaygroundScreen(
                 onClick = onBack,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text("Back")
+                Text(stringResource(R.string.debug_back))
             }
         }
     }
@@ -179,7 +242,7 @@ private data class PlaygroundResult(
 )
 
 private data class PlaygroundScenario(
-    val name: String,
+    @param:StringRes val nameRes: Int,
     val packageName: String?,
     val snapshot: AccessibilityTreeSnapshot,
 )
@@ -187,27 +250,27 @@ private data class PlaygroundScenario(
 private fun detectorPlaygroundScenarios(): List<PlaygroundScenario> =
     listOf(
         PlaygroundScenario(
-            name = "Simulate YouTube Home",
+            nameRes = R.string.debug_scenario_youtube_home,
             packageName = YouTubeShortsDetector.YOUTUBE_PACKAGE,
             snapshot = homeSnapshot(),
         ),
         PlaygroundScenario(
-            name = "Simulate normal YouTube video",
+            nameRes = R.string.debug_scenario_youtube_video,
             packageName = YouTubeShortsDetector.YOUTUBE_PACKAGE,
             snapshot = normalVideoSnapshot(),
         ),
         PlaygroundScenario(
-            name = "Simulate Search",
+            nameRes = R.string.debug_scenario_search,
             packageName = YouTubeShortsDetector.YOUTUBE_PACKAGE,
             snapshot = searchSnapshot(),
         ),
         PlaygroundScenario(
-            name = "Simulate Shorts HIGH confidence",
+            nameRes = R.string.debug_scenario_shorts_high_confidence,
             packageName = YouTubeShortsDetector.YOUTUBE_PACKAGE,
             snapshot = shortsSnapshot(),
         ),
         PlaygroundScenario(
-            name = "Simulate non-YouTube app",
+            nameRes = R.string.debug_scenario_non_youtube,
             packageName = "com.example.other",
             snapshot = shortsSnapshot(),
         ),

@@ -17,8 +17,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.shortsblockerkids.R
 import com.shortsblockerkids.accessibility.PlatformSupportMatrix
 import com.shortsblockerkids.core.storage.AppSettings
 
@@ -39,15 +41,13 @@ fun ProtectedAppsScreen(
         horizontalAlignment = Alignment.Start,
     ) {
         Text(
-            text = "Select Protected Apps",
+            text = stringResource(R.string.protected_apps_title),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text =
-                "Choose which supported short-video surfaces this parent PIN " +
-                    "should protect on this phone.",
+            text = stringResource(R.string.protected_apps_description),
             style = MaterialTheme.typography.bodyLarge,
         )
         Spacer(modifier = Modifier.height(20.dp))
@@ -58,7 +58,7 @@ fun ProtectedAppsScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = entry.platformName,
+                    text = stringResource(entry.platformNameRes),
                     style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier.weight(1f),
                 )
@@ -77,7 +77,7 @@ fun ProtectedAppsScreen(
             enabled = settings.hasEnabledPlatforms,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text("Continue")
+            Text(stringResource(R.string.protected_apps_continue))
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.shortsblockerkids.accessibility
 
+import com.shortsblockerkids.R
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -12,37 +13,37 @@ class PlatformSupportMatrixTest {
             listOf(
                 support(
                     SupportedPlatform.YOUTUBE_SHORTS.id,
-                    "YouTube Shorts",
+                    R.string.platform_youtube_shorts,
                     YouTubeShortsDetector.YOUTUBE_PACKAGE,
                     PlatformSupportStatus.SUPPORTED,
                 ),
                 support(
                     SupportedPlatform.TIKTOK.id,
-                    "TikTok short-video feed",
+                    R.string.platform_tiktok_short_video_feed,
                     TikTokShortVideoDetector.TIKTOK_PACKAGE,
                     PlatformSupportStatus.SUPPORTED_BY_CODE_NEEDS_REAL_DEVICE_QA,
                 ),
                 support(
                     "tiktok_regional",
-                    "TikTok regional",
+                    R.string.platform_tiktok_regional,
                     PlatformSupportMatrix.TIKTOK_REGIONAL_PACKAGE,
                     PlatformSupportStatus.NOT_SUPPORTED,
                 ),
                 support(
                     SupportedPlatform.INSTAGRAM_REELS.id,
-                    "Instagram Reels",
+                    R.string.platform_instagram_reels,
                     InstagramReelsDetector.INSTAGRAM_PACKAGE,
                     PlatformSupportStatus.SUPPORTED_BY_CODE_NEEDS_REAL_DEVICE_QA,
                 ),
                 support(
                     SupportedPlatform.FACEBOOK_REELS.id,
-                    "Facebook Reels",
+                    R.string.platform_facebook_reels,
                     FacebookReelsDetector.FACEBOOK_PACKAGE,
                     PlatformSupportStatus.SUPPORTED_BY_CODE_NEEDS_REAL_DEVICE_QA,
                 ),
                 support(
                     "facebook_lite",
-                    "Facebook Lite",
+                    R.string.platform_facebook_lite,
                     PlatformSupportMatrix.FACEBOOK_LITE_PACKAGE,
                     PlatformSupportStatus.NOT_SUPPORTED,
                 ),
@@ -60,37 +61,44 @@ class PlatformSupportMatrixTest {
     }
 
     @Test
-    fun protectedSummaryDoesNotClaimUnsupportedPackages() {
-        val protectedSummary = PlatformSupportMatrix.protectedSummary()
-        val unsupportedSummary = PlatformSupportMatrix.unsupportedSummary()
-
-        assertTrue(protectedSummary.contains("YouTube Shorts: supported"))
-        assertTrue(
-            protectedSummary.contains(
-                "TikTok short-video feed: supported by code; needs real-device QA",
+    fun platformSupportMatrixSeparatesProtectedAndUnsupportedPackages() {
+        assertEquals(
+            listOf(
+                YouTubeShortsDetector.YOUTUBE_PACKAGE,
+                TikTokShortVideoDetector.TIKTOK_PACKAGE,
+                InstagramReelsDetector.INSTAGRAM_PACKAGE,
+                FacebookReelsDetector.FACEBOOK_PACKAGE,
             ),
+            PlatformSupportMatrix.protectedEntries.map { it.packageName },
+        )
+        assertEquals(
+            listOf(
+                PlatformSupportMatrix.TIKTOK_REGIONAL_PACKAGE,
+                PlatformSupportMatrix.FACEBOOK_LITE_PACKAGE,
+            ),
+            PlatformSupportMatrix.unsupportedEntries.map { it.packageName },
         )
         assertTrue(
-            protectedSummary.contains("Instagram Reels: supported by code; needs real-device QA"),
+            PlatformSupportMatrix.protectedEntries.none {
+                it.status == PlatformSupportStatus.NOT_SUPPORTED
+            },
         )
         assertTrue(
-            protectedSummary.contains("Facebook Reels: supported by code; needs real-device QA"),
+            PlatformSupportMatrix.unsupportedEntries.all {
+                it.status == PlatformSupportStatus.NOT_SUPPORTED
+            },
         )
-        assertFalse(protectedSummary.contains(PlatformSupportMatrix.TIKTOK_REGIONAL_PACKAGE))
-        assertFalse(protectedSummary.contains(PlatformSupportMatrix.FACEBOOK_LITE_PACKAGE))
-        assertTrue(unsupportedSummary.contains(PlatformSupportMatrix.TIKTOK_REGIONAL_PACKAGE))
-        assertTrue(unsupportedSummary.contains(PlatformSupportMatrix.FACEBOOK_LITE_PACKAGE))
     }
 
     private fun support(
         platformId: String,
-        platformName: String,
+        platformNameRes: Int,
         packageName: String,
         status: PlatformSupportStatus,
     ): PlatformSupportEntry =
         PlatformSupportEntry(
             platformId = platformId,
-            platformName = platformName,
+            platformNameRes = platformNameRes,
             packageName = packageName,
             status = status,
         )
