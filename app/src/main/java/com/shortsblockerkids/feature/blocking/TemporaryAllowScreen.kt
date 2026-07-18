@@ -14,8 +14,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.shortsblockerkids.R
 
 @Composable
 fun TemporaryAllowScreen(
@@ -32,13 +35,13 @@ fun TemporaryAllowScreen(
         horizontalAlignment = Alignment.Start,
     ) {
         Text(
-            text = "Allow short videos",
+            text = stringResource(R.string.temporary_allow_title),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "Allow protected short-video apps on this phone for:",
+            text = stringResource(R.string.temporary_allow_description),
             style = MaterialTheme.typography.bodyLarge,
         )
         Spacer(modifier = Modifier.height(24.dp))
@@ -47,7 +50,13 @@ fun TemporaryAllowScreen(
                 onClick = { onDurationSelected(minutes) },
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text("$minutes minutes")
+                Text(
+                    pluralStringResource(
+                        R.plurals.temporary_allow_duration_minutes,
+                        minutes,
+                        minutes,
+                    ),
+                )
             }
             Spacer(modifier = Modifier.height(12.dp))
         }
@@ -55,7 +64,7 @@ fun TemporaryAllowScreen(
             onClick = onCancel,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text("Cancel")
+            Text(stringResource(R.string.temporary_allow_cancel))
         }
     }
 }

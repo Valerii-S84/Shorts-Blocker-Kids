@@ -21,11 +21,14 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.shortsblockerkids.R
 import com.shortsblockerkids.core.security.PinPolicy
 import com.shortsblockerkids.core.security.PinVerificationResult
 import kotlinx.coroutines.launch
@@ -38,7 +41,7 @@ fun PinEntryScreen(
     modifier: Modifier = Modifier,
 ) {
     var pin by remember { mutableStateOf("") }
-    var message by remember { mutableStateOf<String?>(null) }
+    var message by remember { mutableStateOf<PinEntryMessage?>(null) }
     var isVerifying by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
     val canSubmit = PinPolicy.isVerificationInputComplete(pin)
@@ -49,19 +52,19 @@ fun PinEntryScreen(
         }
         val submittedPin = pin
         if (!PinPolicy.isVerificationInputComplete(submittedPin)) {
-            message = "Enter the 4-6 digit PIN."
+            message = PinEntryMessage.Incomplete
             return
         }
         isVerifying = true
         coroutineScope.launch {
             when (val result = onVerifyPin(submittedPin)) {
                 PinVerificationResult.Success -> onUnlocked()
-                PinVerificationResult.NotConfigured -> message = "PIN is not configured."
+                PinVerificationResult.NotConfigured -> message = PinEntryMessage.NotConfigured
                 is PinVerificationResult.Failure -> {
-                    message = "Wrong PIN. ${result.remainingAttempts} attempts left."
+                    message = PinEntryMessage.WrongPin(result.remainingAttempts)
                 }
                 is PinVerificationResult.Locked -> {
-                    message = "PIN locked. Try again in ${result.remainingMinutes()} min."
+                    message = PinEntryMessage.Locked(result.remainingMinutes())
                 }
             }
             isVerifying = false
@@ -77,7 +80,7 @@ fun PinEntryScreen(
         horizontalAlignment = Alignment.Start,
     ) {
         Text(
-            text = "Enter Parent PIN",
+            text = stringResource(R.string.pin_entry_title),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
         )
@@ -88,7 +91,7 @@ fun PinEntryScreen(
                 pin = it.filter(Char::isDigit).take(6)
                 message = null
             },
-            label = { Text("PIN") },
+            label = { Text(stringResource(R.string.pin_input_label)) },
             singleLine = true,
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions =
@@ -100,9 +103,9 @@ fun PinEntryScreen(
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(modifier = Modifier.height(12.dp))
-        message?.let {
+        message?.let { currentMessage ->
             Text(
-                text = it,
+                text = currentMessage.localizedMessage(),
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodyMedium,
             )
@@ -113,12 +116,45 @@ fun PinEntryScreen(
             enabled = canSubmit && !isVerifying,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text("Unlock")
+            Text(stringResource(R.string.pin_entry_submit))
         }
     }
 }
 
+@Composable
+private fun PinEntryMessage.localizedMessage(): String =
+    when (this) {
+        PinEntryMessage.Incomplete -> stringResource(R.string.pin_entry_error_incomplete)
+        PinEntryMessage.NotConfigured -> stringResource(R.string.pin_entry_error_not_configured)
+        is PinEntryMessage.WrongPin ->
+            pluralStringResource(
+                R.plurals.pin_entry_attempts_remaining,
+                remainingAttempts,
+                remainingAttempts,
+            )
+        is PinEntryMessage.Locked ->
+            pluralStringResource(
+                R.plurals.pin_entry_lockout_minutes,
+                remainingMinutes.toInt(),
+                remainingMinutes,
+            )
+    }
+
 private fun PinVerificationResult.Locked.remainingMinutes(): Long {
     val remainingMillis = (untilMillis - System.currentTimeMillis()).coerceAtLeast(0L)
     return TimeUnit.MILLISECONDS.toMinutes(remainingMillis).coerceAtLeast(1L)
+}
+
+private sealed interface PinEntryMessage {
+    data object Incomplete : PinEntryMessage
+
+    data object NotConfigured : PinEntryMessage
+
+    data class WrongPin(
+        val remainingAttempts: Int,
+    ) : PinEntryMessage
+
+    data class Locked(
+        val remainingMinutes: Long,
+    ) : PinEntryMessage
 }
