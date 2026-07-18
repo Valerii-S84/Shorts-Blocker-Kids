@@ -7,10 +7,10 @@ class BillingCopyTest {
     @Test
     fun subscriptionTermsIncludeLoadedPriceAndGooglePlayCancellationPath() {
         assertEquals(
-            "Monthly auto-renewing subscription: EUR 2.20. " +
+            "Monthly auto-renewing subscription: localized Play price. " +
                 "Required after the free test to keep short-video blocking active. " +
                 "Charged by Google Play; manage or cancel anytime in Google Play.",
-            BillingCopy.subscriptionTermsText("EUR 2.20"),
+            BillingCopy.subscriptionTermsText("localized Play price"),
         )
     }
 
@@ -18,6 +18,7 @@ class BillingCopyTest {
     fun subscriptionTermsRemainExplicitBeforePriceLoads() {
         assertEquals(
             "Monthly auto-renewing subscription. " +
+                "Subscription price is shown by Google Play before purchase. " +
                 "Required after the free test to keep short-video blocking active. " +
                 "Charged by Google Play; manage or cancel anytime in Google Play.",
             BillingCopy.subscriptionTermsText(null),
@@ -32,7 +33,7 @@ class BillingCopyTest {
                 billingUiState =
                     BillingUiState(
                         isPurchaseInProgress = true,
-                        productPrice = "EUR 2.20",
+                        productPrice = "localized Play price",
                         statusMessage = "Loaded.",
                     ),
             )
@@ -48,7 +49,7 @@ class BillingCopyTest {
                 billingUiState =
                     BillingUiState(
                         isPurchaseInProgress = true,
-                        productPrice = "EUR 2.20",
+                        productPrice = "localized Play price",
                         statusMessage = "Loaded.",
                     ),
             )
@@ -63,12 +64,12 @@ class BillingCopyTest {
                 hasBillingEntitlement = false,
                 billingUiState =
                     BillingUiState(
-                        productPrice = "EUR 2.20",
+                        productPrice = "localized Play price",
                         statusMessage = "Loaded.",
                     ),
             )
 
-        assertEquals("available: EUR 2.20", label)
+        assertEquals("available: localized Play price", label)
     }
 
     @Test
@@ -84,10 +85,10 @@ class BillingCopyTest {
 
     @Test
     fun billingUiStatePriceLabelUsesLoadedPriceOrFallback() {
-        assertEquals("Monthly subscription", BillingUiState().priceLabel)
+        assertEquals("Price shown in Google Play", BillingUiState().priceLabel)
         assertEquals(
-            "EUR 2.20",
-            BillingUiState(productPrice = "EUR 2.20").priceLabel,
+            "localized Play price",
+            BillingUiState(productPrice = "localized Play price").priceLabel,
         )
     }
 

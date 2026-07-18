@@ -47,7 +47,7 @@ Version code: 1
 Subscription product ID: shorts_blocker_kids_monthly
 Billing library: com.android.billingclient:billing-ktx:9.0.0
 Product type: subscription
-Current proposed price: EUR 2.20/month
+Price is configured per country in Google Play Console. Planned launch pricing: Europe €2.99/month, Ukraine approx. €0.99/month equivalent.
 Production billing backend URL: https://billing.shortsblockerkids.de
 RTDN webhook URL: https://billing.shortsblockerkids.de/billing/play/rtdn
 Privacy Policy URL: https://shortsblockerkids.de/privacy
@@ -70,9 +70,9 @@ runbook before uploading another AAB.
 6. Add benefits that describe the paid feature without implying a misleading
    free trial.
 7. Create an auto-renewing monthly base plan.
-8. Configure country/region availability and price. The planned first price is
-   EUR 2.20/month, but final localized pricing must be confirmed in Play
-   Console.
+8. Configure country/region availability and price. Price is configured per
+   country in Google Play Console. Planned launch pricing: Europe €2.99/month,
+   Ukraine approx. €0.99/month equivalent.
 9. Activate the base plan.
 10. Do not add introductory offers, prepaid plans, or installment plans unless
     the app UI and policy docs are updated first.

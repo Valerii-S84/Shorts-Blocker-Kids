@@ -1101,7 +1101,7 @@ Deferred / frozen:
 
 ```text
 Платно:
-- €2.20 / місяць
+- Price is configured per country in Google Play Console. Planned launch pricing: Europe €2.99/month, Ukraine approx. €0.99/month equivalent.
 - recurring monthly subscription
 
 Payment provider for Play Store launch:
@@ -1565,7 +1565,7 @@ Other apps:
 6. Чи не зависає overlay?
 7. Чи дитина може випадково вимкнути захист?
 8. Чи не страшний текст для дитини?
-9. Чи готові батьки платити €2.20 / місяць?
+9. Чи готові батьки платити локалізовану ціну підписки, показану Google Play?
 10. Що саме незрозуміло в onboarding?
 ```
 

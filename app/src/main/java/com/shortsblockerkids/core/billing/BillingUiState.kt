@@ -9,5 +9,5 @@ data class BillingUiState(
     val canStartPurchase: Boolean = false,
 ) {
     val priceLabel: String
-        get() = productPrice ?: "Monthly subscription"
+        get() = productPrice ?: "Price shown in Google Play"
 }
