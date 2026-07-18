@@ -1,31 +1,28 @@
 package com.shortsblockerkids.accessibility
 
+import androidx.annotation.StringRes
+import com.shortsblockerkids.R
 import com.shortsblockerkids.core.storage.AppSettings
 
 data class SupportedPlatform(
     val id: String,
-    val displayName: String,
 ) {
     companion object {
         val YOUTUBE_SHORTS =
             SupportedPlatform(
                 id = AppSettings.YOUTUBE_SHORTS_PLATFORM_ID,
-                displayName = "YouTube Shorts",
             )
         val TIKTOK =
             SupportedPlatform(
                 id = AppSettings.TIKTOK_PLATFORM_ID,
-                displayName = "TikTok short-video feed",
             )
         val INSTAGRAM_REELS =
             SupportedPlatform(
                 id = AppSettings.INSTAGRAM_REELS_PLATFORM_ID,
-                displayName = "Instagram Reels",
             )
         val FACEBOOK_REELS =
             SupportedPlatform(
                 id = AppSettings.FACEBOOK_REELS_PLATFORM_ID,
-                displayName = "Facebook Reels",
             )
 
         val PROTECTED_PLATFORMS =
@@ -38,17 +35,15 @@ data class SupportedPlatform(
     }
 }
 
-enum class PlatformSupportStatus(
-    val label: String,
-) {
-    SUPPORTED("supported"),
-    SUPPORTED_BY_CODE_NEEDS_REAL_DEVICE_QA("supported by code; needs real-device QA"),
-    NOT_SUPPORTED("not supported"),
+enum class PlatformSupportStatus {
+    SUPPORTED,
+    SUPPORTED_BY_CODE_NEEDS_REAL_DEVICE_QA,
+    NOT_SUPPORTED,
 }
 
 data class PlatformSupportEntry(
     val platformId: String,
-    val platformName: String,
+    @param:StringRes val platformNameRes: Int,
     val packageName: String,
     val status: PlatformSupportStatus,
 )
@@ -61,37 +56,37 @@ object PlatformSupportMatrix {
         listOf(
             PlatformSupportEntry(
                 platformId = SupportedPlatform.YOUTUBE_SHORTS.id,
-                platformName = "YouTube Shorts",
+                platformNameRes = R.string.platform_youtube_shorts,
                 packageName = YouTubeShortsDetector.YOUTUBE_PACKAGE,
                 status = PlatformSupportStatus.SUPPORTED,
             ),
             PlatformSupportEntry(
                 platformId = SupportedPlatform.TIKTOK.id,
-                platformName = "TikTok short-video feed",
+                platformNameRes = R.string.platform_tiktok_short_video_feed,
                 packageName = TikTokShortVideoDetector.TIKTOK_PACKAGE,
                 status = PlatformSupportStatus.SUPPORTED_BY_CODE_NEEDS_REAL_DEVICE_QA,
             ),
             PlatformSupportEntry(
                 platformId = "tiktok_regional",
-                platformName = "TikTok regional",
+                platformNameRes = R.string.platform_tiktok_regional,
                 packageName = TIKTOK_REGIONAL_PACKAGE,
                 status = PlatformSupportStatus.NOT_SUPPORTED,
             ),
             PlatformSupportEntry(
                 platformId = SupportedPlatform.INSTAGRAM_REELS.id,
-                platformName = "Instagram Reels",
+                platformNameRes = R.string.platform_instagram_reels,
                 packageName = InstagramReelsDetector.INSTAGRAM_PACKAGE,
                 status = PlatformSupportStatus.SUPPORTED_BY_CODE_NEEDS_REAL_DEVICE_QA,
             ),
             PlatformSupportEntry(
                 platformId = SupportedPlatform.FACEBOOK_REELS.id,
-                platformName = "Facebook Reels",
+                platformNameRes = R.string.platform_facebook_reels,
                 packageName = FacebookReelsDetector.FACEBOOK_PACKAGE,
                 status = PlatformSupportStatus.SUPPORTED_BY_CODE_NEEDS_REAL_DEVICE_QA,
             ),
             PlatformSupportEntry(
                 platformId = "facebook_lite",
-                platformName = "Facebook Lite",
+                platformNameRes = R.string.platform_facebook_lite,
                 packageName = FACEBOOK_LITE_PACKAGE,
                 status = PlatformSupportStatus.NOT_SUPPORTED,
             ),
@@ -102,14 +97,4 @@ object PlatformSupportMatrix {
 
     val unsupportedEntries: List<PlatformSupportEntry>
         get() = entries.filter { it.status == PlatformSupportStatus.NOT_SUPPORTED }
-
-    fun protectedSummary(): String =
-        protectedEntries.joinToString { entry ->
-            "${entry.platformName}: ${entry.status.label}"
-        }
-
-    fun unsupportedSummary(): String =
-        unsupportedEntries.joinToString { entry ->
-            "${entry.platformName} (${entry.packageName})"
-        }
 }

@@ -11,4 +11,166 @@
     <string name="tamper_protection_description">Optional parent-controlled Device Admin protection that makes uninstall harder while active.</string>
     <string name="tamper_protection_system_explanation">Optional tamper protection makes Shorts Blocker Kids harder to uninstall while active. It does not replace Accessibility protection and does not block Settings or perform hidden system actions.</string>
     <string name="tamper_protection_disable_warning">Tamper protection is active. Disabling it can allow Shorts Blocker Kids to be uninstalled or protection to be changed without the parent PIN.</string>
+
+    <!-- Welcome -->
+    <string name="welcome_title">Shorts Blocker Kids</string>
+    <string name="welcome_subtitle">Blocks supported short-video surfaces on a child’s phone.\nNo account. No server. Parent PIN only.</string>
+    <string name="welcome_start">Start</string>
+
+    <!-- Protected apps -->
+    <string name="protected_apps_title">Select Protected Apps</string>
+    <string name="protected_apps_description">Choose which supported short-video surfaces this parent PIN should protect on this phone.</string>
+    <string name="protected_apps_continue">Continue</string>
+
+    <!-- PIN setup -->
+    <string name="pin_setup_title">Create Parent PIN</string>
+    <string name="pin_input_label">PIN</string>
+    <string name="pin_confirmation_input_label">Confirm PIN</string>
+    <string name="pin_setup_submit">Create PIN</string>
+    <string name="pin_setup_error_invalid_length">PIN must be 4-6 digits.</string>
+    <string name="pin_setup_error_weak_pin">Choose a stronger PIN.</string>
+    <string name="pin_setup_error_confirmation_mismatch">PIN confirmation does not match.</string>
+
+    <!-- PIN entry -->
+    <string name="pin_entry_title">Enter Parent PIN</string>
+    <string name="pin_entry_submit">Unlock</string>
+    <string name="pin_entry_error_incomplete">Enter the 4-6 digit PIN.</string>
+    <string name="pin_entry_error_not_configured">PIN is not configured.</string>
+    <plurals name="pin_entry_attempts_remaining">
+        <item quantity="one">Wrong PIN. %1$d attempt left.</item>
+        <item quantity="other">Wrong PIN. %1$d attempts left.</item>
+    </plurals>
+    <plurals name="pin_entry_lockout_minutes">
+        <item quantity="one">PIN locked. Try again in %1$d min.</item>
+        <item quantity="other">PIN locked. Try again in %1$d min.</item>
+    </plurals>
+
+    <!-- Temporary allow -->
+    <string name="temporary_allow_title">Allow short videos</string>
+    <string name="temporary_allow_description">Allow protected short-video apps on this phone for:</string>
+    <string name="temporary_allow_cancel">Cancel</string>
+    <plurals name="temporary_allow_duration_minutes">
+        <item quantity="one">%1$d minute</item>
+        <item quantity="other">%1$d minutes</item>
+    </plurals>
+
+    <!-- Accessibility setup -->
+    <string name="enable_accessibility_title">Enable Protection</string>
+    <string name="enable_accessibility_instructions">1. Tap Open Settings.\n2. Find Shorts Blocker Kids.\n3. Turn the service on.\n4. Return to this app.</string>
+    <string name="enable_accessibility_status_enabled">Protection permission enabled</string>
+    <string name="enable_accessibility_status_disabled">Protection permission missing</string>
+    <string name="enable_accessibility_open_settings">Open Settings</string>
+    <string name="enable_accessibility_confirm_enabled">I enabled it</string>
+
+    <!-- Dashboard -->
+    <string name="dashboard_title">Short Video Protection</string>
+    <string name="dashboard_setup_checklist">Setup checklist</string>
+    <string name="dashboard_checklist_parent_pin">Parent PIN</string>
+    <string name="dashboard_checklist_protected_apps">Protected apps selected</string>
+    <string name="dashboard_checklist_accessibility_disclosure">Accessibility disclosure accepted</string>
+    <string name="dashboard_checklist_accessibility_service">Accessibility Service active</string>
+    <string name="dashboard_checklist_tamper_protection">Device Admin tamper protection</string>
+    <string name="dashboard_platform_support">Platform support</string>
+    <string name="dashboard_enabled_apps">Enabled apps</string>
+    <string name="dashboard_not_supported">Not supported</string>
+    <string name="dashboard_pin">PIN</string>
+    <string name="dashboard_free_test">Free test</string>
+    <plurals name="dashboard_days_remaining">
+        <item quantity="one">%1$d day remaining</item>
+        <item quantity="other">%1$d days remaining</item>
+    </plurals>
+    <string name="dashboard_days_remaining_label">Days remaining</string>
+    <string name="dashboard_subscription">Subscription</string>
+    <string name="dashboard_protection_permission">Protection permission</string>
+    <string name="dashboard_tamper_protection">Tamper protection</string>
+    <string name="dashboard_protection_status">Protection status</string>
+    <string name="dashboard_description">Shorts Blocker Kids works when Protection is ON and Android Accessibility Service is active for YouTube Shorts, TikTok short-video feed, Instagram Reels, and Facebook Reels. Optional Device Admin tamper protection can make uninstall harder while active. If Accessibility permission is turned off, blocking stops.</string>
+    <string name="dashboard_open_accessibility_settings">Open Accessibility Settings</string>
+    <string name="dashboard_review_accessibility_disclosure">Review Accessibility Disclosure</string>
+    <string name="dashboard_privacy_policy">Privacy Policy</string>
+    <string name="dashboard_review_tamper_protection">Review Tamper Protection</string>
+    <string name="dashboard_enable_tamper_protection">Enable Tamper Protection</string>
+    <string name="dashboard_local_qa">Local QA</string>
+    <string name="dashboard_google_play_subscription">Google Play subscription</string>
+    <string name="dashboard_manage_subscription">Manage subscription</string>
+    <string name="dashboard_subscribe_google_play">Subscribe with Google Play</string>
+    <string name="dashboard_restore_purchases">Restore purchases</string>
+
+    <!-- Statuses and errors -->
+    <string name="status_active">active</string>
+    <string name="status_missing">missing</string>
+    <string name="status_optional">optional</string>
+    <string name="status_enabled">enabled</string>
+    <string name="status_disabled">disabled</string>
+    <string name="status_created">created</string>
+    <string name="status_not_created">not created</string>
+    <string name="status_none">none</string>
+    <string name="status_not_started">not started</string>
+    <string name="status_free_test_active">Free test active</string>
+    <string name="status_free_test_expired">Free test expired</string>
+    <string name="status_subscription_active">Subscription active</string>
+    <string name="status_protection_permission_missing">Protection permission missing</string>
+    <string name="status_protection_active">Protection active</string>
+    <string name="status_protection_locked">Protection locked</string>
+    <string name="status_inactive">inactive</string>
+    <string name="status_optional_inactive">optional inactive</string>
+    <string name="status_locked">LOCKED</string>
+    <string name="status_on">ON</string>
+    <string name="status_off">OFF</string>
+    <string name="error_free_test_ended_with_detail">Free test period ended. %1$s</string>
+    <string name="error_protection_permission_missing">Protection permission missing</string>
+    <string name="error_no_protected_apps_selected">No protected apps selected</string>
+    <string name="error_free_test_expired">Free test expired</string>
+    <string name="error_protection_inactive_disabled">Protection inactive. Turn Protection ON to block short videos.</string>
+    <string name="error_protection_inactive_no_apps">Protection inactive. Enable at least one protected app.</string>
+    <string name="error_protection_inactive_accessibility">Protection inactive. Enable Accessibility Service.</string>
+    <string name="error_protection_inactive_temporary_allow">Protection inactive during temporary allow.</string>
+    <string name="error_free_test_not_started">Free test has not started. Enable protection permission to start the 20-day test.</string>
+    <string name="error_protection_inactive_setup">Protection inactive. Complete setup to block short videos.</string>
+
+    <!-- Platforms -->
+    <string name="platform_youtube_shorts">YouTube Shorts</string>
+    <string name="platform_tiktok_short_video_feed">TikTok short-video feed</string>
+    <string name="platform_tiktok_regional">TikTok regional</string>
+    <string name="platform_instagram_reels">Instagram Reels</string>
+    <string name="platform_facebook_reels">Facebook Reels</string>
+    <string name="platform_facebook_lite">Facebook Lite</string>
+    <string name="platform_status_supported">supported</string>
+    <string name="platform_status_supported_needs_qa">supported by code; needs real-device QA</string>
+    <string name="platform_status_not_supported">not supported</string>
+    <string name="platform_status_item_format">%1$s: %2$s</string>
+    <string name="platform_unsupported_item_format">%1$s (%2$s)</string>
+
+    <!-- Visible debug UI -->
+    <string name="debug_detector_playground_title">Detector Playground</string>
+    <string name="debug_no_scenario">No scenario</string>
+    <string name="debug_not_requested">not requested</string>
+    <string name="debug_detected_package">Detected package</string>
+    <string name="debug_disabled">disabled</string>
+    <string name="debug_protection_mode">Protection mode</string>
+    <string name="debug_blocking_decision">Blocking decision</string>
+    <string name="debug_entitlement">Entitlement</string>
+    <string name="debug_subscription_state">Subscription state</string>
+    <string name="debug_backend">Backend</string>
+    <string name="debug_enabled">enabled</string>
+    <string name="debug_billing_ui">Billing UI</string>
+    <string name="debug_protection_permission">Protection permission</string>
+    <string name="debug_missing">missing</string>
+    <string name="debug_scenario_format">Scenario: %1$s</string>
+    <string name="debug_confidence_format">confidence: %1$s</string>
+    <string name="debug_reasons_format">reasons: %1$s</string>
+    <string name="debug_signals_format">signals: %1$s</string>
+    <string name="debug_would_block_format">wouldBlock: %1$s</string>
+    <string name="debug_test_overlay_format">testOverlay: %1$s</string>
+    <string name="debug_snapshot_format">snapshot: %1$s</string>
+    <string name="debug_snapshot_requested">snapshot requested; open YouTube to capture next event</string>
+    <string name="debug_capture_youtube_snapshot">Capture YouTube UI Snapshot</string>
+    <string name="debug_overlay_requested">overlay requested; open YouTube to consume next event</string>
+    <string name="debug_request_test_overlay">Request Test Overlay</string>
+    <string name="debug_back">Back</string>
+    <string name="debug_scenario_youtube_home">Simulate YouTube Home</string>
+    <string name="debug_scenario_youtube_video">Simulate normal YouTube video</string>
+    <string name="debug_scenario_search">Simulate Search</string>
+    <string name="debug_scenario_shorts_high_confidence">Simulate Shorts HIGH confidence</string>
+    <string name="debug_scenario_non_youtube">Simulate non-YouTube app</string>
 </resources>
