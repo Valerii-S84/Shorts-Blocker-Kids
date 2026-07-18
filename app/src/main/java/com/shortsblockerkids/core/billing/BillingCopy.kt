@@ -5,7 +5,8 @@ object BillingCopy {
         val price =
             productPrice?.let { loadedPrice ->
                 "Monthly auto-renewing subscription: $loadedPrice"
-            } ?: "Monthly auto-renewing subscription"
+            } ?: "Monthly auto-renewing subscription. " +
+                "Subscription price is shown by Google Play before purchase"
 
         return "$price. Required after the free test to keep short-video blocking active. " +
             "Charged by Google Play; manage or cancel anytime in Google Play."

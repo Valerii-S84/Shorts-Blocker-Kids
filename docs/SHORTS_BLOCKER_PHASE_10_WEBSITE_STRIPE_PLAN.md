@@ -42,7 +42,7 @@ Before this path can become active later, it requires a separate explicit decisi
 
 ```text
 Product: Shorts Blocker Kids
-Price: €2.20/month
+Price is configured per country in Google Play Console. Planned launch pricing: Europe €2.99/month, Ukraine approx. €0.99/month equivalent.
 Currency: EUR
 Billing interval: monthly
 Provider: Stripe
@@ -58,10 +58,10 @@ Checkout mode: subscription
    - blocks YouTube Shorts for children;
    - works locally on the phone;
    - parent controls it with PIN;
-   - subscription costs €2.20/month.
+   - Price is configured per country in Google Play Console. Planned launch pricing: Europe €2.99/month, Ukraine approx. €0.99/month equivalent.
 5. Parent creates PIN.
 6. App generates local `install_id` and `install_secret`.
-7. App shows subscription screen with `Subscribe for €2.20/month`.
+7. App shows the localized subscription price returned by Google Play Billing.
 8. Parent taps subscribe.
 9. App calls backend `POST /billing/checkout-session`.
 10. Backend creates Stripe Checkout Session with `install_id` metadata.

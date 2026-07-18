@@ -13,7 +13,7 @@ Status: Partial. Active production monetization path is Google Play Store + Andr
 ## Phase 10A — Billing Policy Lock
 
 - [x] Confirm final product type: recurring subscription.
-- [x] Confirm first subscription price: `€2.20/month`.
+- [x] Price is configured per country in Google Play Console. Planned launch pricing: Europe €2.99/month, Ukraine approx. €0.99/month equivalent.
 - [x] Choose planned Play product ID: `shorts_blocker_kids_monthly`.
 - [x] Document entitlement rules for active, canceled, expired, pending, past_due, and unpaid states.
 - [x] Confirm no ads monetization in v1.

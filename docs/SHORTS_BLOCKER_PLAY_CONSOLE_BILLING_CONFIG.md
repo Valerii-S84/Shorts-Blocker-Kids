@@ -98,7 +98,7 @@ Base plan type: Auto-renewing
 Base plan ID: monthly
 Billing period: Monthly
 Regions: confirm final launch regions in Play Console
-Price: EUR 2.20/month as the first planned EU price
+Price is configured per country in Google Play Console. Planned launch pricing: Europe €2.99/month, Ukraine approx. €0.99/month equivalent.
 Offers: none for v1 unless app UI and docs are updated first
 ```
 
