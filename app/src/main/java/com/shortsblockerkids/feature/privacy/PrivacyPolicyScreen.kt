@@ -1,5 +1,6 @@
 package com.shortsblockerkids.feature.privacy
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,8 +14,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.shortsblockerkids.R
 
 @Composable
 fun PrivacyPolicyScreen(
@@ -31,87 +34,60 @@ fun PrivacyPolicyScreen(
         horizontalAlignment = Alignment.Start,
     ) {
         Text(
-            text = "Privacy Policy",
+            text = stringResource(R.string.privacy_policy_title),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
         )
         PrivacySection(
-            title = "Local app",
-            body =
-                "Shorts Blocker Kids works locally on this phone. It does not " +
-                    "require an account. Production subscription verification may " +
-                    "use a billing backend limited to Google Play entitlement status.",
+            titleRes = R.string.privacy_policy_local_app_title,
+            bodyRes = R.string.privacy_policy_local_app_body,
         )
         PrivacySection(
-            title = "Accessibility Service",
-            body =
-                "The app uses Android Accessibility Service to detect supported " +
-                    "short-video surfaces and show a blocking overlay when protection " +
-                    "is enabled. The protected surfaces are YouTube Shorts, TikTok " +
-                    "short-video feed, Instagram Reels, and Facebook Reels. TikTok " +
-                    "regional package com.ss.android.ugc.trill and Facebook Lite are " +
-                    "not supported.",
+            titleRes = R.string.privacy_policy_accessibility_service_title,
+            bodyRes = R.string.privacy_policy_accessibility_service_body,
         )
         PrivacySection(
-            title = "Tamper protection",
-            body =
-                "Optional Device Admin tamper protection can make Shorts Blocker " +
-                    "Kids harder to uninstall while it is active. It does not replace " +
-                    "Accessibility Service, block Android Settings, wipe the device, " +
-                    "or perform hidden system actions.",
+            titleRes = R.string.privacy_policy_tamper_protection_title,
+            bodyRes = R.string.privacy_policy_tamper_protection_body,
         )
         PrivacySection(
-            title = "Local data",
-            body =
-                "Protection settings and parent PIN hash metadata stay on this " +
-                    "phone. The parent PIN is not stored as plain text.",
+            titleRes = R.string.privacy_policy_local_data_title,
+            bodyRes = R.string.privacy_policy_local_data_body,
         )
         PrivacySection(
-            title = "Data collection",
-            body =
-                "The app does not collect or send child data, supported app activity, " +
-                    "watch history, video titles, URLs, account names, comments, messages, " +
-                    "screen recordings, audio, location, contacts, browsing history, or raw " +
-                    "Accessibility tree dumps.",
+            titleRes = R.string.privacy_policy_data_collection_title,
+            bodyRes = R.string.privacy_policy_data_collection_body,
         )
         PrivacySection(
-            title = "Payments",
-            body =
-                "Subscriptions are handled through Google Play Billing. Payment " +
-                    "data is processed by Google Play under Google Play terms. " +
-                    "This app stores local subscription entitlement status. Backend " +
-                    "verification, when enabled, uses only billing technical data and " +
-                    "stores hashed purchase tokens.",
+            titleRes = R.string.privacy_policy_payments_title,
+            bodyRes = R.string.privacy_policy_payments_body,
         )
         PrivacySection(
-            title = "Limitations",
-            body =
-                "Blocking works when Protection is ON and Android Accessibility " +
-                    "Service is active. If that permission is turned off or the " +
-                    "app is removed after tamper protection is disabled, blocking stops.",
+            titleRes = R.string.privacy_policy_limitations_title,
+            bodyRes = R.string.privacy_policy_limitations_body,
         )
         Button(
             onClick = onBack,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text("Back")
+            Text(stringResource(R.string.common_back))
         }
     }
 }
 
 @Composable
 private fun PrivacySection(
-    title: String,
-    body: String,
+    @StringRes titleRes: Int,
+    @StringRes bodyRes: Int,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(
-            text = title,
+            text = stringResource(titleRes),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold,
         )
         Text(
-            text = body,
+            text = stringResource(bodyRes),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.secondary,
         )

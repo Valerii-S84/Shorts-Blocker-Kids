@@ -16,8 +16,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.shortsblockerkids.R
 
 @Composable
 fun TamperProtectionDisclosureScreen(
@@ -36,33 +38,22 @@ fun TamperProtectionDisclosureScreen(
         horizontalAlignment = Alignment.Start,
     ) {
         Text(
-            text = "Tamper Protection",
+            text = stringResource(R.string.tamper_protection_disclosure_title),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text =
-                "Device Admin tamper protection is optional. It makes Shorts " +
-                    "Blocker Kids harder to uninstall while it is active, so a " +
-                    "child cannot remove protection as easily.\n\n" +
-                    "It does not replace Android Accessibility Service. Blocking " +
-                    "still works only when Accessibility protection is enabled. " +
-                    "This app will not block Android Settings, change hidden " +
-                    "system settings, wipe the device, lock the screen, reset " +
-                    "passwords, or manage other apps.\n\n" +
-                    "If someone tries to disable tamper protection, Android will " +
-                    "show a warning before allowing the Device Admin status to be " +
-                    "turned off.",
+            text = stringResource(R.string.tamper_protection_disclosure_body),
             style = MaterialTheme.typography.bodyLarge,
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
             text =
                 if (isTamperProtectionEnabled) {
-                    "Tamper protection is active"
+                    stringResource(R.string.tamper_protection_status_active)
                 } else {
-                    "Tamper protection is optional and currently inactive"
+                    stringResource(R.string.tamper_protection_status_optional_inactive)
                 },
             style = MaterialTheme.typography.bodyMedium,
             color =
@@ -78,14 +69,20 @@ fun TamperProtectionDisclosureScreen(
             enabled = !isTamperProtectionEnabled,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text("I understand, open Device Admin")
+            Text(stringResource(R.string.tamper_protection_open_device_admin))
         }
         Spacer(modifier = Modifier.height(12.dp))
         OutlinedButton(
             onClick = onBack,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text(if (isTamperProtectionEnabled) "Done" else "Not now")
+            Text(
+                if (isTamperProtectionEnabled) {
+                    stringResource(R.string.common_done)
+                } else {
+                    stringResource(R.string.common_not_now)
+                },
+            )
         }
     }
 }

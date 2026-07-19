@@ -3,7 +3,9 @@ package com.shortsblockerkids.accessibility
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.w3c.dom.Element
 import java.io.File
+import javax.xml.parsers.DocumentBuilderFactory
 
 class ReleaseCopyInvariantTest {
     @Test
@@ -29,30 +31,20 @@ class ReleaseCopyInvariantTest {
 
     @Test
     fun inAppPrivacyAndDisclosureCopyMatchFullPlatformScope() {
-        val disclosure =
-            repoFile(
-                "app/src/main/java/com/shortsblockerkids/feature/onboarding/AccessibilityDisclosureScreen.kt",
-            ).readText()
-        val privacy =
-            repoFile(
-                "app/src/main/java/com/shortsblockerkids/feature/privacy/PrivacyPolicyScreen.kt",
-            ).readText()
+        val policyResourceText = normalizedText(defaultPolicyResourceText())
 
-        listOf(disclosure, privacy).map(::normalizedText).forEach { text ->
-            assertTrue(text.contains("YouTube Shorts"))
-            assertTrue(text.contains("TikTok short-video feed"))
-            assertTrue(text.contains("Instagram Reels"))
-            assertTrue(text.contains("Facebook Reels"))
-            assertTrue(text.contains("com.ss.android.ugc.trill"))
-            assertTrue(text.contains("Facebook"))
-            assertTrue(text.contains("Lite"))
-            assertTrue(text.contains("not supported"))
-            assertFalse(text.contains("needs real-device QA"))
-            assertFalse(text.contains("code-level detectors"))
-            assertFalse(text.contains("YouTube-only"))
-            assertFalse(text.contains("supports all"))
-            assertFalse(text.contains("blocks all"))
-        }
+        assertTrue(policyResourceText.contains("YouTube Shorts"))
+        assertTrue(policyResourceText.contains("TikTok short-video feed"))
+        assertTrue(policyResourceText.contains("Instagram Reels"))
+        assertTrue(policyResourceText.contains("Facebook Reels"))
+        assertTrue(policyResourceText.contains("com.ss.android.ugc.trill"))
+        assertTrue(policyResourceText.contains("Facebook Lite"))
+        assertTrue(policyResourceText.contains("not supported"))
+        assertTrue(policyResourceText.contains("real-device QA"))
+        assertFalse(policyResourceText.contains("code-level detectors"))
+        assertFalse(policyResourceText.contains("YouTube-only"))
+        assertFalse(policyResourceText.contains("supports all"))
+        assertFalse(policyResourceText.contains("blocks all"))
     }
 
     @Test
@@ -104,6 +96,7 @@ class ReleaseCopyInvariantTest {
         assertTrue(manifest.contains(".core.tamper.TamperProtectionReceiver"))
         assertTrue(manifest.contains("android.permission.BIND_DEVICE_ADMIN"))
         assertTrue(manifest.contains("@xml/tamper_protection_device_admin"))
+        assertTrue(manifest.contains("android:label=\"@string/accessibility_service_label\""))
         assertTrue(deviceAdmin.contains("<uses-policies />"))
         assertTrue(strings.contains("does not replace Accessibility protection"))
         assertTrue(strings.contains("does not block Settings"))
@@ -217,11 +210,7 @@ class ReleaseCopyInvariantTest {
     fun privacyCopyDeniesSensitiveChildAndAccessibilityDataCollection() {
         val privacySources =
             listOf(
-                normalizedText(
-                    repoFile(
-                        "app/src/main/java/com/shortsblockerkids/feature/privacy/PrivacyPolicyScreen.kt",
-                    ).readText(),
-                ),
+                normalizedText(defaultPolicyResourceText()),
                 normalizedText(repoFile("docs/SHORTS_BLOCKER_PRIVACY_POLICY_DRAFT.md").readText()),
             )
 
@@ -242,12 +231,7 @@ class ReleaseCopyInvariantTest {
     @Test
     fun billingPrivacyCopyLimitsBackendDataToEntitlementVerification() {
         val privacyPolicy = normalizedText(repoFile("docs/SHORTS_BLOCKER_PRIVACY_POLICY_DRAFT.md").readText())
-        val inAppPrivacy =
-            normalizedText(
-                repoFile(
-                    "app/src/main/java/com/shortsblockerkids/feature/privacy/PrivacyPolicyScreen.kt",
-                ).readText(),
-            )
+        val inAppPrivacy = normalizedText(defaultPolicyResourceText())
 
         assertTrue(privacyPolicy.contains("billing technical data"))
         assertTrue(privacyPolicy.contains("hashed purchase token"))
@@ -308,6 +292,26 @@ class ReleaseCopyInvariantTest {
         assertFalse(serviceConfig.contains(PlatformSupportMatrix.FACEBOOK_LITE_PACKAGE))
     }
 
+    @Test
+    fun debugAccessibilityServiceAllowsOnlyProtectedAndFixturePackages() {
+        val serviceConfig =
+            repoFile(
+                "app/src/debug/res/xml/shorts_blocker_accessibility_service.xml",
+            ).readText()
+
+        assertTrue(serviceConfig.contains(YouTubeShortsDetector.YOUTUBE_PACKAGE))
+        assertTrue(serviceConfig.contains(TikTokShortVideoDetector.TIKTOK_PACKAGE))
+        assertTrue(serviceConfig.contains(InstagramReelsDetector.INSTAGRAM_PACKAGE))
+        assertTrue(serviceConfig.contains(FacebookReelsDetector.FACEBOOK_PACKAGE))
+        assertTrue(serviceConfig.contains(DebugFixturePackages.YOUTUBE))
+        assertTrue(serviceConfig.contains(DebugFixturePackages.TIKTOK))
+        assertTrue(serviceConfig.contains(DebugFixturePackages.INSTAGRAM))
+        assertTrue(serviceConfig.contains(DebugFixturePackages.FACEBOOK))
+        assertFalse(serviceConfig.contains(PlatformSupportMatrix.TIKTOK_REGIONAL_PACKAGE))
+        assertFalse(serviceConfig.contains(PlatformSupportMatrix.FACEBOOK_LITE_PACKAGE))
+        assertFalse(serviceConfig.contains("com.example.shortvideo.fixture"))
+    }
+
     private fun repoFile(relativePath: String): File {
         val userDir = requireNotNull(System.getProperty("user.dir"))
         var root: File? = File(userDir)
@@ -323,6 +327,66 @@ class ReleaseCopyInvariantTest {
 
     private fun normalizedText(text: String): String =
         text
+            .replace("\\n", " ")
             .replace(Regex("[\"+\\r\\n]+"), " ")
             .replace(Regex("\\s+"), " ")
+
+    private fun defaultPolicyResourceText(): String =
+        POLICY_RESOURCE_NAMES.joinToString(separator = "\n") { resourceName ->
+            stringValue(resourceName)
+        }
+
+    private fun stringValue(name: String): String = resourceElement("string", name).textContent.trim()
+
+    private fun resourceElement(
+        tagName: String,
+        name: String,
+    ): Element {
+        val nodes = resources.getElementsByTagName(tagName)
+        for (index in 0 until nodes.length) {
+            val element = nodes.item(index) as Element
+            if (element.getAttribute("name") == name) {
+                return element
+            }
+        }
+        error("Missing " + tagName + " resource: " + name)
+    }
+
+    private val resources by lazy {
+        DocumentBuilderFactory
+            .newInstance()
+            .apply {
+                setFeature("http://apache.org/xml/features/disallow-doctype-decl", true)
+            }.newDocumentBuilder()
+            .parse(repoFile("app/src/main/res/values/strings.xml"))
+    }
+
+    private companion object {
+        val POLICY_RESOURCE_NAMES =
+            setOf(
+                "accessibility_disclosure_title",
+                "accessibility_disclosure_body",
+                "accessibility_disclosure_accept",
+                "privacy_policy_title",
+                "privacy_policy_local_app_title",
+                "privacy_policy_local_app_body",
+                "privacy_policy_accessibility_service_title",
+                "privacy_policy_accessibility_service_body",
+                "privacy_policy_tamper_protection_title",
+                "privacy_policy_tamper_protection_body",
+                "privacy_policy_local_data_title",
+                "privacy_policy_local_data_body",
+                "privacy_policy_data_collection_title",
+                "privacy_policy_data_collection_body",
+                "privacy_policy_payments_title",
+                "privacy_policy_payments_body",
+                "privacy_policy_limitations_title",
+                "privacy_policy_limitations_body",
+                "tamper_protection_disclosure_title",
+                "tamper_protection_disclosure_body",
+                "tamper_protection_status_active",
+                "tamper_protection_status_optional_inactive",
+                "tamper_protection_open_device_admin",
+            )
+    }
 }

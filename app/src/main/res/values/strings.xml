@@ -12,6 +12,40 @@
     <string name="tamper_protection_system_explanation">Optional tamper protection makes Shorts Blocker Kids harder to uninstall while active. It does not replace Accessibility protection and does not block Settings or perform hidden system actions.</string>
     <string name="tamper_protection_disable_warning">Tamper protection is active. Disabling it can allow Shorts Blocker Kids to be uninstalled or protection to be changed without the parent PIN.</string>
 
+    <!-- Common -->
+    <string name="common_back">Back</string>
+    <string name="common_done">Done</string>
+    <string name="common_not_now">Not now</string>
+
+    <!-- Accessibility disclosure -->
+    <string name="accessibility_disclosure_title">Accessibility Permission</string>
+    <string name="accessibility_disclosure_body">Shorts Blocker Kids uses Android Accessibility Service to detect when protected short-video surfaces are open and show a blocking overlay. The protected surfaces are YouTube Shorts, TikTok short-video feed, Instagram Reels, and Facebook Reels. TikTok regional package com.ss.android.ugc.trill and Facebook Lite are not supported. YouTube Shorts has prior real-device smoke evidence. TikTok, Instagram Reels, and Facebook Reels have detector and unit coverage, but still require real-device QA before they are production-verified.\n\nWhen short videos are blocked, the parent PIN can temporarily allow access. Without the parent PIN, the blocking overlay stays active while a protected short-video surface is open.\n\nThe app does not collect or send child data, supported app activity, watch history, video titles, URLs, account names, comments, messages, screen recordings, audio, location, contacts, browsing history, or raw Accessibility tree dumps. There is no account system, analytics, or ads. Backend behavior is limited to Google Play billing verification. Rules and PIN protection stay locally on this phone.\n\nBlocking works when Protection is ON and Android Accessibility Service is active. If that permission is turned off or the app is removed, blocking stops.</string>
+    <string name="accessibility_disclosure_accept">I agree and continue</string>
+
+    <!-- Privacy policy -->
+    <string name="privacy_policy_title">Privacy Policy</string>
+    <string name="privacy_policy_local_app_title">Local app</string>
+    <string name="privacy_policy_local_app_body">Shorts Blocker Kids works locally on this phone. It does not require an account. Production subscription verification may use a billing backend limited to Google Play entitlement status.</string>
+    <string name="privacy_policy_accessibility_service_title">Accessibility Service</string>
+    <string name="privacy_policy_accessibility_service_body">The app uses Android Accessibility Service to detect supported short-video surfaces and show a blocking overlay when protection is enabled. The protected surfaces are YouTube Shorts, TikTok short-video feed, Instagram Reels, and Facebook Reels. TikTok regional package com.ss.android.ugc.trill and Facebook Lite are not supported.</string>
+    <string name="privacy_policy_tamper_protection_title">Tamper protection</string>
+    <string name="privacy_policy_tamper_protection_body">Optional Device Admin tamper protection can make Shorts Blocker Kids harder to uninstall while it is active. It does not replace Accessibility Service, block Android Settings, wipe the device, or perform hidden system actions.</string>
+    <string name="privacy_policy_local_data_title">Local data</string>
+    <string name="privacy_policy_local_data_body">Protection settings and parent PIN hash metadata stay on this phone. The parent PIN is not stored as plain text.</string>
+    <string name="privacy_policy_data_collection_title">Data collection</string>
+    <string name="privacy_policy_data_collection_body">The app does not collect or send child data, supported app activity, watch history, video titles, URLs, account names, comments, messages, screen recordings, audio, location, contacts, browsing history, or raw Accessibility tree dumps.</string>
+    <string name="privacy_policy_payments_title">Payments</string>
+    <string name="privacy_policy_payments_body">Subscriptions are handled through Google Play Billing. Payment data is processed by Google Play under Google Play terms. This app stores local subscription entitlement status. Backend verification, when enabled, uses only billing technical data and stores hashed purchase tokens.</string>
+    <string name="privacy_policy_limitations_title">Limitations</string>
+    <string name="privacy_policy_limitations_body">Blocking works when Protection is ON and Android Accessibility Service is active. If that permission is turned off or the app is removed after tamper protection is disabled, blocking stops.</string>
+
+    <!-- Tamper protection disclosure -->
+    <string name="tamper_protection_disclosure_title">Tamper Protection</string>
+    <string name="tamper_protection_disclosure_body">Device Admin tamper protection is optional. It makes Shorts Blocker Kids harder to uninstall while it is active, so a child cannot remove protection as easily.\n\nIt does not replace Android Accessibility Service. Blocking still works only when Accessibility protection is enabled. This app will not block Android Settings, change hidden system settings, wipe the device, lock the screen, reset passwords, or manage other apps.\n\nIf someone tries to disable tamper protection, Android will show a warning before allowing the Device Admin status to be turned off.</string>
+    <string name="tamper_protection_status_active">Tamper protection is active</string>
+    <string name="tamper_protection_status_optional_inactive">Tamper protection is optional and currently inactive</string>
+    <string name="tamper_protection_open_device_admin">I understand, open Device Admin</string>
+
     <!-- Welcome -->
     <string name="welcome_title">Shorts Blocker Kids</string>
     <string name="welcome_subtitle">Blocks supported short-video surfaces on a child’s phone.\nNo account. No server. Parent PIN only.</string>
