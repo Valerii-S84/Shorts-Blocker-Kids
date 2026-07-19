@@ -45,7 +45,13 @@ val installFakeSocialApps by tasks.registering {
                 .orElse(providers.environmentVariable("ANDROID_SDK_ROOT"))
                 .orNull
                 ?: error("Set ANDROID_HOME or ANDROID_SDK_ROOT to install fake social apps.")
-        val adb = file("$androidHome/platform-tools/adb")
+        val adbExecutable =
+            if (System.getProperty("os.name").startsWith("Windows", ignoreCase = true)) {
+                "adb.exe"
+            } else {
+                "adb"
+            }
+        val adb = file("$androidHome/platform-tools/$adbExecutable")
         require(adb.isFile) { "adb not found at ${adb.absolutePath}" }
 
         fakeSocialAppVariants.values.forEach { relativeApkPath ->

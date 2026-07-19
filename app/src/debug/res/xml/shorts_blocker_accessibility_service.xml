@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeWindowStateChanged|typeWindowContentChanged|typeViewScrolled|typeWindowsChanged"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:accessibilityFlags="flagReportViewIds|flagRetrieveInteractiveWindows"
+    android:canRetrieveWindowContent="true"
+    android:description="@string/accessibility_service_description"
+    android:notificationTimeout="120"
+    android:packageNames="com.google.android.youtube,com.zhiliaoapp.musically,com.instagram.android,com.facebook.katana,com.shortsblockerkids.fixture.youtube,com.shortsblockerkids.fixture.tiktok,com.shortsblockerkids.fixture.instagram,com.shortsblockerkids.fixture.facebook"
+    android:settingsActivity="com.shortsblockerkids.MainActivity" />
