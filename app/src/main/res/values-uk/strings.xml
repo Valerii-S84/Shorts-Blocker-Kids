@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Shorts Blocker Kids</string>
+    <string name="accessibility_service_label">Захист Shorts Blocker Kids</string>
+    <string name="accessibility_service_description">Локально виявляє YouTube Shorts, стрічку коротких відео TikTok, Instagram Reels і Facebook Reels, коли захист увімкнено, та закриває екран блокування коротких відео після виходу із цих розділів.</string>
+    <string name="blocking_overlay_title">Коротке відео заблоковано</string>
+    <string name="blocking_overlay_message">Щоб тимчасово дозволити короткі відео або змінити захист, потрібен батьківський PIN-код.</string>
+    <string name="blocking_overlay_exit_shorts">Вийти на головний екран телефона</string>
+    <string name="blocking_overlay_enter_pin">Ввести PIN-код</string>
+    <string name="tamper_protection_label">Захист Shorts Blocker Kids від втручання</string>
+    <string name="tamper_protection_description">Необов’язковий захист під контролем батьків із правами адміністратора пристрою, який ускладнює видалення застосунку, доки він активний.</string>
+    <string name="tamper_protection_system_explanation">Необов’язковий захист від втручання ускладнює видалення Shorts Blocker Kids, доки він активний. Він не замінює захист через службу спеціальних можливостей, не блокує Налаштування й не виконує прихованих системних дій.</string>
+    <string name="tamper_protection_disable_warning">Захист від втручання активний. Якщо його вимкнути, Shorts Blocker Kids можна буде видалити або змінити захист без батьківського PIN-коду.</string>
+
+    <!-- Common -->
+    <string name="common_back">Назад</string>
+    <string name="common_done">Готово</string>
+    <string name="common_not_now">Не зараз</string>
+
+    <!-- Accessibility disclosure -->
+    <string name="accessibility_disclosure_title">Дозвіл служби спеціальних можливостей</string>
+    <string name="accessibility_disclosure_body">Shorts Blocker Kids використовує службу спеціальних можливостей Android, щоб визначати, коли відкрито захищені розділи з короткими відео, і показувати екран блокування коротких відео. Захищені розділи: YouTube Shorts, стрічка коротких відео TikTok, Instagram Reels і Facebook Reels. Регіональний пакет TikTok com.ss.android.ugc.trill і Facebook Lite не підтримуються. Роботу з YouTube Shorts раніше перевірено базовим тестом на реальному пристрої. Для TikTok, Instagram Reels і Facebook Reels є тести детектора й модульні тести, але перед підтвердженням готовності до використання все ще потрібна перевірка на реальних пристроях.\n\nКоли короткі відео заблоковано, доступ можна тимчасово дозволити за допомогою батьківського PIN-коду. Без батьківського PIN-коду екран блокування коротких відео залишається активним, доки відкрито захищений розділ із короткими відео.\n\nЗастосунок не збирає й не надсилає дані про дитину, відомості про активність у підтримуваних застосунках, історію переглядів, назви відео, URL-адреси, імена облікових записів, коментарі, повідомлення, записи екрана, аудіо, дані про місцезнаходження, контакти, історію браузера або необроблені дампи дерева служби спеціальних можливостей. Немає системи облікових записів, аналітики чи реклами. Серверна частина використовується лише для перевірки оплати через Google Play. Правила й захист PIN-кодом зберігаються локально на цьому телефоні.\n\nБлокування працює, коли захист УВІМКНЕНО й служба спеціальних можливостей Android активна. Якщо вимкнути цей дозвіл або видалити застосунок, блокування припиниться.</string>
+    <string name="accessibility_disclosure_accept">Погоджуюся й продовжую</string>
+
+    <!-- Privacy policy -->
+    <string name="privacy_policy_title">Політика конфіденційності</string>
+    <string name="privacy_policy_local_app_title">Локальний застосунок</string>
+    <string name="privacy_policy_local_app_body">Shorts Blocker Kids працює локально на цьому телефоні. Обліковий запис не потрібен. Перевірка підписки в продукційній версії може використовувати серверну частину, обмежену перевіркою статусу права доступу Google Play.</string>
+    <string name="privacy_policy_accessibility_service_title">Служба спеціальних можливостей</string>
+    <string name="privacy_policy_accessibility_service_body">Застосунок використовує службу спеціальних можливостей Android, щоб виявляти підтримувані розділи з короткими відео й показувати екран блокування коротких відео, коли захист увімкнено. Захищені розділи: YouTube Shorts, стрічка коротких відео TikTok, Instagram Reels і Facebook Reels. Регіональний пакет TikTok com.ss.android.ugc.trill і Facebook Lite не підтримуються.</string>
+    <string name="privacy_policy_tamper_protection_title">Захист від втручання</string>
+    <string name="privacy_policy_tamper_protection_body">Необов’язковий захист від втручання з правами адміністратора пристрою може ускладнити видалення Shorts Blocker Kids, доки він активний. Він не замінює службу спеціальних можливостей, не блокує Налаштування Android, не стирає дані пристрою й не виконує прихованих системних дій.</string>
+    <string name="privacy_policy_local_data_title">Локальні дані</string>
+    <string name="privacy_policy_local_data_body">Налаштування захисту й метадані хешу батьківського PIN-коду зберігаються на цьому телефоні. Батьківський PIN-код не зберігається у відкритому вигляді.</string>
+    <string name="privacy_policy_data_collection_title">Збирання даних</string>
+    <string name="privacy_policy_data_collection_body">Застосунок не збирає й не надсилає дані про дитину, відомості про активність у підтримуваних застосунках, історію переглядів, назви відео, URL-адреси, імена облікових записів, коментарі, повідомлення, записи екрана, аудіо, дані про місцезнаходження, контакти, історію браузера або необроблені дампи дерева служби спеціальних можливостей.</string>
+    <string name="privacy_policy_payments_title">Платежі</string>
+    <string name="privacy_policy_payments_body">Підписки оформлюються через Google Play Billing. Платіжні дані обробляє Google Play відповідно до умов Google Play. Цей застосунок зберігає локальний статус права доступу за підпискою. Коли серверну перевірку ввімкнено, вона використовує лише технічні платіжні дані й зберігає хешовані токени покупок.</string>
+    <string name="privacy_policy_limitations_title">Обмеження</string>
+    <string name="privacy_policy_limitations_body">Блокування працює, коли захист УВІМКНЕНО й служба спеціальних можливостей Android активна. Якщо вимкнути цей дозвіл або видалити застосунок після вимкнення захисту від втручання, блокування припиниться.</string>
+
+    <!-- Tamper protection disclosure -->
+    <string name="tamper_protection_disclosure_title">Захист від втручання</string>
+    <string name="tamper_protection_disclosure_body">Захист від втручання з правами адміністратора пристрою є необов’язковим. Він ускладнює видалення Shorts Blocker Kids, доки активний, щоб дитина не могла так легко прибрати захист.\n\nВін не замінює службу спеціальних можливостей Android. Блокування й далі працює лише тоді, коли захист через службу спеціальних можливостей увімкнено. Цей застосунок не блокуватиме Налаштування Android, не змінюватиме приховані системні налаштування, не стиратиме дані пристрою, не блокуватиме екран телефона, не скидатиме паролі й не керуватиме іншими застосунками.\n\nЯкщо хтось спробує вимкнути захист від втручання, Android покаже попередження, перш ніж дозволити скасувати права адміністратора пристрою.</string>
+    <string name="tamper_protection_status_active">Захист від втручання активний</string>
+    <string name="tamper_protection_status_optional_inactive">Захист від втручання необов’язковий і зараз неактивний</string>
+    <string name="tamper_protection_open_device_admin">Розумію, відкрити налаштування адміністратора пристрою</string>
+
+    <!-- Welcome -->
+    <string name="welcome_title">Shorts Blocker Kids</string>
+    <string name="welcome_subtitle">Блокує підтримувані розділи з короткими відео на телефоні дитини.\nБез облікового запису. Без сервера. Лише батьківський PIN-код.</string>
+    <string name="welcome_start">Почати</string>
+
+    <!-- Protected apps -->
+    <string name="protected_apps_title">Виберіть захищені застосунки</string>
+    <string name="protected_apps_description">Виберіть, які підтримувані розділи з короткими відео має захищати цей батьківський PIN-код на цьому телефоні.</string>
+    <string name="protected_apps_continue">Продовжити</string>
+
+    <!-- PIN setup -->
+    <string name="pin_setup_title">Створення батьківського PIN-коду</string>
+    <string name="pin_input_label">PIN-код</string>
+    <string name="pin_confirmation_input_label">Підтвердіть PIN-код</string>
+    <string name="pin_setup_submit">Створити PIN-код</string>
+    <string name="pin_setup_error_invalid_length">PIN-код має містити 4–6 цифр.</string>
+    <string name="pin_setup_error_weak_pin">Виберіть надійніший PIN-код.</string>
+    <string name="pin_setup_error_confirmation_mismatch">Підтвердження PIN-коду не збігається.</string>
+
+    <!-- PIN entry -->
+    <string name="pin_entry_title">Введіть батьківський PIN-код</string>
+    <string name="pin_entry_submit">Розблокувати</string>
+    <string name="pin_entry_error_incomplete">Введіть PIN-код із 4–6 цифр.</string>
+    <string name="pin_entry_error_not_configured">PIN-код не налаштовано.</string>
+    <plurals name="pin_entry_attempts_remaining">
+        <item quantity="one">Неправильний PIN-код. Залишилася %1$d спроба.</item>
+        <item quantity="few">Неправильний PIN-код. Залишилося %1$d спроби.</item>
+        <item quantity="many">Неправильний PIN-код. Залишилося %1$d спроб.</item>
+        <item quantity="other">Неправильний PIN-код. Залишок спроб: %1$d.</item>
+    </plurals>
+    <plurals name="pin_entry_lockout_minutes">
+        <item quantity="one">PIN-код заблоковано. Спробуйте знову через %1$d хвилину.</item>
+        <item quantity="few">PIN-код заблоковано. Спробуйте знову через %1$d хвилини.</item>
+        <item quantity="many">PIN-код заблоковано. Спробуйте знову через %1$d хвилин.</item>
+        <item quantity="other">PIN-код заблоковано. Повторна спроба буде доступна через %1$d хв.</item>
+    </plurals>
+
+    <!-- Temporary allow -->
+    <string name="temporary_allow_title">Тимчасово дозволити короткі відео</string>
+    <string name="temporary_allow_description">Тимчасово дозволити короткі відео в захищених застосунках на цьому телефоні на:</string>
+    <string name="temporary_allow_cancel">Скасувати</string>
+    <plurals name="temporary_allow_duration_minutes">
+        <item quantity="one">%1$d хвилина</item>
+        <item quantity="few">%1$d хвилини</item>
+        <item quantity="many">%1$d хвилин</item>
+        <item quantity="other">%1$d хв</item>
+    </plurals>
+
+    <!-- Accessibility setup -->
+    <string name="enable_accessibility_title">Увімкніть захист</string>
+    <string name="enable_accessibility_instructions">1. Натисніть «Відкрити налаштування».\n2. Знайдіть Shorts Blocker Kids.\n3. Увімкніть службу.\n4. Поверніться до цього застосунку.</string>
+    <string name="enable_accessibility_status_enabled">Дозвіл захисту ввімкнено</string>
+    <string name="enable_accessibility_status_disabled">Немає дозволу захисту</string>
+    <string name="enable_accessibility_open_settings">Відкрити налаштування</string>
+    <string name="enable_accessibility_confirm_enabled">Підтвердити увімкнення служби</string>
+
+    <!-- Dashboard -->
+    <string name="dashboard_title">Захист від коротких відео</string>
+    <string name="dashboard_setup_checklist">Контрольний список налаштування</string>
+    <string name="dashboard_checklist_parent_pin">Батьківський PIN-код</string>
+    <string name="dashboard_checklist_protected_apps">Захищені застосунки вибрано</string>
+    <string name="dashboard_checklist_accessibility_disclosure">Згоду на використання служби спеціальних можливостей надано</string>
+    <string name="dashboard_checklist_accessibility_service">Служба спеціальних можливостей активна</string>
+    <string name="dashboard_checklist_tamper_protection">Захист від втручання з правами адміністратора пристрою</string>
+    <string name="dashboard_platform_support">Підтримка платформ</string>
+    <string name="dashboard_enabled_apps">Увімкнені застосунки</string>
+    <string name="dashboard_not_supported">Не підтримується</string>
+    <string name="dashboard_pin">PIN-код</string>
+    <string name="dashboard_free_test">Безкоштовний пробний період</string>
+    <plurals name="dashboard_days_remaining">
+        <item quantity="one">Залишився %1$d день</item>
+        <item quantity="few">Залишилося %1$d дні</item>
+        <item quantity="many">Залишилося %1$d днів</item>
+        <item quantity="other">Залишок днів: %1$d</item>
+    </plurals>
+    <string name="dashboard_days_remaining_label">Залишилося днів</string>
+    <string name="dashboard_subscription">Підписка</string>
+    <string name="dashboard_protection_permission">Дозвіл захисту</string>
+    <string name="dashboard_tamper_protection">Захист від втручання</string>
+    <string name="dashboard_protection_status">Стан захисту</string>
+    <string name="dashboard_description">Shorts Blocker Kids працює, коли захист УВІМКНЕНО й служба спеціальних можливостей Android активна для YouTube Shorts, стрічки коротких відео TikTok, Instagram Reels і Facebook Reels. Необов’язковий захист від втручання з правами адміністратора пристрою може ускладнити видалення застосунку, доки він активний. Якщо вимкнути дозвіл служби спеціальних можливостей, блокування припиниться.</string>
+    <string name="dashboard_open_accessibility_settings">Відкрити налаштування спеціальних можливостей</string>
+    <string name="dashboard_review_accessibility_disclosure">Переглянути повідомлення про службу спеціальних можливостей</string>
+    <string name="dashboard_privacy_policy">Політика конфіденційності</string>
+    <string name="dashboard_review_tamper_protection">Переглянути захист від втручання</string>
+    <string name="dashboard_enable_tamper_protection">Увімкнути захист від втручання</string>
+    <string name="dashboard_local_qa">Локальна перевірка якості</string>
+    <string name="dashboard_google_play_subscription">Підписка Google Play</string>
+    <string name="dashboard_manage_subscription">Керувати підпискою</string>
+    <string name="dashboard_subscribe_google_play">Оформити підписку через Google Play</string>
+    <string name="dashboard_restore_purchases">Відновити покупки</string>
+
+    <!-- Billing presentation -->
+    <string name="billing_subscription_managed_by_google_play">Підпискою керує Google Play.</string>
+    <string name="billing_status_purchase_in_progress">триває оформлення покупки</string>
+    <string name="billing_status_available_price">доступно: %1$s</string>
+    <string name="subscription_terms_with_price">Щомісячна підписка з автоматичним поновленням: %1$s. Після безкоштовного пробного періоду вона потрібна, щоб блокування коротких відео залишалося активним. Оплату стягує Google Play; керувати підпискою або скасувати її можна будь-коли в Google Play.</string>
+    <string name="subscription_terms_price_pending">Щомісячна підписка з автоматичним поновленням. Google Play покаже вартість підписки перед покупкою. Після безкоштовного пробного періоду вона потрібна, щоб блокування коротких відео залишалося активним. Оплату стягує Google Play; керувати підпискою або скасувати її можна будь-коли в Google Play.</string>
+    <string name="billing_status_connecting">Підключення до Google Play Billing.</string>
+    <string name="billing_status_connected">Google Play Billing підключено.</string>
+    <string name="billing_status_disconnected">З’єднання з Google Play Billing розірвано.</string>
+    <string name="billing_status_subscription_not_ready">Підписка ще не готова. Перевірте Google Play або відновіть покупки.</string>
+    <string name="billing_status_opening_purchase_flow">Відкривається оформлення покупки в Google Play.</string>
+    <string name="billing_status_purchase_canceled">Покупку скасовано.</string>
+    <string name="billing_status_product_unavailable">Продукт підписки ще недоступний.</string>
+    <string name="billing_status_product_loaded">Підписку завантажено з Google Play.</string>
+    <string name="billing_status_subscription_active">Підписка активна.</string>
+    <string name="billing_status_backend_verification_required">Підписка потребує перевірки на сервері. Відновіть покупки або повторіть спробу.</string>
+    <string name="billing_status_purchase_pending">Покупка очікує обробки. Захист буде розблоковано після завершення оплати.</string>
+    <string name="billing_status_no_active_subscription">Активну підписку Google Play не знайдено.</string>
+    <string name="billing_status_backend_verification_not_ready">Серверна перевірка платежів ще не готова.</string>
+    <string name="billing_status_verifying_with_backend">Підписка перевіряється на захищеному сервері.</string>
+    <string name="billing_status_subscription_canceled_active">Підписка активна до завершення оплаченого періоду.</string>
+    <string name="billing_status_subscription_in_grace">Підписка активна протягом пільгового періоду Google Play.</string>
+    <string name="billing_status_payment_issue">Проблема з оплатою. Оновіть підписку в Google Play.</string>
+    <string name="billing_status_subscription_revoked">Google Play відкликав підписку.</string>
+    <string name="billing_status_verification_unavailable">Перевірка підписки недоступна.</string>
+    <string name="billing_error_unavailable">Оплата недоступна</string>
+    <string name="billing_error_open_purchase_flow">Не вдалося відкрити оформлення покупки</string>
+    <string name="billing_error_manage_subscription_unavailable">Не вдалося відкрити керування підпискою Google Play на цьому пристрої.</string>
+    <string name="billing_error_purchase_failed">Не вдалося здійснити покупку</string>
+    <string name="billing_error_load_subscription">Не вдалося завантажити підписку</string>
+    <string name="billing_error_restore_purchases">Не вдалося відновити покупки</string>
+    <string name="billing_error_verify_with_backend">Не вдалося перевірити підписку на сервері. Відновіть покупки або повторіть спробу.</string>
+    <string name="billing_error_refresh_backend">Не вдалося оновити підписку на сервері. Відновіть покупки або повторіть спробу.</string>
+    <string name="billing_error_acknowledge_purchase">Не вдалося підтвердити покупку</string>
+    <string name="billing_error_with_response_code">%1$s (%2$d).</string>
+
+    <!-- Statuses and errors -->
+    <string name="status_active">активно</string>
+    <string name="status_missing">немає</string>
+    <string name="status_optional">необов’язковий</string>
+    <string name="status_enabled">увімкнено</string>
+    <string name="status_disabled">вимкнено</string>
+    <string name="status_created">створено</string>
+    <string name="status_not_created">не створено</string>
+    <string name="status_none">немає</string>
+    <string name="status_not_started">не розпочато</string>
+    <string name="status_free_test_active">Безкоштовний пробний період активний</string>
+    <string name="status_free_test_expired">Безкоштовний пробний період завершився</string>
+    <string name="status_subscription_active">Підписка активна</string>
+    <string name="status_protection_permission_missing">Немає дозволу захисту</string>
+    <string name="status_protection_active">Захист активний</string>
+    <string name="status_protection_locked">Захист заблоковано</string>
+    <string name="status_inactive">неактивний</string>
+    <string name="status_optional_inactive">необов’язковий, неактивний</string>
+    <string name="status_locked">ЗАБЛОКОВАНО</string>
+    <string name="status_on">УВІМКНЕНО</string>
+    <string name="status_off">ВИМКНЕНО</string>
+    <string name="error_free_test_ended_with_detail">Безкоштовний пробний період завершився. %1$s</string>
+    <string name="error_protection_permission_missing">Немає дозволу захисту</string>
+    <string name="error_no_protected_apps_selected">Не вибрано жодного захищеного застосунку</string>
+    <string name="error_free_test_expired">Безкоштовний пробний період завершився</string>
+    <string name="error_protection_inactive_disabled">Захист неактивний. Увімкніть захист, щоб блокувати короткі відео.</string>
+    <string name="error_protection_inactive_no_apps">Захист неактивний. Увімкніть принаймні один захищений застосунок.</string>
+    <string name="error_protection_inactive_accessibility">Захист неактивний. Увімкніть службу спеціальних можливостей.</string>
+    <string name="error_protection_inactive_temporary_allow">Захист неактивний, поки короткі відео тимчасово дозволено.</string>
+    <string name="error_free_test_not_started">Безкоштовний пробний період ще не розпочато. Увімкніть дозвіл захисту, щоб почати 20-денний пробний період.</string>
+    <string name="error_protection_inactive_setup">Захист неактивний. Завершіть налаштування, щоб блокувати короткі відео.</string>
+
+    <!-- Platforms -->
+    <string name="platform_youtube_shorts">YouTube Shorts</string>
+    <string name="platform_tiktok_short_video_feed">Стрічка коротких відео TikTok</string>
+    <string name="platform_tiktok_regional">Регіональний TikTok</string>
+    <string name="platform_instagram_reels">Instagram Reels</string>
+    <string name="platform_facebook_reels">Facebook Reels</string>
+    <string name="platform_facebook_lite">Facebook Lite</string>
+    <string name="platform_status_supported">підтримується</string>
+    <string name="platform_status_supported_needs_qa">підтримується в коді; потрібна перевірка на реальному пристрої</string>
+    <string name="platform_status_not_supported">не підтримується</string>
+    <string name="platform_status_item_format">%1$s: %2$s</string>
+    <string name="platform_unsupported_item_format">%1$s (%2$s)</string>
+
+    <!-- Visible debug UI -->
+    <string name="debug_detector_playground_title">Тестовий майданчик детектора</string>
+    <string name="debug_no_scenario">Немає сценарію</string>
+    <string name="debug_not_requested">не запитано</string>
+    <string name="debug_detected_package">Виявлений пакет</string>
+    <string name="debug_disabled">вимкнено</string>
+    <string name="debug_protection_mode">Режим захисту</string>
+    <string name="debug_blocking_decision">Рішення про блокування</string>
+    <string name="debug_entitlement">Право доступу</string>
+    <string name="debug_subscription_state">Стан підписки</string>
+    <string name="debug_backend">Сервер</string>
+    <string name="debug_enabled">увімкнено</string>
+    <string name="debug_billing_ui">Інтерфейс оплати</string>
+    <string name="debug_protection_permission">Дозвіл захисту</string>
+    <string name="debug_missing">немає</string>
+    <string name="debug_scenario_format">Сценарій: %1$s</string>
+    <string name="debug_confidence_format">Упевненість: %1$s</string>
+    <string name="debug_reasons_format">Причини: %1$s</string>
+    <string name="debug_signals_format">Сигнали: %1$s</string>
+    <string name="debug_would_block_format">Було б заблоковано: %1$s</string>
+    <string name="debug_test_overlay_format">Тестовий екран блокування коротких відео: %1$s</string>
+    <string name="debug_snapshot_format">Знімок: %1$s</string>
+    <string name="debug_snapshot_requested">Запитано знімок; відкрийте YouTube, щоб зафіксувати наступну подію</string>
+    <string name="debug_capture_youtube_snapshot">Зняти знімок інтерфейсу YouTube</string>
+    <string name="debug_overlay_requested">Запитано екран блокування коротких відео; відкрийте YouTube, щоб обробити наступну подію</string>
+    <string name="debug_request_test_overlay">Запросити тестовий екран блокування коротких відео</string>
+    <string name="debug_back">Назад</string>
+    <string name="debug_scenario_youtube_home">Імітувати головну сторінку YouTube</string>
+    <string name="debug_scenario_youtube_video">Імітувати звичайне відео YouTube</string>
+    <string name="debug_scenario_search">Імітувати пошук</string>
+    <string name="debug_scenario_shorts_high_confidence">Імітувати Shorts із високою впевненістю</string>
+    <string name="debug_scenario_non_youtube">Імітувати застосунок, відмінний від YouTube</string>
+</resources>
