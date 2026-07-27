@@ -189,6 +189,7 @@ val unitTestCoverageExclusions =
         "**/accessibility/RuntimeProtectionState*.*",
         "**/accessibility/ShortsBlockerAccessibilityService*.*",
         "**/core/billing/PlayBillingRepository*.*",
+        "**/feature/billing/**",
         "**/feature/dashboard/**",
         "**/feature/debug/**",
         "**/feature/pin/**",

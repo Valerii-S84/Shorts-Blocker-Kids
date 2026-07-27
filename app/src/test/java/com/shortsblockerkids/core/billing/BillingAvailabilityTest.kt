@@ -9,6 +9,6 @@ class BillingAvailabilityTest {
     fun billingUsesGooglePlaySubscriptionProduct() {
         assertTrue(BillingAvailability.BILLING_ENABLED)
         assertEquals("shorts_blocker_kids_monthly", BillingAvailability.MONTHLY_SUBSCRIPTION_PRODUCT_ID)
-        assertEquals("Subscription is managed by Google Play.", BillingAvailability.DEFERRED_MESSAGE)
+        assertEquals(72L * 60L * 60L * 1_000L, BillingAvailability.OFFLINE_GRACE_MILLIS)
     }
 }

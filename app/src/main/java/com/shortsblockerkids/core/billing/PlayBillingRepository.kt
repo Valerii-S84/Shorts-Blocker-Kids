@@ -75,7 +75,7 @@ class PlayBillingRepository(
         _uiState.update {
             it.copy(
                 isLoading = true,
-                statusMessage = "Connecting to Google Play Billing.",
+                message = BillingUiMessage(BillingMessageCode.CONNECTING),
             )
         }
         billingClient.startConnection(
@@ -87,13 +87,13 @@ class PlayBillingRepository(
                             it.copy(
                                 isReady = true,
                                 isLoading = false,
-                                statusMessage = "Google Play Billing connected.",
+                                message = BillingUiMessage(BillingMessageCode.CONNECTED),
                             )
                         }
                         queryProductDetails()
                         queryPurchases()
                     } else {
-                        setBillingError("Billing unavailable", billingResult)
+                        setBillingError(BillingMessageCode.BILLING_UNAVAILABLE, billingResult)
                     }
                 }
 
@@ -104,7 +104,7 @@ class PlayBillingRepository(
                             isReady = false,
                             isLoading = false,
                             canStartPurchase = false,
-                            statusMessage = "Google Play Billing disconnected.",
+                            message = BillingUiMessage(BillingMessageCode.DISCONNECTED),
                         )
                     }
                 }
@@ -133,8 +133,7 @@ class PlayBillingRepository(
         if (!billingClient.isReady || details == null || offerToken == null) {
             _uiState.update {
                 it.copy(
-                    statusMessage =
-                        "Subscription is not ready yet. Check Google Play or restore purchases.",
+                    message = BillingUiMessage(BillingMessageCode.SUBSCRIPTION_NOT_READY),
                 )
             }
             start()
@@ -156,12 +155,12 @@ class PlayBillingRepository(
         _uiState.update {
             it.copy(
                 isPurchaseInProgress = true,
-                statusMessage = "Opening Google Play purchase flow.",
+                message = BillingUiMessage(BillingMessageCode.OPENING_PURCHASE_FLOW),
             )
         }
         val result = billingClient.launchBillingFlow(activity, billingFlowParams)
         if (result.responseCode != BillingClient.BillingResponseCode.OK) {
-            setBillingError("Could not open purchase flow", result)
+            setBillingError(BillingMessageCode.OPEN_PURCHASE_FLOW_FAILED, result)
         }
     }
 
@@ -178,8 +177,8 @@ class PlayBillingRepository(
         } catch (_: ActivityNotFoundException) {
             _uiState.update {
                 it.copy(
-                    statusMessage =
-                        "Could not open Google Play subscription management on this device.",
+                    message =
+                        BillingUiMessage(BillingMessageCode.MANAGE_SUBSCRIPTION_UNAVAILABLE),
                 )
             }
         }
@@ -193,11 +192,13 @@ class PlayBillingRepository(
         when (billingResult.responseCode) {
             BillingClient.BillingResponseCode.OK -> processPurchases(purchases.orEmpty())
             BillingClient.BillingResponseCode.USER_CANCELED -> {
-                _uiState.update { it.copy(statusMessage = "Purchase canceled.") }
+                _uiState.update {
+                    it.copy(message = BillingUiMessage(BillingMessageCode.PURCHASE_CANCELED))
+                }
                 queryPurchases()
             }
 
-            else -> setBillingError("Purchase failed", billingResult)
+            else -> setBillingError(BillingMessageCode.PURCHASE_FAILED, billingResult)
         }
     }
 
@@ -218,7 +219,7 @@ class PlayBillingRepository(
         _uiState.update { it.copy(isLoading = true) }
         billingClient.queryProductDetailsAsync(params) { billingResult, productDetailsResult ->
             if (billingResult.responseCode != BillingClient.BillingResponseCode.OK) {
-                setBillingError("Could not load subscription", billingResult)
+                setBillingError(BillingMessageCode.LOAD_SUBSCRIPTION_FAILED, billingResult)
                 return@queryProductDetailsAsync
             }
 
@@ -242,12 +243,14 @@ class PlayBillingRepository(
                     isLoading = false,
                     productPrice = price,
                     canStartPurchase = details != null && subscriptionOfferToken != null,
-                    statusMessage =
-                        if (details == null) {
-                            "Subscription product is not available yet."
-                        } else {
-                            "Subscription loaded from Google Play."
-                        },
+                    message =
+                        BillingUiMessage(
+                            if (details == null) {
+                                BillingMessageCode.PRODUCT_UNAVAILABLE
+                            } else {
+                                BillingMessageCode.PRODUCT_LOADED
+                            },
+                        ),
                 )
             }
         }
@@ -263,7 +266,7 @@ class PlayBillingRepository(
             if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
                 processPurchases(purchases)
             } else {
-                setBillingError("Could not restore purchases", billingResult)
+                setBillingError(BillingMessageCode.RESTORE_PURCHASES_FAILED, billingResult)
             }
         }
     }
@@ -303,10 +306,12 @@ class PlayBillingRepository(
         _uiState.update {
             it.copy(
                 isLoading = false,
-                statusMessage =
-                    verificationPolicy.localPurchaseStatusMessage(
-                        hasPurchasedSubscription = purchased.isNotEmpty(),
-                        hasPendingSubscription = hasPending,
+                message =
+                    BillingUiMessage(
+                        verificationPolicy.localPurchaseMessageCode(
+                            hasPurchasedSubscription = purchased.isNotEmpty(),
+                            hasPendingSubscription = hasPending,
+                        ),
                     ),
             )
         }
@@ -320,7 +325,10 @@ class PlayBillingRepository(
         if (currentInstallId.isNullOrBlank()) {
             recordFailClosedEntitlement()
             _uiState.update {
-                it.copy(statusMessage = "Billing backend verification is not ready yet.")
+                it.copy(
+                    message =
+                        BillingUiMessage(BillingMessageCode.BACKEND_VERIFICATION_NOT_READY),
+                )
             }
             return
         }
@@ -328,7 +336,7 @@ class PlayBillingRepository(
         _uiState.update {
             it.copy(
                 isLoading = true,
-                statusMessage = "Verifying subscription with secure backend.",
+                message = BillingUiMessage(BillingMessageCode.VERIFYING_WITH_BACKEND),
             )
         }
         billingScope.launch {
@@ -347,7 +355,7 @@ class PlayBillingRepository(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        statusMessage = snapshot.statusMessage(hasPending),
+                        message = BillingUiMessage(snapshot.messageCode(hasPending)),
                     )
                 }
             }.onFailure {
@@ -355,8 +363,8 @@ class PlayBillingRepository(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        statusMessage =
-                            "Could not verify subscription with backend. Restore or try again.",
+                        message =
+                            BillingUiMessage(BillingMessageCode.VERIFY_WITH_BACKEND_FAILED),
                     )
                 }
             }
@@ -384,12 +392,14 @@ class PlayBillingRepository(
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            statusMessage =
-                                if (hasPending) {
-                                    "Purchase pending. Protection unlocks after payment completes."
-                                } else {
-                                    "No active Google Play subscription found."
-                                },
+                            message =
+                                BillingUiMessage(
+                                    if (hasPending) {
+                                        BillingMessageCode.PURCHASE_PENDING
+                                    } else {
+                                        BillingMessageCode.NO_ACTIVE_SUBSCRIPTION
+                                    },
+                                ),
                         )
                     }
                     return@onSuccess
@@ -398,7 +408,7 @@ class PlayBillingRepository(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        statusMessage = snapshot.statusMessage(hasPending),
+                        message = BillingUiMessage(snapshot.messageCode(hasPending)),
                     )
                 }
             }.onFailure {
@@ -406,8 +416,7 @@ class PlayBillingRepository(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        statusMessage =
-                            "Could not refresh subscription with backend. Restore or try again.",
+                        message = BillingUiMessage(BillingMessageCode.REFRESH_BACKEND_FAILED),
                     )
                 }
             }
@@ -426,29 +435,29 @@ class PlayBillingRepository(
                 .build()
         billingClient.acknowledgePurchase(params) { billingResult ->
             if (billingResult.responseCode != BillingClient.BillingResponseCode.OK) {
-                setBillingError("Could not acknowledge purchase", billingResult)
+                setBillingError(BillingMessageCode.ACKNOWLEDGE_PURCHASE_FAILED, billingResult)
             }
         }
     }
 
-    private fun BillingEntitlementSnapshot.statusMessage(hasPending: Boolean): String =
+    private fun BillingEntitlementSnapshot.messageCode(hasPending: Boolean): BillingMessageCode =
         when {
-            state == BillingEntitlementState.ACTIVE -> "Subscription active."
+            state == BillingEntitlementState.ACTIVE -> BillingMessageCode.SUBSCRIPTION_ACTIVE
             state == BillingEntitlementState.CANCELED_ACTIVE ->
-                "Subscription active until the paid period ends."
+                BillingMessageCode.SUBSCRIPTION_CANCELED_ACTIVE
             state == BillingEntitlementState.IN_GRACE ->
-                "Subscription active during Google Play grace period."
+                BillingMessageCode.SUBSCRIPTION_IN_GRACE
             state == BillingEntitlementState.PENDING || hasPending ->
-                "Purchase pending. Protection unlocks after payment completes."
+                BillingMessageCode.PURCHASE_PENDING
             state == BillingEntitlementState.ON_HOLD ->
-                "Payment issue. Update the subscription in Google Play."
-            state == BillingEntitlementState.REVOKED -> "Subscription revoked by Google Play."
-            state == BillingEntitlementState.EXPIRED -> "No active Google Play subscription found."
-            else -> "Subscription verification unavailable."
+                BillingMessageCode.PAYMENT_ISSUE
+            state == BillingEntitlementState.REVOKED -> BillingMessageCode.SUBSCRIPTION_REVOKED
+            state == BillingEntitlementState.EXPIRED -> BillingMessageCode.NO_ACTIVE_SUBSCRIPTION
+            else -> BillingMessageCode.VERIFICATION_UNAVAILABLE
         }
 
     private fun setBillingError(
-        prefix: String,
+        messageCode: BillingMessageCode,
         billingResult: BillingResult,
     ) {
         isConnecting = false
@@ -458,7 +467,11 @@ class PlayBillingRepository(
                 isLoading = false,
                 isPurchaseInProgress = false,
                 canStartPurchase = productDetails != null && subscriptionOfferToken != null,
-                statusMessage = "$prefix (${billingResult.responseCode}).",
+                message =
+                    BillingUiMessage(
+                        code = messageCode,
+                        responseCode = billingResult.responseCode,
+                    ),
             )
         }
     }

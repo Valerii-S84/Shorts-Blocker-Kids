@@ -87,8 +87,8 @@ Implementation evidence:
   `PURCHASED`.
 - Subscription terms are visible before the app launches the Google Play
   purchase flow.
-- Billing UI copy is centralized in `BillingCopy` and covered by
-  `BillingCopyTest`.
+- Billing UI copy is mapped at the Compose presentation boundary in
+  `BillingPresentation` and covered by `BillingPresentationResourceInvariantTest`.
 
 Pending verification:
 

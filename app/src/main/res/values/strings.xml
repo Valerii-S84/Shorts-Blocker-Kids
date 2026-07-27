@@ -130,6 +130,42 @@
     <string name="dashboard_subscribe_google_play">Subscribe with Google Play</string>
     <string name="dashboard_restore_purchases">Restore purchases</string>
 
+    <!-- Billing presentation -->
+    <string name="billing_subscription_managed_by_google_play">Subscription is managed by Google Play.</string>
+    <string name="billing_status_purchase_in_progress">purchase in progress</string>
+    <string name="billing_status_available_price">available: %1$s</string>
+    <string name="subscription_terms_with_price">Monthly auto-renewing subscription: %1$s. Required after the free test to keep short-video blocking active. Charged by Google Play; manage or cancel anytime in Google Play.</string>
+    <string name="subscription_terms_price_pending">Monthly auto-renewing subscription. Subscription price is shown by Google Play before purchase. Required after the free test to keep short-video blocking active. Charged by Google Play; manage or cancel anytime in Google Play.</string>
+    <string name="billing_status_connecting">Connecting to Google Play Billing.</string>
+    <string name="billing_status_connected">Google Play Billing connected.</string>
+    <string name="billing_status_disconnected">Google Play Billing disconnected.</string>
+    <string name="billing_status_subscription_not_ready">Subscription is not ready yet. Check Google Play or restore purchases.</string>
+    <string name="billing_status_opening_purchase_flow">Opening Google Play purchase flow.</string>
+    <string name="billing_status_purchase_canceled">Purchase canceled.</string>
+    <string name="billing_status_product_unavailable">Subscription product is not available yet.</string>
+    <string name="billing_status_product_loaded">Subscription loaded from Google Play.</string>
+    <string name="billing_status_subscription_active">Subscription active.</string>
+    <string name="billing_status_backend_verification_required">Subscription requires backend verification. Restore or try again.</string>
+    <string name="billing_status_purchase_pending">Purchase pending. Protection unlocks after payment completes.</string>
+    <string name="billing_status_no_active_subscription">No active Google Play subscription found.</string>
+    <string name="billing_status_backend_verification_not_ready">Billing backend verification is not ready yet.</string>
+    <string name="billing_status_verifying_with_backend">Verifying subscription with secure backend.</string>
+    <string name="billing_status_subscription_canceled_active">Subscription active until the paid period ends.</string>
+    <string name="billing_status_subscription_in_grace">Subscription active during Google Play grace period.</string>
+    <string name="billing_status_payment_issue">Payment issue. Update the subscription in Google Play.</string>
+    <string name="billing_status_subscription_revoked">Subscription revoked by Google Play.</string>
+    <string name="billing_status_verification_unavailable">Subscription verification unavailable.</string>
+    <string name="billing_error_unavailable">Billing unavailable</string>
+    <string name="billing_error_open_purchase_flow">Could not open purchase flow</string>
+    <string name="billing_error_manage_subscription_unavailable">Could not open Google Play subscription management on this device.</string>
+    <string name="billing_error_purchase_failed">Purchase failed</string>
+    <string name="billing_error_load_subscription">Could not load subscription</string>
+    <string name="billing_error_restore_purchases">Could not restore purchases</string>
+    <string name="billing_error_verify_with_backend">Could not verify subscription with backend. Restore or try again.</string>
+    <string name="billing_error_refresh_backend">Could not refresh subscription with backend. Restore or try again.</string>
+    <string name="billing_error_acknowledge_purchase">Could not acknowledge purchase</string>
+    <string name="billing_error_with_response_code">%1$s (%2$d).</string>
+
     <!-- Statuses and errors -->
     <string name="status_active">active</string>
     <string name="status_missing">missing</string>

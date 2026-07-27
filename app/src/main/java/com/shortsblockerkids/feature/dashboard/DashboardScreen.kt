@@ -26,12 +26,13 @@ import androidx.compose.ui.unit.dp
 import com.shortsblockerkids.R
 import com.shortsblockerkids.accessibility.PlatformSupportMatrix
 import com.shortsblockerkids.accessibility.PlatformSupportStatus
-import com.shortsblockerkids.core.billing.BillingAvailability
-import com.shortsblockerkids.core.billing.BillingCopy
 import com.shortsblockerkids.core.billing.BillingUiState
 import com.shortsblockerkids.core.entitlement.LocalEntitlementResolver
 import com.shortsblockerkids.core.model.EntitlementState
 import com.shortsblockerkids.core.storage.AppSettings
+import com.shortsblockerkids.feature.billing.billingMessageText
+import com.shortsblockerkids.feature.billing.billingSubscriptionStatusText
+import com.shortsblockerkids.feature.billing.billingSubscriptionTermsText
 
 @Composable
 fun DashboardScreen(
@@ -176,7 +177,7 @@ fun DashboardScreen(
                 }
                 StatusRow(
                     stringResource(R.string.dashboard_subscription),
-                    BillingCopy.subscriptionStatusLabel(
+                    billingSubscriptionStatusText(
                         hasBillingEntitlement = settings.hasBillingEntitlement(nowMillis),
                         billingUiState = billingUiState,
                     ),
@@ -205,7 +206,9 @@ fun DashboardScreen(
                     ErrorText(
                         stringResource(
                             R.string.error_free_test_ended_with_detail,
-                            BillingAvailability.DEFERRED_MESSAGE,
+                            stringResource(
+                                R.string.billing_subscription_managed_by_google_play,
+                            ),
                         ),
                     )
                 }
@@ -484,12 +487,12 @@ private fun BillingActions(
                 fontWeight = FontWeight.SemiBold,
             )
             Text(
-                text = billingUiState.statusMessage,
+                text = billingMessageText(billingUiState.message),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.secondary,
             )
             Text(
-                text = BillingCopy.subscriptionTermsText(billingUiState.productPrice),
+                text = billingSubscriptionTermsText(billingUiState.productPrice),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.secondary,
             )
