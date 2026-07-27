@@ -1,13 +1,19 @@
 package com.shortsblockerkids.e2e
 
+import android.app.LocaleManager
 import android.app.UiAutomation
 import android.content.ComponentName
+import android.content.res.Configuration
+import android.os.Build
 import android.os.Bundle
+import android.os.LocaleList
 import android.os.SystemClock
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
+import com.shortsblockerkids.R
 import com.shortsblockerkids.accessibility.AccessibilityServiceStatus
 import com.shortsblockerkids.accessibility.RuntimeProtectionState
 import com.shortsblockerkids.accessibility.ShortsBlockerAccessibilityService
@@ -38,6 +44,7 @@ class ShortVideoBlockerEmulatorE2eTest {
     @Before
     fun setUp() {
         resetProtectionEnvironment()
+        clearApplicationLocale()
         ensureFixtureAppsInstalled()
         prepareProtectionState()
         enableAccessibilityService()
@@ -53,6 +60,7 @@ class ShortVideoBlockerEmulatorE2eTest {
         }
         disableAccessibilityService()
         waitUntil(timeoutMs = 5_000L) { !isOverlayVisible() }
+        clearApplicationLocale()
         pressHome()
         RuntimeProtectionState.clearDetectorResult()
     }
@@ -134,7 +142,7 @@ class ShortVideoBlockerEmulatorE2eTest {
         assertOverlayVisible()
         assertLastDetectorPackage(FixturePlatform.YOUTUBE, "confidence=HIGH")
 
-        tapText(OVERLAY_EXIT)
+        tapText(resourceText(R.string.blocking_overlay_exit_shorts))
         assertNoOverlay(timeoutMs = 4_000L)
 
         launchFixture(FixturePlatform.YOUTUBE, "normal_video")
@@ -149,16 +157,16 @@ class ShortVideoBlockerEmulatorE2eTest {
         launchFixture(FixturePlatform.YOUTUBE, "shorts")
         assertOverlayVisible()
 
-        tapText(OVERLAY_ENTER_PIN)
+        tapText(resourceText(R.string.blocking_overlay_enter_pin))
         enterPin("0000")
-        tapText("Unlock")
-        waitForText("Wrong PIN")
-        assertFalse(hasText("Allow short videos"))
+        tapText(resourceText(R.string.pin_entry_submit))
+        waitForText(quantityText(R.plurals.pin_entry_attempts_remaining, 4))
+        assertFalse(hasText(resourceText(R.string.temporary_allow_title)))
 
         enterPin(PARENT_PIN)
-        tapText("Unlock")
-        waitForText("Allow short videos")
-        tapText("5 minutes")
+        tapText(resourceText(R.string.pin_entry_submit))
+        waitForText(resourceText(R.string.temporary_allow_title))
+        tapText(quantityText(R.plurals.temporary_allow_duration_minutes, 5))
         assertNoOverlay()
 
         launchFixture(FixturePlatform.YOUTUBE, "shorts")
@@ -181,11 +189,39 @@ class ShortVideoBlockerEmulatorE2eTest {
     }
 
     @Test
+    @SdkSuppress(minSdkVersion = 33)
+    fun englishLocaleOverlayAndPinSmoke() {
+        assertLocaleOverlayAndPinSmoke("en-US")
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 33)
+    fun germanLocaleOverlayAndPinSmoke() {
+        assertLocaleOverlayAndPinSmoke("de-DE")
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 33)
+    fun ukrainianLocaleOverlayAndPinSmoke() {
+        assertLocaleOverlayAndPinSmoke("uk-UA")
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 33)
+    fun unsupportedLocaleOverlayAndPinSmokeUsesEnglishFallback() {
+        assertLocaleOverlayAndPinSmoke("fr-FR,en-US")
+        assertEquals(
+            englishResourceText(R.string.blocking_overlay_title),
+            resourceText(R.string.blocking_overlay_title),
+        )
+    }
+
+    @Test
     fun exitBackAndHomeInteractionsRecoverWithoutDuplicateOverlay() {
         launchFixture(FixturePlatform.YOUTUBE, "shorts")
         assertOverlayVisible()
 
-        tapText(OVERLAY_EXIT)
+        tapText(resourceText(R.string.blocking_overlay_exit_shorts))
         assertNoOverlay(timeoutMs = 4_000L)
 
         launchFixture(FixturePlatform.YOUTUBE, "home")
@@ -259,6 +295,28 @@ class ShortVideoBlockerEmulatorE2eTest {
         launchAndExpectOverlay(FixturePlatform.YOUTUBE, "shorts")
     }
 
+    private fun assertLocaleOverlayAndPinSmoke(languageTags: String) {
+        setApplicationLocale(languageTags)
+        launchFixture(FixturePlatform.YOUTUBE, "shorts")
+        assertOverlayVisible()
+        assertTrue(hasText(resourceText(R.string.blocking_overlay_title)))
+
+        tapText(resourceText(R.string.blocking_overlay_enter_pin))
+        waitForText(resourceText(R.string.pin_entry_title))
+        enterPin("0000")
+        tapText(resourceText(R.string.pin_entry_submit))
+        waitForText(quantityText(R.plurals.pin_entry_attempts_remaining, 4))
+
+        enterPin(PARENT_PIN)
+        tapText(resourceText(R.string.pin_entry_submit))
+        waitForText(resourceText(R.string.temporary_allow_title))
+        tapText(quantityText(R.plurals.temporary_allow_duration_minutes, 5))
+        assertNoOverlay()
+
+        launchFixture(FixturePlatform.YOUTUBE, "shorts")
+        assertNoOverlay()
+    }
+
     private fun assertNormalScreensDoNotBlock(
         platform: FixturePlatform,
         screens: List<String>,
@@ -320,6 +378,34 @@ class ShortVideoBlockerEmulatorE2eTest {
         pressHome()
         waitUntil(timeoutMs = 5_000L) { !isOverlayVisible() }
         RuntimeProtectionState.clearDetectorResult()
+    }
+
+    private fun setApplicationLocale(languageTags: String) {
+        check(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+        disableAccessibilityService()
+        val localeManager = targetContext.getSystemService(LocaleManager::class.java)
+        localeManager.applicationLocales = LocaleList.forLanguageTags(languageTags)
+        assertTrue(
+            "App locale was not applied: $languageTags",
+            waitUntil(timeoutMs = 5_000L) {
+                localeManager.applicationLocales.toLanguageTags() == languageTags
+            },
+        )
+        enableAccessibilityService()
+    }
+
+    private fun clearApplicationLocale() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            return
+        }
+        val localeManager = targetContext.getSystemService(LocaleManager::class.java)
+        localeManager.applicationLocales = LocaleList.getEmptyLocaleList()
+        assertTrue(
+            "App locale was not cleared",
+            waitUntil(timeoutMs = 5_000L) {
+                localeManager.applicationLocales.toLanguageTags().isEmpty()
+            },
+        )
     }
 
     private fun enableAccessibilityService() {
@@ -392,8 +478,8 @@ class ShortVideoBlockerEmulatorE2eTest {
             return
         }
         when (text) {
-            OVERLAY_ENTER_PIN -> tapOverlayEnterPin()
-            OVERLAY_EXIT -> tapOverlayExit()
+            resourceText(R.string.blocking_overlay_enter_pin) -> tapOverlayEnterPin()
+            resourceText(R.string.blocking_overlay_exit_shorts) -> tapOverlayExit()
             else -> assertNotNull("Missing UI text: $text", node)
         }
         SystemClock.sleep(700L)
@@ -420,9 +506,10 @@ class ShortVideoBlockerEmulatorE2eTest {
     }
 
     private fun waitForText(text: String) {
+        val found = waitUntil(timeoutMs = 8_000L) { hasTextContaining(text) }
         assertTrue(
-            "Expected text not found: $text",
-            waitUntil(timeoutMs = 5_000L) { hasTextContaining(text) },
+            "Expected text not found: $text; visible=${visibleTextSnapshot()}",
+            found,
         )
     }
 
@@ -462,12 +549,14 @@ class ShortVideoBlockerEmulatorE2eTest {
 
     private fun isOverlayVisible(): Boolean =
         accessibilityOverlayWindowCount() > 0 ||
-            hasText(OVERLAY_TITLE) ||
+            hasText(resourceText(R.string.blocking_overlay_title)) ||
             shell("dumpsys accessibility").contains("TYPE_ACCESSIBILITY_OVERLAY")
 
     private fun overlayTitleCount(): Int =
         accessibilityOverlayWindowCount().takeIf { it > 0 }
-            ?: findNodes { it.hasExactTextOrDescription(OVERLAY_TITLE) }.size
+            ?: findNodes {
+                it.hasExactTextOrDescription(resourceText(R.string.blocking_overlay_title))
+            }.size
 
     private fun accessibilityOverlayWindowCount(): Int =
         uiAutomation.windows.count { window ->
@@ -499,6 +588,26 @@ class ShortVideoBlockerEmulatorE2eTest {
     private fun hasText(text: String): Boolean = findNodes { it.hasExactTextOrDescription(text) }.isNotEmpty()
 
     private fun hasTextContaining(text: String): Boolean = findNodes { it.hasTextOrDescriptionContaining(text) }.isNotEmpty()
+
+    private fun visibleTextSnapshot(): List<String> =
+        findNodes { !it.text.isNullOrBlank() || !it.contentDescription.isNullOrBlank() }
+            .mapNotNull { it.text?.toString() ?: it.contentDescription?.toString() }
+            .distinct()
+
+    private fun resourceText(resourceId: Int): String = targetContext.getString(resourceId)
+
+    private fun quantityText(
+        resourceId: Int,
+        quantity: Int,
+    ): String = targetContext.resources.getQuantityString(resourceId, quantity, quantity)
+
+    private fun englishResourceText(resourceId: Int): String {
+        val configuration =
+            Configuration(targetContext.resources.configuration).apply {
+                setLocales(LocaleList.forLanguageTags("en-US"))
+            }
+        return targetContext.createConfigurationContext(configuration).getString(resourceId)
+    }
 
     private fun waitForNode(
         timeoutMs: Long,
@@ -594,9 +703,6 @@ class ShortVideoBlockerEmulatorE2eTest {
 
     private companion object {
         const val PARENT_PIN = "2580"
-        const val OVERLAY_TITLE = "Short video blocked"
-        const val OVERLAY_ENTER_PIN = "Enter PIN"
-        const val OVERLAY_EXIT = "Exit to phone home"
         const val FAKE_ACTIVITY = "com.shortsblockerkids.fixtureapps.FakeSocialActivity"
     }
 }
