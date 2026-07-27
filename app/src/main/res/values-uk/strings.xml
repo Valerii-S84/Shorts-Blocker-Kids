@@ -25,7 +25,7 @@
     <!-- Privacy policy -->
     <string name="privacy_policy_title">Політика конфіденційності</string>
     <string name="privacy_policy_local_app_title">Локальний застосунок</string>
-    <string name="privacy_policy_local_app_body">Shorts Blocker Kids працює локально на цьому телефоні. Обліковий запис не потрібен. Перевірка підписки в робочій версії може використовувати серверну частину, обмежену перевіркою статусу права доступу Google Play.</string>
+    <string name="privacy_policy_local_app_body">Shorts Blocker Kids працює локально на цьому телефоні. Обліковий запис не потрібен. Перевірка підписки в продукційній версії може використовувати серверну частину, обмежену перевіркою статусу права доступу Google Play.</string>
     <string name="privacy_policy_accessibility_service_title">Служба спеціальних можливостей</string>
     <string name="privacy_policy_accessibility_service_body">Застосунок використовує службу спеціальних можливостей Android, щоб виявляти підтримувані розділи з короткими відео й показувати екран блокування коротких відео, коли захист увімкнено. Захищені розділи: YouTube Shorts, стрічка коротких відео TikTok, Instagram Reels і Facebook Reels. Регіональний пакет TikTok com.ss.android.ugc.trill і Facebook Lite не підтримуються.</string>
     <string name="privacy_policy_tamper_protection_title">Захист від втручання</string>
@@ -35,13 +35,13 @@
     <string name="privacy_policy_data_collection_title">Збирання даних</string>
     <string name="privacy_policy_data_collection_body">Застосунок не збирає й не надсилає дані про дитину, відомості про активність у підтримуваних застосунках, історію переглядів, назви відео, URL-адреси, імена облікових записів, коментарі, повідомлення, записи екрана, аудіо, дані про місцезнаходження, контакти, історію браузера або необроблені дампи дерева служби спеціальних можливостей.</string>
     <string name="privacy_policy_payments_title">Платежі</string>
-    <string name="privacy_policy_payments_body">Підписки оформлюються через Google Play Billing. Платіжні дані обробляє Google Play відповідно до умов Google Play. Цей застосунок зберігає локальний статус права на підписку. Коли серверну перевірку ввімкнено, вона використовує лише технічні платіжні дані й зберігає хешовані токени покупок.</string>
+    <string name="privacy_policy_payments_body">Підписки оформлюються через Google Play Billing. Платіжні дані обробляє Google Play відповідно до умов Google Play. Цей застосунок зберігає локальний статус права доступу за підпискою. Коли серверну перевірку ввімкнено, вона використовує лише технічні платіжні дані й зберігає хешовані токени покупок.</string>
     <string name="privacy_policy_limitations_title">Обмеження</string>
     <string name="privacy_policy_limitations_body">Блокування працює, коли захист УВІМКНЕНО й служба спеціальних можливостей Android активна. Якщо вимкнути цей дозвіл або видалити застосунок після вимкнення захисту від втручання, блокування припиниться.</string>
 
     <!-- Tamper protection disclosure -->
     <string name="tamper_protection_disclosure_title">Захист від втручання</string>
-    <string name="tamper_protection_disclosure_body">Захист від втручання з правами адміністратора пристрою є необов’язковим. Він ускладнює видалення Shorts Blocker Kids, доки активний, щоб дитина не могла так легко прибрати захист.\n\nВін не замінює службу спеціальних можливостей Android. Блокування й далі працює лише тоді, коли захист через службу спеціальних можливостей увімкнено. Цей застосунок не блокуватиме Налаштування Android, не змінюватиме приховані системні налаштування, не стиратиме дані пристрою, не блокуватиме екран телефона, не скидатиме паролі й не керуватиме іншими застосунками.\n\nЯкщо хтось спробує вимкнути захист від втручання, Android покаже попередження, перш ніж дозволити вимкнути статус адміністратора пристрою.</string>
+    <string name="tamper_protection_disclosure_body">Захист від втручання з правами адміністратора пристрою є необов’язковим. Він ускладнює видалення Shorts Blocker Kids, доки активний, щоб дитина не могла так легко прибрати захист.\n\nВін не замінює службу спеціальних можливостей Android. Блокування й далі працює лише тоді, коли захист через службу спеціальних можливостей увімкнено. Цей застосунок не блокуватиме Налаштування Android, не змінюватиме приховані системні налаштування, не стиратиме дані пристрою, не блокуватиме екран телефона, не скидатиме паролі й не керуватиме іншими застосунками.\n\nЯкщо хтось спробує вимкнути захист від втручання, Android покаже попередження, перш ніж дозволити скасувати права адміністратора пристрою.</string>
     <string name="tamper_protection_status_active">Захист від втручання активний</string>
     <string name="tamper_protection_status_optional_inactive">Захист від втручання необов’язковий і зараз неактивний</string>
     <string name="tamper_protection_open_device_admin">Розумію, відкрити налаштування адміністратора пристрою</string>
@@ -100,7 +100,7 @@
     <string name="enable_accessibility_status_enabled">Дозвіл захисту ввімкнено</string>
     <string name="enable_accessibility_status_disabled">Немає дозволу захисту</string>
     <string name="enable_accessibility_open_settings">Відкрити налаштування</string>
-    <string name="enable_accessibility_confirm_enabled">Службу увімкнено</string>
+    <string name="enable_accessibility_confirm_enabled">Підтвердити увімкнення служби</string>
 
     <!-- Dashboard -->
     <string name="dashboard_title">Захист від коротких відео</string>
@@ -175,7 +175,7 @@
     <string name="billing_error_with_response_code">%1$s (%2$d).</string>
 
     <!-- Statuses and errors -->
-    <string name="status_active">активний</string>
+    <string name="status_active">активно</string>
     <string name="status_missing">немає</string>
     <string name="status_optional">необов’язковий</string>
     <string name="status_enabled">увімкнено</string>
