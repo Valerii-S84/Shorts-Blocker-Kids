@@ -194,6 +194,7 @@ val unitTestCoverageExclusions =
         "**/feature/debug/**",
         "**/feature/pin/**",
         "**/feature/privacy/**",
+        "**/feature/tamper/TamperProtectionDisclosureScreenKt*.*",
         "**/feature/onboarding/*Screen*.*",
         "**/feature/blocking/*Screen*.*",
         "**/ui/**",
