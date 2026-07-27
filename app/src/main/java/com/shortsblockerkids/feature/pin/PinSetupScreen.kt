@@ -26,6 +26,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.shortsblockerkids.R
 import com.shortsblockerkids.core.security.PinPolicy
+import com.shortsblockerkids.core.security.PinValidationReason
 import com.shortsblockerkids.core.security.PinValidationResult
 
 @Composable
@@ -35,7 +36,7 @@ fun PinSetupScreen(
 ) {
     var pin by remember { mutableStateOf("") }
     var confirmation by remember { mutableStateOf("") }
-    var error by remember { mutableStateOf<PinSetupError?>(null) }
+    var error by remember { mutableStateOf<PinValidationReason?>(null) }
 
     Column(
         modifier =
@@ -79,9 +80,9 @@ fun PinSetupScreen(
         Spacer(modifier = Modifier.height(24.dp))
         Button(
             onClick = {
-                when (PinPolicy.validate(pin, confirmation)) {
+                when (val result = PinPolicy.validate(pin, confirmation)) {
                     PinValidationResult.Valid -> onPinCreated(pin)
-                    is PinValidationResult.Invalid -> error = pinSetupError(pin)
+                    is PinValidationResult.Invalid -> error = result.reason
                 }
             },
             modifier = Modifier.fillMaxWidth(),
@@ -92,21 +93,14 @@ fun PinSetupScreen(
 }
 
 @Composable
-private fun PinSetupError.localizedMessage(): String =
+private fun PinValidationReason.localizedMessage(): String =
     stringResource(
         when (this) {
-            PinSetupError.INVALID_LENGTH -> R.string.pin_setup_error_invalid_length
-            PinSetupError.WEAK_PIN -> R.string.pin_setup_error_weak_pin
-            PinSetupError.CONFIRMATION_MISMATCH -> R.string.pin_setup_error_confirmation_mismatch
+            PinValidationReason.INVALID_LENGTH -> R.string.pin_setup_error_invalid_length
+            PinValidationReason.WEAK_PIN -> R.string.pin_setup_error_weak_pin
+            PinValidationReason.CONFIRMATION_MISMATCH -> R.string.pin_setup_error_confirmation_mismatch
         },
     )
-
-private fun pinSetupError(pin: String): PinSetupError =
-    when {
-        !PinPolicy.isVerificationInputComplete(pin) -> PinSetupError.INVALID_LENGTH
-        PinPolicy.validate(pin, pin) is PinValidationResult.Invalid -> PinSetupError.WEAK_PIN
-        else -> PinSetupError.CONFIRMATION_MISMATCH
-    }
 
 @Composable
 private fun PinField(
@@ -126,9 +120,3 @@ private fun PinField(
 }
 
 private fun String.keepPinDigits(): String = filter(Char::isDigit).take(6)
-
-private enum class PinSetupError {
-    INVALID_LENGTH,
-    WEAK_PIN,
-    CONFIRMATION_MISMATCH,
-}

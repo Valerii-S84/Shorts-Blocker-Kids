@@ -9,15 +9,15 @@ object PinPolicy {
         confirmation: String,
     ): PinValidationResult {
         if (!isVerificationInputComplete(pin)) {
-            return PinValidationResult.Invalid("PIN must be 4-6 digits.")
+            return PinValidationResult.Invalid(PinValidationReason.INVALID_LENGTH)
         }
 
         if (pin in weakPins) {
-            return PinValidationResult.Invalid("Choose a stronger PIN.")
+            return PinValidationResult.Invalid(PinValidationReason.WEAK_PIN)
         }
 
         if (pin != confirmation) {
-            return PinValidationResult.Invalid("PIN confirmation does not match.")
+            return PinValidationResult.Invalid(PinValidationReason.CONFIRMATION_MISMATCH)
         }
 
         return PinValidationResult.Valid
@@ -26,10 +26,16 @@ object PinPolicy {
     fun isVerificationInputComplete(pin: String): Boolean = allowedPattern.matches(pin)
 }
 
+enum class PinValidationReason {
+    INVALID_LENGTH,
+    WEAK_PIN,
+    CONFIRMATION_MISMATCH,
+}
+
 sealed interface PinValidationResult {
     data object Valid : PinValidationResult
 
     data class Invalid(
-        val message: String,
+        val reason: PinValidationReason,
     ) : PinValidationResult
 }

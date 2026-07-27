@@ -61,14 +61,14 @@
     <string name="pin_input_label">PIN</string>
     <string name="pin_confirmation_input_label">Confirm PIN</string>
     <string name="pin_setup_submit">Create PIN</string>
-    <string name="pin_setup_error_invalid_length">PIN must be 4-6 digits.</string>
+    <string name="pin_setup_error_invalid_length">PIN must be 4–6 digits.</string>
     <string name="pin_setup_error_weak_pin">Choose a stronger PIN.</string>
     <string name="pin_setup_error_confirmation_mismatch">PIN confirmation does not match.</string>
 
     <!-- PIN entry -->
     <string name="pin_entry_title">Enter Parent PIN</string>
     <string name="pin_entry_submit">Unlock</string>
-    <string name="pin_entry_error_incomplete">Enter the 4-6 digit PIN.</string>
+    <string name="pin_entry_error_incomplete">Enter the 4–6 digit PIN.</string>
     <string name="pin_entry_error_not_configured">PIN is not configured.</string>
     <plurals name="pin_entry_attempts_remaining">
         <item quantity="one">Wrong PIN. %1$d attempt left.</item>

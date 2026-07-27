@@ -36,7 +36,6 @@ Status: Partial
 - `app/src/main/java/com/shortsblockerkids/core/security/PinVerificationResult.kt`
 - `app/src/main/java/com/shortsblockerkids/core/storage/AppSettings.kt`
 - `app/src/main/java/com/shortsblockerkids/core/storage/SettingsRepository.kt`
-- `app/src/main/java/com/shortsblockerkids/feature/blocking/BlockingCopy.kt`
 - `app/src/main/java/com/shortsblockerkids/feature/dashboard/DashboardScreen.kt`
 - `app/src/main/java/com/shortsblockerkids/feature/onboarding/AccessibilityDisclosureScreen.kt`
 - `app/src/main/java/com/shortsblockerkids/feature/onboarding/WelcomeScreen.kt`

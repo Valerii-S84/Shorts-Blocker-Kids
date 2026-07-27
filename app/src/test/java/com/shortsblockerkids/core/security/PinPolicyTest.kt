@@ -1,5 +1,6 @@
 package com.shortsblockerkids.core.security
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -10,8 +11,17 @@ class PinPolicyTest {
         val weakPins = listOf("0000", "1111", "1234", "123456")
 
         weakPins.forEach { pin ->
-            assertTrue(PinPolicy.validate(pin, pin) is PinValidationResult.Invalid)
+            val result = PinPolicy.validate(pin, pin) as PinValidationResult.Invalid
+
+            assertEquals(PinValidationReason.WEAK_PIN, result.reason)
         }
+    }
+
+    @Test
+    fun rejectsInvalidLengthWithReason() {
+        val result = PinPolicy.validate("482", "482") as PinValidationResult.Invalid
+
+        assertEquals(PinValidationReason.INVALID_LENGTH, result.reason)
     }
 
     @Test
@@ -22,7 +32,9 @@ class PinPolicyTest {
 
     @Test
     fun rejectsMismatchedConfirmation() {
-        assertTrue(PinPolicy.validate("4826", "4827") is PinValidationResult.Invalid)
+        val result = PinPolicy.validate("4826", "4827") as PinValidationResult.Invalid
+
+        assertEquals(PinValidationReason.CONFIRMATION_MISMATCH, result.reason)
     }
 
     @Test
