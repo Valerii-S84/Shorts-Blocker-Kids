@@ -27,16 +27,17 @@ data class BillingVerificationPolicy(
             checkedAtMillis = checkedAtMillis,
         )
 
-    fun localPurchaseStatusMessage(
+    fun localPurchaseMessageCode(
         hasPurchasedSubscription: Boolean,
         hasPendingSubscription: Boolean,
-    ): String =
+    ): BillingMessageCode =
         when {
-            hasPurchasedSubscription && canUseClientOnlyEntitlement -> "Subscription active."
+            hasPurchasedSubscription && canUseClientOnlyEntitlement ->
+                BillingMessageCode.SUBSCRIPTION_ACTIVE
             hasPurchasedSubscription ->
-                "Subscription requires backend verification. Restore or try again."
+                BillingMessageCode.BACKEND_VERIFICATION_REQUIRED
             hasPendingSubscription ->
-                "Purchase pending. Protection unlocks after payment completes."
-            else -> "No active Google Play subscription found."
+                BillingMessageCode.PURCHASE_PENDING
+            else -> BillingMessageCode.NO_ACTIVE_SUBSCRIPTION
         }
 }

@@ -35,6 +35,7 @@ import com.shortsblockerkids.accessibility.YouTubeShortsDetector
 import com.shortsblockerkids.core.billing.BillingUiState
 import com.shortsblockerkids.core.entitlement.LocalEntitlementResolver
 import com.shortsblockerkids.core.storage.AppSettings
+import com.shortsblockerkids.feature.billing.billingMessageText
 
 @Composable
 fun DetectorPlaygroundScreen(
@@ -109,7 +110,10 @@ fun DetectorPlaygroundScreen(
                         stringResource(R.string.debug_enabled)
                     },
                 )
-                QaRow(stringResource(R.string.debug_billing_ui), billingUiState.statusMessage)
+                QaRow(
+                    stringResource(R.string.debug_billing_ui),
+                    billingMessageText(billingUiState.message),
+                )
                 QaRow(
                     stringResource(R.string.debug_protection_permission),
                     if (isAccessibilityServiceEnabled) {

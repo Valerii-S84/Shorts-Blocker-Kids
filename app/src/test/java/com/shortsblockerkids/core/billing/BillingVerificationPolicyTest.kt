@@ -42,8 +42,8 @@ class BillingVerificationPolicyTest {
         assertFalse(policy.canUseClientOnlyEntitlement)
         assertEquals(BillingEntitlementState.EXPIRED, snapshot.state)
         assertEquals(
-            "Subscription requires backend verification. Restore or try again.",
-            policy.localPurchaseStatusMessage(
+            BillingMessageCode.BACKEND_VERIFICATION_REQUIRED,
+            policy.localPurchaseMessageCode(
                 hasPurchasedSubscription = true,
                 hasPendingSubscription = false,
             ),
@@ -85,6 +85,37 @@ class BillingVerificationPolicyTest {
 
         assertEquals(BillingEntitlementState.EXPIRED, snapshot.state)
         assertFalse(snapshot.isActive)
+    }
+
+    @Test
+    fun localPurchasePresentationUsesStableCodes() {
+        val policy =
+            BillingVerificationPolicy(
+                clientOnlyModeRequested = true,
+                internalTestingBuild = true,
+            )
+
+        assertEquals(
+            BillingMessageCode.SUBSCRIPTION_ACTIVE,
+            policy.localPurchaseMessageCode(
+                hasPurchasedSubscription = true,
+                hasPendingSubscription = false,
+            ),
+        )
+        assertEquals(
+            BillingMessageCode.PURCHASE_PENDING,
+            policy.localPurchaseMessageCode(
+                hasPurchasedSubscription = false,
+                hasPendingSubscription = true,
+            ),
+        )
+        assertEquals(
+            BillingMessageCode.NO_ACTIVE_SUBSCRIPTION,
+            policy.localPurchaseMessageCode(
+                hasPurchasedSubscription = false,
+                hasPendingSubscription = false,
+            ),
+        )
     }
 
     @Test
