@@ -238,7 +238,7 @@
     <string name="debug_confidence_format">Упевненість: %1$s</string>
     <string name="debug_reasons_format">Причини: %1$s</string>
     <string name="debug_signals_format">Сигнали: %1$s</string>
-    <string name="debug_would_block_format">Буде заблоковано: %1$s</string>
+    <string name="debug_would_block_format">Було б заблоковано: %1$s</string>
     <string name="debug_test_overlay_format">Тестовий екран блокування коротких відео: %1$s</string>
     <string name="debug_snapshot_format">Знімок: %1$s</string>
     <string name="debug_snapshot_requested">Запитано знімок; відкрийте YouTube, щоб зафіксувати наступну подію</string>
