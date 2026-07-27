@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Shorts Blocker Kids</string>
+    <string name="accessibility_service_label">Shorts Blocker Kids-Schutz</string>
+    <string name="accessibility_service_description">Erkennt YouTube Shorts, den TikTok-Kurzvideo-Feed, Instagram Reels und Facebook Reels lokal, wenn der Schutz aktiviert ist, und schließt den Blockierungsbildschirm, nachdem Sie diese Bereiche verlassen haben.</string>
+    <string name="blocking_overlay_title">Kurzvideo blockiert</string>
+    <string name="blocking_overlay_message">Zum vorübergehenden Erlauben von Kurzvideos oder zum Ändern des Schutzes ist die Eltern-PIN erforderlich.</string>
+    <string name="blocking_overlay_exit_shorts">Zum Startbildschirm</string>
+    <string name="blocking_overlay_enter_pin">PIN eingeben</string>
+    <string name="tamper_protection_label">Shorts Blocker Kids-Manipulationsschutz</string>
+    <string name="tamper_protection_description">Optionaler, von den Eltern gesteuerter Geräteadministrator-Schutz, der die Deinstallation erschwert, solange er aktiv ist.</string>
+    <string name="tamper_protection_system_explanation">Der optionale Manipulationsschutz erschwert die Deinstallation von Shorts Blocker Kids, solange er aktiv ist. Er ersetzt nicht den Schutz durch Bedienungshilfen, blockiert nicht die Einstellungen und führt keine verborgenen Systemaktionen aus.</string>
+    <string name="tamper_protection_disable_warning">Der Manipulationsschutz ist aktiv. Wenn Sie ihn deaktivieren, kann Shorts Blocker Kids deinstalliert oder der Schutz ohne Eltern-PIN geändert werden.</string>
+
+    <!-- Common -->
+    <string name="common_back">Zurück</string>
+    <string name="common_done">Fertig</string>
+    <string name="common_not_now">Nicht jetzt</string>
+
+    <!-- Accessibility disclosure -->
+    <string name="accessibility_disclosure_title">Berechtigung für Bedienungshilfen</string>
+    <string name="accessibility_disclosure_body">Shorts Blocker Kids verwendet den Android-Bedienungshilfedienst, um zu erkennen, wenn geschützte Kurzvideo-Bereiche geöffnet sind, und einen Blockierungsbildschirm anzuzeigen. Geschützt werden YouTube Shorts, der TikTok-Kurzvideo-Feed, Instagram Reels und Facebook Reels. Das regionale TikTok-Paket com.ss.android.ugc.trill und Facebook Lite werden nicht unterstützt. Für YouTube Shorts liegen bereits Smoke-Test-Nachweise von einem echten Gerät vor. TikTok, Instagram Reels und Facebook Reels sind durch Detektor- und Unit-Tests abgedeckt, erfordern aber weiterhin Qualitätssicherung auf echten Geräten, bevor ihre Funktion in der Produktivversion als bestätigt gilt.\n\nWenn Kurzvideos blockiert sind, kann der Zugriff mit der Eltern-PIN vorübergehend erlaubt werden. Ohne die Eltern-PIN bleibt der Blockierungsbildschirm aktiv, solange ein geschützter Kurzvideo-Bereich geöffnet ist.\n\nDie App erfasst oder übermittelt keine Daten von Kindern, Aktivitäten in unterstützten Apps, Wiedergabeverläufe, Videotitel, URLs, Kontonamen, Kommentare, Nachrichten, Bildschirmaufnahmen, Audiodaten, Standortdaten, Kontakte, Browserverläufe oder Rohdaten des Bedienungshilfen-Baums. Es gibt kein Kontosystem, keine Analysen und keine Werbung. Das Backend wird ausschließlich zur Überprüfung der Google Play-Abrechnung verwendet. Regeln und PIN-Schutz bleiben lokal auf diesem Smartphone.\n\nDie Blockierung funktioniert, wenn der Schutz EINGESCHALTET und der Android-Bedienungshilfedienst aktiv ist. Wird diese Berechtigung deaktiviert oder die App entfernt, endet die Blockierung.</string>
+    <string name="accessibility_disclosure_accept">Zustimmen und fortfahren</string>
+
+    <!-- Privacy policy -->
+    <string name="privacy_policy_title">Datenschutzerklärung</string>
+    <string name="privacy_policy_local_app_title">Lokale App</string>
+    <string name="privacy_policy_local_app_body">Shorts Blocker Kids funktioniert lokal auf diesem Smartphone. Ein Konto ist nicht erforderlich. Die Abonnementprüfung in der Produktivversion kann ein Abrechnungs-Backend verwenden, das ausschließlich den Google Play-Berechtigungsstatus verarbeitet.</string>
+    <string name="privacy_policy_accessibility_service_title">Bedienungshilfedienst</string>
+    <string name="privacy_policy_accessibility_service_body">Die App verwendet den Android-Bedienungshilfedienst, um unterstützte Kurzvideo-Bereiche zu erkennen und bei aktiviertem Schutz einen Blockierungsbildschirm anzuzeigen. Geschützt werden YouTube Shorts, der TikTok-Kurzvideo-Feed, Instagram Reels und Facebook Reels. Das regionale TikTok-Paket com.ss.android.ugc.trill und Facebook Lite werden nicht unterstützt.</string>
+    <string name="privacy_policy_tamper_protection_title">Manipulationsschutz</string>
+    <string name="privacy_policy_tamper_protection_body">Der optionale Manipulationsschutz über den Geräteadministrator kann die Deinstallation von Shorts Blocker Kids erschweren, solange er aktiv ist. Er ersetzt nicht den Bedienungshilfedienst, blockiert nicht die Android-Einstellungen, löscht keine Gerätedaten und führt keine verborgenen Systemaktionen aus.</string>
+    <string name="privacy_policy_local_data_title">Lokale Daten</string>
+    <string name="privacy_policy_local_data_body">Schutzeinstellungen und Metadaten des Eltern-PIN-Hashs bleiben auf diesem Smartphone. Die Eltern-PIN wird nicht als Klartext gespeichert.</string>
+    <string name="privacy_policy_data_collection_title">Datenerfassung</string>
+    <string name="privacy_policy_data_collection_body">Die App erfasst oder übermittelt keine Daten von Kindern, Aktivitäten in unterstützten Apps, Wiedergabeverläufe, Videotitel, URLs, Kontonamen, Kommentare, Nachrichten, Bildschirmaufnahmen, Audiodaten, Standortdaten, Kontakte, Browserverläufe oder Rohdaten der Bedienungshilfen-Struktur.</string>
+    <string name="privacy_policy_payments_title">Zahlungen</string>
+    <string name="privacy_policy_payments_body">Abonnements werden über Google Play Billing abgewickelt. Zahlungsdaten verarbeitet Google Play gemäß den Google Play-Bedingungen. Diese App speichert den Berechtigungsstatus des Abonnements lokal. Wenn die Backend-Verifizierung aktiviert ist, verwendet sie ausschließlich technische Abrechnungsdaten und speichert gehashte Kauf-Token.</string>
+    <string name="privacy_policy_limitations_title">Einschränkungen</string>
+    <string name="privacy_policy_limitations_body">Die Blockierung funktioniert, wenn der Schutz EINGESCHALTET und der Android-Bedienungshilfedienst aktiv ist. Wird diese Berechtigung deaktiviert oder die App nach dem Deaktivieren des Manipulationsschutzes entfernt, endet die Blockierung.</string>
+
+    <!-- Tamper protection disclosure -->
+    <string name="tamper_protection_disclosure_title">Manipulationsschutz</string>
+    <string name="tamper_protection_disclosure_body">Der Manipulationsschutz über den Geräteadministrator ist optional. Er erschwert die Deinstallation von Shorts Blocker Kids, solange er aktiv ist, damit ein Kind den Schutz nicht so einfach entfernen kann.\n\nEr ersetzt nicht den Android-Bedienungshilfedienst. Die Blockierung funktioniert weiterhin nur, wenn der Schutz durch Bedienungshilfen aktiviert ist. Diese App blockiert nicht die Android-Einstellungen, ändert keine verborgenen Systemeinstellungen, löscht keine Gerätedaten, sperrt nicht den Bildschirm, setzt keine Passwörter zurück und verwaltet keine anderen Apps.\n\nWenn jemand versucht, den Manipulationsschutz zu deaktivieren, zeigt Android eine Warnung an, bevor der Geräteadministrator-Status ausgeschaltet werden kann.</string>
+    <string name="tamper_protection_status_active">Manipulationsschutz ist aktiv</string>
+    <string name="tamper_protection_status_optional_inactive">Manipulationsschutz ist optional und derzeit inaktiv</string>
+    <string name="tamper_protection_open_device_admin">Verstanden, Geräteadministrator öffnen</string>
+
+    <!-- Welcome -->
+    <string name="welcome_title">Shorts Blocker Kids</string>
+    <string name="welcome_subtitle">Blockiert unterstützte Kurzvideo-Bereiche auf dem Smartphone eines Kindes.\nKein Konto. Kein Server. Nur Eltern-PIN.</string>
+    <string name="welcome_start">Starten</string>
+
+    <!-- Protected apps -->
+    <string name="protected_apps_title">Zu schützende Apps auswählen</string>
+    <string name="protected_apps_description">Wählen Sie aus, welche unterstützten Kurzvideo-Bereiche diese Eltern-PIN auf diesem Smartphone schützen soll.</string>
+    <string name="protected_apps_continue">Weiter</string>
+
+    <!-- PIN setup -->
+    <string name="pin_setup_title">Eltern-PIN erstellen</string>
+    <string name="pin_input_label">PIN</string>
+    <string name="pin_confirmation_input_label">PIN bestätigen</string>
+    <string name="pin_setup_submit">PIN erstellen</string>
+    <string name="pin_setup_error_invalid_length">Die PIN muss aus 4–6 Ziffern bestehen.</string>
+    <string name="pin_setup_error_weak_pin">Wählen Sie eine sicherere PIN.</string>
+    <string name="pin_setup_error_confirmation_mismatch">Die PIN-Bestätigung stimmt nicht überein.</string>
+
+    <!-- PIN entry -->
+    <string name="pin_entry_title">Eltern-PIN eingeben</string>
+    <string name="pin_entry_submit">Entsperren</string>
+    <string name="pin_entry_error_incomplete">Geben Sie die 4–6-stellige PIN ein.</string>
+    <string name="pin_entry_error_not_configured">Es ist keine PIN eingerichtet.</string>
+    <plurals name="pin_entry_attempts_remaining">
+        <item quantity="one">Falsche PIN. Noch %1$d Versuch.</item>
+        <item quantity="other">Falsche PIN. Noch %1$d Versuche.</item>
+    </plurals>
+    <plurals name="pin_entry_lockout_minutes">
+        <item quantity="one">PIN gesperrt. In %1$d Minute erneut versuchen.</item>
+        <item quantity="other">PIN gesperrt. In %1$d Minuten erneut versuchen.</item>
+    </plurals>
+
+    <!-- Temporary allow -->
+    <string name="temporary_allow_title">Kurzvideos erlauben</string>
+    <string name="temporary_allow_description">Geschützte Kurzvideo-Apps auf diesem Smartphone vorübergehend erlauben für:</string>
+    <string name="temporary_allow_cancel">Abbrechen</string>
+    <plurals name="temporary_allow_duration_minutes">
+        <item quantity="one">%1$d Minute</item>
+        <item quantity="other">%1$d Minuten</item>
+    </plurals>
+
+    <!-- Accessibility setup -->
+    <string name="enable_accessibility_title">Schutz aktivieren</string>
+    <string name="enable_accessibility_instructions">1. Tippen Sie auf Einstellungen öffnen.\n2. Wählen Sie Shorts Blocker Kids aus.\n3. Aktivieren Sie den Dienst.\n4. Kehren Sie zu dieser App zurück.</string>
+    <string name="enable_accessibility_status_enabled">Berechtigung für den Schutz erteilt</string>
+    <string name="enable_accessibility_status_disabled">Berechtigung für den Schutz fehlt</string>
+    <string name="enable_accessibility_open_settings">Einstellungen öffnen</string>
+    <string name="enable_accessibility_confirm_enabled">Ich habe den Dienst aktiviert</string>
+
+    <!-- Dashboard -->
+    <string name="dashboard_title">Kurzvideo-Schutz</string>
+    <string name="dashboard_setup_checklist">Einrichtungscheckliste</string>
+    <string name="dashboard_checklist_parent_pin">Eltern-PIN</string>
+    <string name="dashboard_checklist_protected_apps">Zu schützende Apps ausgewählt</string>
+    <string name="dashboard_checklist_accessibility_disclosure">Hinweis zu Bedienungshilfen akzeptiert</string>
+    <string name="dashboard_checklist_accessibility_service">Bedienungshilfedienst aktiv</string>
+    <string name="dashboard_checklist_tamper_protection">Manipulationsschutz über Geräteadministrator</string>
+    <string name="dashboard_platform_support">Plattformunterstützung</string>
+    <string name="dashboard_enabled_apps">Aktivierte Apps</string>
+    <string name="dashboard_not_supported">Nicht unterstützt</string>
+    <string name="dashboard_pin">PIN</string>
+    <string name="dashboard_free_test">Kostenloser Test</string>
+    <plurals name="dashboard_days_remaining">
+        <item quantity="one">Noch %1$d Tag</item>
+        <item quantity="other">Noch %1$d Tage</item>
+    </plurals>
+    <string name="dashboard_days_remaining_label">Verbleibende Tage</string>
+    <string name="dashboard_subscription">Abonnement</string>
+    <string name="dashboard_protection_permission">Schutzberechtigung</string>
+    <string name="dashboard_tamper_protection">Manipulationsschutz</string>
+    <string name="dashboard_protection_status">Schutzstatus</string>
+    <string name="dashboard_description">Shorts Blocker Kids funktioniert, wenn der Schutz EINGESCHALTET und der Android-Bedienungshilfedienst für YouTube Shorts, den TikTok-Kurzvideo-Feed, Instagram Reels und Facebook Reels aktiv ist. Der optionale Manipulationsschutz über den Geräteadministrator kann die Deinstallation erschweren, solange er aktiv ist. Wird die Berechtigung für Bedienungshilfen deaktiviert, endet die Blockierung.</string>
+    <string name="dashboard_open_accessibility_settings">Bedienungshilfen-Einstellungen öffnen</string>
+    <string name="dashboard_review_accessibility_disclosure">Hinweis zu Bedienungshilfen ansehen</string>
+    <string name="dashboard_privacy_policy">Datenschutzerklärung</string>
+    <string name="dashboard_review_tamper_protection">Manipulationsschutz ansehen</string>
+    <string name="dashboard_enable_tamper_protection">Manipulationsschutz aktivieren</string>
+    <string name="dashboard_local_qa">Lokale Qualitätssicherung</string>
+    <string name="dashboard_google_play_subscription">Google Play-Abonnement</string>
+    <string name="dashboard_manage_subscription">Abonnement verwalten</string>
+    <string name="dashboard_subscribe_google_play">Über Google Play abonnieren</string>
+    <string name="dashboard_restore_purchases">Käufe wiederherstellen</string>
+
+    <!-- Billing presentation -->
+    <string name="billing_subscription_managed_by_google_play">Das Abonnement wird über Google Play verwaltet.</string>
+    <string name="billing_status_purchase_in_progress">Kauf läuft</string>
+    <string name="billing_status_available_price">verfügbar: %1$s</string>
+    <string name="subscription_terms_with_price">Monatlich automatisch verlängerndes Abonnement: %1$s. Nach dem kostenlosen Test erforderlich, damit die Blockierung von Kurzvideos aktiv bleibt. Abrechnung über Google Play; jederzeit in Google Play verwalten oder kündigen.</string>
+    <string name="subscription_terms_price_pending">Monatlich automatisch verlängerndes Abonnement. Der Abonnementpreis wird vor dem Kauf von Google Play angezeigt. Nach dem kostenlosen Test erforderlich, damit die Blockierung von Kurzvideos aktiv bleibt. Abrechnung über Google Play; jederzeit in Google Play verwalten oder kündigen.</string>
+    <string name="billing_status_connecting">Verbindung mit Google Play Billing wird hergestellt.</string>
+    <string name="billing_status_connected">Mit Google Play Billing verbunden.</string>
+    <string name="billing_status_disconnected">Verbindung zu Google Play Billing getrennt.</string>
+    <string name="billing_status_subscription_not_ready">Das Abonnement kann noch nicht verwendet werden. Prüfen Sie Google Play oder stellen Sie Käufe wieder her.</string>
+    <string name="billing_status_opening_purchase_flow">Google Play-Kaufvorgang wird geöffnet.</string>
+    <string name="billing_status_purchase_canceled">Kauf abgebrochen.</string>
+    <string name="billing_status_product_unavailable">Das Abonnementprodukt ist noch nicht verfügbar.</string>
+    <string name="billing_status_product_loaded">Abonnement von Google Play geladen.</string>
+    <string name="billing_status_subscription_active">Abonnement aktiv.</string>
+    <string name="billing_status_backend_verification_required">Für das Abonnement ist eine Backend-Verifizierung erforderlich. Stellen Sie Käufe wieder her oder versuchen Sie es erneut.</string>
+    <string name="billing_status_purchase_pending">Kauf ausstehend. Der Schutz wird nach Abschluss der Zahlung freigeschaltet.</string>
+    <string name="billing_status_no_active_subscription">Kein aktives Google Play-Abonnement gefunden.</string>
+    <string name="billing_status_backend_verification_not_ready">Die Verifizierung über das Abrechnungs-Backend ist noch nicht verfügbar.</string>
+    <string name="billing_status_verifying_with_backend">Abonnement wird über das sichere Backend verifiziert.</string>
+    <string name="billing_status_subscription_canceled_active">Das Abonnement bleibt bis zum Ende des bezahlten Zeitraums aktiv.</string>
+    <string name="billing_status_subscription_in_grace">Das Abonnement ist während der Google Play-Kulanzfrist aktiv.</string>
+    <string name="billing_status_payment_issue">Zahlungsproblem. Aktualisieren Sie das Abonnement in Google Play.</string>
+    <string name="billing_status_subscription_revoked">Abonnement von Google Play widerrufen.</string>
+    <string name="billing_status_verification_unavailable">Abonnementverifizierung nicht verfügbar.</string>
+    <string name="billing_error_unavailable">Abrechnung nicht verfügbar</string>
+    <string name="billing_error_open_purchase_flow">Kaufvorgang konnte nicht geöffnet werden</string>
+    <string name="billing_error_manage_subscription_unavailable">Die Google Play-Abonnementverwaltung konnte auf diesem Gerät nicht geöffnet werden.</string>
+    <string name="billing_error_purchase_failed">Kauf fehlgeschlagen</string>
+    <string name="billing_error_load_subscription">Abonnement konnte nicht geladen werden</string>
+    <string name="billing_error_restore_purchases">Käufe konnten nicht wiederhergestellt werden</string>
+    <string name="billing_error_verify_with_backend">Abonnement konnte nicht über das Backend verifiziert werden. Stellen Sie Käufe wieder her oder versuchen Sie es erneut.</string>
+    <string name="billing_error_refresh_backend">Abonnement konnte nicht über das Backend aktualisiert werden. Stellen Sie Käufe wieder her oder versuchen Sie es erneut.</string>
+    <string name="billing_error_acknowledge_purchase">Kauf konnte nicht bestätigt werden</string>
+    <string name="billing_error_with_response_code">%1$s (%2$d).</string>
+
+    <!-- Statuses and errors -->
+    <string name="status_active">aktiv</string>
+    <string name="status_missing">fehlt</string>
+    <string name="status_optional">optional</string>
+    <string name="status_enabled">aktiviert</string>
+    <string name="status_disabled">deaktiviert</string>
+    <string name="status_created">erstellt</string>
+    <string name="status_not_created">nicht erstellt</string>
+    <string name="status_none">keine</string>
+    <string name="status_not_started">nicht gestartet</string>
+    <string name="status_free_test_active">Kostenloser Test aktiv</string>
+    <string name="status_free_test_expired">Kostenloser Test abgelaufen</string>
+    <string name="status_subscription_active">Abonnement aktiv</string>
+    <string name="status_protection_permission_missing">Schutzberechtigung fehlt</string>
+    <string name="status_protection_active">Schutz aktiv</string>
+    <string name="status_protection_locked">Schutz gesperrt</string>
+    <string name="status_inactive">inaktiv</string>
+    <string name="status_optional_inactive">optional, inaktiv</string>
+    <string name="status_locked">GESPERRT</string>
+    <string name="status_on">EIN</string>
+    <string name="status_off">AUS</string>
+    <string name="error_free_test_ended_with_detail">Der kostenlose Test ist abgelaufen. %1$s</string>
+    <string name="error_protection_permission_missing">Schutzberechtigung fehlt</string>
+    <string name="error_no_protected_apps_selected">Keine zu schützenden Apps ausgewählt</string>
+    <string name="error_free_test_expired">Kostenloser Test abgelaufen</string>
+    <string name="error_protection_inactive_disabled">Schutz inaktiv. Schalten Sie den Schutz EIN, um Kurzvideos zu blockieren.</string>
+    <string name="error_protection_inactive_no_apps">Schutz inaktiv. Aktivieren Sie mindestens eine zu schützende App.</string>
+    <string name="error_protection_inactive_accessibility">Schutz inaktiv. Aktivieren Sie den Bedienungshilfedienst.</string>
+    <string name="error_protection_inactive_temporary_allow">Schutz während der vorübergehenden Freigabe inaktiv.</string>
+    <string name="error_free_test_not_started">Der kostenlose Test wurde noch nicht gestartet. Erteilen Sie die Schutzberechtigung, um den 20-tägigen Test zu starten.</string>
+    <string name="error_protection_inactive_setup">Schutz inaktiv. Schließen Sie die Einrichtung ab, um Kurzvideos zu blockieren.</string>
+
+    <!-- Platforms -->
+    <string name="platform_youtube_shorts">YouTube Shorts</string>
+    <string name="platform_tiktok_short_video_feed">TikTok-Kurzvideo-Feed</string>
+    <string name="platform_tiktok_regional">TikTok regional</string>
+    <string name="platform_instagram_reels">Instagram Reels</string>
+    <string name="platform_facebook_reels">Facebook Reels</string>
+    <string name="platform_facebook_lite">Facebook Lite</string>
+    <string name="platform_status_supported">unterstützt</string>
+    <string name="platform_status_supported_needs_qa">im Code unterstützt; Qualitätssicherung auf echtem Gerät erforderlich</string>
+    <string name="platform_status_not_supported">nicht unterstützt</string>
+    <string name="platform_status_item_format">%1$s: %2$s</string>
+    <string name="platform_unsupported_item_format">%1$s (%2$s)</string>
+
+    <!-- Visible debug UI -->
+    <string name="debug_detector_playground_title">Detektor-Testbereich</string>
+    <string name="debug_no_scenario">Kein Szenario</string>
+    <string name="debug_not_requested">nicht angefordert</string>
+    <string name="debug_detected_package">Erkanntes Paket</string>
+    <string name="debug_disabled">deaktiviert</string>
+    <string name="debug_protection_mode">Schutzmodus</string>
+    <string name="debug_blocking_decision">Blockierungsentscheidung</string>
+    <string name="debug_entitlement">Berechtigung</string>
+    <string name="debug_subscription_state">Abonnementstatus</string>
+    <string name="debug_backend">Backend</string>
+    <string name="debug_enabled">aktiviert</string>
+    <string name="debug_billing_ui">Abrechnungsoberfläche</string>
+    <string name="debug_protection_permission">Schutzberechtigung</string>
+    <string name="debug_missing">fehlt</string>
+    <string name="debug_scenario_format">Szenario: %1$s</string>
+    <string name="debug_confidence_format">Konfidenz: %1$s</string>
+    <string name="debug_reasons_format">Gründe: %1$s</string>
+    <string name="debug_signals_format">Signale: %1$s</string>
+    <string name="debug_would_block_format">würde blockieren: %1$s</string>
+    <string name="debug_test_overlay_format">Test-Overlay: %1$s</string>
+    <string name="debug_snapshot_format">Snapshot: %1$s</string>
+    <string name="debug_snapshot_requested">Snapshot angefordert; öffnen Sie YouTube, um das nächste Ereignis zu erfassen</string>
+    <string name="debug_capture_youtube_snapshot">Snapshot der YouTube-Oberfläche erfassen</string>
+    <string name="debug_overlay_requested">Overlay angefordert; öffnen Sie YouTube, um das nächste Ereignis zu verarbeiten</string>
+    <string name="debug_request_test_overlay">Test-Overlay anfordern</string>
+    <string name="debug_back">Zurück</string>
+    <string name="debug_scenario_youtube_home">YouTube-Startseite simulieren</string>
+    <string name="debug_scenario_youtube_video">Normales YouTube-Video simulieren</string>
+    <string name="debug_scenario_search">Suche simulieren</string>
+    <string name="debug_scenario_shorts_high_confidence">Shorts mit hoher Konfidenz simulieren</string>
+    <string name="debug_scenario_non_youtube">Andere App als YouTube simulieren</string>
+</resources>
