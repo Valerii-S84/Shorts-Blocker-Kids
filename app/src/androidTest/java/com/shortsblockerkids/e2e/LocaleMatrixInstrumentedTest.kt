@@ -1,9 +1,11 @@
 package com.shortsblockerkids.e2e
 
 import android.content.ComponentName
+import android.content.Context
 import android.content.res.Configuration
 import android.content.res.Resources
 import android.os.LocaleList
+import android.view.accessibility.AccessibilityManager
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.shortsblockerkids.R
@@ -20,6 +22,7 @@ class LocaleMatrixInstrumentedTest {
 
     @Test
     fun localeMatrixResolvesCriticalSurfaces() {
+        assertAccessibilityServiceDescriptionMetadata()
         LOCALE_EXPECTATIONS.forEach { expectation ->
             assertCriticalSurfaces(expectation)
         }
@@ -73,21 +76,20 @@ class LocaleMatrixInstrumentedTest {
     }
 
     private fun assertCriticalSurfaces(expectation: LocaleExpectation) {
-        val resources = resourcesFor(expectation.languageTag)
-        val packageManager = targetContext.packageManager
-        val accessibilityServiceInfo =
-            packageManager.getServiceInfo(
-                ComponentName(targetContext, ShortsBlockerAccessibilityService::class.java),
-                0,
-            )
+        val localizedContext = contextFor(expectation.languageTag)
+        val resources = localizedContext.resources
+        val serviceComponent =
+            ComponentName(targetContext, ShortsBlockerAccessibilityService::class.java)
+        val declaredAccessibilityServiceInfo =
+            targetContext.packageManager.getServiceInfo(serviceComponent, 0)
         val deviceAdminInfo =
-            packageManager.getReceiverInfo(
+            targetContext.packageManager.getReceiverInfo(
                 ComponentName(targetContext, TamperProtectionReceiver::class.java),
                 0,
             )
 
         assertEquals(R.string.app_name, targetContext.applicationInfo.labelRes)
-        assertEquals(R.string.accessibility_service_label, accessibilityServiceInfo.labelRes)
+        assertEquals(R.string.accessibility_service_label, declaredAccessibilityServiceInfo.labelRes)
         assertEquals(R.string.tamper_protection_label, deviceAdminInfo.labelRes)
         assertEquals(R.string.tamper_protection_description, deviceAdminInfo.descriptionRes)
         expectation.surfaces.forEach { (resourceId, expected) ->
@@ -99,13 +101,37 @@ class LocaleMatrixInstrumentedTest {
         }
     }
 
-    private fun resourcesFor(languageTag: String): Resources {
+    private fun assertAccessibilityServiceDescriptionMetadata() {
+        val serviceComponent =
+            ComponentName(targetContext, ShortsBlockerAccessibilityService::class.java)
+        val installedAccessibilityServiceInfo =
+            targetContext
+                .getSystemService(AccessibilityManager::class.java)
+                .installedAccessibilityServiceList
+                .single { serviceInfo ->
+                    val declaredServiceInfo = serviceInfo.resolveInfo.serviceInfo
+                    declaredServiceInfo.packageName == serviceComponent.packageName &&
+                        declaredServiceInfo.name == serviceComponent.className
+                }
+
+        assertEquals(
+            "Accessibility service metadata does not resolve the declared description",
+            targetContext.getString(R.string.accessibility_service_description),
+            installedAccessibilityServiceInfo
+                .loadDescription(targetContext.packageManager),
+        )
+    }
+
+    private fun contextFor(languageTag: String): Context {
         val configuration =
             Configuration(targetContext.resources.configuration).apply {
                 setLocales(LocaleList.forLanguageTags(languageTag))
             }
-        return targetContext.createConfigurationContext(configuration).resources
+
+        return targetContext.createConfigurationContext(configuration)
     }
+
+    private fun resourcesFor(languageTag: String): Resources = contextFor(languageTag).resources
 
     private data class LocaleExpectation(
         val languageTag: String,
@@ -233,6 +259,7 @@ class LocaleMatrixInstrumentedTest {
                 PluralExpectation(
                     "fr-FR",
                     mapOf(
+                        0 to "0 minute",
                         1 to "1 minute",
                         2 to "2 minutes",
                     ),

@@ -40,9 +40,11 @@ class ShortVideoBlockerEmulatorE2eTest {
         instrumentation.getUiAutomation(UiAutomation.FLAG_DONT_SUPPRESS_ACCESSIBILITY_SERVICES)
     private val targetContext = instrumentation.targetContext
     private val settingsRepository = SettingsRepository(targetContext)
+    private var originalApplicationLocales: LocaleList? = null
 
     @Before
     fun setUp() {
+        originalApplicationLocales = currentApplicationLocales()
         resetProtectionEnvironment()
         clearApplicationLocale()
         ensureFixtureAppsInstalled()
@@ -60,7 +62,7 @@ class ShortVideoBlockerEmulatorE2eTest {
         }
         disableAccessibilityService()
         waitUntil(timeoutMs = 5_000L) { !isOverlayVisible() }
-        clearApplicationLocale()
+        restoreApplicationLocale()
         pressHome()
         RuntimeProtectionState.clearDetectorResult()
     }
@@ -158,6 +160,7 @@ class ShortVideoBlockerEmulatorE2eTest {
         assertOverlayVisible()
 
         tapText(resourceText(R.string.blocking_overlay_enter_pin))
+        waitForText(resourceText(R.string.pin_entry_title))
         enterPin("0000")
         tapText(resourceText(R.string.pin_entry_submit))
         waitForText(quantityText(R.plurals.pin_entry_attempts_remaining, 4))
@@ -170,7 +173,7 @@ class ShortVideoBlockerEmulatorE2eTest {
         assertNoOverlay()
 
         launchFixture(FixturePlatform.YOUTUBE, "shorts")
-        assertNoOverlay()
+        assertOverlayRemainsHidden()
 
         runBlocking {
             settingsRepository.setTemporaryAllowUntil(System.currentTimeMillis() - 1L)
@@ -383,27 +386,51 @@ class ShortVideoBlockerEmulatorE2eTest {
     private fun setApplicationLocale(languageTags: String) {
         check(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
         disableAccessibilityService()
-        val localeManager = targetContext.getSystemService(LocaleManager::class.java)
-        localeManager.applicationLocales = LocaleList.forLanguageTags(languageTags)
-        assertTrue(
-            "App locale was not applied: $languageTags",
-            waitUntil(timeoutMs = 5_000L) {
-                localeManager.applicationLocales.toLanguageTags() == languageTags
-            },
+        applyApplicationLocales(
+            locales = LocaleList.forLanguageTags(languageTags),
+            action = "applied",
         )
         enableAccessibilityService()
     }
 
     private fun clearApplicationLocale() {
+        applyApplicationLocales(
+            locales = LocaleList.getEmptyLocaleList(),
+            action = "cleared",
+        )
+    }
+
+    private fun restoreApplicationLocale() {
+        val locales = originalApplicationLocales ?: return
+        applyApplicationLocales(
+            locales = locales,
+            action = "restored",
+        )
+    }
+
+    private fun currentApplicationLocales(): LocaleList? =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            targetContext
+                .getSystemService(LocaleManager::class.java)
+                .applicationLocales
+        } else {
+            null
+        }
+
+    private fun applyApplicationLocales(
+        locales: LocaleList,
+        action: String,
+    ) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
             return
         }
         val localeManager = targetContext.getSystemService(LocaleManager::class.java)
-        localeManager.applicationLocales = LocaleList.getEmptyLocaleList()
+        val expectedLanguageTags = locales.toLanguageTags()
+        localeManager.applicationLocales = locales
         assertTrue(
-            "App locale was not cleared",
+            "App locale was not $action: $expectedLanguageTags",
             waitUntil(timeoutMs = 5_000L) {
-                localeManager.applicationLocales.toLanguageTags().isEmpty()
+                localeManager.applicationLocales.toLanguageTags() == expectedLanguageTags
             },
         )
     }
@@ -436,10 +463,13 @@ class ShortVideoBlockerEmulatorE2eTest {
     private fun disableAccessibilityService() {
         shell("settings delete secure enabled_accessibility_services")
         shell("settings put secure accessibility_enabled 0")
-        waitUntil(timeoutMs = 5_000L) {
-            !shell("dumpsys accessibility")
-                .contains(ShortsBlockerAccessibilityService::class.java.name)
-        }
+        assertTrue(
+            "Accessibility service did not fully unbind",
+            waitUntil(timeoutMs = 8_000L) {
+                !shell("dumpsys accessibility")
+                    .contains(ShortsBlockerAccessibilityService::class.java.name)
+            },
+        )
     }
 
     private fun ensureFixtureAppsInstalled() {
@@ -524,6 +554,15 @@ class ShortVideoBlockerEmulatorE2eTest {
     private fun assertNoOverlay(timeoutMs: Long = 2_500L) {
         val disappeared = waitUntil(timeoutMs = timeoutMs) { !isOverlayVisible() }
         assertTrue("Blocking overlay was still visible", disappeared)
+    }
+
+    private fun assertOverlayRemainsHidden(timeoutMs: Long = 2_500L) {
+        val deadline = SystemClock.uptimeMillis() + timeoutMs
+        while (SystemClock.uptimeMillis() < deadline) {
+            assertFalse("Blocking overlay appeared during the quiet period", isOverlayVisible())
+            SystemClock.sleep(100L)
+        }
+        assertFalse("Blocking overlay appeared during the quiet period", isOverlayVisible())
     }
 
     private fun assertLastDetectorPackage(
