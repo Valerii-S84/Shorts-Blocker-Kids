@@ -127,11 +127,15 @@ Shorts Blocker Kids:
 - production access request;
 - staged rollout;
 - hotfix loop після release.
+- approved behavior-preserving Clean Architecture migration defined in
+  `docs/SHORTS_BLOCKER_CLEAN_ARCHITECTURE_MIGRATION_PLAN.md`.
 ```
 
 Активний порядок виконання:
 
 ```text
+P0 / NEXT CODE-CHANGE TRACK. Clean Architecture migration, one slice per PR,
+starting with Slice 1 only.
 P0. Policy package і Play review readiness.
 P1. Real-device blocker QA.
 P2. AAB release pipeline і signing.
@@ -1711,8 +1715,24 @@ Other apps:
 
 ## A. Рекомендований порядок задач для розробника
 
+### P0 / NEXT — Clean Architecture migration
+
+**Статус:** APPROVED / READY FOR EXECUTION
+
+Канонічний план:
+
 ```text
-Current implementation priority:
+docs/SHORTS_BLOCKER_CLEAN_ARCHITECTURE_MIGRATION_PLAN.md
+```
+
+Це наступний repository code-change track. Виконувати строго по одному slice на
+PR, починаючи лише зі Slice 1. Не поєднувати міграцію з новими продуктовими
+фічами. Billing лишається у пізніх slices. Зовнішні Play Console та release
+evidence tasks можуть виконуватися паралельно, якщо вони не змінюють scope
+поточного code-change PR.
+
+```text
+Existing production execution queue after the approved P0 code track:
 
 1. Freeze scope under Active Production Execution Lock.
 2. Finish Accessibility disclosure / consent UX.
