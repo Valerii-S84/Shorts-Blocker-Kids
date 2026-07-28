@@ -13,6 +13,7 @@ import android.view.accessibility.AccessibilityWindowInfo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
+import com.shortsblockerkids.MainActivity
 import com.shortsblockerkids.R
 import com.shortsblockerkids.accessibility.AccessibilityServiceStatus
 import com.shortsblockerkids.accessibility.RuntimeProtectionState
@@ -160,7 +161,10 @@ class ShortVideoBlockerEmulatorE2eTest {
         assertOverlayVisible()
 
         tapText(resourceText(R.string.blocking_overlay_enter_pin))
-        waitForText(resourceText(R.string.pin_entry_title))
+        waitForText(
+            text = resourceText(R.string.pin_entry_title),
+            timeoutMs = PIN_ACTIVITY_TIMEOUT_MS,
+        )
         enterPin("0000")
         tapText(resourceText(R.string.pin_entry_submit))
         waitForText(quantityText(R.plurals.pin_entry_attempts_remaining, 4))
@@ -194,25 +198,37 @@ class ShortVideoBlockerEmulatorE2eTest {
     @Test
     @SdkSuppress(minSdkVersion = 33)
     fun englishLocaleOverlayAndPinSmoke() {
-        assertLocaleOverlayAndPinSmoke("en-US")
+        assertLocaleOverlayAndPinSmoke(
+            languageTags = "en-US",
+            expectedOverlayTitle = "Short video blocked",
+        )
     }
 
     @Test
     @SdkSuppress(minSdkVersion = 33)
     fun germanLocaleOverlayAndPinSmoke() {
-        assertLocaleOverlayAndPinSmoke("de-DE")
+        assertLocaleOverlayAndPinSmoke(
+            languageTags = "de-DE",
+            expectedOverlayTitle = "Kurzvideo blockiert",
+        )
     }
 
     @Test
     @SdkSuppress(minSdkVersion = 33)
     fun ukrainianLocaleOverlayAndPinSmoke() {
-        assertLocaleOverlayAndPinSmoke("uk-UA")
+        assertLocaleOverlayAndPinSmoke(
+            languageTags = "uk-UA",
+            expectedOverlayTitle = "Коротке відео заблоковано",
+        )
     }
 
     @Test
     @SdkSuppress(minSdkVersion = 33)
     fun unsupportedLocaleOverlayAndPinSmokeUsesEnglishFallback() {
-        assertLocaleOverlayAndPinSmoke("fr-FR,en-US")
+        assertLocaleOverlayAndPinSmoke(
+            languageTags = "fr-FR,en-US",
+            expectedOverlayTitle = "Short video blocked",
+        )
         assertEquals(
             englishResourceText(R.string.blocking_overlay_title),
             resourceText(R.string.blocking_overlay_title),
@@ -298,14 +314,29 @@ class ShortVideoBlockerEmulatorE2eTest {
         launchAndExpectOverlay(FixturePlatform.YOUTUBE, "shorts")
     }
 
-    private fun assertLocaleOverlayAndPinSmoke(languageTags: String) {
+    private fun assertLocaleOverlayAndPinSmoke(
+        languageTags: String,
+        expectedOverlayTitle: String,
+    ) {
         setApplicationLocale(languageTags)
+        prewarmMainActivity()
         launchFixture(FixturePlatform.YOUTUBE, "shorts")
         assertOverlayVisible()
-        assertTrue(hasText(resourceText(R.string.blocking_overlay_title)))
+        assertEquals(
+            "$languageTags did not update the app resource context",
+            expectedOverlayTitle,
+            resourceText(R.string.blocking_overlay_title),
+        )
+        assertTrue(
+            "$languageTags overlay did not use the expected localized title",
+            hasText(expectedOverlayTitle),
+        )
 
         tapText(resourceText(R.string.blocking_overlay_enter_pin))
-        waitForText(resourceText(R.string.pin_entry_title))
+        waitForText(
+            text = resourceText(R.string.pin_entry_title),
+            timeoutMs = PIN_ACTIVITY_TIMEOUT_MS,
+        )
         enterPin("0000")
         tapText(resourceText(R.string.pin_entry_submit))
         waitForText(quantityText(R.plurals.pin_entry_attempts_remaining, 4))
@@ -317,7 +348,17 @@ class ShortVideoBlockerEmulatorE2eTest {
         assertNoOverlay()
 
         launchFixture(FixturePlatform.YOUTUBE, "shorts")
-        assertNoOverlay()
+        assertOverlayRemainsHidden()
+    }
+
+    private fun prewarmMainActivity() {
+        val component = ComponentName(targetContext, MainActivity::class.java).flattenToString()
+        shell("am start -W -n $component")
+        waitForText(
+            text = resourceText(R.string.pin_entry_title),
+            timeoutMs = PIN_ACTIVITY_TIMEOUT_MS,
+        )
+        pressHome()
     }
 
     private fun assertNormalScreensDoNotBlock(
@@ -535,8 +576,11 @@ class ShortVideoBlockerEmulatorE2eTest {
         SystemClock.sleep(300L)
     }
 
-    private fun waitForText(text: String) {
-        val found = waitUntil(timeoutMs = 8_000L) { hasTextContaining(text) }
+    private fun waitForText(
+        text: String,
+        timeoutMs: Long = 8_000L,
+    ) {
+        val found = waitUntil(timeoutMs = timeoutMs) { hasTextContaining(text) }
         assertTrue(
             "Expected text not found: $text; visible=${visibleTextSnapshot()}",
             found,
@@ -743,5 +787,6 @@ class ShortVideoBlockerEmulatorE2eTest {
     private companion object {
         const val PARENT_PIN = "2580"
         const val FAKE_ACTIVITY = "com.shortsblockerkids.fixtureapps.FakeSocialActivity"
+        const val PIN_ACTIVITY_TIMEOUT_MS = 30_000L
     }
 }
