@@ -24,6 +24,7 @@ import com.shortsblockerkids.core.billing.PlayBillingRepository
 import com.shortsblockerkids.core.storage.AppSettings
 import com.shortsblockerkids.core.storage.SettingsRepository
 import com.shortsblockerkids.core.tamper.TamperProtectionStatus
+import com.shortsblockerkids.domain.protection.ProtectionActivationPolicy
 import com.shortsblockerkids.feature.blocking.TemporaryAllowCompletion
 import com.shortsblockerkids.feature.blocking.TemporaryAllowFlowController
 import com.shortsblockerkids.feature.blocking.TemporaryAllowScreen
@@ -250,7 +251,13 @@ private fun ShortsBlockerKidsApp(
     ) {
         if (
             screen == AppScreen.Dashboard &&
-            settings.shouldRecordProtectionActivation(isAccessibilityServiceEnabled)
+            ProtectionActivationPolicy.shouldStartFreeTest(
+                isAccessibilityServiceEnabled = isAccessibilityServiceEnabled,
+                isProtectionEnabled = settings.protectionEnabled,
+                isAccessibilityDisclosureAccepted = settings.accessibilityDisclosureAccepted,
+                isPinConfigured = settings.isPinCreated,
+                isFreeTestAlreadyStarted = settings.freeTestStartedAt != null,
+            )
         ) {
             repository.recordSuccessfulProtectionActivation()
             onStateChanged()
@@ -502,13 +509,6 @@ private fun handleTemporaryAllowCompletion(
         TemporaryAllowCompletion.ReturnToForegroundApp -> onTemporaryAllowFlowClosed()
     }
 }
-
-private fun AppSettings.shouldRecordProtectionActivation(isAccessibilityServiceEnabled: Boolean): Boolean =
-    isAccessibilityServiceEnabled &&
-        protectionEnabled &&
-        accessibilityDisclosureAccepted &&
-        isPinCreated &&
-        freeTestStartedAt == null
 
 private enum class AppScreen {
     Welcome,
