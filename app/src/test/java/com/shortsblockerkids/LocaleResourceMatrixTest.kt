@@ -30,22 +30,33 @@ class LocaleResourceMatrixTest(
     ): ResolvedResource {
         val language = Locale.forLanguageTag(localeTag).language
         val localizedCatalogPath = "app/src/main/res/values-$language/strings.xml"
-        val catalogPath =
-            localizedCatalogPath
-                .takeIf { repoFileOrNull(it) != null }
-                ?: DEFAULT_CATALOG_PATH
-        val catalog = requireNotNull(repoFileOrNull(catalogPath))
+        val localizedValue =
+            repoFileOrNull(localizedCatalogPath)?.let { catalog ->
+                parseStringResource(catalog, resourceName)
+            }
+        if (localizedValue != null) {
+            return ResolvedResource(
+                catalogPath = localizedCatalogPath,
+                value = localizedValue,
+            )
+        }
+
+        val defaultCatalog = requireNotNull(repoFileOrNull(DEFAULT_CATALOG_PATH))
+        val defaultValue =
+            requireNotNull(parseStringResource(defaultCatalog, resourceName)) {
+                "Missing string/$resourceName in ${defaultCatalog.path}"
+            }
 
         return ResolvedResource(
-            catalogPath = catalogPath,
-            value = parseStringResource(catalog, resourceName),
+            catalogPath = DEFAULT_CATALOG_PATH,
+            value = defaultValue,
         )
     }
 
     private fun parseStringResource(
         catalog: File,
         resourceName: String,
-    ): String {
+    ): String? {
         val document =
             DocumentBuilderFactory
                 .newInstance()
@@ -61,7 +72,7 @@ class LocaleResourceMatrixTest(
                 return resource.textContent.trim()
             }
         }
-        error("Missing string/$resourceName in ${catalog.path}")
+        return null
     }
 
     private fun repoFileOrNull(relativePath: String): File? {

@@ -78,7 +78,7 @@ fun DetectorPlaygroundScreen(
             modifier
                 .fillMaxSize()
                 .windowInsetsPadding(
-                    WindowInsets.safeDrawing.only(WindowInsetsSides.Top),
+                    WindowInsets.safeDrawing.only(WindowInsetsSides.Vertical),
                 ).verticalScroll(rememberScrollState())
                 .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
