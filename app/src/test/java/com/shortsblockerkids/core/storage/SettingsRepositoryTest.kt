@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.PreferencesSerializer
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.shortsblockerkids.core.billing.BillingEntitlementSnapshot
@@ -71,11 +72,32 @@ class SettingsRepositoryTest {
 
             assertEquals(null, repository.readSettings().first().freeTestStartedAt)
 
+            repository.setProtectionEnabled(false)
             repository.recordSuccessfulProtectionActivation(nowMillis = 5_000L)
             val settings = repository.readSettings().first()
 
+            assertTrue(settings.protectionEnabled)
             assertEquals(5_000L, settings.freeTestStartedAt)
             assertEquals(FreeTestPolicy.DEFAULT_DURATION_DAYS, settings.freeTestDurationDays)
+        }
+
+    @Test
+    fun repeatedActivationPreservesFreeTestStartAndDurationAndReenablesProtection() =
+        runBlocking {
+            val dataStore = createDataStore("free-test-repeat")
+            val repository = SettingsRepository(dataStore)
+            repository.recordSuccessfulProtectionActivation(nowMillis = 5_000L)
+            dataStore.edit { preferences ->
+                preferences[intPreferencesKey("free_test_duration_days")] = 30
+            }
+            repository.setProtectionEnabled(false)
+
+            repository.recordSuccessfulProtectionActivation(nowMillis = 10_000L)
+            val settings = repository.readSettings().first()
+
+            assertTrue(settings.protectionEnabled)
+            assertEquals(5_000L, settings.freeTestStartedAt)
+            assertEquals(30, settings.freeTestDurationDays)
         }
 
     @Test

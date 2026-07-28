@@ -11,6 +11,7 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.shortsblockerkids.application.port.ProtectionActivationStore
 import com.shortsblockerkids.core.billing.BillingEntitlementSnapshot
 import com.shortsblockerkids.core.billing.BillingEntitlementState
 import com.shortsblockerkids.core.entitlement.FreeTestPolicy
@@ -33,7 +34,7 @@ class SettingsRepository(
     private val dataStore: DataStore<Preferences>,
     private val pinHasher: PinHasher = PinHasher(),
     private val pinRateLimiter: PinRateLimiter = PinRateLimiter(),
-) {
+) : ProtectionActivationStore {
     constructor(
         context: Context,
         pinHasher: PinHasher = PinHasher(),
@@ -52,7 +53,7 @@ class SettingsRepository(
         }
     }
 
-    suspend fun recordSuccessfulProtectionActivation(nowMillis: Long = System.currentTimeMillis()) {
+    override suspend fun recordSuccessfulProtectionActivation(nowMillis: Long) {
         dataStore.edit { preferences ->
             preferences[KEY_PROTECTION_ENABLED] = true
             preferences[KEY_FREE_TEST_DURATION_DAYS] =

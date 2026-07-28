@@ -18,6 +18,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.shortsblockerkids.accessibility.AccessibilityServiceStatus
+import com.shortsblockerkids.application.protection.RecordSuccessfulProtectionActivationUseCase
 import com.shortsblockerkids.core.billing.BillingUiState
 import com.shortsblockerkids.core.billing.HttpBillingBackendClient
 import com.shortsblockerkids.core.billing.PlayBillingRepository
@@ -42,6 +43,7 @@ import com.shortsblockerkids.feature.pin.PinEntryScreen
 import com.shortsblockerkids.feature.pin.PinSetupScreen
 import com.shortsblockerkids.feature.privacy.PrivacyPolicyScreen
 import com.shortsblockerkids.feature.tamper.TamperProtectionDisclosureScreen
+import com.shortsblockerkids.infrastructure.time.SystemTimeProvider
 import com.shortsblockerkids.ui.theme.ShortsBlockerKidsTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -63,6 +65,11 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         settingsRepository = SettingsRepository(this)
+        val protectionActivationUseCase =
+            RecordSuccessfulProtectionActivationUseCase(
+                timeProvider = SystemTimeProvider(),
+                protectionActivationStore = settingsRepository,
+            )
         billingRepository =
             PlayBillingRepository(
                 context = this,
@@ -95,6 +102,7 @@ class MainActivity : ComponentActivity() {
                         isTemporaryAllowRequested = temporaryAllowRequestState.value,
                         billingUiState = billingUiState,
                         repository = settingsRepository,
+                        recordSuccessfulProtectionActivationUseCase = protectionActivationUseCase,
                         onSubscribe = {
                             billingRepository.launchPurchase(this@MainActivity)
                         },
@@ -198,6 +206,7 @@ private fun ShortsBlockerKidsApp(
     isTemporaryAllowRequested: Boolean,
     billingUiState: BillingUiState,
     repository: SettingsRepository,
+    recordSuccessfulProtectionActivationUseCase: RecordSuccessfulProtectionActivationUseCase,
     onSubscribe: () -> Unit,
     onRestorePurchases: () -> Unit,
     onManageSubscription: () -> Unit,
@@ -259,7 +268,7 @@ private fun ShortsBlockerKidsApp(
                 isFreeTestAlreadyStarted = settings.freeTestStartedAt != null,
             )
         ) {
-            repository.recordSuccessfulProtectionActivation()
+            recordSuccessfulProtectionActivationUseCase()
             onStateChanged()
         }
     }
@@ -352,7 +361,7 @@ private fun ShortsBlockerKidsApp(
                         onStateChanged()
                         if (isAccessibilityServiceEnabled) {
                             coroutineScope.launch {
-                                repository.recordSuccessfulProtectionActivation()
+                                recordSuccessfulProtectionActivationUseCase()
                                 onStateChanged()
                                 screen = AppScreen.Dashboard
                             }
@@ -370,7 +379,7 @@ private fun ShortsBlockerKidsApp(
                         if (enabled) {
                             coroutineScope.launch {
                                 if (isAccessibilityServiceEnabled) {
-                                    repository.recordSuccessfulProtectionActivation()
+                                    recordSuccessfulProtectionActivationUseCase()
                                 } else {
                                     repository.setProtectionEnabled(true)
                                 }
