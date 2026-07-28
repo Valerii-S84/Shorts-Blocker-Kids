@@ -266,7 +266,7 @@ class ShortVideoBlockerEmulatorE2eTest {
 
         runBlocking {
             settingsRepository.setProtectionEnabled(true)
-            settingsRepository.recordSuccessfulProtectionActivation()
+            settingsRepository.recordSuccessfulProtectionActivation(System.currentTimeMillis())
         }
         launchFixture(FixturePlatform.YOUTUBE, "shorts")
 
@@ -389,7 +389,7 @@ class ShortVideoBlockerEmulatorE2eTest {
         pressHome()
         runBlocking {
             settingsRepository.setProtectionEnabled(true)
-            settingsRepository.recordSuccessfulProtectionActivation()
+            settingsRepository.recordSuccessfulProtectionActivation(System.currentTimeMillis())
         }
         SystemClock.sleep(700L)
     }
@@ -401,7 +401,7 @@ class ShortVideoBlockerEmulatorE2eTest {
             settingsRepository.setSelectedMode(ProtectionMode.BLOCK_SHORTS)
             settingsRepository.setTemporaryAllowUntil(null)
             settingsRepository.setProtectionEnabled(true)
-            settingsRepository.recordSuccessfulProtectionActivation()
+            settingsRepository.recordSuccessfulProtectionActivation(System.currentTimeMillis())
         }
         assertTrue(
             "Protection settings did not become active",
