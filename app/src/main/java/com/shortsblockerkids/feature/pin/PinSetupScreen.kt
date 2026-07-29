@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,18 +26,22 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.shortsblockerkids.R
+import com.shortsblockerkids.application.pin.CreatePinUseCase
 import com.shortsblockerkids.core.security.PinPolicy
 import com.shortsblockerkids.core.security.PinValidationReason
 import com.shortsblockerkids.core.security.PinValidationResult
+import kotlinx.coroutines.launch
 
 @Composable
 fun PinSetupScreen(
-    onPinCreated: (String) -> Unit,
+    createPinUseCase: CreatePinUseCase,
+    onPinCreated: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var pin by remember { mutableStateOf("") }
     var confirmation by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<PinValidationReason?>(null) }
+    val coroutineScope = rememberCoroutineScope()
 
     Column(
         modifier =
@@ -80,8 +85,13 @@ fun PinSetupScreen(
         Spacer(modifier = Modifier.height(24.dp))
         Button(
             onClick = {
-                when (val result = PinPolicy.validate(pin, confirmation)) {
-                    PinValidationResult.Valid -> onPinCreated(pin)
+                val submittedPin = pin
+                when (val result = PinPolicy.validate(submittedPin, confirmation)) {
+                    PinValidationResult.Valid ->
+                        coroutineScope.launch {
+                            createPinUseCase(submittedPin)
+                            onPinCreated()
+                        }
                     is PinValidationResult.Invalid -> error = result.reason
                 }
             },
