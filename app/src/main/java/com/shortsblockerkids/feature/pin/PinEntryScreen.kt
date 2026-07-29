@@ -29,6 +29,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.shortsblockerkids.R
+import com.shortsblockerkids.application.pin.VerifyPinUseCase
 import com.shortsblockerkids.core.security.PinPolicy
 import com.shortsblockerkids.core.security.PinVerificationResult
 import kotlinx.coroutines.launch
@@ -36,7 +37,8 @@ import java.util.concurrent.TimeUnit
 
 @Composable
 fun PinEntryScreen(
-    onVerifyPin: suspend (String) -> PinVerificationResult,
+    verifyPinUseCase: VerifyPinUseCase,
+    onStateChanged: () -> Unit,
     onUnlocked: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -57,7 +59,9 @@ fun PinEntryScreen(
         }
         isVerifying = true
         coroutineScope.launch {
-            when (val result = onVerifyPin(submittedPin)) {
+            val result = verifyPinUseCase(submittedPin)
+            onStateChanged()
+            when (result) {
                 PinVerificationResult.Success -> onUnlocked()
                 PinVerificationResult.NotConfigured -> message = PinEntryMessage.NotConfigured
                 is PinVerificationResult.Failure -> {

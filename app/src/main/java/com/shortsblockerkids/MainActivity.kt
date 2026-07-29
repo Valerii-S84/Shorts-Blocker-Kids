@@ -18,6 +18,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.shortsblockerkids.accessibility.AccessibilityServiceStatus
+import com.shortsblockerkids.application.pin.CreatePinUseCase
+import com.shortsblockerkids.application.pin.VerifyPinUseCase
 import com.shortsblockerkids.application.protection.RecordSuccessfulProtectionActivationUseCase
 import com.shortsblockerkids.core.billing.BillingUiState
 import com.shortsblockerkids.core.billing.HttpBillingBackendClient
@@ -43,6 +45,7 @@ import com.shortsblockerkids.feature.pin.PinEntryScreen
 import com.shortsblockerkids.feature.pin.PinSetupScreen
 import com.shortsblockerkids.feature.privacy.PrivacyPolicyScreen
 import com.shortsblockerkids.feature.tamper.TamperProtectionDisclosureScreen
+import com.shortsblockerkids.infrastructure.storage.SettingsPinAccessAdapter
 import com.shortsblockerkids.infrastructure.time.SystemTimeProvider
 import com.shortsblockerkids.ui.theme.ShortsBlockerKidsTheme
 import kotlinx.coroutines.CoroutineScope
@@ -65,6 +68,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         settingsRepository = SettingsRepository(this)
+        val pinAccessAdapter = SettingsPinAccessAdapter(settingsRepository)
+        val createPinUseCase = CreatePinUseCase(pinAccessAdapter)
+        val verifyPinUseCase = VerifyPinUseCase(pinAccessAdapter)
         val protectionActivationUseCase =
             RecordSuccessfulProtectionActivationUseCase(
                 timeProvider = SystemTimeProvider(),
@@ -102,6 +108,8 @@ class MainActivity : ComponentActivity() {
                         isTemporaryAllowRequested = temporaryAllowRequestState.value,
                         billingUiState = billingUiState,
                         repository = settingsRepository,
+                        createPinUseCase = createPinUseCase,
+                        verifyPinUseCase = verifyPinUseCase,
                         recordSuccessfulProtectionActivationUseCase = protectionActivationUseCase,
                         onSubscribe = {
                             billingRepository.launchPurchase(this@MainActivity)
@@ -206,6 +214,8 @@ private fun ShortsBlockerKidsApp(
     isTemporaryAllowRequested: Boolean,
     billingUiState: BillingUiState,
     repository: SettingsRepository,
+    createPinUseCase: CreatePinUseCase,
+    verifyPinUseCase: VerifyPinUseCase,
     recordSuccessfulProtectionActivationUseCase: RecordSuccessfulProtectionActivationUseCase,
     onSubscribe: () -> Unit,
     onRestorePurchases: () -> Unit,
@@ -282,26 +292,21 @@ private fun ShortsBlockerKidsApp(
 
             AppScreen.PinSetup ->
                 PinSetupScreen(
-                    onPinCreated = { pin ->
-                        coroutineScope.launch {
-                            repository.savePin(pin)
-                            isUnlocked = true
-                            onStateChanged()
-                            screen =
-                                AccessibilityPermissionFlow
-                                    .destinationAfterPinCreated()
-                                    .toAppScreen()
-                        }
+                    createPinUseCase = createPinUseCase,
+                    onPinCreated = {
+                        isUnlocked = true
+                        onStateChanged()
+                        screen =
+                            AccessibilityPermissionFlow
+                                .destinationAfterPinCreated()
+                                .toAppScreen()
                     },
                 )
 
             AppScreen.PinEntry ->
                 PinEntryScreen(
-                    onVerifyPin = { pin ->
-                        val result = repository.verifyPin(pin)
-                        onStateChanged()
-                        result
-                    },
+                    verifyPinUseCase = verifyPinUseCase,
+                    onStateChanged = onStateChanged,
                     onUnlocked = {
                         isUnlocked = true
                         if (pendingProtectionDisable) {
