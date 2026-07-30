@@ -5,17 +5,11 @@ import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.shortsblockerkids.accessibility.AccessibilityServiceStatus
 import com.shortsblockerkids.application.pin.CreatePinUseCase
@@ -23,32 +17,14 @@ import com.shortsblockerkids.application.pin.VerifyPinUseCase
 import com.shortsblockerkids.application.protection.ClearExpiredTemporaryAllowUseCase
 import com.shortsblockerkids.application.protection.RecordSuccessfulProtectionActivationUseCase
 import com.shortsblockerkids.application.protection.SetTemporaryAllowUseCase
-import com.shortsblockerkids.core.billing.BillingUiState
 import com.shortsblockerkids.core.billing.HttpBillingBackendClient
 import com.shortsblockerkids.core.billing.PlayBillingRepository
 import com.shortsblockerkids.core.storage.AppSettings
 import com.shortsblockerkids.core.storage.SettingsRepository
 import com.shortsblockerkids.core.tamper.TamperProtectionStatus
-import com.shortsblockerkids.domain.protection.ProtectionActivationPolicy
-import com.shortsblockerkids.feature.blocking.TemporaryAllowCompletion
-import com.shortsblockerkids.feature.blocking.TemporaryAllowFlowController
-import com.shortsblockerkids.feature.blocking.TemporaryAllowScreen
-import com.shortsblockerkids.feature.dashboard.DashboardScreen
-import com.shortsblockerkids.feature.debug.DetectorPlaygroundScreen
-import com.shortsblockerkids.feature.onboarding.AccessibilityDisclosureDecision
-import com.shortsblockerkids.feature.onboarding.AccessibilityDisclosureScreen
-import com.shortsblockerkids.feature.onboarding.AccessibilityPermissionFlow
-import com.shortsblockerkids.feature.onboarding.AccessibilitySettingsRequest
-import com.shortsblockerkids.feature.onboarding.AccessibilitySetupDestination
-import com.shortsblockerkids.feature.onboarding.EnableAccessibilityScreen
-import com.shortsblockerkids.feature.onboarding.ProtectedAppsScreen
-import com.shortsblockerkids.feature.onboarding.WelcomeScreen
-import com.shortsblockerkids.feature.pin.PinEntryScreen
-import com.shortsblockerkids.feature.pin.PinSetupScreen
-import com.shortsblockerkids.feature.privacy.PrivacyPolicyScreen
-import com.shortsblockerkids.feature.tamper.TamperProtectionDisclosureScreen
 import com.shortsblockerkids.infrastructure.storage.SettingsPinAccessAdapter
 import com.shortsblockerkids.infrastructure.time.SystemTimeProvider
+import com.shortsblockerkids.presentation.app.ShortsBlockerKidsApp
 import com.shortsblockerkids.ui.theme.ShortsBlockerKidsTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -119,11 +95,20 @@ class MainActivity : ComponentActivity() {
                         isTamperProtectionEnabled = tamperProtectionEnabledState.value,
                         isTemporaryAllowRequested = temporaryAllowRequestState.value,
                         billingUiState = billingUiState,
-                        repository = settingsRepository,
                         createPinUseCase = createPinUseCase,
                         verifyPinUseCase = verifyPinUseCase,
                         recordSuccessfulProtectionActivationUseCase = protectionActivationUseCase,
                         setTemporaryAllowUseCase = setTemporaryAllowUseCase,
+                        isDetectorQaVisible = BuildConfig.ACCESSIBILITY_DEBUG_TOOLS_ENABLED,
+                        onProtectionEnabledChanged = { enabled ->
+                            settingsRepository.setProtectionEnabled(enabled)
+                        },
+                        onPlatformEnabledChanged = { platformId, enabled ->
+                            settingsRepository.setPlatformEnabled(platformId, enabled)
+                        },
+                        onAccessibilityDisclosureAccepted = {
+                            settingsRepository.acceptAccessibilityDisclosure()
+                        },
                         onSubscribe = {
                             billingRepository.launchPurchase(this@MainActivity)
                         },
@@ -217,335 +202,4 @@ class MainActivity : ComponentActivity() {
     companion object {
         const val EXTRA_OPEN_TEMPORARY_ALLOW_PIN = "com.shortsblockerkids.OPEN_TEMPORARY_ALLOW_PIN"
     }
-}
-
-@Composable
-private fun ShortsBlockerKidsApp(
-    settings: AppSettings,
-    isAccessibilityServiceEnabled: Boolean,
-    isTamperProtectionEnabled: Boolean,
-    isTemporaryAllowRequested: Boolean,
-    billingUiState: BillingUiState,
-    repository: SettingsRepository,
-    createPinUseCase: CreatePinUseCase,
-    verifyPinUseCase: VerifyPinUseCase,
-    recordSuccessfulProtectionActivationUseCase: RecordSuccessfulProtectionActivationUseCase,
-    setTemporaryAllowUseCase: SetTemporaryAllowUseCase,
-    onSubscribe: () -> Unit,
-    onRestorePurchases: () -> Unit,
-    onManageSubscription: () -> Unit,
-    onOpenAccessibilitySettings: () -> Unit,
-    onOpenTamperProtectionSettings: () -> Unit,
-    onStateChanged: () -> Unit,
-    onTemporaryAllowFlowClosed: () -> Unit,
-    onTemporaryAllowRequestConsumed: () -> Unit,
-) {
-    val coroutineScope = rememberCoroutineScope()
-    val temporaryAllowFlowController =
-        TemporaryAllowFlowController(setTemporaryAllowUseCase)
-    var screen by rememberSaveable {
-        mutableStateOf(initialScreen(settings))
-    }
-    var isUnlocked by rememberSaveable {
-        mutableStateOf(!settings.isPinCreated)
-    }
-    var pendingTemporaryAllow by rememberSaveable {
-        mutableStateOf(false)
-    }
-    var pendingProtectionDisable by rememberSaveable {
-        mutableStateOf(false)
-    }
-
-    LaunchedEffect(settings.isPinCreated, isUnlocked) {
-        if (settings.isPinCreated && !isUnlocked) {
-            screen = AppScreen.PinEntry
-        }
-    }
-
-    LaunchedEffect(isTemporaryAllowRequested, settings.isPinCreated) {
-        if (isTemporaryAllowRequested && settings.isPinCreated) {
-            pendingTemporaryAllow = true
-            pendingProtectionDisable = false
-            isUnlocked = false
-            screen = AppScreen.PinEntry
-            onTemporaryAllowRequestConsumed()
-        }
-    }
-
-    LaunchedEffect(
-        screen,
-        isAccessibilityServiceEnabled,
-        settings.freeTestStartedAt,
-        settings.protectionEnabled,
-        settings.accessibilityDisclosureAccepted,
-        settings.isPinCreated,
-    ) {
-        if (
-            screen == AppScreen.Dashboard &&
-            ProtectionActivationPolicy.shouldStartFreeTest(
-                isAccessibilityServiceEnabled = isAccessibilityServiceEnabled,
-                isProtectionEnabled = settings.protectionEnabled,
-                isAccessibilityDisclosureAccepted = settings.accessibilityDisclosureAccepted,
-                isPinConfigured = settings.isPinCreated,
-                isFreeTestAlreadyStarted = settings.freeTestStartedAt != null,
-            )
-        ) {
-            recordSuccessfulProtectionActivationUseCase()
-            onStateChanged()
-        }
-    }
-
-    Box(modifier = Modifier.fillMaxSize()) {
-        when (screen) {
-            AppScreen.Welcome ->
-                WelcomeScreen(
-                    onStart = { screen = AppScreen.PinSetup },
-                )
-
-            AppScreen.PinSetup ->
-                PinSetupScreen(
-                    createPinUseCase = createPinUseCase,
-                    onPinCreated = {
-                        isUnlocked = true
-                        onStateChanged()
-                        screen =
-                            AccessibilityPermissionFlow
-                                .destinationAfterPinCreated()
-                                .toAppScreen()
-                    },
-                )
-
-            AppScreen.PinEntry ->
-                PinEntryScreen(
-                    verifyPinUseCase = verifyPinUseCase,
-                    onStateChanged = onStateChanged,
-                    onUnlocked = {
-                        isUnlocked = true
-                        if (pendingProtectionDisable) {
-                            coroutineScope.launch {
-                                repository.setProtectionEnabled(false)
-                                pendingProtectionDisable = false
-                                onStateChanged()
-                                screen = AppScreen.Dashboard
-                            }
-                        } else {
-                            screen = unlockedDestination(settings, pendingTemporaryAllow)
-                        }
-                    },
-                )
-
-            AppScreen.ProtectedApps ->
-                ProtectedAppsScreen(
-                    settings = settings,
-                    onPlatformEnabledChanged = { platformId, enabled ->
-                        coroutineScope.launch {
-                            repository.setPlatformEnabled(platformId, enabled)
-                            onStateChanged()
-                        }
-                    },
-                    onContinue = {
-                        screen = AppScreen.AccessibilityDisclosure
-                    },
-                )
-
-            AppScreen.AccessibilityDisclosure ->
-                AccessibilityDisclosureScreen(
-                    onAccept = {
-                        coroutineScope.launch {
-                            repository.acceptAccessibilityDisclosure()
-                            onStateChanged()
-                            screen =
-                                AccessibilityPermissionFlow
-                                    .destinationAfterDisclosure(
-                                        AccessibilityDisclosureDecision.Accepted,
-                                    ).toAppScreen()
-                        }
-                    },
-                    onDecline = {
-                        screen =
-                            AccessibilityPermissionFlow
-                                .destinationAfterDisclosure(
-                                    AccessibilityDisclosureDecision.Declined,
-                                ).toAppScreen()
-                    },
-                )
-
-            AppScreen.EnableAccessibility ->
-                EnableAccessibilityScreen(
-                    isAccessibilityServiceEnabled = isAccessibilityServiceEnabled,
-                    onOpenAccessibilitySettings = onOpenAccessibilitySettings,
-                    onEnabled = {
-                        onStateChanged()
-                        if (isAccessibilityServiceEnabled) {
-                            coroutineScope.launch {
-                                recordSuccessfulProtectionActivationUseCase()
-                                onStateChanged()
-                                screen = AppScreen.Dashboard
-                            }
-                        }
-                    },
-                )
-
-            AppScreen.Dashboard ->
-                DashboardScreen(
-                    settings = settings,
-                    isAccessibilityServiceEnabled = isAccessibilityServiceEnabled,
-                    isTamperProtectionEnabled = isTamperProtectionEnabled,
-                    billingUiState = billingUiState,
-                    onProtectionChanged = { enabled ->
-                        if (enabled) {
-                            coroutineScope.launch {
-                                if (isAccessibilityServiceEnabled) {
-                                    recordSuccessfulProtectionActivationUseCase()
-                                } else {
-                                    repository.setProtectionEnabled(true)
-                                }
-                                onStateChanged()
-                            }
-                        } else {
-                            pendingProtectionDisable = true
-                            pendingTemporaryAllow = false
-                            isUnlocked = false
-                            screen = AppScreen.PinEntry
-                        }
-                    },
-                    onPlatformEnabledChanged = { platformId, enabled ->
-                        coroutineScope.launch {
-                            repository.setPlatformEnabled(platformId, enabled)
-                            onStateChanged()
-                        }
-                    },
-                    onSubscribe = onSubscribe,
-                    onRestorePurchases = onRestorePurchases,
-                    onManageSubscription = onManageSubscription,
-                    onOpenAccessibilitySettings = {
-                        when (
-                            AccessibilityPermissionFlow.settingsRequest(
-                                settings.accessibilityDisclosureAccepted,
-                            )
-                        ) {
-                            AccessibilitySettingsRequest.ShowDisclosure -> {
-                                screen = AppScreen.AccessibilityDisclosure
-                            }
-
-                            AccessibilitySettingsRequest.OpenSystemSettings -> {
-                                onOpenAccessibilitySettings()
-                            }
-                        }
-                    },
-                    onOpenPrivacyPolicy = {
-                        screen = AppScreen.PrivacyPolicy
-                    },
-                    onOpenTamperProtection = {
-                        screen = AppScreen.TamperProtectionDisclosure
-                    },
-                    onOpenDebugQa =
-                        if (BuildConfig.ACCESSIBILITY_DEBUG_TOOLS_ENABLED) {
-                            { screen = AppScreen.DetectorQa }
-                        } else {
-                            null
-                        },
-                )
-
-            AppScreen.PrivacyPolicy ->
-                PrivacyPolicyScreen(
-                    onBack = {
-                        screen = AppScreen.Dashboard
-                    },
-                )
-
-            AppScreen.TamperProtectionDisclosure ->
-                TamperProtectionDisclosureScreen(
-                    isTamperProtectionEnabled = isTamperProtectionEnabled,
-                    onEnableTamperProtection = onOpenTamperProtectionSettings,
-                    onBack = {
-                        onStateChanged()
-                        screen = AppScreen.Dashboard
-                    },
-                )
-
-            AppScreen.TemporaryAllow ->
-                TemporaryAllowScreen(
-                    onDurationSelected = { duration ->
-                        coroutineScope.launch {
-                            val completion = temporaryAllowFlowController.selectDuration(duration)
-                            pendingTemporaryAllow = false
-                            pendingProtectionDisable = false
-                            onStateChanged()
-                            handleTemporaryAllowCompletion(
-                                completion = completion,
-                                onTemporaryAllowFlowClosed = onTemporaryAllowFlowClosed,
-                            )
-                        }
-                    },
-                    onCancel = {
-                        val completion = temporaryAllowFlowController.cancel()
-                        pendingTemporaryAllow = false
-                        pendingProtectionDisable = false
-                        handleTemporaryAllowCompletion(
-                            completion = completion,
-                            onTemporaryAllowFlowClosed = onTemporaryAllowFlowClosed,
-                        )
-                    },
-                )
-
-            AppScreen.DetectorQa ->
-                DetectorPlaygroundScreen(
-                    settings = settings,
-                    isAccessibilityServiceEnabled = isAccessibilityServiceEnabled,
-                    billingUiState = billingUiState,
-                    onBack = {
-                        screen = AppScreen.Dashboard
-                    },
-                )
-        }
-    }
-}
-
-private fun initialScreen(settings: AppSettings): AppScreen {
-    if (!settings.isPinCreated) {
-        return AppScreen.Welcome
-    }
-
-    return AppScreen.PinEntry
-}
-
-private fun unlockedDestination(
-    settings: AppSettings,
-    pendingTemporaryAllow: Boolean,
-): AppScreen =
-    AccessibilityPermissionFlow
-        .destinationAfterParentUnlock(settings, pendingTemporaryAllow)
-        .toAppScreen()
-
-private fun AccessibilitySetupDestination.toAppScreen(): AppScreen =
-    when (this) {
-        AccessibilitySetupDestination.ProtectedApps -> AppScreen.ProtectedApps
-        AccessibilitySetupDestination.Disclosure -> AppScreen.AccessibilityDisclosure
-        AccessibilitySetupDestination.EnableAccessibility -> AppScreen.EnableAccessibility
-        AccessibilitySetupDestination.Dashboard -> AppScreen.Dashboard
-        AccessibilitySetupDestination.TemporaryAllow -> AppScreen.TemporaryAllow
-    }
-
-private fun handleTemporaryAllowCompletion(
-    completion: TemporaryAllowCompletion,
-    onTemporaryAllowFlowClosed: () -> Unit,
-) {
-    when (completion) {
-        TemporaryAllowCompletion.ReturnToForegroundApp -> onTemporaryAllowFlowClosed()
-    }
-}
-
-private enum class AppScreen {
-    Welcome,
-    PinSetup,
-    PinEntry,
-    ProtectedApps,
-    AccessibilityDisclosure,
-    EnableAccessibility,
-    Dashboard,
-    PrivacyPolicy,
-    TamperProtectionDisclosure,
-    TemporaryAllow,
-    DetectorQa,
 }
