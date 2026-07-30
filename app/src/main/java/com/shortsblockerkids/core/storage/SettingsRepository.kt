@@ -11,7 +11,9 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.shortsblockerkids.application.port.PinStateStore
 import com.shortsblockerkids.application.port.ProtectionActivationStore
+import com.shortsblockerkids.application.port.TimeProvider
 import com.shortsblockerkids.core.billing.BillingEntitlementSnapshot
 import com.shortsblockerkids.core.billing.BillingEntitlementState
 import com.shortsblockerkids.core.entitlement.FreeTestPolicy
@@ -19,6 +21,9 @@ import com.shortsblockerkids.core.model.ProtectionMode
 import com.shortsblockerkids.core.security.PinHasher
 import com.shortsblockerkids.core.security.PinRateLimiter
 import com.shortsblockerkids.core.security.PinVerificationResult
+import com.shortsblockerkids.infrastructure.storage.DataStorePinStateStore
+import com.shortsblockerkids.infrastructure.storage.PinPreferenceKeys
+import com.shortsblockerkids.infrastructure.storage.SettingsPinAccessAdapter
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -35,6 +40,8 @@ class SettingsRepository(
     private val pinHasher: PinHasher = PinHasher(),
     private val pinRateLimiter: PinRateLimiter = PinRateLimiter(),
 ) : ProtectionActivationStore {
+    private val pinStateStore: PinStateStore = DataStorePinStateStore(dataStore)
+
     constructor(
         context: Context,
         pinHasher: PinHasher = PinHasher(),
@@ -44,6 +51,8 @@ class SettingsRepository(
         pinHasher = pinHasher,
         pinRateLimiter = pinRateLimiter,
     )
+
+    internal fun pinStateStore(): PinStateStore = pinStateStore
 
     fun readSettings(): Flow<AppSettings> = dataStore.data.map { it.toAppSettings() }
 
@@ -157,77 +166,23 @@ class SettingsRepository(
     }
 
     suspend fun savePin(pin: String) {
-        val salt = pinHasher.generateSalt()
-        val hash = pinHasher.hash(pin = pin, saltBase64 = salt)
-        dataStore.edit { preferences ->
-            preferences[KEY_PIN_HASH] = hash
-            preferences[KEY_PIN_SALT] = salt
-            preferences[KEY_PIN_HASH_VERSION] = PinHasher.CURRENT_VERSION
-            preferences[KEY_FAILED_PIN_ATTEMPTS] = 0
-            preferences.remove(KEY_PIN_LOCKOUT_UNTIL)
-        }
+        SettingsPinAccessAdapter(
+            pinStateStore = pinStateStore,
+            pinHasher = pinHasher,
+            pinRateLimiter = pinRateLimiter,
+        ).createPin(pin)
     }
 
     suspend fun verifyPin(
         pin: String,
         nowMillis: Long = System.currentTimeMillis(),
-    ): PinVerificationResult {
-        var result: PinVerificationResult = PinVerificationResult.NotConfigured
-        dataStore.edit { preferences ->
-            result =
-                verifyPinWithPreferences(
-                    preferences = preferences,
-                    settings = preferences.toAppSettings(),
-                    pin = pin,
-                    nowMillis = nowMillis,
-                )
-        }
-        return result
-    }
-
-    private fun verifyPinWithPreferences(
-        preferences: MutablePreferences,
-        settings: AppSettings,
-        pin: String,
-        nowMillis: Long,
-    ): PinVerificationResult {
-        if (!settings.isPinCreated) {
-            return PinVerificationResult.NotConfigured
-        }
-
-        val lockoutUntil = settings.pinLockoutUntil
-        if (lockoutUntil != null && lockoutUntil > nowMillis) {
-            return PinVerificationResult.Locked(lockoutUntil)
-        }
-
-        val expectedHash = settings.pinHash ?: return PinVerificationResult.NotConfigured
-        val salt = settings.pinSalt ?: return PinVerificationResult.NotConfigured
-        val matches =
-            runCatching {
-                val actualHash = pinHasher.hash(pin = pin, saltBase64 = salt)
-                pinHasher.matches(expectedHash, actualHash)
-            }.getOrElse {
-                return PinVerificationResult.NotConfigured
-            }
-        if (matches) {
-            preferences[KEY_FAILED_PIN_ATTEMPTS] = 0
-            preferences.remove(KEY_PIN_LOCKOUT_UNTIL)
-            return PinVerificationResult.Success
-        }
-
-        val rateLimit = pinRateLimiter.recordFailure(settings.failedPinAttempts, nowMillis)
-        preferences[KEY_FAILED_PIN_ATTEMPTS] = rateLimit.failedAttempts
-        preferences.setNullableLong(KEY_PIN_LOCKOUT_UNTIL, rateLimit.lockoutUntil)
-
-        val lockout = rateLimit.lockoutUntil
-        if (lockout != null) {
-            return PinVerificationResult.Locked(lockout)
-        }
-
-        return PinVerificationResult.Failure(
-            remainingAttempts = pinRateLimiter.remainingAttemptsBeforeLockout(rateLimit.failedAttempts),
-        )
-    }
+    ): PinVerificationResult =
+        SettingsPinAccessAdapter(
+            pinStateStore = pinStateStore,
+            pinHasher = pinHasher,
+            pinRateLimiter = pinRateLimiter,
+            timeProvider = TimeProvider { nowMillis },
+        ).verifyPin(pin)
 
     private fun Preferences.toAppSettings(): AppSettings =
         AppSettings(
@@ -248,11 +203,12 @@ class SettingsRepository(
             billingSubscriptionActive = this[KEY_BILLING_SUBSCRIPTION_ACTIVE] ?: false,
             billingLastVerifiedAt = this[KEY_BILLING_LAST_VERIFIED_AT],
             billingActiveUntilMillis = this[KEY_BILLING_ACTIVE_UNTIL_MILLIS],
-            pinHash = this[KEY_PIN_HASH],
-            pinSalt = this[KEY_PIN_SALT],
-            pinHashVersion = this[KEY_PIN_HASH_VERSION] ?: PinHasher.CURRENT_VERSION,
-            failedPinAttempts = this[KEY_FAILED_PIN_ATTEMPTS] ?: 0,
-            pinLockoutUntil = this[KEY_PIN_LOCKOUT_UNTIL],
+            pinHash = this[PinPreferenceKeys.PIN_HASH],
+            pinSalt = this[PinPreferenceKeys.PIN_SALT],
+            pinHashVersion =
+                this[PinPreferenceKeys.PIN_HASH_VERSION] ?: PinHasher.CURRENT_VERSION,
+            failedPinAttempts = this[PinPreferenceKeys.FAILED_PIN_ATTEMPTS] ?: 0,
+            pinLockoutUntil = this[PinPreferenceKeys.PIN_LOCKOUT_UNTIL],
         )
 
     private inline fun <reified T : Enum<T>> enumValueOrDefault(
@@ -297,10 +253,5 @@ class SettingsRepository(
         private val KEY_BILLING_LAST_VERIFIED_AT = longPreferencesKey("billing_last_verified_at")
         private val KEY_BILLING_ACTIVE_UNTIL_MILLIS =
             longPreferencesKey("billing_active_until_millis")
-        private val KEY_PIN_HASH = stringPreferencesKey("pinHash")
-        private val KEY_PIN_SALT = stringPreferencesKey("pinSalt")
-        private val KEY_PIN_HASH_VERSION = intPreferencesKey("pinHashVersion")
-        private val KEY_FAILED_PIN_ATTEMPTS = intPreferencesKey("failedPinAttempts")
-        private val KEY_PIN_LOCKOUT_UNTIL = longPreferencesKey("pinLockoutUntil")
     }
 }
