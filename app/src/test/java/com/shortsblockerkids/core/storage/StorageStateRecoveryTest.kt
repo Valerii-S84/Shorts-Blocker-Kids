@@ -4,9 +4,12 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.shortsblockerkids.core.billing.BillingEntitlementState
 import com.shortsblockerkids.core.model.ProtectionMode
+import com.shortsblockerkids.core.security.PinVerificationResult
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -73,13 +76,20 @@ class StorageStateRecoveryTest {
             dataStore.edit { preferences ->
                 preferences[stringPreferencesKey("pinHash")] = " "
                 preferences[stringPreferencesKey("pinSalt")] = ""
+                preferences[intPreferencesKey("failedPinAttempts")] = 5
+                preferences[longPreferencesKey("pinLockoutUntil")] = 31_000L
             }
             val repository = SettingsRepository(dataStore)
 
             val settings = repository.readSettings().first()
+            val result = repository.verifyPin("4826", nowMillis = 1_000L)
+            val preferences = dataStore.data.first()
 
             assertFalse(settings.isPinCreated)
             assertFalse(settings.canProtect(nowMillis = 1_000L))
+            assertEquals(PinVerificationResult.NotConfigured, result)
+            assertEquals(5, preferences[intPreferencesKey("failedPinAttempts")])
+            assertEquals(31_000L, preferences[longPreferencesKey("pinLockoutUntil")])
         }
 
     private fun createDataStore(name: String): DataStore<Preferences> {
