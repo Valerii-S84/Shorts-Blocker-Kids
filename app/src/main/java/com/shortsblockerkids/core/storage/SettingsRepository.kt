@@ -13,6 +13,7 @@ import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.shortsblockerkids.application.port.PinStateStore
 import com.shortsblockerkids.application.port.ProtectionActivationStore
+import com.shortsblockerkids.application.port.TemporaryAllowStore
 import com.shortsblockerkids.application.port.TimeProvider
 import com.shortsblockerkids.core.billing.BillingEntitlementSnapshot
 import com.shortsblockerkids.core.billing.BillingEntitlementState
@@ -39,7 +40,8 @@ class SettingsRepository(
     private val dataStore: DataStore<Preferences>,
     private val pinHasher: PinHasher = PinHasher(),
     private val pinRateLimiter: PinRateLimiter = PinRateLimiter(),
-) : ProtectionActivationStore {
+) : ProtectionActivationStore,
+    TemporaryAllowStore {
     private val pinStateStore: PinStateStore = DataStorePinStateStore(dataStore)
 
     constructor(
@@ -142,27 +144,22 @@ class SettingsRepository(
         setDisclosureAccepted(true)
     }
 
-    suspend fun setTemporaryAllowUntil(allowUntilMillis: Long?) {
+    override suspend fun setTemporaryAllowUntil(allowUntilMillis: Long?) {
         dataStore.edit { preferences ->
             preferences.setNullableLong(KEY_TEMPORARY_ALLOW_UNTIL, allowUntilMillis)
         }
     }
 
-    suspend fun setTemporaryAllowForMinutes(
-        minutes: Int,
-        nowMillis: Long = System.currentTimeMillis(),
-    ) {
-        require(minutes > 0) { "Temporary allow duration must be positive." }
-        setTemporaryAllowUntil(nowMillis + minutes * 60_000L)
-    }
-
-    suspend fun clearExpiredTemporaryAllow(nowMillis: Long = System.currentTimeMillis()) {
+    override suspend fun removeTemporaryAllowIf(shouldRemove: (Long) -> Boolean): Boolean {
+        var removed = false
         dataStore.edit { preferences ->
             val allowUntil = preferences[KEY_TEMPORARY_ALLOW_UNTIL] ?: return@edit
-            if (allowUntil <= nowMillis) {
+            if (shouldRemove(allowUntil)) {
                 preferences.remove(KEY_TEMPORARY_ALLOW_UNTIL)
+                removed = true
             }
         }
+        return removed
     }
 
     suspend fun savePin(pin: String) {

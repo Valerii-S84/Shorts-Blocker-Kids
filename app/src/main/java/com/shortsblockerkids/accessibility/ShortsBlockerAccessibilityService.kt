@@ -2,8 +2,10 @@ package com.shortsblockerkids.accessibility
 
 import android.accessibilityservice.AccessibilityService
 import android.view.accessibility.AccessibilityEvent
+import com.shortsblockerkids.application.protection.ClearExpiredTemporaryAllowUseCase
 import com.shortsblockerkids.core.storage.AppSettings
 import com.shortsblockerkids.core.storage.SettingsRepository
+import com.shortsblockerkids.infrastructure.time.SystemTimeProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -23,12 +25,16 @@ class ShortsBlockerAccessibilityService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         val settingsRepository = SettingsRepository(this)
+        val clearExpiredTemporaryAllowUseCase =
+            ClearExpiredTemporaryAllowUseCase(
+                timeProvider = SystemTimeProvider(),
+                temporaryAllowStore = settingsRepository,
+            )
         latestSettings =
             runBlocking(Dispatchers.IO) {
                 activeSettingsFrom(
-                    settingsRepository = settingsRepository,
+                    clearExpiredTemporaryAllowUseCase = clearExpiredTemporaryAllowUseCase,
                     settings = settingsRepository.readSettings().first(),
-                    nowMillis = System.currentTimeMillis(),
                 )
             }
         val blockingDecisionController = BlockingDecisionController()
@@ -63,7 +69,11 @@ class ShortsBlockerAccessibilityService : AccessibilityService() {
             settingsRepository.readSettings().collect { settings ->
                 val nowMillis = System.currentTimeMillis()
                 val wasProtectionActive = latestSettings.canProtect(nowMillis)
-                val activeSettings = activeSettingsFrom(settingsRepository, settings, nowMillis)
+                val activeSettings =
+                    activeSettingsFrom(
+                        clearExpiredTemporaryAllowUseCase = clearExpiredTemporaryAllowUseCase,
+                        settings = settings,
+                    )
                 latestSettings = activeSettings
                 if (!activeSettings.canProtect(nowMillis)) {
                     eventRouter.dismissBlockingState()
@@ -100,12 +110,10 @@ class ShortsBlockerAccessibilityService : AccessibilityService() {
     }
 
     private suspend fun activeSettingsFrom(
-        settingsRepository: SettingsRepository,
+        clearExpiredTemporaryAllowUseCase: ClearExpiredTemporaryAllowUseCase,
         settings: AppSettings,
-        nowMillis: Long,
     ): AppSettings =
-        if (settings.hasExpiredTemporaryAllow(nowMillis)) {
-            settingsRepository.clearExpiredTemporaryAllow(nowMillis)
+        if (clearExpiredTemporaryAllowUseCase()) {
             settings.copy(temporaryAllowUntil = null)
         } else {
             settings

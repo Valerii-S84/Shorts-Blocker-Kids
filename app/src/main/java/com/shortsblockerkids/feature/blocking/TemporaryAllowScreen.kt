@@ -19,10 +19,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.shortsblockerkids.R
+import com.shortsblockerkids.domain.protection.TemporaryAllowDuration
 
 @Composable
 fun TemporaryAllowScreen(
-    onDurationSelected: (Int) -> Unit,
+    onDurationSelected: (TemporaryAllowDuration) -> Unit,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -45,16 +46,16 @@ fun TemporaryAllowScreen(
             style = MaterialTheme.typography.bodyLarge,
         )
         Spacer(modifier = Modifier.height(24.dp))
-        TemporaryAllowFlowController.ALLOWED_DURATIONS.forEach { minutes ->
+        TemporaryAllowDuration.entries.forEach { duration ->
             Button(
-                onClick = { onDurationSelected(minutes) },
+                onClick = { onDurationSelected(duration) },
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(
                     pluralStringResource(
                         R.plurals.temporary_allow_duration_minutes,
-                        minutes,
-                        minutes,
+                        duration.minutes,
+                        duration.minutes,
                     ),
                 )
             }

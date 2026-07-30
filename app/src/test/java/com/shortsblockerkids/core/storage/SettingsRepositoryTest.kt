@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.PreferencesSerializer
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.shortsblockerkids.core.billing.BillingEntitlementSnapshot
@@ -286,30 +287,23 @@ class SettingsRepositoryTest {
         }
 
     @Test
-    fun validPinTemporaryAllowSelectionStoresExpiryForFiveTenAndFifteenMinutes() =
+    fun storesExactTemporaryAllowTimestampUnderExistingKey() =
         runBlocking {
-            val repository = createRepository("allow-durations")
-            val nowMillis = 1_000L
-            repository.savePin("4826")
-            repository.setDisclosureAccepted(true)
-            repository.recordSuccessfulProtectionActivation(nowMillis = nowMillis)
+            val dataStore = createDataStore("allow-timestamp")
+            val repository = SettingsRepository(dataStore)
 
-            assertEquals(PinVerificationResult.Success, repository.verifyPin("4826"))
+            repository.setTemporaryAllowUntil(901_234L)
 
-            listOf(5, 10, 15).forEach { minutes ->
-                repository.setTemporaryAllowForMinutes(minutes, nowMillis)
-                val settings = repository.readSettings().first()
-
-                assertEquals(
-                    nowMillis + minutes * 60_000L,
-                    settings.temporaryAllowUntil,
-                )
-                assertFalse(settings.canProtect(nowMillis = nowMillis + 1L))
-            }
+            val storedPreferences = dataStore.data.first()
+            assertEquals(
+                901_234L,
+                storedPreferences[longPreferencesKey("temporaryAllowUntil")],
+            )
+            assertEquals(901_234L, repository.readSettings().first().temporaryAllowUntil)
         }
 
     @Test
-    fun clearsExpiredTemporaryAllowBeforeClockRollbackCanReactivateIt() =
+    fun removeTemporaryAllowIfPhysicallyRemovesMatchingValue() =
         runBlocking {
             val repository = createRepository("expired-allow")
 
@@ -318,24 +312,33 @@ class SettingsRepositoryTest {
             repository.recordSuccessfulProtectionActivation(nowMillis = 1_000L)
             repository.setTemporaryAllowUntil(2_000L)
 
-            repository.clearExpiredTemporaryAllow(nowMillis = 2_500L)
+            val removed =
+                repository.removeTemporaryAllowIf { allowUntilMillis ->
+                    allowUntilMillis <= 2_500L
+                }
             val settings = repository.readSettings().first()
 
+            assertTrue(removed)
             assertEquals(null, settings.temporaryAllowUntil)
             assertTrue(settings.canProtect(nowMillis = 1_500L))
         }
 
     @Test
-    fun clearExpiredTemporaryAllowLeavesMissingOrActiveAllowUntouched() =
+    fun removeTemporaryAllowIfLeavesMissingOrNonMatchingValueUntouched() =
         runBlocking {
             val repository = createRepository("clear-allow-no-op")
 
-            repository.clearExpiredTemporaryAllow(nowMillis = 2_500L)
+            val missingRemoved = repository.removeTemporaryAllowIf { true }
             assertEquals(null, repository.readSettings().first().temporaryAllowUntil)
 
             repository.setTemporaryAllowUntil(3_000L)
-            repository.clearExpiredTemporaryAllow(nowMillis = 2_500L)
+            val activeRemoved =
+                repository.removeTemporaryAllowIf { allowUntilMillis ->
+                    allowUntilMillis <= 2_500L
+                }
 
+            assertFalse(missingRemoved)
+            assertFalse(activeRemoved)
             assertEquals(3_000L, repository.readSettings().first().temporaryAllowUntil)
         }
 
@@ -349,17 +352,6 @@ class SettingsRepositoryTest {
 
             assertEquals(null, repository.readSettings().first().temporaryAllowUntil)
         }
-
-    @Test
-    fun rejectsNonPositiveTemporaryAllowDurations() {
-        val repository = createRepository("invalid-allow-duration")
-
-        assertThrows(IllegalArgumentException::class.java) {
-            runBlocking {
-                repository.setTemporaryAllowForMinutes(0, nowMillis = 1_000L)
-            }
-        }
-    }
 
     @Test
     fun escalatesPinLockoutAcrossFailedAttempts() =
