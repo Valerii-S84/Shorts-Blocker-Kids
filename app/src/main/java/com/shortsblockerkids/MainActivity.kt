@@ -20,7 +20,9 @@ import androidx.compose.ui.Modifier
 import com.shortsblockerkids.accessibility.AccessibilityServiceStatus
 import com.shortsblockerkids.application.pin.CreatePinUseCase
 import com.shortsblockerkids.application.pin.VerifyPinUseCase
+import com.shortsblockerkids.application.protection.ClearExpiredTemporaryAllowUseCase
 import com.shortsblockerkids.application.protection.RecordSuccessfulProtectionActivationUseCase
+import com.shortsblockerkids.application.protection.SetTemporaryAllowUseCase
 import com.shortsblockerkids.core.billing.BillingUiState
 import com.shortsblockerkids.core.billing.HttpBillingBackendClient
 import com.shortsblockerkids.core.billing.PlayBillingRepository
@@ -76,6 +78,16 @@ class MainActivity : ComponentActivity() {
                 timeProvider = SystemTimeProvider(),
                 protectionActivationStore = settingsRepository,
             )
+        val setTemporaryAllowUseCase =
+            SetTemporaryAllowUseCase(
+                timeProvider = SystemTimeProvider(),
+                temporaryAllowStore = settingsRepository,
+            )
+        val clearExpiredTemporaryAllowUseCase =
+            ClearExpiredTemporaryAllowUseCase(
+                timeProvider = SystemTimeProvider(),
+                temporaryAllowStore = settingsRepository,
+            )
         billingRepository =
             PlayBillingRepository(
                 context = this,
@@ -94,7 +106,7 @@ class MainActivity : ComponentActivity() {
             )
         temporaryAllowRequestState.value = intent.isTemporaryAllowRequest()
         loadInitialSettings()
-        observeSettings()
+        observeSettings(clearExpiredTemporaryAllowUseCase)
         refreshState()
 
         setContent {
@@ -111,6 +123,7 @@ class MainActivity : ComponentActivity() {
                         createPinUseCase = createPinUseCase,
                         verifyPinUseCase = verifyPinUseCase,
                         recordSuccessfulProtectionActivationUseCase = protectionActivationUseCase,
+                        setTemporaryAllowUseCase = setTemporaryAllowUseCase,
                         onSubscribe = {
                             billingRepository.launchPurchase(this@MainActivity)
                         },
@@ -160,16 +173,16 @@ class MainActivity : ComponentActivity() {
         super.onDestroy()
     }
 
-    private fun observeSettings() {
+    private fun observeSettings(clearExpiredTemporaryAllowUseCase: ClearExpiredTemporaryAllowUseCase) {
         activityScope.launch {
             settingsRepository.readSettings().collect { settings ->
-                val nowMillis = System.currentTimeMillis()
-                if (settings.hasExpiredTemporaryAllow(nowMillis)) {
-                    settingsRepository.clearExpiredTemporaryAllow(nowMillis)
-                    settingsState.value = settings.copy(temporaryAllowUntil = null)
-                } else {
-                    settingsState.value = settings
-                }
+                val temporaryAllowRemoved = clearExpiredTemporaryAllowUseCase()
+                settingsState.value =
+                    if (temporaryAllowRemoved) {
+                        settings.copy(temporaryAllowUntil = null)
+                    } else {
+                        settings
+                    }
             }
         }
     }
@@ -217,6 +230,7 @@ private fun ShortsBlockerKidsApp(
     createPinUseCase: CreatePinUseCase,
     verifyPinUseCase: VerifyPinUseCase,
     recordSuccessfulProtectionActivationUseCase: RecordSuccessfulProtectionActivationUseCase,
+    setTemporaryAllowUseCase: SetTemporaryAllowUseCase,
     onSubscribe: () -> Unit,
     onRestorePurchases: () -> Unit,
     onManageSubscription: () -> Unit,
@@ -228,9 +242,7 @@ private fun ShortsBlockerKidsApp(
 ) {
     val coroutineScope = rememberCoroutineScope()
     val temporaryAllowFlowController =
-        TemporaryAllowFlowController { minutes ->
-            repository.setTemporaryAllowForMinutes(minutes)
-        }
+        TemporaryAllowFlowController(setTemporaryAllowUseCase)
     var screen by rememberSaveable {
         mutableStateOf(initialScreen(settings))
     }
@@ -454,9 +466,9 @@ private fun ShortsBlockerKidsApp(
 
             AppScreen.TemporaryAllow ->
                 TemporaryAllowScreen(
-                    onDurationSelected = { minutes ->
+                    onDurationSelected = { duration ->
                         coroutineScope.launch {
-                            val completion = temporaryAllowFlowController.selectDuration(minutes)
+                            val completion = temporaryAllowFlowController.selectDuration(duration)
                             pendingTemporaryAllow = false
                             pendingProtectionDisable = false
                             onStateChanged()

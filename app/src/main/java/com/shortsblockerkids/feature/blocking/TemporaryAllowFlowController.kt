@@ -1,21 +1,17 @@
 package com.shortsblockerkids.feature.blocking
 
+import com.shortsblockerkids.application.protection.SetTemporaryAllowUseCase
+import com.shortsblockerkids.domain.protection.TemporaryAllowDuration
+
 class TemporaryAllowFlowController(
-    private val storeTemporaryAllow: suspend (Int) -> Unit,
+    private val setTemporaryAllowUseCase: SetTemporaryAllowUseCase,
 ) {
-    suspend fun selectDuration(minutes: Int): TemporaryAllowCompletion {
-        require(minutes in ALLOWED_DURATIONS) {
-            "Unsupported temporary allow duration: $minutes"
-        }
-        storeTemporaryAllow(minutes)
+    suspend fun selectDuration(duration: TemporaryAllowDuration): TemporaryAllowCompletion {
+        setTemporaryAllowUseCase(duration)
         return TemporaryAllowCompletion.ReturnToForegroundApp
     }
 
     fun cancel(): TemporaryAllowCompletion = TemporaryAllowCompletion.ReturnToForegroundApp
-
-    companion object {
-        val ALLOWED_DURATIONS = listOf(5, 10, 15)
-    }
 }
 
 enum class TemporaryAllowCompletion {
