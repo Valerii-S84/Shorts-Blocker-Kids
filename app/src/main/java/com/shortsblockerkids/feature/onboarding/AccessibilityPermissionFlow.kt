@@ -1,29 +1,29 @@
 package com.shortsblockerkids.feature.onboarding
 
-import com.shortsblockerkids.core.storage.AppSettings
+import com.shortsblockerkids.presentation.app.AppScreen
 
 object AccessibilityPermissionFlow {
-    fun destinationAfterPinCreated(): AccessibilitySetupDestination = AccessibilitySetupDestination.ProtectedApps
+    fun destinationAfterPinCreated(): AppScreen = AppScreen.ProtectedApps
 
     fun destinationAfterParentUnlock(
-        settings: AppSettings,
+        hasAcceptedAccessibilityDisclosure: Boolean,
         pendingTemporaryAllow: Boolean,
-    ): AccessibilitySetupDestination {
-        if (!settings.accessibilityDisclosureAccepted) {
-            return AccessibilitySetupDestination.ProtectedApps
+    ): AppScreen {
+        if (!hasAcceptedAccessibilityDisclosure) {
+            return AppScreen.ProtectedApps
         }
 
         return if (pendingTemporaryAllow) {
-            AccessibilitySetupDestination.TemporaryAllow
+            AppScreen.TemporaryAllow
         } else {
-            AccessibilitySetupDestination.Dashboard
+            AppScreen.Dashboard
         }
     }
 
-    fun destinationAfterDisclosure(decision: AccessibilityDisclosureDecision): AccessibilitySetupDestination =
+    fun destinationAfterDisclosure(decision: AccessibilityDisclosureDecision): AppScreen =
         when (decision) {
-            AccessibilityDisclosureDecision.Accepted -> AccessibilitySetupDestination.EnableAccessibility
-            AccessibilityDisclosureDecision.Declined -> AccessibilitySetupDestination.Dashboard
+            AccessibilityDisclosureDecision.Accepted -> AppScreen.EnableAccessibility
+            AccessibilityDisclosureDecision.Declined -> AppScreen.Dashboard
         }
 
     fun settingsRequest(hasAffirmativeAccessibilityConsent: Boolean): AccessibilitySettingsRequest =
@@ -42,12 +42,4 @@ enum class AccessibilityDisclosureDecision {
 enum class AccessibilitySettingsRequest {
     ShowDisclosure,
     OpenSystemSettings,
-}
-
-enum class AccessibilitySetupDestination {
-    ProtectedApps,
-    Disclosure,
-    EnableAccessibility,
-    Dashboard,
-    TemporaryAllow,
 }

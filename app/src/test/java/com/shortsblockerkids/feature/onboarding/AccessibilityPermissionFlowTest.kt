@@ -1,6 +1,6 @@
 package com.shortsblockerkids.feature.onboarding
 
-import com.shortsblockerkids.core.storage.AppSettings
+import com.shortsblockerkids.presentation.app.AppScreen
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -8,7 +8,7 @@ class AccessibilityPermissionFlowTest {
     @Test
     fun pinCreationShowsProtectedAppSelectionBeforeDisclosure() {
         assertEquals(
-            AccessibilitySetupDestination.ProtectedApps,
+            AppScreen.ProtectedApps,
             AccessibilityPermissionFlow.destinationAfterPinCreated(),
         )
     }
@@ -16,7 +16,7 @@ class AccessibilityPermissionFlowTest {
     @Test
     fun userCanDeclineDisclosureWithoutOpeningSettings() {
         assertEquals(
-            AccessibilitySetupDestination.Dashboard,
+            AppScreen.Dashboard,
             AccessibilityPermissionFlow.destinationAfterDisclosure(
                 AccessibilityDisclosureDecision.Declined,
             ),
@@ -47,43 +47,33 @@ class AccessibilityPermissionFlowTest {
 
     @Test
     fun resumedProtectionSetupReturnsToAppSelectionBeforeDisclosure() {
-        val settingsWithoutConsent = pinCreatedSettings(accessibilityDisclosureAccepted = false)
-        val settingsWithConsent = pinCreatedSettings(accessibilityDisclosureAccepted = true)
-
         assertEquals(
-            AccessibilitySetupDestination.ProtectedApps,
+            AppScreen.ProtectedApps,
             AccessibilityPermissionFlow.destinationAfterParentUnlock(
-                settings = settingsWithoutConsent,
+                hasAcceptedAccessibilityDisclosure = false,
                 pendingTemporaryAllow = false,
             ),
         )
         assertEquals(
-            AccessibilitySetupDestination.ProtectedApps,
+            AppScreen.ProtectedApps,
             AccessibilityPermissionFlow.destinationAfterParentUnlock(
-                settings = settingsWithoutConsent,
+                hasAcceptedAccessibilityDisclosure = false,
                 pendingTemporaryAllow = true,
             ),
         )
         assertEquals(
-            AccessibilitySetupDestination.Dashboard,
+            AppScreen.Dashboard,
             AccessibilityPermissionFlow.destinationAfterParentUnlock(
-                settings = settingsWithConsent,
+                hasAcceptedAccessibilityDisclosure = true,
                 pendingTemporaryAllow = false,
             ),
         )
         assertEquals(
-            AccessibilitySetupDestination.TemporaryAllow,
+            AppScreen.TemporaryAllow,
             AccessibilityPermissionFlow.destinationAfterParentUnlock(
-                settings = settingsWithConsent,
+                hasAcceptedAccessibilityDisclosure = true,
                 pendingTemporaryAllow = true,
             ),
         )
     }
-
-    private fun pinCreatedSettings(accessibilityDisclosureAccepted: Boolean): AppSettings =
-        AppSettings(
-            accessibilityDisclosureAccepted = accessibilityDisclosureAccepted,
-            pinHash = "hash",
-            pinSalt = "salt",
-        )
 }
