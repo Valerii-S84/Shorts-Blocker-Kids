@@ -1,5 +1,8 @@
 package com.shortsblockerkids.accessibility
 
+import com.shortsblockerkids.domain.detection.AccessibilityNodeSignal
+import com.shortsblockerkids.domain.detection.AccessibilityTreeSnapshot
+
 object DetectorFixtureLoader {
     fun load(fileName: String): DetectorFixture {
         val text =

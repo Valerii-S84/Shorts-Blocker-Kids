@@ -1,5 +1,17 @@
 package com.shortsblockerkids.accessibility
 
+import com.shortsblockerkids.domain.detection.AccessibilityTreeSnapshot
+import com.shortsblockerkids.domain.detection.Confidence
+import com.shortsblockerkids.domain.detection.DetectionResult
+import com.shortsblockerkids.domain.detection.DetectorSignal
+import com.shortsblockerkids.domain.detection.FacebookReelsDetector
+import com.shortsblockerkids.domain.detection.InstagramReelsDetector
+import com.shortsblockerkids.domain.detection.ShortVideoDetectionEngine
+import com.shortsblockerkids.domain.detection.ShortVideoDetector
+import com.shortsblockerkids.domain.detection.SupportedPlatform
+import com.shortsblockerkids.domain.detection.TikTokShortVideoDetector
+import com.shortsblockerkids.domain.detection.YouTubeShortsDetector
+import com.shortsblockerkids.platform.accessibility.detection.ProductionDetectorRegistry
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertThrows
@@ -70,7 +82,7 @@ class ShortVideoDetectionEngineTest {
 
     @Test
     fun platformForPackageReturnsMatchingProtectedPlatform() {
-        val engine = ShortVideoDetectionEngine.production()
+        val engine = ProductionDetectorRegistry.create()
 
         assertEquals(
             SupportedPlatform.YOUTUBE_SHORTS,

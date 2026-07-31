@@ -6,6 +6,7 @@ import com.shortsblockerkids.application.protection.ClearExpiredTemporaryAllowUs
 import com.shortsblockerkids.core.storage.AppSettings
 import com.shortsblockerkids.core.storage.SettingsRepository
 import com.shortsblockerkids.infrastructure.time.SystemTimeProvider
+import com.shortsblockerkids.platform.accessibility.detection.ProductionDetectorRegistry
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -43,7 +44,7 @@ class ShortsBlockerAccessibilityService : AccessibilityService() {
                 settingsProvider = { latestSettings },
                 eventPolicy = AccessibilityEventPolicy(),
                 treeScanner = AccessibilityTreeScanner(),
-                detectionEngine = ShortVideoDetectionEngine.production(),
+                detectionEngine = ProductionDetectorRegistry.create(),
                 blockingDecisionController = blockingDecisionController,
                 blockOverlayController =
                     BlockOverlayController(

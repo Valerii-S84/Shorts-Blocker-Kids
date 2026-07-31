@@ -1,9 +1,11 @@
-package com.shortsblockerkids.accessibility
+package com.shortsblockerkids.domain.detection
 
-class YouTubeShortsDetector : ShortVideoDetector {
+class YouTubeShortsDetector(
+    packageAliases: Set<String> = emptySet(),
+) : ShortVideoDetector {
     override val platform: SupportedPlatform = SupportedPlatform.YOUTUBE_SHORTS
     override val supportedPackages: Set<String> =
-        setOf(YOUTUBE_PACKAGE) + DebugFixturePackages.enabled(DebugFixturePackages.YOUTUBE)
+        setOf(YOUTUBE_PACKAGE) + packageAliases
 
     override fun detect(
         packageName: String?,

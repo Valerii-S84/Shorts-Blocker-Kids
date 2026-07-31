@@ -1,4 +1,4 @@
-package com.shortsblockerkids.accessibility
+package com.shortsblockerkids.domain.detection
 
 interface ShortVideoDetector {
     val platform: SupportedPlatform

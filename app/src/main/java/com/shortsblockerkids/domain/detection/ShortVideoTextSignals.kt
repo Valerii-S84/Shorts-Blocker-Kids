@@ -1,4 +1,4 @@
-package com.shortsblockerkids.accessibility
+package com.shortsblockerkids.domain.detection
 
 internal object ShortVideoTextSignals {
     val shortsIdentifiers = setOf("shorts")

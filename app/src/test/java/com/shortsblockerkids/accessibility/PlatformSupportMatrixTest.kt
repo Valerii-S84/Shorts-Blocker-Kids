@@ -1,6 +1,12 @@
 package com.shortsblockerkids.accessibility
 
 import com.shortsblockerkids.R
+import com.shortsblockerkids.domain.detection.FacebookReelsDetector
+import com.shortsblockerkids.domain.detection.InstagramReelsDetector
+import com.shortsblockerkids.domain.detection.SupportedPlatform
+import com.shortsblockerkids.domain.detection.TikTokShortVideoDetector
+import com.shortsblockerkids.domain.detection.YouTubeShortsDetector
+import com.shortsblockerkids.platform.accessibility.detection.ProductionDetectorRegistry
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -54,7 +60,7 @@ class PlatformSupportMatrixTest {
 
     @Test
     fun productionEngineDoesNotSupportUnsupportedRegionalOrLitePackages() {
-        val engine = ShortVideoDetectionEngine.production()
+        val engine = ProductionDetectorRegistry.create()
 
         assertFalse(engine.supportsPackage(PlatformSupportMatrix.TIKTOK_REGIONAL_PACKAGE))
         assertFalse(engine.supportsPackage(PlatformSupportMatrix.FACEBOOK_LITE_PACKAGE))

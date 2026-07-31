@@ -32,14 +32,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.shortsblockerkids.BuildConfig
 import com.shortsblockerkids.R
-import com.shortsblockerkids.accessibility.AccessibilityNodeSignal
-import com.shortsblockerkids.accessibility.AccessibilityTreeSnapshot
-import com.shortsblockerkids.accessibility.DetectionResult
 import com.shortsblockerkids.accessibility.RuntimeProtectionState
-import com.shortsblockerkids.accessibility.YouTubeShortsDetector
 import com.shortsblockerkids.core.billing.BillingUiState
 import com.shortsblockerkids.core.entitlement.LocalEntitlementResolver
 import com.shortsblockerkids.core.storage.AppSettings
+import com.shortsblockerkids.domain.detection.AccessibilityNodeSignal
+import com.shortsblockerkids.domain.detection.AccessibilityTreeSnapshot
+import com.shortsblockerkids.domain.detection.DetectionResult
+import com.shortsblockerkids.domain.detection.YouTubeShortsDetector
 import com.shortsblockerkids.feature.billing.billingMessageText
 
 @Composable

@@ -2,38 +2,11 @@ package com.shortsblockerkids.accessibility
 
 import androidx.annotation.StringRes
 import com.shortsblockerkids.R
-import com.shortsblockerkids.core.storage.AppSettings
-
-data class SupportedPlatform(
-    val id: String,
-) {
-    companion object {
-        val YOUTUBE_SHORTS =
-            SupportedPlatform(
-                id = AppSettings.YOUTUBE_SHORTS_PLATFORM_ID,
-            )
-        val TIKTOK =
-            SupportedPlatform(
-                id = AppSettings.TIKTOK_PLATFORM_ID,
-            )
-        val INSTAGRAM_REELS =
-            SupportedPlatform(
-                id = AppSettings.INSTAGRAM_REELS_PLATFORM_ID,
-            )
-        val FACEBOOK_REELS =
-            SupportedPlatform(
-                id = AppSettings.FACEBOOK_REELS_PLATFORM_ID,
-            )
-
-        val PROTECTED_PLATFORMS =
-            listOf(
-                YOUTUBE_SHORTS,
-                TIKTOK,
-                INSTAGRAM_REELS,
-                FACEBOOK_REELS,
-            )
-    }
-}
+import com.shortsblockerkids.domain.detection.FacebookReelsDetector
+import com.shortsblockerkids.domain.detection.InstagramReelsDetector
+import com.shortsblockerkids.domain.detection.SupportedPlatform
+import com.shortsblockerkids.domain.detection.TikTokShortVideoDetector
+import com.shortsblockerkids.domain.detection.YouTubeShortsDetector
 
 enum class PlatformSupportStatus {
     SUPPORTED,
