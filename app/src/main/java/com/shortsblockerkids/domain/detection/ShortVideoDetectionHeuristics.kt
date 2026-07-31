@@ -1,4 +1,4 @@
-package com.shortsblockerkids.accessibility
+package com.shortsblockerkids.domain.detection
 
 import java.util.Locale
 

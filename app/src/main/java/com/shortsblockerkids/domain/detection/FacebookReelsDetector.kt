@@ -1,9 +1,11 @@
-package com.shortsblockerkids.accessibility
+package com.shortsblockerkids.domain.detection
 
-class InstagramReelsDetector : ShortVideoDetector {
-    override val platform: SupportedPlatform = SupportedPlatform.INSTAGRAM_REELS
+class FacebookReelsDetector(
+    packageAliases: Set<String> = emptySet(),
+) : ShortVideoDetector {
+    override val platform: SupportedPlatform = SupportedPlatform.FACEBOOK_REELS
     override val supportedPackages: Set<String> =
-        setOf(INSTAGRAM_PACKAGE) + DebugFixturePackages.enabled(DebugFixturePackages.INSTAGRAM)
+        setOf(FACEBOOK_PACKAGE) + packageAliases
 
     override fun detect(
         packageName: String?,
@@ -33,7 +35,6 @@ class InstagramReelsDetector : ShortVideoDetector {
             when {
                 isHighConfidenceReels(
                     hasReelsIdentifier = hasReelsIdentifier,
-                    hasReelContainer = hasReelContainer,
                     hasActionRail = hasActionRail,
                     hasVerticalFullscreen = hasVerticalFullscreen,
                     hasRepeatedVerticalFeed = hasRepeatedVerticalFeed,
@@ -52,7 +53,7 @@ class InstagramReelsDetector : ShortVideoDetector {
         val matched =
             nodes.any { node ->
                 node.contentDescriptionSignals.any { it in ShortVideoTextSignals.reelsIdentifiers } ||
-                    node.viewIdResourceName.containsAnyIgnoringCase("reel", "reels", "clips")
+                    node.viewIdResourceName.containsAnyIgnoringCase("reel", "reels")
             }
 
         if (matched) {
@@ -66,12 +67,11 @@ class InstagramReelsDetector : ShortVideoDetector {
         val matched =
             nodes.any { node ->
                 node.viewIdResourceName.containsAnyIgnoringCase(
-                    "clips",
-                    "clips_viewer",
                     "reel",
                     "reels",
                     "reel_viewer",
-                    "viewer",
+                    "video",
+                    "player",
                 ) ||
                     node.className.containsAnyIgnoringCase("viewpager")
             }
@@ -85,19 +85,18 @@ class InstagramReelsDetector : ShortVideoDetector {
 
     private fun AccessibilityTreeSnapshot.hasActionRail(matchedSignals: MutableSet<DetectorSignal>): Boolean =
         hasActionRailSignal(
-            actionSignals = ShortVideoTextSignals.instagramActions,
+            actionSignals = ShortVideoTextSignals.facebookActions,
             matchedSignals = matchedSignals,
         )
 
     private fun AccessibilityTreeSnapshot.hasVerticalFullscreen(matchedSignals: MutableSet<DetectorSignal>): Boolean =
-        hasVerticalFullscreenSignal(matchedSignals) { it.isInstagramSurfaceCandidate() }
+        hasVerticalFullscreenSignal(matchedSignals) { it.isFacebookSurfaceCandidate() }
 
     private fun AccessibilityTreeSnapshot.hasRepeatedVerticalFeed(matchedSignals: MutableSet<DetectorSignal>): Boolean =
-        hasRepeatedVerticalFeedSignal(matchedSignals)
+        hasRepeatedVerticalFeedSignal(matchedSignals) { !it.viewIdResourceName.isNonReelsWorkflowId() }
 
     private fun isHighConfidenceReels(
         hasReelsIdentifier: Boolean,
-        hasReelContainer: Boolean,
         hasActionRail: Boolean,
         hasVerticalFullscreen: Boolean,
         hasRepeatedVerticalFeed: Boolean,
@@ -106,15 +105,31 @@ class InstagramReelsDetector : ShortVideoDetector {
             return false
         }
 
-        return hasReelsIdentifier || hasReelContainer && hasRepeatedVerticalFeed
+        return hasReelsIdentifier || hasRepeatedVerticalFeed
     }
 
-    private fun AccessibilityNodeSignal.isInstagramSurfaceCandidate(): Boolean =
+    private fun String?.isNonReelsWorkflowId(): Boolean =
+        containsAnyIgnoringCase(
+            "news_feed",
+            "home_feed",
+            "comments",
+            "comment",
+            "search",
+            "settings",
+            "messages",
+            "message",
+            "profile",
+            "groups",
+            "group",
+            "marketplace",
+        )
+
+    private fun AccessibilityNodeSignal.isFacebookSurfaceCandidate(): Boolean =
         isScrollable ||
-            viewIdResourceName.containsAnyIgnoringCase("clips", "reel", "reels", "player", "video") ||
+            viewIdResourceName.containsAnyIgnoringCase("reel", "reels", "player", "video") ||
             className.containsAnyIgnoringCase("viewpager", "framelayout")
 
     companion object {
-        const val INSTAGRAM_PACKAGE = "com.instagram.android"
+        const val FACEBOOK_PACKAGE = "com.facebook.katana"
     }
 }

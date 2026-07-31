@@ -1,4 +1,4 @@
-package com.shortsblockerkids.accessibility
+package com.shortsblockerkids.domain.detection
 
 class ShortVideoDetectionEngine(
     detectors: List<ShortVideoDetector>,
@@ -41,17 +41,6 @@ class ShortVideoDetectionEngine(
     }
 
     companion object {
-        fun production(): ShortVideoDetectionEngine =
-            ShortVideoDetectionEngine(
-                detectors =
-                    listOf(
-                        YouTubeShortsDetector(),
-                        TikTokShortVideoDetector(),
-                        InstagramReelsDetector(),
-                        FacebookReelsDetector(),
-                    ),
-            )
-
         fun youtubeOnly(): ShortVideoDetectionEngine =
             ShortVideoDetectionEngine(
                 detectors = listOf(YouTubeShortsDetector()),

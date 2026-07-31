@@ -1,5 +1,7 @@
 package com.shortsblockerkids.accessibility
 
+import com.shortsblockerkids.domain.detection.Confidence
+import com.shortsblockerkids.domain.detection.DetectionResult
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

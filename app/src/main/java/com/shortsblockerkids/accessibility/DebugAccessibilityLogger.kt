@@ -3,6 +3,8 @@ package com.shortsblockerkids.accessibility
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import com.shortsblockerkids.BuildConfig
+import com.shortsblockerkids.domain.detection.AccessibilityTreeSnapshot
+import com.shortsblockerkids.domain.detection.DetectionResult
 
 class DebugAccessibilityLogger {
     fun logIgnoredEvent(

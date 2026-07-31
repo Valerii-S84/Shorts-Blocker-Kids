@@ -1,6 +1,7 @@
 package com.shortsblockerkids.accessibility
 
 import com.shortsblockerkids.BuildConfig
+import com.shortsblockerkids.domain.detection.AccessibilityTreeSnapshot
 import java.io.File
 
 class DetectorDebugSnapshotStore(

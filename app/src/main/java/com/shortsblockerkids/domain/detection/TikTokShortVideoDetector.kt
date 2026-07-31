@@ -1,9 +1,11 @@
-package com.shortsblockerkids.accessibility
+package com.shortsblockerkids.domain.detection
 
-class TikTokShortVideoDetector : ShortVideoDetector {
+class TikTokShortVideoDetector(
+    packageAliases: Set<String> = emptySet(),
+) : ShortVideoDetector {
     override val platform: SupportedPlatform = SupportedPlatform.TIKTOK
     override val supportedPackages: Set<String> =
-        setOf(TIKTOK_PACKAGE) + DebugFixturePackages.enabled(DebugFixturePackages.TIKTOK)
+        setOf(TIKTOK_PACKAGE) + packageAliases
 
     override fun detect(
         packageName: String?,

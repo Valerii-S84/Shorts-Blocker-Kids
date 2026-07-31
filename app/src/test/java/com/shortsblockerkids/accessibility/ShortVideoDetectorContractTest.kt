@@ -1,5 +1,15 @@
 package com.shortsblockerkids.accessibility
 
+import com.shortsblockerkids.domain.detection.AccessibilityNodeSignal
+import com.shortsblockerkids.domain.detection.AccessibilityTreeSnapshot
+import com.shortsblockerkids.domain.detection.Confidence
+import com.shortsblockerkids.domain.detection.DetectionResult
+import com.shortsblockerkids.domain.detection.DetectorSignal
+import com.shortsblockerkids.domain.detection.FacebookReelsDetector
+import com.shortsblockerkids.domain.detection.InstagramReelsDetector
+import com.shortsblockerkids.domain.detection.ShortVideoDetector
+import com.shortsblockerkids.domain.detection.TikTokShortVideoDetector
+import com.shortsblockerkids.domain.detection.YouTubeShortsDetector
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

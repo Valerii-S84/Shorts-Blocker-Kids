@@ -1,5 +1,7 @@
 package com.shortsblockerkids.accessibility
 
+import com.shortsblockerkids.domain.detection.DetectionResult
+
 class BlockingDecisionController(
     private val blockCooldownMs: Long = DEFAULT_BLOCK_COOLDOWN_MS,
     private val detectionDebounceMs: Long = DEFAULT_DETECTION_DEBOUNCE_MS,

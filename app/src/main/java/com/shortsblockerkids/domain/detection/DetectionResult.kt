@@ -1,4 +1,4 @@
-package com.shortsblockerkids.accessibility
+package com.shortsblockerkids.domain.detection
 
 data class DetectionResult(
     val isShorts: Boolean,

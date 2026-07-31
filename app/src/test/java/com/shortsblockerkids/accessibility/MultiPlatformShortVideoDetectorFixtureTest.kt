@@ -1,5 +1,14 @@
 package com.shortsblockerkids.accessibility
 
+import com.shortsblockerkids.domain.detection.Confidence
+import com.shortsblockerkids.domain.detection.DetectionResult
+import com.shortsblockerkids.domain.detection.DetectorSignal
+import com.shortsblockerkids.domain.detection.FacebookReelsDetector
+import com.shortsblockerkids.domain.detection.InstagramReelsDetector
+import com.shortsblockerkids.domain.detection.SupportedPlatform
+import com.shortsblockerkids.domain.detection.TikTokShortVideoDetector
+import com.shortsblockerkids.domain.detection.YouTubeShortsDetector
+import com.shortsblockerkids.platform.accessibility.detection.ProductionDetectorRegistry
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -8,7 +17,7 @@ import org.junit.Test
 class MultiPlatformShortVideoDetectorFixtureTest {
     @Test
     fun productionEngineSupportsPrimaryPlatformPackages() {
-        val engine = ShortVideoDetectionEngine.production()
+        val engine = ProductionDetectorRegistry.create()
 
         assertTrue(engine.supportsPackage(YouTubeShortsDetector.YOUTUBE_PACKAGE))
         assertTrue(engine.supportsPackage(TikTokShortVideoDetector.TIKTOK_PACKAGE))
@@ -20,7 +29,7 @@ class MultiPlatformShortVideoDetectorFixtureTest {
 
     @Test
     fun productionEngineReportsProtectedPlatforms() {
-        val engine = ShortVideoDetectionEngine.production()
+        val engine = ProductionDetectorRegistry.create()
 
         assertEquals(
             listOf(
@@ -90,7 +99,7 @@ class MultiPlatformShortVideoDetectorFixtureTest {
     @Test
     fun unknownPackageWithReelsFixtureIsNotBlocked() {
         val fixture = DetectorFixtureLoader.load("instagram_reels_high.json")
-        val engine = ShortVideoDetectionEngine.production()
+        val engine = ProductionDetectorRegistry.create()
 
         val result = engine.detect("com.example.other", fixture.snapshot)
 
@@ -100,7 +109,7 @@ class MultiPlatformShortVideoDetectorFixtureTest {
 
     private fun detectFixture(fileName: String): DetectionResult {
         val fixture = DetectorFixtureLoader.load(fileName)
-        val engine = ShortVideoDetectionEngine.production()
+        val engine = ProductionDetectorRegistry.create()
         return engine.detect(fixture.packageName, fixture.snapshot)
     }
 }
