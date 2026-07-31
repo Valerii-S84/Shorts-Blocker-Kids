@@ -16,8 +16,8 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.shortsblockerkids.MainActivity
 import com.shortsblockerkids.R
 import com.shortsblockerkids.accessibility.AccessibilityServiceStatus
-import com.shortsblockerkids.accessibility.RuntimeProtectionState
 import com.shortsblockerkids.accessibility.ShortsBlockerAccessibilityService
+import com.shortsblockerkids.accessibility.accessibilityDiagnostics
 import com.shortsblockerkids.core.model.ProtectionMode
 import com.shortsblockerkids.core.storage.SettingsRepository
 import kotlinx.coroutines.flow.first
@@ -52,7 +52,7 @@ class ShortVideoBlockerEmulatorE2eTest {
         prepareProtectionState()
         enableAccessibilityService()
         pressHome()
-        RuntimeProtectionState.clearDetectorResult()
+        accessibilityDiagnostics.clearDetectorResult()
     }
 
     @After
@@ -65,7 +65,7 @@ class ShortVideoBlockerEmulatorE2eTest {
         waitUntil(timeoutMs = 5_000L) { !isOverlayVisible() }
         restoreApplicationLocale()
         pressHome()
-        RuntimeProtectionState.clearDetectorResult()
+        accessibilityDiagnostics.clearDetectorResult()
     }
 
     @Test
@@ -279,7 +279,7 @@ class ShortVideoBlockerEmulatorE2eTest {
 
         assertEquals(FixturePlatform.UNSUPPORTED.packageName, currentPackageName())
         assertNoOverlay()
-        assertTrue(RuntimeProtectionState.lastDetectorResultText() in listOf(null, "none"))
+        assertTrue(accessibilityDiagnostics.lastDetectorResultText() in listOf(null, "none"))
     }
 
     @Test
@@ -421,7 +421,7 @@ class ShortVideoBlockerEmulatorE2eTest {
         disableAccessibilityService()
         pressHome()
         waitUntil(timeoutMs = 5_000L) { !isOverlayVisible() }
-        RuntimeProtectionState.clearDetectorResult()
+        accessibilityDiagnostics.clearDetectorResult()
     }
 
     private fun setApplicationLocale(languageTags: String) {
@@ -616,14 +616,14 @@ class ShortVideoBlockerEmulatorE2eTest {
         assertTrue(
             "AccessibilityService did not record ${platform.packageName}",
             waitUntil(timeoutMs = 3_000L) {
-                RuntimeProtectionState
+                accessibilityDiagnostics
                     .lastDetectorResultText()
                     ?.contains("package=${platform.packageName}") == true
             },
         )
         assertTrue(
-            RuntimeProtectionState.lastDetectorResultText().orEmpty(),
-            RuntimeProtectionState
+            accessibilityDiagnostics.lastDetectorResultText().orEmpty(),
+            accessibilityDiagnostics
                 .lastDetectorResultText()
                 .orEmpty()
                 .contains(expectedFragment),

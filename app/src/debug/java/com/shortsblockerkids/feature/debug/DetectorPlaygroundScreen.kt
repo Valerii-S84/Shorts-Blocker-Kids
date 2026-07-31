@@ -32,7 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.shortsblockerkids.BuildConfig
 import com.shortsblockerkids.R
-import com.shortsblockerkids.accessibility.RuntimeProtectionState
+import com.shortsblockerkids.accessibility.accessibilityDiagnostics
 import com.shortsblockerkids.core.billing.BillingUiState
 import com.shortsblockerkids.core.entitlement.LocalEntitlementResolver
 import com.shortsblockerkids.core.storage.AppSettings
@@ -95,13 +95,13 @@ fun DetectorPlaygroundScreen(
             ) {
                 QaRow(
                     stringResource(R.string.debug_detected_package),
-                    RuntimeProtectionState.lastDetectorResultText()
+                    accessibilityDiagnostics.lastDetectorResultText()
                         ?: stringResource(R.string.debug_disabled),
                 )
                 QaRow(stringResource(R.string.debug_protection_mode), settings.selectedMode.name)
                 QaRow(
                     stringResource(R.string.debug_blocking_decision),
-                    RuntimeProtectionState.lastBlockingDecisionText()
+                    accessibilityDiagnostics.lastBlockingDecisionText()
                         ?: stringResource(R.string.debug_disabled),
                 )
                 QaRow(stringResource(R.string.debug_entitlement), entitlementState.name)
@@ -186,14 +186,14 @@ fun DetectorPlaygroundScreen(
                 Text(
                     stringResource(
                         R.string.debug_snapshot_format,
-                        RuntimeProtectionState.lastDebugSnapshotText().toString(),
+                        accessibilityDiagnostics.lastDebugSnapshotText().toString(),
                     ),
                 )
             }
         }
         Button(
             onClick = {
-                RuntimeProtectionState.requestDebugSnapshot()
+                accessibilityDiagnostics.requestDebugSnapshot()
                 selectedResult =
                     selectedResult.copy(
                         overlayMessage = snapshotRequestedMessage,
@@ -205,7 +205,7 @@ fun DetectorPlaygroundScreen(
         }
         Button(
             onClick = {
-                RuntimeProtectionState.requestDebugOverlay()
+                accessibilityDiagnostics.requestDebugOverlay()
                 selectedResult =
                     selectedResult.copy(
                         overlayMessage = overlayRequestedMessage,

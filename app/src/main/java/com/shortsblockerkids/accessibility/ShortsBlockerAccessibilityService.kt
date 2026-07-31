@@ -1,10 +1,15 @@
 package com.shortsblockerkids.accessibility
 
 import android.accessibilityservice.AccessibilityService
+import android.content.Intent
 import android.view.accessibility.AccessibilityEvent
+import com.shortsblockerkids.MainActivity
+import com.shortsblockerkids.application.model.AccessibilityProtectionState
+import com.shortsblockerkids.application.port.ProtectionSettingsPort
 import com.shortsblockerkids.application.protection.ClearExpiredTemporaryAllowUseCase
 import com.shortsblockerkids.core.storage.AppSettings
 import com.shortsblockerkids.core.storage.SettingsRepository
+import com.shortsblockerkids.domain.detection.SupportedPlatform
 import com.shortsblockerkids.infrastructure.time.SystemTimeProvider
 import com.shortsblockerkids.platform.accessibility.detection.ProductionDetectorRegistry
 import kotlinx.coroutines.CoroutineScope
@@ -26,9 +31,10 @@ class ShortsBlockerAccessibilityService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         val settingsRepository = SettingsRepository(this)
+        val timeProvider = SystemTimeProvider()
         val clearExpiredTemporaryAllowUseCase =
             ClearExpiredTemporaryAllowUseCase(
-                timeProvider = SystemTimeProvider(),
+                timeProvider = timeProvider,
                 temporaryAllowStore = settingsRepository,
             )
         latestSettings =
@@ -38,10 +44,36 @@ class ShortsBlockerAccessibilityService : AccessibilityService() {
                     settings = settingsRepository.readSettings().first(),
                 )
             }
+        val protectionSettingsPort =
+            ProtectionSettingsPort { nowMillis ->
+                latestSettings.toAccessibilityProtectionState(nowMillis)
+            }
+        val diagnostics =
+            configureAccessibilityDiagnostics(
+                debugLogger = DebugAccessibilityLogger(),
+                debugSnapshotStore =
+                    DetectorDebugSnapshotStore(
+                        directory = cacheDir.resolve("detector_snapshots"),
+                    ),
+            )
+        val temporaryAllowNavigator =
+            TemporaryAllowNavigator {
+                val intent =
+                    Intent(this, MainActivity::class.java).apply {
+                        addFlags(
+                            Intent.FLAG_ACTIVITY_NEW_TASK or
+                                Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                                Intent.FLAG_ACTIVITY_SINGLE_TOP,
+                        )
+                        putExtra(MainActivity.EXTRA_OPEN_TEMPORARY_ALLOW_PIN, true)
+                    }
+                startActivity(intent)
+            }
         val blockingDecisionController = BlockingDecisionController()
         eventRouter =
             AccessibilityEventRouter(
-                settingsProvider = { latestSettings },
+                protectionSettingsPort = protectionSettingsPort,
+                timeProvider = timeProvider,
                 eventPolicy = AccessibilityEventPolicy(),
                 treeScanner = AccessibilityTreeScanner(),
                 detectionEngine = ProductionDetectorRegistry.create(),
@@ -49,9 +81,10 @@ class ShortsBlockerAccessibilityService : AccessibilityService() {
                 blockOverlayController =
                     BlockOverlayController(
                         service = this,
+                        temporaryAllowNavigator = temporaryAllowNavigator,
                         onOverlayDismissed = blockingDecisionController::onOverlayDismissed,
                         onPinEntryRequested = {
-                            val nowMillis = System.currentTimeMillis()
+                            val nowMillis = timeProvider.currentTimeMillis()
                             blockingDecisionController.onPinEntryRequested(nowMillis)
                             schedulePinEntryRecheck()
                         },
@@ -61,15 +94,11 @@ class ShortsBlockerAccessibilityService : AccessibilityService() {
                             }
                         },
                     ),
-                debugLogger = DebugAccessibilityLogger(),
-                debugSnapshotStore =
-                    DetectorDebugSnapshotStore(
-                        directory = cacheDir.resolve("detector_snapshots"),
-                    ),
+                diagnostics = diagnostics,
             )
         serviceScope.launch {
             settingsRepository.readSettings().collect { settings ->
-                val nowMillis = System.currentTimeMillis()
+                val nowMillis = timeProvider.currentTimeMillis()
                 val wasProtectionActive = latestSettings.canProtect(nowMillis)
                 val activeSettings =
                     activeSettingsFrom(
@@ -110,6 +139,15 @@ class ShortsBlockerAccessibilityService : AccessibilityService() {
         serviceScope.cancel()
         super.onDestroy()
     }
+
+    private fun AppSettings.toAccessibilityProtectionState(nowMillis: Long): AccessibilityProtectionState =
+        AccessibilityProtectionState(
+            isProtectionActive = canProtect(nowMillis),
+            enabledPlatformIds =
+                SupportedPlatform.PROTECTED_PLATFORMS
+                    .filter { platform -> isPlatformEnabled(platform.id) }
+                    .mapTo(mutableSetOf()) { platform -> platform.id },
+        )
 
     private suspend fun activeSettingsFrom(
         clearExpiredTemporaryAllowUseCase: ClearExpiredTemporaryAllowUseCase,
