@@ -2,11 +2,28 @@ package com.shortsblockerkids.accessibility
 
 import android.view.accessibility.AccessibilityEvent
 import com.shortsblockerkids.BuildConfig
+import com.shortsblockerkids.application.port.AccessibilityDiagnosticsPort
 import com.shortsblockerkids.domain.detection.AccessibilityTreeSnapshot
 import com.shortsblockerkids.domain.detection.Confidence
 import com.shortsblockerkids.domain.detection.DetectionResult
 
-object RuntimeProtectionState {
+val accessibilityDiagnostics: AccessibilityDiagnosticsPort = RuntimeProtectionState
+
+internal fun configureAccessibilityDiagnostics(
+    debugLogger: DebugAccessibilityLogger,
+    debugSnapshotStore: DetectorDebugSnapshotStore,
+): AccessibilityDiagnosticsPort =
+    RuntimeProtectionState.apply {
+        configure(
+            debugLogger = debugLogger,
+            debugSnapshotStore = debugSnapshotStore,
+        )
+    }
+
+private object RuntimeProtectionState : AccessibilityDiagnosticsPort {
+    private lateinit var debugLogger: DebugAccessibilityLogger
+    private lateinit var debugSnapshotStore: DetectorDebugSnapshotStore
+
     @Volatile
     private var lastDetectorResult: LastDetectorResult? = null
 
@@ -20,53 +37,78 @@ object RuntimeProtectionState {
     private var lastDebugSnapshot: DetectorDebugSnapshot? = null
 
     @Volatile
-    private var lastBlockingDecision: BlockingDecision? = null
+    private var lastBlockingDecision: String? = null
 
-    fun recordDetectorResult(
+    fun configure(
+        debugLogger: DebugAccessibilityLogger,
+        debugSnapshotStore: DetectorDebugSnapshotStore,
+    ) {
+        this.debugLogger = debugLogger
+        this.debugSnapshotStore = debugSnapshotStore
+    }
+
+    override fun logIgnoredEvent(
+        packageName: String?,
+        eventType: Int,
+        reason: String,
+    ) {
+        debugLogger.logIgnoredEvent(
+            packageName = packageName,
+            eventType = eventType,
+            reason = reason,
+        )
+    }
+
+    override fun recordDetection(
         packageName: String,
         eventType: Int,
         result: DetectionResult,
         snapshot: AccessibilityTreeSnapshot,
-        nowMillis: Long = System.currentTimeMillis(),
+        nowMillis: Long,
     ) {
-        if (!BuildConfig.ACCESSIBILITY_DEBUG_TOOLS_ENABLED) {
-            return
+        if (BuildConfig.ACCESSIBILITY_DEBUG_TOOLS_ENABLED) {
+            lastDetectorResult =
+                LastDetectorResult(
+                    packageName = packageName,
+                    eventType = AccessibilityEvent.eventTypeToString(eventType),
+                    confidence = result.confidence,
+                    reasons = result.reasons,
+                    matchedSignals = result.matchedSignals,
+                    snapshotSummary = snapshot.toDebugSummary(),
+                    recordedAtMillis = nowMillis,
+                )
         }
 
-        lastDetectorResult =
-            LastDetectorResult(
-                packageName = packageName,
-                eventType = AccessibilityEvent.eventTypeToString(eventType),
-                confidence = result.confidence,
-                reasons = result.reasons,
-                matchedSignals = result.matchedSignals,
-                snapshotSummary = snapshot.toDebugSummary(),
-                recordedAtMillis = nowMillis,
-            )
+        debugLogger.logDetection(
+            packageName = packageName,
+            eventType = eventType,
+            result = result,
+            snapshot = snapshot,
+        )
     }
 
-    fun clearDetectorResult() {
+    override fun clearDetectorResult() {
         if (BuildConfig.ACCESSIBILITY_DEBUG_TOOLS_ENABLED) {
             lastDetectorResult = null
             lastBlockingDecision = null
         }
     }
 
-    fun recordBlockingDecision(decision: BlockingDecision) {
+    override fun recordBlockingDecision(decision: String) {
         if (BuildConfig.ACCESSIBILITY_DEBUG_TOOLS_ENABLED) {
             lastBlockingDecision = decision
         }
     }
 
-    fun lastBlockingDecisionText(): String? {
+    override fun lastBlockingDecisionText(): String? {
         if (!BuildConfig.ACCESSIBILITY_DEBUG_TOOLS_ENABLED) {
             return null
         }
 
-        return lastBlockingDecision?.name ?: "none"
+        return lastBlockingDecision ?: "none"
     }
 
-    fun lastDetectorResultText(): String? {
+    override fun lastDetectorResultText(): String? {
         if (!BuildConfig.ACCESSIBILITY_DEBUG_TOOLS_ENABLED) {
             return null
         }
@@ -78,7 +120,7 @@ object RuntimeProtectionState {
             "snapshot=${result.snapshotSummary} at=${result.recordedAtMillis}"
     }
 
-    fun lastDebugSnapshotText(): String? {
+    override fun lastDebugSnapshotText(): String? {
         if (!BuildConfig.ACCESSIBILITY_DEBUG_TOOLS_ENABLED) {
             return null
         }
@@ -87,13 +129,13 @@ object RuntimeProtectionState {
         return "saved=${snapshot.path} summary=${snapshot.summary}"
     }
 
-    fun requestDebugOverlay() {
+    override fun requestDebugOverlay() {
         if (BuildConfig.ACCESSIBILITY_DEBUG_TOOLS_ENABLED) {
             debugOverlayRequested = true
         }
     }
 
-    fun consumeDebugOverlayRequest(): Boolean {
+    override fun consumeDebugOverlayRequest(): Boolean {
         if (!BuildConfig.ACCESSIBILITY_DEBUG_TOOLS_ENABLED || !debugOverlayRequested) {
             return false
         }
@@ -102,13 +144,34 @@ object RuntimeProtectionState {
         return true
     }
 
-    fun requestDebugSnapshot() {
+    override fun requestDebugSnapshot() {
         if (BuildConfig.ACCESSIBILITY_DEBUG_TOOLS_ENABLED) {
             debugSnapshotRequested = true
         }
     }
 
-    fun consumeDebugSnapshotRequest(): Boolean {
+    override fun isDebugSnapshotPending(): Boolean = BuildConfig.ACCESSIBILITY_DEBUG_TOOLS_ENABLED && debugSnapshotRequested
+
+    override fun captureDebugSnapshotIfRequested(
+        packageName: String,
+        eventType: String,
+        snapshot: AccessibilityTreeSnapshot,
+        nowMillis: Long,
+    ) {
+        if (!consumeDebugSnapshotRequest()) {
+            return
+        }
+
+        debugSnapshotStore
+            .save(
+                packageName = packageName,
+                eventType = eventType,
+                snapshot = snapshot,
+                nowMillis = nowMillis,
+            )?.let(::recordDebugSnapshot)
+    }
+
+    private fun consumeDebugSnapshotRequest(): Boolean {
         if (!BuildConfig.ACCESSIBILITY_DEBUG_TOOLS_ENABLED || !debugSnapshotRequested) {
             return false
         }
@@ -117,9 +180,7 @@ object RuntimeProtectionState {
         return true
     }
 
-    fun isDebugSnapshotPending(): Boolean = BuildConfig.ACCESSIBILITY_DEBUG_TOOLS_ENABLED && debugSnapshotRequested
-
-    fun recordDebugSnapshot(snapshot: DetectorDebugSnapshot) {
+    private fun recordDebugSnapshot(snapshot: DetectorDebugSnapshot) {
         if (BuildConfig.ACCESSIBILITY_DEBUG_TOOLS_ENABLED) {
             lastDebugSnapshot = snapshot
         }

@@ -1,7 +1,6 @@
 package com.shortsblockerkids.accessibility
 
 import android.accessibilityservice.AccessibilityService
-import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.PixelFormat
@@ -17,12 +16,12 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
-import com.shortsblockerkids.MainActivity
 import com.shortsblockerkids.R
 import kotlin.math.roundToInt
 
 class BlockOverlayController(
     private val service: AccessibilityService,
+    private val temporaryAllowNavigator: TemporaryAllowNavigator,
     private val onOverlayDismissed: () -> Unit = {},
     private val onPinEntryRequested: () -> Unit = {},
     private val onShortsCloseCompleted: () -> Unit = {},
@@ -182,7 +181,7 @@ class BlockOverlayController(
                 )
             setOnClickListener {
                 onPinEntryRequested()
-                openAppForPinEntry()
+                temporaryAllowNavigator.openTemporaryAllowPin()
                 dismissOverlay()
             }
         }
@@ -202,19 +201,6 @@ class BlockOverlayController(
             background = roundedBackground(color = backgroundColor)
             setPadding(16.dp(), 10.dp(), 16.dp(), 10.dp())
         }
-
-    private fun openAppForPinEntry() {
-        val intent =
-            Intent(service, MainActivity::class.java).apply {
-                addFlags(
-                    Intent.FLAG_ACTIVITY_NEW_TASK or
-                        Intent.FLAG_ACTIVITY_CLEAR_TOP or
-                        Intent.FLAG_ACTIVITY_SINGLE_TOP,
-                )
-                putExtra(MainActivity.EXTRA_OPEN_TEMPORARY_ALLOW_PIN, true)
-            }
-        service.startActivity(intent)
-    }
 
     private fun exitToPhoneHome(button: Button) {
         if (!phoneHomeExitController.exitToPhoneHome()) {

@@ -3,34 +3,36 @@ package com.shortsblockerkids.accessibility
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityEvent.eventTypeToString
 import android.view.accessibility.AccessibilityNodeInfo
-import com.shortsblockerkids.core.storage.AppSettings
+import com.shortsblockerkids.application.port.AccessibilityDiagnosticsPort
+import com.shortsblockerkids.application.port.ProtectionSettingsPort
+import com.shortsblockerkids.application.port.TimeProvider
 import com.shortsblockerkids.domain.detection.Confidence
 import com.shortsblockerkids.domain.detection.DetectionResult
 import com.shortsblockerkids.domain.detection.ShortVideoDetectionEngine
 
 class AccessibilityEventRouter(
-    private val settingsProvider: () -> AppSettings,
+    private val protectionSettingsPort: ProtectionSettingsPort,
+    private val timeProvider: TimeProvider,
     private val eventPolicy: AccessibilityEventPolicy,
     private val treeScanner: AccessibilityTreeScanner,
     private val detectionEngine: ShortVideoDetectionEngine,
     private val blockingDecisionController: BlockingDecisionController,
     private val blockOverlayController: BlockOverlayController,
-    private val debugLogger: DebugAccessibilityLogger,
-    private val debugSnapshotStore: DetectorDebugSnapshotStore,
+    private val diagnostics: AccessibilityDiagnosticsPort,
 ) {
     fun route(
         event: AccessibilityEvent,
         rootProvider: () -> AccessibilityNodeInfo?,
     ) {
         val packageName = event.packageName?.toString()
-        val nowMillis = System.currentTimeMillis()
+        val nowMillis = timeProvider.currentTimeMillis()
         val platform = detectionEngine.platformForPackage(packageName)
         if (platform == null) {
             if (
                 blockOverlayController.isOverlayVisible ||
                 blockingDecisionController.shouldIgnoreUnsupportedPackageEvent(nowMillis)
             ) {
-                debugLogger.logIgnoredEvent(
+                diagnostics.logIgnoredEvent(
                     packageName = packageName,
                     eventType = event.eventType,
                     reason = "blocking ui active",
@@ -41,9 +43,9 @@ class AccessibilityEventRouter(
             return
         }
         val supportedPackageName = packageName ?: return
-        val settings = settingsProvider()
-        if (!settings.isPlatformEnabled(platform.id)) {
-            debugLogger.logIgnoredEvent(
+        val protectionState = protectionSettingsPort.protectionState(nowMillis)
+        if (!protectionState.isPlatformEnabled(platform.id)) {
+            diagnostics.logIgnoredEvent(
                 packageName = packageName,
                 eventType = event.eventType,
                 reason = "protected app disabled",
@@ -53,7 +55,7 @@ class AccessibilityEventRouter(
         }
 
         if (blockOverlayController.isOverlayVisible) {
-            debugLogger.logIgnoredEvent(
+            diagnostics.logIgnoredEvent(
                 packageName = packageName,
                 eventType = event.eventType,
                 reason = "blocking overlay visible",
@@ -61,7 +63,7 @@ class AccessibilityEventRouter(
             return
         }
 
-        if (RuntimeProtectionState.consumeDebugOverlayRequest()) {
+        if (diagnostics.consumeDebugOverlayRequest()) {
             val decision =
                 blockingDecisionController.evaluate(
                     isInSupportedApp = true,
@@ -79,8 +81,8 @@ class AccessibilityEventRouter(
             return
         }
 
-        val isProtectionActive = settings.canProtect(nowMillis)
-        val isDebugSnapshotPending = RuntimeProtectionState.isDebugSnapshotPending()
+        val isProtectionActive = protectionState.isProtectionActive
+        val isDebugSnapshotPending = diagnostics.isDebugSnapshotPending()
         if (!isProtectionActive && !isDebugSnapshotPending) {
             val decision =
                 blockingDecisionController.evaluate(
@@ -91,7 +93,7 @@ class AccessibilityEventRouter(
                 )
             handleDecision(decision)
             eventPolicy.reset()
-            RuntimeProtectionState.clearDetectorResult()
+            diagnostics.clearDetectorResult()
             return
         }
 
@@ -101,28 +103,19 @@ class AccessibilityEventRouter(
 
         val root = rootProvider() ?: return
         val snapshot = treeScanner.scan(root)
-        if (RuntimeProtectionState.consumeDebugSnapshotRequest()) {
-            debugSnapshotStore
-                .save(
-                    packageName = supportedPackageName,
-                    eventType = eventTypeToString(event.eventType),
-                    snapshot = snapshot,
-                    nowMillis = nowMillis,
-                )?.let(RuntimeProtectionState::recordDebugSnapshot)
-        }
+        diagnostics.captureDebugSnapshotIfRequested(
+            packageName = supportedPackageName,
+            eventType = eventTypeToString(event.eventType),
+            snapshot = snapshot,
+            nowMillis = nowMillis,
+        )
         val result = detectionEngine.detect(supportedPackageName, snapshot)
-        RuntimeProtectionState.recordDetectorResult(
+        diagnostics.recordDetection(
             packageName = supportedPackageName,
             eventType = event.eventType,
             result = result,
             snapshot = snapshot,
             nowMillis = nowMillis,
-        )
-        debugLogger.logDetection(
-            packageName = packageName,
-            eventType = event.eventType,
-            result = result,
-            snapshot = snapshot,
         )
 
         val decision =
@@ -143,11 +136,11 @@ class AccessibilityEventRouter(
         blockOverlayController.dismissOverlay()
         blockingDecisionController.reset()
         eventPolicy.reset()
-        RuntimeProtectionState.clearDetectorResult()
+        diagnostics.clearDetectorResult()
     }
 
     private fun handleDecision(decision: BlockingDecision) {
-        RuntimeProtectionState.recordBlockingDecision(decision)
+        diagnostics.recordBlockingDecision(decision.name)
         when (decision) {
             BlockingDecision.ShowOverlay -> {
                 if (!blockOverlayController.showBlockedOverlay()) {
