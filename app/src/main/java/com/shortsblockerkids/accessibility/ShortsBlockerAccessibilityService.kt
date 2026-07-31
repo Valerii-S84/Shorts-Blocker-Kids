@@ -50,7 +50,8 @@ class ShortsBlockerAccessibilityService : AccessibilityService() {
                         service = this,
                         onOverlayDismissed = blockingDecisionController::onOverlayDismissed,
                         onPinEntryRequested = {
-                            blockingDecisionController.onPinEntryRequested()
+                            val nowMillis = System.currentTimeMillis()
+                            blockingDecisionController.onPinEntryRequested(nowMillis)
                             schedulePinEntryRecheck()
                         },
                         onShortsCloseCompleted = {

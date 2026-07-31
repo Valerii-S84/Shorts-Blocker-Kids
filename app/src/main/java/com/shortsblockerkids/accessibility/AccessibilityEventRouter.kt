@@ -70,7 +70,7 @@ class AccessibilityEventRouter(
                             reasons = listOf("debug overlay request"),
                             matchedSignals = listOf("debug_overlay_request"),
                         ),
-                    nowMillis = System.currentTimeMillis(),
+                    nowMillis = nowMillis,
                 )
             handleDecision(decision)
             return

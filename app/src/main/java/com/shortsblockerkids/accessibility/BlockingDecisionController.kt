@@ -51,7 +51,7 @@ class BlockingDecisionController(
         overlayVisible = false
     }
 
-    fun onPinEntryRequested(nowMillis: Long = System.currentTimeMillis()) {
+    fun onPinEntryRequested(nowMillis: Long) {
         pinEntryRequestedAtMillis = nowMillis
     }
 
