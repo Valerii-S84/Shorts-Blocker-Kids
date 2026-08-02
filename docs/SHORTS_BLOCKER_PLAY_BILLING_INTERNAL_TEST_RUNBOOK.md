@@ -54,7 +54,7 @@ Privacy Policy URL: https://shortsblockerkids.de/privacy
 ```
 
 The product ID in Play Console must match
-`BillingAvailability.MONTHLY_SUBSCRIPTION_PRODUCT_ID`. If Play Console requires
+`PlayBillingConfig.MONTHLY_SUBSCRIPTION_PRODUCT_ID`. If Play Console requires
 a different product ID, update the app constant, tests, policy docs, and this
 runbook before uploading another AAB.
 
@@ -85,7 +85,8 @@ treating product-loading failures as app bugs.
 
 ## Device Setup Checklist
 
-1. Use a real Android device with current Google Play installed.
+1. Use a Play-enabled Android device (physical device or Google Play AVD) with
+   the current Google Play app installed.
 2. Sign in with the license tester account on the device.
 3. Install Shorts Blocker Kids from the internal testing track, not by local APK
    sideload, for Billing verification.

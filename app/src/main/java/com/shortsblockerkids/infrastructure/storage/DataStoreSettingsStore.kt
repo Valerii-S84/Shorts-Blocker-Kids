@@ -11,7 +11,7 @@ import com.shortsblockerkids.application.port.PinStateStore
 import com.shortsblockerkids.application.port.ProtectionActivationStore
 import com.shortsblockerkids.application.port.SettingsStatePort
 import com.shortsblockerkids.application.port.TemporaryAllowStore
-import com.shortsblockerkids.core.billing.BillingEntitlementSnapshot
+import com.shortsblockerkids.domain.entitlement.BillingEntitlementSnapshot
 import com.shortsblockerkids.domain.entitlement.FreeTestPolicy
 import com.shortsblockerkids.domain.protection.ProtectionConfiguration
 import com.shortsblockerkids.domain.protection.ProtectionMode

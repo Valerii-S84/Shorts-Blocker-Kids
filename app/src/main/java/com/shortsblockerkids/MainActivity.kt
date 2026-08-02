@@ -20,15 +20,16 @@ import com.shortsblockerkids.application.protection.ClearExpiredTemporaryAllowUs
 import com.shortsblockerkids.application.protection.RecordSuccessfulProtectionActivationUseCase
 import com.shortsblockerkids.application.protection.SetTemporaryAllowUseCase
 import com.shortsblockerkids.composition.dashboard.DashboardUiStateAssembler
-import com.shortsblockerkids.core.billing.BillingAvailability
-import com.shortsblockerkids.core.billing.HttpBillingBackendClient
-import com.shortsblockerkids.core.billing.PlayBillingRepository
+import com.shortsblockerkids.infrastructure.billing.GooglePlayBillingGateway
+import com.shortsblockerkids.infrastructure.billing.HttpBillingVerificationAdapter
+import com.shortsblockerkids.infrastructure.billing.PlayBillingConfig
 import com.shortsblockerkids.infrastructure.storage.DataStoreSettingsStore
 import com.shortsblockerkids.infrastructure.storage.SettingsPinAccessAdapter
 import com.shortsblockerkids.infrastructure.time.SystemTimeProvider
 import com.shortsblockerkids.platform.accessibility.status.AccessibilityServiceStatus
 import com.shortsblockerkids.platform.tamper.TamperProtectionStatus
 import com.shortsblockerkids.presentation.app.ShortsBlockerKidsApp
+import com.shortsblockerkids.presentation.billing.BillingCoordinator
 import com.shortsblockerkids.ui.theme.ShortsBlockerKidsTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -40,7 +41,7 @@ import kotlinx.coroutines.runBlocking
 
 class MainActivity : ComponentActivity() {
     private lateinit var settingsStore: DataStoreSettingsStore
-    private lateinit var billingRepository: PlayBillingRepository
+    private lateinit var billingCoordinator: BillingCoordinator
     private val activityScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val settingsState = mutableStateOf(AppSettingsSnapshot())
     private val accessibilityEnabledState = mutableStateOf(false)
@@ -72,29 +73,31 @@ class MainActivity : ComponentActivity() {
             )
         val syncBillingEntitlementUseCase =
             SyncBillingEntitlementUseCase(
-                billingBackendClient =
-                    HttpBillingBackendClient.fromBaseUrl(BuildConfig.BILLING_BACKEND_BASE_URL),
+                billingVerificationPort =
+                    HttpBillingVerificationAdapter.fromBaseUrl(
+                        BuildConfig.BILLING_BACKEND_BASE_URL,
+                    ),
                 timeProvider = timeProvider,
                 configuration =
                     BillingSyncConfiguration(
                         installId =
                             runBlocking { settingsStore.getOrCreateBillingInstallationId() },
                         packageName = applicationContext.packageName,
-                        productId = BillingAvailability.MONTHLY_SUBSCRIPTION_PRODUCT_ID,
+                        productId = PlayBillingConfig.MONTHLY_SUBSCRIPTION_PRODUCT_ID,
                         appVersion = BuildConfig.VERSION_NAME,
                         clientOnlyModeRequested = BuildConfig.BILLING_CLIENT_ONLY_TEST_MODE,
                         internalTestingBuild = BuildConfig.DEBUG,
                     ),
             )
-        billingRepository =
-            PlayBillingRepository(
-                context = this,
+        billingCoordinator =
+            BillingCoordinator(
+                billingGateway = GooglePlayBillingGateway(this),
+                syncBillingEntitlementUseCase = syncBillingEntitlementUseCase,
                 onEntitlementChanged = { snapshot ->
                     activityScope.launch {
                         settingsStore.updateBillingEntitlement(snapshot)
                     }
                 },
-                syncBillingEntitlementUseCase = syncBillingEntitlementUseCase,
                 billingScope = activityScope,
             )
         temporaryAllowRequestState.value = intent.isTemporaryAllowRequest()
@@ -105,7 +108,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             ShortsBlockerKidsTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    val billingUiState by billingRepository.uiState.collectAsState()
+                    val billingUiState by billingCoordinator.uiState.collectAsState()
                     ShortsBlockerKidsApp(
                         dashboardUiStateProvider = {
                             dashboardUiStateAssembler.create(
@@ -133,13 +136,13 @@ class MainActivity : ComponentActivity() {
                             settingsStore.acceptAccessibilityDisclosure()
                         },
                         onSubscribe = {
-                            billingRepository.launchPurchase(this@MainActivity)
+                            billingCoordinator.launchPurchase()
                         },
                         onRestorePurchases = {
-                            billingRepository.refreshPurchases()
+                            billingCoordinator.refreshPurchases()
                         },
                         onManageSubscription = {
-                            billingRepository.openManageSubscription(this@MainActivity)
+                            billingCoordinator.openManageSubscription()
                         },
                         onOpenAccessibilitySettings = ::openAccessibilitySettings,
                         onOpenTamperProtectionSettings = ::openTamperProtectionSettings,
@@ -168,14 +171,14 @@ class MainActivity : ComponentActivity() {
         if (::settingsStore.isInitialized) {
             refreshState()
         }
-        if (::billingRepository.isInitialized) {
-            billingRepository.start()
+        if (::billingCoordinator.isInitialized) {
+            billingCoordinator.start()
         }
     }
 
     override fun onDestroy() {
-        if (::billingRepository.isInitialized) {
-            billingRepository.stop()
+        if (::billingCoordinator.isInitialized) {
+            billingCoordinator.stop()
         }
         activityScope.cancel()
         super.onDestroy()

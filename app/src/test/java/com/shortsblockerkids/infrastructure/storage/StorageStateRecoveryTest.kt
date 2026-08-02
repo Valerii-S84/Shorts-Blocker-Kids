@@ -11,7 +11,7 @@ import com.shortsblockerkids.application.pin.PinVerificationResult
 import com.shortsblockerkids.application.port.TimeProvider
 import com.shortsblockerkids.application.protection.canProtect
 import com.shortsblockerkids.application.protection.hasBillingEntitlement
-import com.shortsblockerkids.core.billing.BillingEntitlementState
+import com.shortsblockerkids.domain.entitlement.BillingEntitlementState
 import com.shortsblockerkids.domain.protection.ProtectionConfiguration
 import com.shortsblockerkids.domain.protection.ProtectionMode
 import kotlinx.coroutines.CoroutineScope

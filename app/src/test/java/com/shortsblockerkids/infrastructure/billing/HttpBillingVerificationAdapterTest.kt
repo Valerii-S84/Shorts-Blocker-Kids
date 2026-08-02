@@ -1,5 +1,8 @@
-package com.shortsblockerkids.core.billing
+package com.shortsblockerkids.infrastructure.billing
 
+import com.shortsblockerkids.application.billing.BillingVerificationRequest
+import com.shortsblockerkids.application.billing.DisabledBillingVerificationPort
+import com.shortsblockerkids.domain.entitlement.BillingEntitlementState
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.contentOrNull
@@ -18,13 +21,13 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.concurrent.thread
 
-class BillingBackendClientTest {
+class HttpBillingVerificationAdapterTest {
     @Test
     fun blankBackendUrlKeepsClientOnlyBillingPathDisabled() {
         runBlocking {
-            val client = HttpBillingBackendClient.fromBaseUrl("")
+            val client = HttpBillingVerificationAdapter.fromBaseUrl("")
 
-            assertSame(DisabledBillingBackendClient, client)
+            assertSame(DisabledBillingVerificationPort, client)
             assertFalse(client.isConfigured)
             assertTrue(client.refreshEntitlement("install-id") == null)
         }
@@ -33,8 +36,8 @@ class BillingBackendClientTest {
     @Test(expected = UnsupportedOperationException::class)
     fun disabledBackendDoesNotVerifyPurchases() {
         runBlocking {
-            DisabledBillingBackendClient.verifyPurchase(
-                BillingBackendPurchaseRequest(
+            DisabledBillingVerificationPort.verifyPurchase(
+                BillingVerificationRequest(
                     installId = "install-id",
                     packageName = "com.shortsblockerkids",
                     productId = "shorts_blocker_kids_monthly",
@@ -47,17 +50,17 @@ class BillingBackendClientTest {
 
     @Test
     fun whitespaceBackendUrlKeepsClientOnlyBillingPathDisabled() {
-        val client = HttpBillingBackendClient.fromBaseUrl("   ")
+        val client = HttpBillingVerificationAdapter.fromBaseUrl("   ")
 
-        assertSame(DisabledBillingBackendClient, client)
+        assertSame(DisabledBillingVerificationPort, client)
         assertFalse(client.isConfigured)
     }
 
     @Test
     fun configuredBackendUrlEnablesHttpBillingClient() {
-        val client = HttpBillingBackendClient.fromBaseUrl("http://127.0.0.1:8080")
+        val client = HttpBillingVerificationAdapter.fromBaseUrl("http://127.0.0.1:8080")
 
-        assertTrue(client is HttpBillingBackendClient)
+        assertTrue(client is HttpBillingVerificationAdapter)
         assertTrue(client.isConfigured)
     }
 
@@ -75,14 +78,14 @@ class BillingBackendClientTest {
                     }
                     """.trimIndent(),
             ).use { server ->
-                val client = HttpBillingBackendClient.fromBaseUrl(server.baseUrl)
+                val client = HttpBillingVerificationAdapter.fromBaseUrl(server.baseUrl)
 
                 val snapshot =
                     client.verifyPurchase(
-                        BillingBackendPurchaseRequest(
+                        BillingVerificationRequest(
                             installId = "install-id",
                             packageName = "com.shortsblockerkids",
-                            productId = BillingAvailability.MONTHLY_SUBSCRIPTION_PRODUCT_ID,
+                            productId = PlayBillingConfig.MONTHLY_SUBSCRIPTION_PRODUCT_ID,
                             purchaseToken = "token",
                             appVersion = "0.1.0",
                         ),
@@ -96,7 +99,7 @@ class BillingBackendClientTest {
                 assertEquals("install-id", body["install_id"]?.jsonPrimitive?.contentOrNull)
                 assertEquals("com.shortsblockerkids", body["package_name"]?.jsonPrimitive?.contentOrNull)
                 assertEquals(
-                    BillingAvailability.MONTHLY_SUBSCRIPTION_PRODUCT_ID,
+                    PlayBillingConfig.MONTHLY_SUBSCRIPTION_PRODUCT_ID,
                     body["product_id"]?.jsonPrimitive?.contentOrNull,
                 )
                 assertEquals("token", body["purchase_token"]?.jsonPrimitive?.contentOrNull)
@@ -115,7 +118,7 @@ class BillingBackendClientTest {
                 statusCode = 200,
                 responseBody = """{"state":"IN_GRACE"}""",
             ).use { server ->
-                val client = HttpBillingBackendClient("${server.baseUrl}/", nowMillis = { 42L })
+                val client = HttpBillingVerificationAdapter("${server.baseUrl}/", nowMillis = { 42L })
 
                 val snapshot = client.refreshEntitlement("install id/child")
                 val request = server.awaitRequest()
@@ -144,7 +147,7 @@ class BillingBackendClientTest {
                     }
                     """.trimIndent(),
             ).use { server ->
-                val client = HttpBillingBackendClient(server.baseUrl, nowMillis = { 900L })
+                val client = HttpBillingVerificationAdapter(server.baseUrl, nowMillis = { 900L })
 
                 val snapshot = client.refreshEntitlement("install-id")
 
@@ -168,7 +171,7 @@ class BillingBackendClientTest {
                     }
                     """.trimIndent(),
             ).use { server ->
-                val client = HttpBillingBackendClient(server.baseUrl, nowMillis = { 901L })
+                val client = HttpBillingVerificationAdapter(server.baseUrl, nowMillis = { 901L })
 
                 val snapshot = client.refreshEntitlement("install-id")
 
@@ -186,7 +189,7 @@ class BillingBackendClientTest {
                 statusCode = 409,
                 responseBody = """{"error":"token details stay server-side"}""",
             ).use { server ->
-                val client = HttpBillingBackendClient(server.baseUrl)
+                val client = HttpBillingVerificationAdapter(server.baseUrl)
 
                 val error =
                     runCatching { client.refreshEntitlement("install-id") }
@@ -205,7 +208,7 @@ class BillingBackendClientTest {
                 ServerSocket(0, 1, InetAddress.getByName("127.0.0.1")).use {
                     it.localPort
                 }
-            val client = HttpBillingBackendClient("http://127.0.0.1:$unavailablePort")
+            val client = HttpBillingVerificationAdapter("http://127.0.0.1:$unavailablePort")
 
             val error =
                 runCatching { client.refreshEntitlement("install-id") }
@@ -218,15 +221,15 @@ class BillingBackendClientTest {
     @Test
     fun directBlankHttpClientRejectsNetworkOperationsConservatively() {
         runBlocking {
-            val client = HttpBillingBackendClient(" ")
+            val client = HttpBillingVerificationAdapter(" ")
 
             val verifyError =
                 runCatching {
                     client.verifyPurchase(
-                        BillingBackendPurchaseRequest(
+                        BillingVerificationRequest(
                             installId = "install-id",
                             packageName = "com.shortsblockerkids",
-                            productId = BillingAvailability.MONTHLY_SUBSCRIPTION_PRODUCT_ID,
+                            productId = PlayBillingConfig.MONTHLY_SUBSCRIPTION_PRODUCT_ID,
                             purchaseToken = "token",
                             appVersion = "0.1.0",
                         ),

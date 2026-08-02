@@ -92,12 +92,18 @@ class EntitlementBoundaryTest {
                 "$SOURCE_ROOT/core/entitlement/FreeTestPolicy.kt",
                 "$SOURCE_ROOT/core/entitlement/LocalEntitlementResolver.kt",
                 "$SOURCE_ROOT/core/model/EntitlementState.kt",
+                "$SOURCE_ROOT/core/billing/BillingEntitlementState.kt",
+                "$SOURCE_ROOT/core/billing/BillingEntitlementSnapshot.kt",
+                "$SOURCE_ROOT/core/billing/BillingVerificationPolicy.kt",
             )
         val NEW_TYPE_PATHS =
             listOf(
                 APP_SETTINGS_SNAPSHOT,
                 LOCAL_ENTITLEMENT_RESOLVER,
                 "$SOURCE_ROOT/domain/entitlement/FreeTestPolicy.kt",
+                "$SOURCE_ROOT/domain/entitlement/BillingEntitlementState.kt",
+                "$SOURCE_ROOT/domain/entitlement/BillingEntitlementSnapshot.kt",
+                "$SOURCE_ROOT/domain/entitlement/BillingVerificationPolicy.kt",
                 "$SOURCE_ROOT/application/model/EntitlementState.kt",
             )
     }

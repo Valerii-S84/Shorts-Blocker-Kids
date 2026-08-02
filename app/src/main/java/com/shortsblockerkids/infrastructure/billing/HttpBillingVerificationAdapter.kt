@@ -1,5 +1,10 @@
-package com.shortsblockerkids.core.billing
+package com.shortsblockerkids.infrastructure.billing
 
+import com.shortsblockerkids.application.billing.BillingVerificationPort
+import com.shortsblockerkids.application.billing.BillingVerificationRequest
+import com.shortsblockerkids.application.billing.DisabledBillingVerificationPort
+import com.shortsblockerkids.domain.entitlement.BillingEntitlementSnapshot
+import com.shortsblockerkids.domain.entitlement.BillingEntitlementState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -13,13 +18,13 @@ import java.net.HttpURLConnection
 import java.net.URI
 import java.net.URLEncoder
 
-class HttpBillingBackendClient(
+class HttpBillingVerificationAdapter(
     private val baseUrl: String,
     private val nowMillis: () -> Long = System::currentTimeMillis,
-) : BillingBackendClient {
+) : BillingVerificationPort {
     override val isConfigured: Boolean = baseUrl.isNotBlank()
 
-    override suspend fun verifyPurchase(request: BillingBackendPurchaseRequest): BillingEntitlementSnapshot =
+    override suspend fun verifyPurchase(request: BillingVerificationRequest): BillingEntitlementSnapshot =
         withContext(Dispatchers.IO) {
             if (!isConfigured) {
                 throw IllegalStateException("Billing backend is not configured.")
@@ -115,11 +120,11 @@ class HttpBillingBackendClient(
     companion object {
         private val json = Json { ignoreUnknownKeys = true }
 
-        fun fromBaseUrl(baseUrl: String): BillingBackendClient =
+        fun fromBaseUrl(baseUrl: String): BillingVerificationPort =
             if (baseUrl.isBlank()) {
-                DisabledBillingBackendClient
+                DisabledBillingVerificationPort
             } else {
-                HttpBillingBackendClient(baseUrl)
+                HttpBillingVerificationAdapter(baseUrl)
             }
     }
 }

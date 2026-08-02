@@ -1,4 +1,4 @@
-package com.shortsblockerkids.core.billing
+package com.shortsblockerkids.presentation.billing
 
 data class BillingUiState(
     val isReady: Boolean = false,

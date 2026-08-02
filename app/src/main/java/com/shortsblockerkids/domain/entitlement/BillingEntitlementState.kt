@@ -1,4 +1,4 @@
-package com.shortsblockerkids.core.billing
+package com.shortsblockerkids.domain.entitlement
 
 enum class BillingEntitlementState {
     UNKNOWN,
