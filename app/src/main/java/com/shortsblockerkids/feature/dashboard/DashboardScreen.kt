@@ -29,54 +29,44 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.shortsblockerkids.R
-import com.shortsblockerkids.accessibility.PlatformSupportMatrix
-import com.shortsblockerkids.accessibility.PlatformSupportStatus
-import com.shortsblockerkids.application.model.AppSettingsSnapshot
-import com.shortsblockerkids.application.model.EntitlementState
-import com.shortsblockerkids.application.protection.LocalEntitlementResolver
-import com.shortsblockerkids.application.protection.freeTestDaysRemaining
-import com.shortsblockerkids.application.protection.freeTestState
-import com.shortsblockerkids.application.protection.hasBillingEntitlement
-import com.shortsblockerkids.application.protection.isTemporarilyAllowed
-import com.shortsblockerkids.application.protection.toLocalEntitlementInput
 import com.shortsblockerkids.core.billing.BillingUiState
-import com.shortsblockerkids.domain.protection.ProtectionConfiguration
 import com.shortsblockerkids.feature.billing.billingMessageText
 import com.shortsblockerkids.feature.billing.billingSubscriptionStatusText
 import com.shortsblockerkids.feature.billing.billingSubscriptionTermsText
+import com.shortsblockerkids.presentation.dashboard.DashboardUiState
+import com.shortsblockerkids.presentation.dashboard.DashboardWarningUiModel
+import com.shortsblockerkids.presentation.dashboard.ProtectedPlatformItemUiModel
+
+data class DashboardCallbacks(
+    val protection: DashboardProtectionCallbacks,
+    val billing: DashboardBillingCallbacks,
+    val navigation: DashboardNavigationCallbacks,
+)
+
+data class DashboardProtectionCallbacks(
+    val onProtectionChanged: (Boolean) -> Unit,
+    val onPlatformEnabledChanged: (String, Boolean) -> Unit,
+)
+
+data class DashboardBillingCallbacks(
+    val onSubscribe: () -> Unit,
+    val onRestorePurchases: () -> Unit,
+    val onManageSubscription: () -> Unit,
+)
+
+data class DashboardNavigationCallbacks(
+    val onOpenAccessibilitySettings: () -> Unit,
+    val onOpenPrivacyPolicy: () -> Unit,
+    val onOpenTamperProtection: () -> Unit,
+    val onOpenDebugQa: (() -> Unit)? = null,
+)
 
 @Composable
 fun DashboardScreen(
-    settings: AppSettingsSnapshot,
-    isAccessibilityServiceEnabled: Boolean,
-    isTamperProtectionEnabled: Boolean,
-    billingUiState: BillingUiState,
-    onProtectionChanged: (Boolean) -> Unit,
-    onPlatformEnabledChanged: (String, Boolean) -> Unit,
-    onSubscribe: () -> Unit,
-    onRestorePurchases: () -> Unit,
-    onManageSubscription: () -> Unit,
-    onOpenAccessibilitySettings: () -> Unit,
-    onOpenPrivacyPolicy: () -> Unit,
-    onOpenTamperProtection: () -> Unit,
-    onOpenDebugQa: (() -> Unit)? = null,
+    uiState: DashboardUiState,
+    callbacks: DashboardCallbacks,
     modifier: Modifier = Modifier,
 ) {
-    val nowMillis = System.currentTimeMillis()
-    val protectionConfiguration = settings.protectionConfiguration
-    val freeTestState = settings.freeTestState(nowMillis)
-    val entitlementState =
-        LocalEntitlementResolver.resolve(
-            settings.toLocalEntitlementInput(
-                isProtectionPermissionGranted = isAccessibilityServiceEnabled,
-                nowMillis = nowMillis,
-            ),
-        )
-    val isProtectionActive =
-        entitlementState == EntitlementState.PROTECTION_ACTIVE
-    val isProtectionLocked = entitlementState == EntitlementState.PROTECTION_LOCKED
-    val hasBillingEntitlement = settings.hasBillingEntitlement(nowMillis)
-
     Column(
         modifier =
             modifier
@@ -101,16 +91,14 @@ fun DashboardScreen(
             ) {
                 ProtectionRow(
                     label = stringResource(R.string.dashboard_title),
-                    value =
-                        protectionSwitchLabel(
-                            protectionConfiguration,
-                            isProtectionLocked,
-                        ),
+                    value = stringResource(uiState.protection.switchStatusRes),
                     control = {
                         Switch(
-                            checked = protectionConfiguration.isEnabled && !isProtectionLocked,
-                            onCheckedChange = onProtectionChanged,
-                            enabled = !isProtectionLocked,
+                            checked =
+                                uiState.protection.isEnabled &&
+                                    !uiState.protection.isLocked,
+                            onCheckedChange = callbacks.protection.onProtectionChanged,
+                            enabled = !uiState.protection.isLocked,
                         )
                     },
                 )
@@ -121,60 +109,64 @@ fun DashboardScreen(
                 )
                 ChecklistRow(
                     stringResource(R.string.dashboard_checklist_parent_pin),
-                    protectionConfiguration.isPinConfigured,
+                    uiState.setup.isPinConfigured,
                 )
                 ChecklistRow(
                     stringResource(R.string.dashboard_checklist_protected_apps),
-                    protectionConfiguration.hasEnabledPlatforms,
+                    uiState.setup.hasProtectedPlatforms,
                 )
                 ChecklistRow(
                     stringResource(R.string.dashboard_checklist_accessibility_disclosure),
-                    protectionConfiguration.isAccessibilityDisclosureAccepted,
+                    uiState.setup.isAccessibilityDisclosureAccepted,
                 )
                 ChecklistRow(
                     stringResource(R.string.dashboard_checklist_accessibility_service),
-                    isAccessibilityServiceEnabled,
+                    uiState.setup.isAccessibilityServiceEnabled,
                 )
                 ChecklistRow(
                     label = stringResource(R.string.dashboard_checklist_tamper_protection),
-                    isComplete = isTamperProtectionEnabled,
+                    isComplete = uiState.setup.isTamperProtectionEnabled,
                     incompleteLabel = stringResource(R.string.status_optional),
                     isOptional = true,
                 )
                 StatusRow(
                     stringResource(R.string.dashboard_platform_support),
-                    protectedPlatformSummary(),
+                    protectedPlatformSummary(uiState.platforms.protected),
                 )
                 StatusRow(
                     stringResource(R.string.dashboard_enabled_apps),
-                    enabledAppsLabel(protectionConfiguration),
+                    enabledAppsLabel(uiState.platforms.protected),
                 )
-                PlatformSupportMatrix.protectedEntries.forEach { entry ->
+                uiState.platforms.protected.forEach { item ->
                     ProtectionRow(
-                        label = stringResource(entry.platformNameRes),
+                        label = stringResource(item.nameRes),
                         value =
-                            if (protectionConfiguration.isPlatformEnabled(entry.platformId)) {
+                            if (item.isSelected) {
                                 stringResource(R.string.status_enabled)
                             } else {
                                 stringResource(R.string.status_disabled)
                             },
                         control = {
                             Switch(
-                                checked = protectionConfiguration.isPlatformEnabled(entry.platformId),
+                                checked = item.isSelected,
                                 onCheckedChange = { enabled ->
-                                    onPlatformEnabledChanged(entry.platformId, enabled)
+                                    callbacks.protection.onPlatformEnabledChanged(
+                                        item.platformId,
+                                        enabled,
+                                    )
                                 },
+                                enabled = item.isEnabled && item.isClickable,
                             )
                         },
                     )
                 }
                 StatusRow(
                     stringResource(R.string.dashboard_not_supported),
-                    unsupportedPlatformSummary(),
+                    unsupportedPlatformSummary(uiState.platforms.unsupported),
                 )
                 StatusRow(
                     stringResource(R.string.dashboard_pin),
-                    if (protectionConfiguration.isPinConfigured) {
+                    if (uiState.setup.isPinConfigured) {
                         stringResource(R.string.status_created)
                     } else {
                         stringResource(R.string.status_not_created)
@@ -182,9 +174,9 @@ fun DashboardScreen(
                 )
                 StatusRow(
                     stringResource(R.string.dashboard_free_test),
-                    freeTestState.dashboardLabel(),
+                    stringResource(uiState.entitlement.freeTestStatusRes),
                 )
-                settings.freeTestDaysRemaining(nowMillis)?.let { daysRemaining ->
+                uiState.entitlement.freeTestDaysRemaining?.let { daysRemaining ->
                     StatusRow(
                         stringResource(R.string.dashboard_days_remaining_label),
                         pluralStringResource(
@@ -197,13 +189,13 @@ fun DashboardScreen(
                 StatusRow(
                     stringResource(R.string.dashboard_subscription),
                     billingSubscriptionStatusText(
-                        hasBillingEntitlement = settings.hasBillingEntitlement(nowMillis),
-                        billingUiState = billingUiState,
+                        hasBillingEntitlement = uiState.billing.hasEntitlement,
+                        billingUiState = uiState.billing.uiState,
                     ),
                 )
                 StatusRow(
                     stringResource(R.string.dashboard_protection_permission),
-                    if (isAccessibilityServiceEnabled) {
+                    if (uiState.setup.isAccessibilityServiceEnabled) {
                         stringResource(R.string.status_enabled)
                     } else {
                         stringResource(R.string.status_protection_permission_missing)
@@ -211,7 +203,7 @@ fun DashboardScreen(
                 )
                 StatusRow(
                     stringResource(R.string.dashboard_tamper_protection),
-                    if (isTamperProtectionEnabled) {
+                    if (uiState.setup.isTamperProtectionEnabled) {
                         stringResource(R.string.status_active)
                     } else {
                         stringResource(R.string.status_optional_inactive)
@@ -219,33 +211,10 @@ fun DashboardScreen(
                 )
                 StatusRow(
                     stringResource(R.string.dashboard_protection_status),
-                    entitlementState.protectionLabel(),
+                    stringResource(uiState.protection.protectionStatusRes),
                 )
-                if (freeTestState == EntitlementState.FREE_TEST_EXPIRED && !hasBillingEntitlement) {
-                    ErrorText(
-                        stringResource(
-                            R.string.error_free_test_ended_with_detail,
-                            stringResource(
-                                R.string.billing_subscription_managed_by_google_play,
-                            ),
-                        ),
-                    )
-                }
-                if (!isAccessibilityServiceEnabled) {
-                    ErrorText(stringResource(R.string.error_protection_permission_missing))
-                }
-                if (!protectionConfiguration.hasEnabledPlatforms) {
-                    ErrorText(stringResource(R.string.error_no_protected_apps_selected))
-                }
-                if (!isProtectionActive) {
-                    val inactiveMessage =
-                        protectionInactiveMessage(
-                            settings = settings,
-                            isAccessibilityServiceEnabled = isAccessibilityServiceEnabled,
-                            nowMillis = nowMillis,
-                            hasBillingEntitlement = hasBillingEntitlement,
-                        )
-                    ErrorText(inactiveMessage)
+                uiState.warnings.forEach { warning ->
+                    ErrorText(warningText(warning))
                 }
                 Text(
                     text = stringResource(R.string.dashboard_description),
@@ -256,46 +225,34 @@ fun DashboardScreen(
         }
         Spacer(modifier = Modifier.height(12.dp))
         BillingActions(
-            billingUiState = billingUiState,
-            hasBillingEntitlement = hasBillingEntitlement,
-            onSubscribe = onSubscribe,
-            onRestorePurchases = onRestorePurchases,
-            onManageSubscription = onManageSubscription,
+            billingUiState = uiState.billing.uiState,
+            hasBillingEntitlement = uiState.billing.hasEntitlement,
+            onSubscribe = callbacks.billing.onSubscribe,
+            onRestorePurchases = callbacks.billing.onRestorePurchases,
+            onManageSubscription = callbacks.billing.onManageSubscription,
         )
         Spacer(modifier = Modifier.height(12.dp))
         Button(
-            onClick = onOpenAccessibilitySettings,
+            onClick = callbacks.navigation.onOpenAccessibilitySettings,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text(
-                if (protectionConfiguration.isAccessibilityDisclosureAccepted) {
-                    stringResource(R.string.dashboard_open_accessibility_settings)
-                } else {
-                    stringResource(R.string.dashboard_review_accessibility_disclosure)
-                },
-            )
+            Text(stringResource(uiState.actions.accessibilitySettingsLabelRes))
         }
         Spacer(modifier = Modifier.height(12.dp))
         OutlinedButton(
-            onClick = onOpenPrivacyPolicy,
+            onClick = callbacks.navigation.onOpenPrivacyPolicy,
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text(stringResource(R.string.dashboard_privacy_policy))
         }
         Spacer(modifier = Modifier.height(12.dp))
         OutlinedButton(
-            onClick = onOpenTamperProtection,
+            onClick = callbacks.navigation.onOpenTamperProtection,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text(
-                if (isTamperProtectionEnabled) {
-                    stringResource(R.string.dashboard_review_tamper_protection)
-                } else {
-                    stringResource(R.string.dashboard_enable_tamper_protection)
-                },
-            )
+            Text(stringResource(uiState.actions.tamperProtectionLabelRes))
         }
-        onOpenDebugQa?.let { openDebugQa ->
+        callbacks.navigation.onOpenDebugQa?.let { openDebugQa ->
             Spacer(modifier = Modifier.height(12.dp))
             OutlinedButton(
                 onClick = openDebugQa,
@@ -345,50 +302,11 @@ private fun ChecklistRow(
 }
 
 @Composable
-private fun protectionInactiveMessage(
-    settings: AppSettingsSnapshot,
-    isAccessibilityServiceEnabled: Boolean,
-    nowMillis: Long,
-    hasBillingEntitlement: Boolean,
-): String {
-    if (
-        settings.freeTestState(nowMillis) == EntitlementState.FREE_TEST_EXPIRED &&
-        !hasBillingEntitlement
-    ) {
-        return stringResource(R.string.error_free_test_expired)
-    }
-
-    if (!settings.protectionConfiguration.isEnabled) {
-        return stringResource(R.string.error_protection_inactive_disabled)
-    }
-
-    if (!settings.protectionConfiguration.hasEnabledPlatforms) {
-        return stringResource(R.string.error_protection_inactive_no_apps)
-    }
-
-    if (!isAccessibilityServiceEnabled) {
-        return stringResource(R.string.error_protection_inactive_accessibility)
-    }
-
-    if (settings.isTemporarilyAllowed(nowMillis)) {
-        return stringResource(R.string.error_protection_inactive_temporary_allow)
-    }
-
-    if (settings.freeTestState(nowMillis) == EntitlementState.FREE_TEST_NOT_STARTED) {
-        return stringResource(R.string.error_free_test_not_started)
-    }
-
-    return stringResource(R.string.error_protection_inactive_setup)
-}
-
-@Composable
-private fun enabledAppsLabel(protectionConfiguration: ProtectionConfiguration): String {
-    val enabledNames = mutableListOf<String>()
-    for (entry in PlatformSupportMatrix.protectedEntries) {
-        if (protectionConfiguration.isPlatformEnabled(entry.platformId)) {
-            enabledNames += stringResource(entry.platformNameRes)
+private fun enabledAppsLabel(items: List<ProtectedPlatformItemUiModel>): String {
+    val enabledNames =
+        items.filter(ProtectedPlatformItemUiModel::isSelected).map { item ->
+            stringResource(item.nameRes)
         }
-    }
 
     return if (enabledNames.isEmpty()) {
         stringResource(R.string.status_none)
@@ -398,85 +316,54 @@ private fun enabledAppsLabel(protectionConfiguration: ProtectionConfiguration): 
 }
 
 @Composable
-private fun protectedPlatformSummary(): String {
-    val summaries = mutableListOf<String>()
-    for (entry in PlatformSupportMatrix.protectedEntries) {
-        summaries +=
+private fun protectedPlatformSummary(items: List<ProtectedPlatformItemUiModel>): String =
+    items
+        .map { item ->
             stringResource(
                 R.string.platform_status_item_format,
-                stringResource(entry.platformNameRes),
-                platformStatusLabel(entry.status),
+                stringResource(item.nameRes),
+                stringResource(item.statusRes),
             )
-    }
-    return summaries.joinToString()
-}
+        }.joinToString()
 
 @Composable
-private fun unsupportedPlatformSummary(): String {
-    val summaries = mutableListOf<String>()
-    for (entry in PlatformSupportMatrix.unsupportedEntries) {
-        summaries +=
+private fun unsupportedPlatformSummary(items: List<ProtectedPlatformItemUiModel>): String =
+    items
+        .map { item ->
             stringResource(
                 R.string.platform_unsupported_item_format,
-                stringResource(entry.platformNameRes),
-                entry.packageName,
+                stringResource(item.nameRes),
+                item.packageName,
             )
-    }
-    return summaries.joinToString()
-}
+        }.joinToString()
 
 @Composable
-private fun platformStatusLabel(status: PlatformSupportStatus): String =
-    when (status) {
-        PlatformSupportStatus.SUPPORTED ->
-            stringResource(R.string.platform_status_supported)
-        PlatformSupportStatus.SUPPORTED_BY_CODE_NEEDS_REAL_DEVICE_QA ->
-            stringResource(R.string.platform_status_supported_needs_qa)
-        PlatformSupportStatus.NOT_SUPPORTED ->
-            stringResource(R.string.platform_status_not_supported)
+private fun warningText(warning: DashboardWarningUiModel): String =
+    when (warning) {
+        DashboardWarningUiModel.FREE_TEST_ENDED ->
+            stringResource(
+                R.string.error_free_test_ended_with_detail,
+                stringResource(R.string.billing_subscription_managed_by_google_play),
+            )
+        DashboardWarningUiModel.PROTECTION_PERMISSION_MISSING ->
+            stringResource(R.string.error_protection_permission_missing)
+        DashboardWarningUiModel.NO_PROTECTED_APPS_SELECTED ->
+            stringResource(R.string.error_no_protected_apps_selected)
+        DashboardWarningUiModel.FREE_TEST_EXPIRED ->
+            stringResource(R.string.error_free_test_expired)
+        DashboardWarningUiModel.PROTECTION_DISABLED ->
+            stringResource(R.string.error_protection_inactive_disabled)
+        DashboardWarningUiModel.NO_PROTECTED_APPS ->
+            stringResource(R.string.error_protection_inactive_no_apps)
+        DashboardWarningUiModel.ACCESSIBILITY_DISABLED ->
+            stringResource(R.string.error_protection_inactive_accessibility)
+        DashboardWarningUiModel.TEMPORARY_ALLOW_ACTIVE ->
+            stringResource(R.string.error_protection_inactive_temporary_allow)
+        DashboardWarningUiModel.FREE_TEST_NOT_STARTED ->
+            stringResource(R.string.error_free_test_not_started)
+        DashboardWarningUiModel.SETUP_INCOMPLETE ->
+            stringResource(R.string.error_protection_inactive_setup)
     }
-
-@Composable
-private fun EntitlementState.dashboardLabel(): String =
-    when (this) {
-        EntitlementState.FREE_TEST_NOT_STARTED -> stringResource(R.string.status_not_started)
-        EntitlementState.FREE_TEST_ACTIVE -> stringResource(R.string.status_free_test_active)
-        EntitlementState.FREE_TEST_EXPIRED -> stringResource(R.string.status_free_test_expired)
-        EntitlementState.SUBSCRIPTION_ACTIVE -> stringResource(R.string.status_subscription_active)
-        EntitlementState.PROTECTION_PERMISSION_MISSING ->
-            stringResource(R.string.status_protection_permission_missing)
-        EntitlementState.PROTECTION_ACTIVE -> stringResource(R.string.status_protection_active)
-        EntitlementState.PROTECTION_LOCKED -> stringResource(R.string.status_protection_locked)
-    }
-
-@Composable
-private fun EntitlementState.protectionLabel(): String =
-    when (this) {
-        EntitlementState.PROTECTION_ACTIVE -> stringResource(R.string.status_protection_active)
-        EntitlementState.PROTECTION_PERMISSION_MISSING ->
-            stringResource(R.string.status_protection_permission_missing)
-        EntitlementState.PROTECTION_LOCKED -> stringResource(R.string.status_protection_locked)
-        EntitlementState.FREE_TEST_ACTIVE -> stringResource(R.string.status_inactive)
-        EntitlementState.FREE_TEST_NOT_STARTED -> stringResource(R.string.status_not_started)
-        EntitlementState.FREE_TEST_EXPIRED -> stringResource(R.string.status_free_test_expired)
-        EntitlementState.SUBSCRIPTION_ACTIVE -> stringResource(R.string.status_inactive)
-    }
-
-@Composable
-private fun protectionSwitchLabel(
-    protectionConfiguration: ProtectionConfiguration,
-    isProtectionLocked: Boolean,
-): String {
-    if (isProtectionLocked) {
-        return stringResource(R.string.status_locked)
-    }
-
-    return if (protectionConfiguration.isEnabled) {
-        stringResource(R.string.status_on)
-    } else {
-        stringResource(R.string.status_off)
-    }
-}
 
 @Composable
 private fun ErrorText(text: String) {

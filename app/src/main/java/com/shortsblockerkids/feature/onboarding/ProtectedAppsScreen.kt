@@ -21,14 +21,17 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.shortsblockerkids.R
-import com.shortsblockerkids.accessibility.PlatformSupportMatrix
-import com.shortsblockerkids.domain.protection.ProtectionConfiguration
+import com.shortsblockerkids.presentation.dashboard.ProtectedPlatformItemUiModel
+
+data class ProtectedAppsCallbacks(
+    val onPlatformEnabledChanged: (String, Boolean) -> Unit,
+    val onContinue: () -> Unit,
+)
 
 @Composable
 fun ProtectedAppsScreen(
-    protectionConfiguration: ProtectionConfiguration,
-    onPlatformEnabledChanged: (String, Boolean) -> Unit,
-    onContinue: () -> Unit,
+    items: List<ProtectedPlatformItemUiModel>,
+    callbacks: ProtectedAppsCallbacks,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -51,30 +54,36 @@ fun ProtectedAppsScreen(
             style = MaterialTheme.typography.bodyLarge,
         )
         Spacer(modifier = Modifier.height(20.dp))
-        PlatformSupportMatrix.protectedEntries.forEach { entry ->
+        items.forEach { item ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = stringResource(entry.platformNameRes),
+                    text = stringResource(item.nameRes),
                     style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier.weight(1f),
                 )
                 Switch(
-                    checked = protectionConfiguration.isPlatformEnabled(entry.platformId),
-                    onCheckedChange = { enabled ->
-                        onPlatformEnabledChanged(entry.platformId, enabled)
-                    },
+                    checked = item.isSelected,
+                    onCheckedChange =
+                        if (item.isClickable) {
+                            { enabled ->
+                                callbacks.onPlatformEnabledChanged(item.platformId, enabled)
+                            }
+                        } else {
+                            null
+                        },
+                    enabled = item.isEnabled,
                 )
             }
             Spacer(modifier = Modifier.height(10.dp))
         }
         Spacer(modifier = Modifier.height(22.dp))
         Button(
-            onClick = onContinue,
-            enabled = protectionConfiguration.hasEnabledPlatforms,
+            onClick = callbacks.onContinue,
+            enabled = items.any(ProtectedPlatformItemUiModel::isSelected),
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text(stringResource(R.string.protected_apps_continue))

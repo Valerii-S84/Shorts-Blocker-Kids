@@ -32,35 +32,22 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.shortsblockerkids.BuildConfig
 import com.shortsblockerkids.R
-import com.shortsblockerkids.application.model.AppSettingsSnapshot
-import com.shortsblockerkids.application.protection.LocalEntitlementResolver
-import com.shortsblockerkids.application.protection.toLocalEntitlementInput
-import com.shortsblockerkids.core.billing.BillingUiState
 import com.shortsblockerkids.domain.detection.AccessibilityNodeSignal
 import com.shortsblockerkids.domain.detection.AccessibilityTreeSnapshot
 import com.shortsblockerkids.domain.detection.DetectionResult
 import com.shortsblockerkids.domain.detection.YouTubeShortsDetector
 import com.shortsblockerkids.feature.billing.billingMessageText
 import com.shortsblockerkids.platform.accessibility.diagnostics.accessibilityDiagnostics
+import com.shortsblockerkids.presentation.dashboard.DashboardUiState
 
 @Composable
 fun DetectorPlaygroundScreen(
-    settings: AppSettingsSnapshot,
-    isAccessibilityServiceEnabled: Boolean,
-    billingUiState: BillingUiState,
+    uiState: DashboardUiState,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val detector = remember { YouTubeShortsDetector() }
     val scenarios = remember { detectorPlaygroundScenarios() }
-    val nowMillis = System.currentTimeMillis()
-    val entitlementState =
-        LocalEntitlementResolver.resolve(
-            settings.toLocalEntitlementInput(
-                isProtectionPermissionGranted = isAccessibilityServiceEnabled,
-                nowMillis = nowMillis,
-            ),
-        )
     val noScenarioName = stringResource(R.string.debug_no_scenario)
     val notRequestedMessage = stringResource(R.string.debug_not_requested)
     val snapshotRequestedMessage = stringResource(R.string.debug_snapshot_requested)
@@ -102,17 +89,20 @@ fun DetectorPlaygroundScreen(
                 )
                 QaRow(
                     stringResource(R.string.debug_protection_mode),
-                    settings.protectionConfiguration.mode.name,
+                    uiState.protection.modeName,
                 )
                 QaRow(
                     stringResource(R.string.debug_blocking_decision),
                     accessibilityDiagnostics.lastBlockingDecisionText()
                         ?: stringResource(R.string.debug_disabled),
                 )
-                QaRow(stringResource(R.string.debug_entitlement), entitlementState.name)
+                QaRow(
+                    stringResource(R.string.debug_entitlement),
+                    uiState.entitlement.resolvedStateName,
+                )
                 QaRow(
                     stringResource(R.string.debug_subscription_state),
-                    settings.billingEntitlementStateName,
+                    uiState.billing.entitlementStateName,
                 )
                 QaRow(
                     stringResource(R.string.debug_backend),
@@ -124,11 +114,11 @@ fun DetectorPlaygroundScreen(
                 )
                 QaRow(
                     stringResource(R.string.debug_billing_ui),
-                    billingMessageText(billingUiState.message),
+                    billingMessageText(uiState.billing.uiState.message),
                 )
                 QaRow(
                     stringResource(R.string.debug_protection_permission),
-                    if (isAccessibilityServiceEnabled) {
+                    if (uiState.setup.isAccessibilityServiceEnabled) {
                         stringResource(R.string.debug_enabled)
                     } else {
                         stringResource(R.string.debug_missing)

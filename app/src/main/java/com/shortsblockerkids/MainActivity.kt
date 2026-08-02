@@ -17,6 +17,7 @@ import com.shortsblockerkids.application.pin.VerifyPinUseCase
 import com.shortsblockerkids.application.protection.ClearExpiredTemporaryAllowUseCase
 import com.shortsblockerkids.application.protection.RecordSuccessfulProtectionActivationUseCase
 import com.shortsblockerkids.application.protection.SetTemporaryAllowUseCase
+import com.shortsblockerkids.composition.dashboard.DashboardUiStateAssembler
 import com.shortsblockerkids.core.billing.HttpBillingBackendClient
 import com.shortsblockerkids.core.billing.PlayBillingRepository
 import com.shortsblockerkids.infrastructure.storage.DataStoreSettingsStore
@@ -49,19 +50,21 @@ class MainActivity : ComponentActivity() {
         val pinAccessAdapter = SettingsPinAccessAdapter(pinStateStore = settingsStore)
         val createPinUseCase = CreatePinUseCase(pinAccessAdapter)
         val verifyPinUseCase = VerifyPinUseCase(pinAccessAdapter)
+        val timeProvider = SystemTimeProvider()
+        val dashboardUiStateAssembler = DashboardUiStateAssembler(timeProvider)
         val protectionActivationUseCase =
             RecordSuccessfulProtectionActivationUseCase(
-                timeProvider = SystemTimeProvider(),
+                timeProvider = timeProvider,
                 protectionActivationStore = settingsStore,
             )
         val setTemporaryAllowUseCase =
             SetTemporaryAllowUseCase(
-                timeProvider = SystemTimeProvider(),
+                timeProvider = timeProvider,
                 temporaryAllowStore = settingsStore,
             )
         val clearExpiredTemporaryAllowUseCase =
             ClearExpiredTemporaryAllowUseCase(
-                timeProvider = SystemTimeProvider(),
+                timeProvider = timeProvider,
                 temporaryAllowStore = settingsStore,
             )
         billingRepository =
@@ -90,11 +93,17 @@ class MainActivity : ComponentActivity() {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     val billingUiState by billingRepository.uiState.collectAsState()
                     ShortsBlockerKidsApp(
-                        settings = settingsState.value,
-                        isAccessibilityServiceEnabled = accessibilityEnabledState.value,
-                        isTamperProtectionEnabled = tamperProtectionEnabledState.value,
+                        dashboardUiStateProvider = {
+                            dashboardUiStateAssembler.create(
+                                settings = settingsState.value,
+                                billingUiState = billingUiState,
+                                isAccessibilityServiceEnabled =
+                                    accessibilityEnabledState.value,
+                                isTamperProtectionEnabled =
+                                    tamperProtectionEnabledState.value,
+                            )
+                        },
                         isTemporaryAllowRequested = temporaryAllowRequestState.value,
-                        billingUiState = billingUiState,
                         createPinUseCase = createPinUseCase,
                         verifyPinUseCase = verifyPinUseCase,
                         recordSuccessfulProtectionActivationUseCase = protectionActivationUseCase,
