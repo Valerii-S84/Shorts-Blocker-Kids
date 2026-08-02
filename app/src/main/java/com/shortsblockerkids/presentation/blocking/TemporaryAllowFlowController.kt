@@ -1,4 +1,4 @@
-package com.shortsblockerkids.feature.blocking
+package com.shortsblockerkids.presentation.blocking
 
 import com.shortsblockerkids.application.protection.SetTemporaryAllowUseCase
 import com.shortsblockerkids.domain.protection.TemporaryAllowDuration

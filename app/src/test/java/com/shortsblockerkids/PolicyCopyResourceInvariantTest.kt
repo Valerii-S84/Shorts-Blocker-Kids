@@ -122,11 +122,11 @@ class PolicyCopyResourceInvariantTest {
     private companion object {
         const val STRINGS_XML = "app/src/main/res/values/strings.xml"
         const val ACCESSIBILITY_SOURCE =
-            "app/src/main/java/com/shortsblockerkids/feature/onboarding/AccessibilityDisclosureScreen.kt"
+            "app/src/main/java/com/shortsblockerkids/presentation/onboarding/AccessibilityDisclosureScreen.kt"
         const val PRIVACY_SOURCE =
-            "app/src/main/java/com/shortsblockerkids/feature/privacy/PrivacyPolicyScreen.kt"
+            "app/src/main/java/com/shortsblockerkids/presentation/privacy/PrivacyPolicyScreen.kt"
         const val TAMPER_SOURCE =
-            "app/src/main/java/com/shortsblockerkids/feature/tamper/TamperProtectionDisclosureScreen.kt"
+            "app/src/main/java/com/shortsblockerkids/presentation/tamper/TamperProtectionDisclosureScreen.kt"
 
         val ENGLISH_LITERAL = Regex("\"(?:[^\"\\\\]|\\\\.)*[A-Za-z](?:[^\"\\\\]|\\\\.)*\"")
 

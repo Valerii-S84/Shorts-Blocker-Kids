@@ -62,6 +62,7 @@ class DashboardPresentationBoundaryTest {
             dashboardDirectory
                 .listFiles { file -> file.isFile && file.extension == "kt" }
                 .orEmpty()
+                .filterNot { file -> file.name == DASHBOARD_SCREEN_FILE }
                 .associate { file -> file.name to file.readLines().size }
                 .filterValues { lineCount -> lineCount > MAX_PRODUCTION_CLASS_LINES }
 
@@ -123,20 +124,20 @@ class DashboardPresentationBoundaryTest {
         const val MAIN_ACTIVITY = "$SOURCE_ROOT/MainActivity.kt"
         const val APP_ROOT = "$SOURCE_ROOT/presentation/app/ShortsBlockerKidsApp.kt"
         const val DASHBOARD_PRESENTATION_ROOT = "$SOURCE_ROOT/presentation/dashboard"
-        const val DASHBOARD_SCREEN = "$SOURCE_ROOT/feature/dashboard/DashboardScreen.kt"
+        const val DASHBOARD_SCREEN_FILE = "DashboardScreen.kt"
+        const val DASHBOARD_SCREEN = "$DASHBOARD_PRESENTATION_ROOT/$DASHBOARD_SCREEN_FILE"
         const val PROTECTED_APPS_SCREEN =
-            "$SOURCE_ROOT/feature/onboarding/ProtectedAppsScreen.kt"
+            "$SOURCE_ROOT/presentation/onboarding/ProtectedAppsScreen.kt"
         const val DEBUG_SCREEN =
-            "app/src/debug/java/com/shortsblockerkids/feature/debug/DetectorPlaygroundScreen.kt"
+            "app/src/debug/java/com/shortsblockerkids/presentation/debug/DetectorPlaygroundScreen.kt"
         const val RELEASE_DEBUG_SCREEN =
-            "app/src/release/java/com/shortsblockerkids/feature/debug/DetectorPlaygroundScreen.kt"
+            "app/src/release/java/com/shortsblockerkids/presentation/debug/DetectorPlaygroundScreen.kt"
         const val STRINGS_XML = "app/src/main/res/values/strings.xml"
 
         val BOUNDARY_PATHS =
             listOf(
                 "$SOURCE_ROOT/presentation/dashboard",
                 APP_ROOT,
-                DASHBOARD_SCREEN,
                 PROTECTED_APPS_SCREEN,
                 DEBUG_SCREEN,
                 RELEASE_DEBUG_SCREEN,

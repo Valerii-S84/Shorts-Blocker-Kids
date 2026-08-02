@@ -152,9 +152,9 @@ class BillingPresentationResourceInvariantTest {
         const val BILLING_PRESENTATION_SOURCE =
             "app/src/main/java/com/shortsblockerkids/presentation/billing/BillingPresentation.kt"
         const val DASHBOARD_SOURCE =
-            "app/src/main/java/com/shortsblockerkids/feature/dashboard/DashboardScreen.kt"
+            "app/src/main/java/com/shortsblockerkids/presentation/dashboard/DashboardScreen.kt"
         const val DEBUG_SOURCE =
-            "app/src/debug/java/com/shortsblockerkids/feature/debug/DetectorPlaygroundScreen.kt"
+            "app/src/debug/java/com/shortsblockerkids/presentation/debug/DetectorPlaygroundScreen.kt"
         const val BILLING_GATEWAY_SOURCE =
             "app/src/main/java/com/shortsblockerkids/infrastructure/billing/" +
                 "GooglePlayBillingGateway.kt"

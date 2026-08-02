@@ -1,4 +1,4 @@
-package com.shortsblockerkids.feature.onboarding
+package com.shortsblockerkids.presentation.onboarding
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

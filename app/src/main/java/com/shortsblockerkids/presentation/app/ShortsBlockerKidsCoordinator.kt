@@ -3,9 +3,9 @@ package com.shortsblockerkids.presentation.app
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.shortsblockerkids.feature.onboarding.AccessibilityDisclosureDecision
-import com.shortsblockerkids.feature.onboarding.AccessibilityPermissionFlow
-import com.shortsblockerkids.feature.onboarding.AccessibilitySettingsRequest
+import com.shortsblockerkids.presentation.onboarding.AccessibilityDisclosureDecision
+import com.shortsblockerkids.presentation.onboarding.AccessibilityPermissionFlow
+import com.shortsblockerkids.presentation.onboarding.AccessibilitySettingsRequest
 
 class ShortsBlockerKidsCoordinator internal constructor(
     currentScreen: AppScreen,

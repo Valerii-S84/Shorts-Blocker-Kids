@@ -153,11 +153,11 @@ class CoreUiResourceInvariantTest {
     private companion object {
         const val STRINGS_XML = "app/src/main/res/values/strings.xml"
         const val DASHBOARD_SOURCE =
-            "app/src/main/java/com/shortsblockerkids/feature/dashboard/DashboardScreen.kt"
+            "app/src/main/java/com/shortsblockerkids/presentation/dashboard/DashboardScreen.kt"
         const val PROTECTED_APPS_SOURCE =
-            "app/src/main/java/com/shortsblockerkids/feature/onboarding/ProtectedAppsScreen.kt"
+            "app/src/main/java/com/shortsblockerkids/presentation/onboarding/ProtectedAppsScreen.kt"
         const val DEBUG_SOURCE =
-            "app/src/debug/java/com/shortsblockerkids/feature/debug/DetectorPlaygroundScreen.kt"
+            "app/src/debug/java/com/shortsblockerkids/presentation/debug/DetectorPlaygroundScreen.kt"
         const val PLATFORM_SOURCE =
             "app/src/main/java/com/shortsblockerkids/accessibility/SupportedPlatform.kt"
         const val DASHBOARD_PLATFORM_MAPPER_SOURCE =

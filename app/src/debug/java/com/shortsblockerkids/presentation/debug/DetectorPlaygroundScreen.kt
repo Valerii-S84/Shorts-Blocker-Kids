@@ -1,4 +1,4 @@
-package com.shortsblockerkids.feature.debug
+package com.shortsblockerkids.presentation.debug
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
