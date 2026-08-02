@@ -78,9 +78,10 @@ Implementation evidence:
 
 - `com.android.billingclient:billing-ktx:9.0.0` is declared through the Gradle
   version catalog.
-- `PlayBillingRepository` owns a single BillingClient connection, product
+- `GooglePlayBillingGateway` owns a single BillingClient connection, product
   loading, purchase launch, purchase updates, purchase acknowledgement, restore,
-  and manage-subscription intent.
+  and manage-subscription intent; `BillingCoordinator` owns entitlement sync and
+  billing UI-state coordination.
 - Dashboard billing actions are parent-controlled because dashboard access
   requires the parent PIN after initial setup.
 - Pending purchases do not unlock protection until purchase state is

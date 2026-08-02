@@ -36,8 +36,8 @@ import com.shortsblockerkids.domain.detection.AccessibilityNodeSignal
 import com.shortsblockerkids.domain.detection.AccessibilityTreeSnapshot
 import com.shortsblockerkids.domain.detection.DetectionResult
 import com.shortsblockerkids.domain.detection.YouTubeShortsDetector
-import com.shortsblockerkids.feature.billing.billingMessageText
 import com.shortsblockerkids.platform.accessibility.diagnostics.accessibilityDiagnostics
+import com.shortsblockerkids.presentation.billing.billingMessageText
 import com.shortsblockerkids.presentation.dashboard.DashboardUiState
 
 @Composable

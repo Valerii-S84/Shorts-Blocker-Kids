@@ -17,16 +17,12 @@ class LayerDependencyTest {
 
     @Test
     fun applicationImportsOnlyApplicationDomainAndCoroutines() {
-        assertImports("application") { source, importedName ->
+        assertImports("application") { _, importedName ->
             importedName.startsWith("kotlin.") ||
                 importedName.startsWith("java.") ||
                 importedName.startsWith("kotlinx.coroutines.") ||
                 importedName.startsWith("com.shortsblockerkids.application.") ||
-                importedName.startsWith("com.shortsblockerkids.domain.") ||
-                (
-                    source.isApplicationBillingSource() &&
-                        importedName in TRANSITIONAL_APPLICATION_BILLING_IMPORTS
-                )
+                importedName.startsWith("com.shortsblockerkids.domain.")
         }
         assertNoDirectSystemTime("application")
     }
@@ -89,6 +85,27 @@ class LayerDependencyTest {
     }
 
     @Test
+    fun infrastructureBillingDoesNotImportPresentation() {
+        assertNoImportsWithPrefixes(
+            layer = "infrastructure/billing",
+            forbiddenPrefixes = listOf("com.shortsblockerkids.presentation."),
+        )
+    }
+
+    @Test
+    fun presentationBillingAvoidsAndroidAndGoogleBillingPayloads() {
+        assertNoImportsWithPrefixes(
+            layer = "presentation/billing",
+            forbiddenPrefixes =
+                listOf(
+                    "android.",
+                    "com.android.billingclient.",
+                    "com.shortsblockerkids.infrastructure.",
+                ),
+        )
+    }
+
+    @Test
     fun transitionalCoreStoragePackageIsGone() {
         val legacyStorage = File(sourceRoot, "core/storage")
         val remainingKotlinFiles =
@@ -100,6 +117,25 @@ class LayerDependencyTest {
 
         assertTrue(
             "transitional core/storage Kotlin files remain: $remainingKotlinFiles",
+            remainingKotlinFiles.isEmpty(),
+        )
+    }
+
+    @Test
+    fun legacyBillingPackagesAreGone() {
+        val remainingKotlinFiles =
+            listOf("core/billing", "feature/billing")
+                .flatMap { relativePath ->
+                    File(sourceRoot, relativePath)
+                        .takeIf(File::isDirectory)
+                        ?.walkTopDown()
+                        ?.filter { file -> file.isFile && file.extension == "kt" }
+                        ?.toList()
+                        .orEmpty()
+                }
+
+        assertTrue(
+            "legacy billing Kotlin files remain: $remainingKotlinFiles",
             remainingKotlinFiles.isEmpty(),
         )
     }
@@ -186,9 +222,6 @@ class LayerDependencyTest {
     private fun imports(source: File): List<String> =
         IMPORT_PATTERN.findAll(source.readText()).map { match -> match.groupValues[1] }.toList()
 
-    private fun File.isApplicationBillingSource(): Boolean =
-        relativeTo(sourceRoot).invariantSeparatorsPath.startsWith("application/billing/")
-
     private fun sources(layer: String): List<File> =
         File(sourceRoot, layer)
             .walkTopDown()
@@ -208,15 +241,6 @@ class LayerDependencyTest {
 
     private companion object {
         val IMPORT_PATTERN = Regex("(?m)^import\\s+([^\\s]+)")
-        val TRANSITIONAL_APPLICATION_BILLING_IMPORTS =
-            setOf(
-                "com.shortsblockerkids.core.billing.BillingBackendClient",
-                "com.shortsblockerkids.core.billing.BillingBackendPurchaseRequest",
-                "com.shortsblockerkids.core.billing.BillingEntitlementSnapshot",
-                "com.shortsblockerkids.core.billing.BillingEntitlementState",
-                "com.shortsblockerkids.core.billing.BillingMessageCode",
-                "com.shortsblockerkids.core.billing.BillingVerificationPolicy",
-            )
         val SOURCE_SET_PATHS =
             listOf(
                 "app/src/main/java",

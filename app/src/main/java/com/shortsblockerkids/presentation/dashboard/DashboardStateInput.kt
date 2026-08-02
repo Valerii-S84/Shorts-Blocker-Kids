@@ -1,7 +1,7 @@
 package com.shortsblockerkids.presentation.dashboard
 
 import androidx.annotation.StringRes
-import com.shortsblockerkids.core.billing.BillingUiState
+import com.shortsblockerkids.presentation.billing.BillingUiState
 
 data class DashboardStateInput(
     val protection: DashboardProtectionInput,

@@ -1,12 +1,9 @@
 package com.shortsblockerkids.application.billing
 
 import com.shortsblockerkids.application.port.TimeProvider
-import com.shortsblockerkids.core.billing.BillingBackendClient
-import com.shortsblockerkids.core.billing.BillingBackendPurchaseRequest
-import com.shortsblockerkids.core.billing.BillingEntitlementSnapshot
-import com.shortsblockerkids.core.billing.BillingEntitlementState
-import com.shortsblockerkids.core.billing.BillingMessageCode
-import com.shortsblockerkids.core.billing.BillingVerificationPolicy
+import com.shortsblockerkids.domain.entitlement.BillingEntitlementSnapshot
+import com.shortsblockerkids.domain.entitlement.BillingEntitlementState
+import com.shortsblockerkids.domain.entitlement.BillingVerificationPolicy
 
 data class BillingSyncConfiguration(
     val installId: String?,
@@ -18,7 +15,7 @@ data class BillingSyncConfiguration(
 )
 
 class SyncBillingEntitlementUseCase(
-    private val billingBackendClient: BillingBackendClient,
+    private val billingVerificationPort: BillingVerificationPort,
     private val timeProvider: TimeProvider,
     private val configuration: BillingSyncConfiguration,
 ) {
@@ -28,19 +25,13 @@ class SyncBillingEntitlementUseCase(
             internalTestingBuild = configuration.internalTestingBuild,
         )
 
-    fun messageCodeWhileSyncing(purchaseSummary: BillingPurchaseSummary): BillingMessageCode? =
-        if (
-            billingBackendClient.isConfigured &&
+    fun willVerifyPurchaseWithBackend(purchaseSummary: BillingPurchaseSummary): Boolean =
+        billingVerificationPort.isConfigured &&
             purchaseSummary.hasPurchasedSubscription &&
             !configuration.installId.isNullOrBlank()
-        ) {
-            BillingMessageCode.VERIFYING_WITH_BACKEND
-        } else {
-            null
-        }
 
     suspend operator fun invoke(purchaseSummary: BillingPurchaseSummary): BillingSyncOutcome =
-        if (billingBackendClient.isConfigured) {
+        if (billingVerificationPort.isConfigured) {
             syncWithBackend(purchaseSummary)
         } else {
             syncWithoutBackend(purchaseSummary)
@@ -61,14 +52,15 @@ class SyncBillingEntitlementUseCase(
         val installId = configuration.installId
         if (installId.isNullOrBlank()) {
             return failClosedOutcome(
-                messageCodeToApply = BillingMessageCode.BACKEND_VERIFICATION_NOT_READY,
+                status = BillingSyncStatus.BACKEND_INSTALLATION_ID_UNAVAILABLE,
+                hasPendingSubscription = hasPendingSubscription,
                 clearsLoading = false,
             )
         }
 
         return runCatching {
-            billingBackendClient.verifyPurchase(
-                BillingBackendPurchaseRequest(
+            billingVerificationPort.verifyPurchase(
+                BillingVerificationRequest(
                     installId = installId,
                     packageName = configuration.packageName,
                     productId = configuration.productId,
@@ -81,7 +73,10 @@ class SyncBillingEntitlementUseCase(
                 snapshot.toOutcome(hasPendingSubscription)
             },
             onFailure = {
-                failClosedOutcome(BillingMessageCode.VERIFY_WITH_BACKEND_FAILED)
+                failClosedOutcome(
+                    status = BillingSyncStatus.BACKEND_PURCHASE_VERIFICATION_FAILED,
+                    hasPendingSubscription = hasPendingSubscription,
+                )
             },
         )
     }
@@ -90,13 +85,14 @@ class SyncBillingEntitlementUseCase(
         val installId = configuration.installId
         if (installId.isNullOrBlank()) {
             return failClosedOutcome(
-                messageCodeToApply = null,
+                status = null,
+                hasPendingSubscription = hasPendingSubscription,
                 clearsLoading = false,
             )
         }
 
         return runCatching {
-            billingBackendClient.refreshEntitlement(installId)
+            billingVerificationPort.refreshEntitlement(installId)
         }.fold(
             onSuccess = { snapshot ->
                 val refreshedSnapshot =
@@ -108,7 +104,10 @@ class SyncBillingEntitlementUseCase(
                 refreshedSnapshot.toOutcome(hasPendingSubscription)
             },
             onFailure = {
-                failClosedOutcome(BillingMessageCode.REFRESH_BACKEND_FAILED)
+                failClosedOutcome(
+                    status = BillingSyncStatus.BACKEND_ENTITLEMENT_REFRESH_FAILED,
+                    hasPendingSubscription = hasPendingSubscription,
+                )
             },
         )
     }
@@ -131,17 +130,23 @@ class SyncBillingEntitlementUseCase(
 
         return BillingSyncOutcome(
             entitlementSnapshot = snapshot,
-            messageCodeToApply =
-                verificationPolicy.localPurchaseMessageCode(
-                    hasPurchasedSubscription = purchaseSummary.hasPurchasedSubscription,
-                    hasPendingSubscription = purchaseSummary.hasPendingSubscription,
-                ),
+            status =
+                if (
+                    purchaseSummary.hasPurchasedSubscription &&
+                    !verificationPolicy.canUseClientOnlyEntitlement
+                ) {
+                    BillingSyncStatus.BACKEND_VERIFICATION_REQUIRED
+                } else {
+                    BillingSyncStatus.ENTITLEMENT_RESOLVED
+                },
+            hasPendingSubscription = purchaseSummary.hasPendingSubscription,
             purchaseTokensToAcknowledge = acknowledgementTokens,
         )
     }
 
     private fun failClosedOutcome(
-        messageCodeToApply: BillingMessageCode?,
+        status: BillingSyncStatus?,
+        hasPendingSubscription: Boolean,
         clearsLoading: Boolean = true,
     ): BillingSyncOutcome =
         BillingSyncOutcome(
@@ -149,28 +154,15 @@ class SyncBillingEntitlementUseCase(
                 verificationPolicy.failClosedSnapshot(
                     checkedAtMillis = timeProvider.currentTimeMillis(),
                 ),
-            messageCodeToApply = messageCodeToApply,
+            status = status,
+            hasPendingSubscription = hasPendingSubscription,
             clearsLoading = clearsLoading,
         )
 
     private fun BillingEntitlementSnapshot.toOutcome(hasPendingSubscription: Boolean): BillingSyncOutcome =
         BillingSyncOutcome(
             entitlementSnapshot = this,
-            messageCodeToApply = messageCode(hasPendingSubscription),
+            status = BillingSyncStatus.ENTITLEMENT_RESOLVED,
+            hasPendingSubscription = hasPendingSubscription,
         )
-
-    private fun BillingEntitlementSnapshot.messageCode(hasPendingSubscription: Boolean): BillingMessageCode =
-        when {
-            state == BillingEntitlementState.ACTIVE -> BillingMessageCode.SUBSCRIPTION_ACTIVE
-            state == BillingEntitlementState.CANCELED_ACTIVE ->
-                BillingMessageCode.SUBSCRIPTION_CANCELED_ACTIVE
-            state == BillingEntitlementState.IN_GRACE ->
-                BillingMessageCode.SUBSCRIPTION_IN_GRACE
-            state == BillingEntitlementState.PENDING || hasPendingSubscription ->
-                BillingMessageCode.PURCHASE_PENDING
-            state == BillingEntitlementState.ON_HOLD -> BillingMessageCode.PAYMENT_ISSUE
-            state == BillingEntitlementState.REVOKED -> BillingMessageCode.SUBSCRIPTION_REVOKED
-            state == BillingEntitlementState.EXPIRED -> BillingMessageCode.NO_ACTIVE_SUBSCRIPTION
-            else -> BillingMessageCode.VERIFICATION_UNAVAILABLE
-        }
 }

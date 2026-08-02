@@ -3,11 +3,11 @@ package com.shortsblockerkids.presentation.dashboard
 import com.shortsblockerkids.R
 import com.shortsblockerkids.accessibility.PlatformSupportMatrix
 import com.shortsblockerkids.accessibility.PlatformSupportStatus
-import com.shortsblockerkids.core.billing.BillingMessageCode
-import com.shortsblockerkids.core.billing.BillingUiMessage
-import com.shortsblockerkids.core.billing.BillingUiState
 import com.shortsblockerkids.domain.entitlement.FreeTestPolicy
 import com.shortsblockerkids.domain.protection.ProtectionMode
+import com.shortsblockerkids.presentation.billing.BillingMessageCode
+import com.shortsblockerkids.presentation.billing.BillingUiMessage
+import com.shortsblockerkids.presentation.billing.BillingUiState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull

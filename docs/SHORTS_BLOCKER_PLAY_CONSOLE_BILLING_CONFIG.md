@@ -54,13 +54,13 @@ Status before testing: Active
 The product ID must match:
 
 ```text
-BillingAvailability.MONTHLY_SUBSCRIPTION_PRODUCT_ID
+PlayBillingConfig.MONTHLY_SUBSCRIPTION_PRODUCT_ID
 ```
 
 If Play Console requires a different product ID, update:
 
-- `BillingAvailability.MONTHLY_SUBSCRIPTION_PRODUCT_ID`;
-- `BillingAvailabilityTest`;
+- `PlayBillingConfig.MONTHLY_SUBSCRIPTION_PRODUCT_ID`;
+- `PlayBillingConfigTest`;
 - `docs/SHORTS_BLOCKER_PHASE_10_BILLING_CHECKLIST.md`;
 - `docs/SHORTS_BLOCKER_PLAY_BILLING_INTERNAL_TEST_RUNBOOK.md`;
 - this config sheet.

@@ -1,4 +1,4 @@
-package com.shortsblockerkids.core.billing
+package com.shortsblockerkids.domain.entitlement
 
 data class BillingVerificationPolicy(
     val clientOnlyModeRequested: Boolean = false,
@@ -26,18 +26,4 @@ data class BillingVerificationPolicy(
             state = BillingEntitlementState.UNKNOWN,
             checkedAtMillis = checkedAtMillis,
         )
-
-    fun localPurchaseMessageCode(
-        hasPurchasedSubscription: Boolean,
-        hasPendingSubscription: Boolean,
-    ): BillingMessageCode =
-        when {
-            hasPurchasedSubscription && canUseClientOnlyEntitlement ->
-                BillingMessageCode.SUBSCRIPTION_ACTIVE
-            hasPurchasedSubscription ->
-                BillingMessageCode.BACKEND_VERIFICATION_REQUIRED
-            hasPendingSubscription ->
-                BillingMessageCode.PURCHASE_PENDING
-            else -> BillingMessageCode.NO_ACTIVE_SUBSCRIPTION
-        }
 }

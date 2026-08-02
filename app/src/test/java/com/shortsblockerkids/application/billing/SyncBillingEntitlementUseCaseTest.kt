@@ -1,11 +1,8 @@
 package com.shortsblockerkids.application.billing
 
 import com.shortsblockerkids.application.port.TimeProvider
-import com.shortsblockerkids.core.billing.BillingBackendClient
-import com.shortsblockerkids.core.billing.BillingBackendPurchaseRequest
-import com.shortsblockerkids.core.billing.BillingEntitlementSnapshot
-import com.shortsblockerkids.core.billing.BillingEntitlementState
-import com.shortsblockerkids.core.billing.BillingMessageCode
+import com.shortsblockerkids.domain.entitlement.BillingEntitlementSnapshot
+import com.shortsblockerkids.domain.entitlement.BillingEntitlementState
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -25,7 +22,7 @@ class SyncBillingEntitlementUseCaseTest {
                     activeUntilMillis = 9_876L,
                 )
             val backend =
-                RecordingBillingBackendClient(
+                RecordingBillingVerificationPort(
                     isConfigured = true,
                     verifyResult = exactSnapshot,
                 )
@@ -39,18 +36,16 @@ class SyncBillingEntitlementUseCaseTest {
                 )
             val purchaseSummary = purchasedSummary(hasPendingSubscription = true)
 
-            assertEquals(
-                BillingMessageCode.VERIFYING_WITH_BACKEND,
-                useCase.messageCodeWhileSyncing(purchaseSummary),
-            )
+            assertTrue(useCase.willVerifyPurchaseWithBackend(purchaseSummary))
             val outcome = useCase(purchaseSummary)
 
             assertSame(exactSnapshot, outcome.entitlementSnapshot)
-            assertEquals(BillingMessageCode.SUBSCRIPTION_CANCELED_ACTIVE, outcome.messageCodeToApply)
+            assertEquals(BillingSyncStatus.ENTITLEMENT_RESOLVED, outcome.status)
+            assertTrue(outcome.hasPendingSubscription)
             assertTrue(outcome.purchaseTokensToAcknowledge.isEmpty())
             assertEquals(
                 listOf(
-                    BillingBackendPurchaseRequest(
+                    BillingVerificationRequest(
                         installId = INSTALL_ID,
                         packageName = PACKAGE_NAME,
                         productId = PRODUCT_ID,
@@ -65,34 +60,33 @@ class SyncBillingEntitlementUseCaseTest {
         }
 
     @Test
-    fun verificationProgressMessageRequiresConfiguredBackendPurchaseAndInstallId() {
+    fun backendVerificationProgressRequiresConfiguredBackendPurchaseAndInstallId() {
         val purchased = purchasedSummary()
         val noPurchase = noPurchaseSummary()
 
-        assertNull(
-            createUseCase(RecordingBillingBackendClient(isConfigured = false))
-                .messageCodeWhileSyncing(purchased),
+        assertFalse(
+            createUseCase(RecordingBillingVerificationPort(isConfigured = false))
+                .willVerifyPurchaseWithBackend(purchased),
         )
-        assertNull(
+        assertFalse(
             createUseCase(
-                backend = RecordingBillingBackendClient(isConfigured = true),
+                backend = RecordingBillingVerificationPort(isConfigured = true),
                 installId = null,
-            ).messageCodeWhileSyncing(purchased),
+            ).willVerifyPurchaseWithBackend(purchased),
         )
-        assertNull(
+        assertFalse(
             createUseCase(
-                backend = RecordingBillingBackendClient(isConfigured = true),
+                backend = RecordingBillingVerificationPort(isConfigured = true),
                 installId = "   ",
-            ).messageCodeWhileSyncing(purchased),
+            ).willVerifyPurchaseWithBackend(purchased),
         )
-        assertNull(
-            createUseCase(RecordingBillingBackendClient(isConfigured = true))
-                .messageCodeWhileSyncing(noPurchase),
+        assertFalse(
+            createUseCase(RecordingBillingVerificationPort(isConfigured = true))
+                .willVerifyPurchaseWithBackend(noPurchase),
         )
-        assertEquals(
-            BillingMessageCode.VERIFYING_WITH_BACKEND,
-            createUseCase(RecordingBillingBackendClient(isConfigured = true))
-                .messageCodeWhileSyncing(purchased),
+        assertTrue(
+            createUseCase(RecordingBillingVerificationPort(isConfigured = true))
+                .willVerifyPurchaseWithBackend(purchased),
         )
     }
 
@@ -100,7 +94,7 @@ class SyncBillingEntitlementUseCaseTest {
     fun missingOrBlankInstallIdFailsVerificationClosedWithoutBackendCall() =
         runBlocking {
             listOf<String?>(null, "", "   ").forEach { installId ->
-                val backend = RecordingBillingBackendClient(isConfigured = true)
+                val backend = RecordingBillingVerificationPort(isConfigured = true)
                 val timeProvider = RecordingTimeProvider()
                 val outcome =
                     createUseCase(
@@ -111,7 +105,7 @@ class SyncBillingEntitlementUseCaseTest {
 
                 assertFailClosed(
                     outcome = outcome,
-                    expectedMessageCode = BillingMessageCode.BACKEND_VERIFICATION_NOT_READY,
+                    expectedStatus = BillingSyncStatus.BACKEND_INSTALLATION_ID_UNAVAILABLE,
                     expectedClearsLoading = false,
                 )
                 assertTrue(backend.verifyRequests.isEmpty())
@@ -124,7 +118,7 @@ class SyncBillingEntitlementUseCaseTest {
     fun verificationFailureReturnsUnknownImmediatelyWithoutAcknowledgement() =
         runBlocking {
             val backend =
-                RecordingBillingBackendClient(isConfigured = true).apply {
+                RecordingBillingVerificationPort(isConfigured = true).apply {
                     verifyFailure = IllegalStateException("verify failed")
                 }
             val timeProvider = RecordingTimeProvider()
@@ -134,7 +128,7 @@ class SyncBillingEntitlementUseCaseTest {
                     purchasedSummary(),
                 )
 
-            assertFailClosed(outcome, BillingMessageCode.VERIFY_WITH_BACKEND_FAILED)
+            assertFailClosed(outcome, BillingSyncStatus.BACKEND_PURCHASE_VERIFICATION_FAILED)
             assertEquals(1, backend.verifyRequests.size)
             assertTrue(backend.refreshInstallIds.isEmpty())
             assertEquals(1, timeProvider.callCount)
@@ -150,7 +144,7 @@ class SyncBillingEntitlementUseCaseTest {
                     activeUntilMillis = 8_888L,
                 )
             val backend =
-                RecordingBillingBackendClient(
+                RecordingBillingVerificationPort(
                     isConfigured = true,
                     refreshResult = exactSnapshot,
                 )
@@ -165,7 +159,8 @@ class SyncBillingEntitlementUseCaseTest {
                 )(noPurchaseSummary())
 
             assertSame(exactSnapshot, outcome.entitlementSnapshot)
-            assertEquals(BillingMessageCode.SUBSCRIPTION_ACTIVE, outcome.messageCodeToApply)
+            assertEquals(BillingSyncStatus.ENTITLEMENT_RESOLVED, outcome.status)
+            assertFalse(outcome.hasPendingSubscription)
             assertTrue(outcome.purchaseTokensToAcknowledge.isEmpty())
             assertEquals(listOf(INSTALL_ID), backend.refreshInstallIds)
             assertTrue(backend.verifyRequests.isEmpty())
@@ -173,14 +168,11 @@ class SyncBillingEntitlementUseCaseTest {
         }
 
     @Test
-    fun nullRefreshCreatesExpiredSnapshotWithCurrentTimeAndPendingMessage() =
+    fun nullRefreshCreatesExpiredSnapshotWithCurrentTimeAndPendingState() =
         runBlocking {
-            listOf(
-                false to BillingMessageCode.NO_ACTIVE_SUBSCRIPTION,
-                true to BillingMessageCode.PURCHASE_PENDING,
-            ).forEach { (hasPendingSubscription, expectedMessageCode) ->
+            listOf(false, true).forEach { hasPendingSubscription ->
                 val backend =
-                    RecordingBillingBackendClient(
+                    RecordingBillingVerificationPort(
                         isConfigured = true,
                         refreshResult = null,
                     )
@@ -194,7 +186,8 @@ class SyncBillingEntitlementUseCaseTest {
                 assertEquals(BillingEntitlementState.EXPIRED, outcome.entitlementSnapshot.state)
                 assertEquals(NOW_MILLIS, outcome.entitlementSnapshot.checkedAtMillis)
                 assertNull(outcome.entitlementSnapshot.activeUntilMillis)
-                assertEquals(expectedMessageCode, outcome.messageCodeToApply)
+                assertEquals(BillingSyncStatus.ENTITLEMENT_RESOLVED, outcome.status)
+                assertEquals(hasPendingSubscription, outcome.hasPendingSubscription)
                 assertTrue(outcome.purchaseTokensToAcknowledge.isEmpty())
                 assertEquals(listOf(INSTALL_ID), backend.refreshInstallIds)
                 assertEquals(1, timeProvider.callCount)
@@ -205,7 +198,7 @@ class SyncBillingEntitlementUseCaseTest {
     fun refreshFailureReturnsUnknownImmediatelyWithoutAcknowledgement() =
         runBlocking {
             val backend =
-                RecordingBillingBackendClient(isConfigured = true).apply {
+                RecordingBillingVerificationPort(isConfigured = true).apply {
                     refreshFailure = IllegalStateException("refresh failed")
                 }
             val timeProvider = RecordingTimeProvider()
@@ -213,7 +206,7 @@ class SyncBillingEntitlementUseCaseTest {
             val outcome =
                 createUseCase(backend = backend, timeProvider = timeProvider)(noPurchaseSummary())
 
-            assertFailClosed(outcome, BillingMessageCode.REFRESH_BACKEND_FAILED)
+            assertFailClosed(outcome, BillingSyncStatus.BACKEND_ENTITLEMENT_REFRESH_FAILED)
             assertEquals(listOf(INSTALL_ID), backend.refreshInstallIds)
             assertTrue(backend.verifyRequests.isEmpty())
             assertEquals(1, timeProvider.callCount)
@@ -223,7 +216,7 @@ class SyncBillingEntitlementUseCaseTest {
     fun missingOrBlankInstallIdFailsRefreshClosedAndPreservesCurrentMessage() =
         runBlocking {
             listOf<String?>(null, "", "   ").forEach { installId ->
-                val backend = RecordingBillingBackendClient(isConfigured = true)
+                val backend = RecordingBillingVerificationPort(isConfigured = true)
                 val timeProvider = RecordingTimeProvider()
                 val outcome =
                     createUseCase(
@@ -234,7 +227,7 @@ class SyncBillingEntitlementUseCaseTest {
 
                 assertFailClosed(
                     outcome = outcome,
-                    expectedMessageCode = null,
+                    expectedStatus = null,
                     expectedClearsLoading = false,
                 )
                 assertTrue(backend.verifyRequests.isEmpty())
@@ -255,7 +248,7 @@ class SyncBillingEntitlementUseCaseTest {
                 )
 
             cases.forEach { case ->
-                val backend = RecordingBillingBackendClient(isConfigured = false)
+                val backend = RecordingBillingVerificationPort(isConfigured = false)
                 val timeProvider = RecordingTimeProvider()
                 val outcome =
                     createUseCase(
@@ -269,12 +262,13 @@ class SyncBillingEntitlementUseCaseTest {
                 assertEquals(NOW_MILLIS, outcome.entitlementSnapshot.checkedAtMillis)
                 assertEquals(
                     if (case.expectedState == BillingEntitlementState.ACTIVE) {
-                        BillingMessageCode.SUBSCRIPTION_ACTIVE
+                        BillingSyncStatus.ENTITLEMENT_RESOLVED
                     } else {
-                        BillingMessageCode.BACKEND_VERIFICATION_REQUIRED
+                        BillingSyncStatus.BACKEND_VERIFICATION_REQUIRED
                     },
-                    outcome.messageCodeToApply,
+                    outcome.status,
                 )
+                assertFalse(outcome.hasPendingSubscription)
                 assertEquals(case.expectedAcknowledgementTokens, outcome.purchaseTokensToAcknowledge)
                 assertTrue(backend.verifyRequests.isEmpty())
                 assertTrue(backend.refreshInstallIds.isEmpty())
@@ -287,7 +281,7 @@ class SyncBillingEntitlementUseCaseTest {
         runBlocking {
             val outcome =
                 createUseCase(
-                    backend = RecordingBillingBackendClient(isConfigured = false),
+                    backend = RecordingBillingVerificationPort(isConfigured = false),
                     clientOnlyModeRequested = true,
                     internalTestingBuild = true,
                 )(
@@ -298,7 +292,8 @@ class SyncBillingEntitlementUseCaseTest {
                 )
 
             assertEquals(BillingEntitlementState.ACTIVE, outcome.entitlementSnapshot.state)
-            assertEquals(BillingMessageCode.SUBSCRIPTION_ACTIVE, outcome.messageCodeToApply)
+            assertEquals(BillingSyncStatus.ENTITLEMENT_RESOLVED, outcome.status)
+            assertTrue(outcome.hasPendingSubscription)
             assertTrue(outcome.purchaseTokensToAcknowledge.isEmpty())
         }
 
@@ -309,112 +304,39 @@ class SyncBillingEntitlementUseCaseTest {
                 noPurchaseSummary(
                     hasPendingSubscription = true,
                     unacknowledgedTokens = ACK_TOKENS,
-                ) to
-                    BillingMessageCode.PURCHASE_PENDING,
+                ),
                 noPurchaseSummary(
                     hasPendingSubscription = false,
                     unacknowledgedTokens = ACK_TOKENS,
-                ) to
-                    BillingMessageCode.NO_ACTIVE_SUBSCRIPTION,
-            ).forEach { (purchaseSummary, expectedMessageCode) ->
+                ),
+            ).forEach { purchaseSummary ->
                 val outcome =
                     createUseCase(
-                        backend = RecordingBillingBackendClient(isConfigured = false),
+                        backend = RecordingBillingVerificationPort(isConfigured = false),
                         clientOnlyModeRequested = true,
                         internalTestingBuild = true,
                     )(purchaseSummary)
 
                 assertEquals(BillingEntitlementState.EXPIRED, outcome.entitlementSnapshot.state)
                 assertFalse(outcome.entitlementSnapshot.isActive)
-                assertEquals(expectedMessageCode, outcome.messageCodeToApply)
-                assertTrue(outcome.purchaseTokensToAcknowledge.isEmpty())
-            }
-        }
-
-    @Test
-    fun backendSnapshotsUseStableMessageCodesForEveryEntitlementState() =
-        runBlocking {
-            val expectedCodes =
-                mapOf(
-                    BillingEntitlementState.ACTIVE to BillingMessageCode.SUBSCRIPTION_ACTIVE,
-                    BillingEntitlementState.CANCELED_ACTIVE to
-                        BillingMessageCode.SUBSCRIPTION_CANCELED_ACTIVE,
-                    BillingEntitlementState.IN_GRACE to BillingMessageCode.SUBSCRIPTION_IN_GRACE,
-                    BillingEntitlementState.PENDING to BillingMessageCode.PURCHASE_PENDING,
-                    BillingEntitlementState.ON_HOLD to BillingMessageCode.PAYMENT_ISSUE,
-                    BillingEntitlementState.REVOKED to BillingMessageCode.SUBSCRIPTION_REVOKED,
-                    BillingEntitlementState.EXPIRED to BillingMessageCode.NO_ACTIVE_SUBSCRIPTION,
-                    BillingEntitlementState.UNKNOWN to BillingMessageCode.VERIFICATION_UNAVAILABLE,
+                assertEquals(BillingSyncStatus.ENTITLEMENT_RESOLVED, outcome.status)
+                assertEquals(
+                    purchaseSummary.hasPendingSubscription,
+                    outcome.hasPendingSubscription,
                 )
-
-            expectedCodes.forEach { (state, expectedMessageCode) ->
-                val exactSnapshot =
-                    BillingEntitlementSnapshot(
-                        state = state,
-                        checkedAtMillis = state.ordinal.toLong(),
-                    )
-                val backend =
-                    RecordingBillingBackendClient(
-                        isConfigured = true,
-                        verifyResult = exactSnapshot,
-                    )
-
-                val outcome = createUseCase(backend)(purchasedSummary())
-
-                assertSame(exactSnapshot, outcome.entitlementSnapshot)
-                assertEquals(expectedMessageCode, outcome.messageCodeToApply)
                 assertTrue(outcome.purchaseTokensToAcknowledge.isEmpty())
-            }
-        }
-
-    @Test
-    fun paidBackendStatesTakePriorityWhilePendingOverridesOtherBackendMessages() =
-        runBlocking {
-            val expectedCodes =
-                mapOf(
-                    BillingEntitlementState.ACTIVE to BillingMessageCode.SUBSCRIPTION_ACTIVE,
-                    BillingEntitlementState.CANCELED_ACTIVE to
-                        BillingMessageCode.SUBSCRIPTION_CANCELED_ACTIVE,
-                    BillingEntitlementState.IN_GRACE to BillingMessageCode.SUBSCRIPTION_IN_GRACE,
-                    BillingEntitlementState.PENDING to BillingMessageCode.PURCHASE_PENDING,
-                    BillingEntitlementState.ON_HOLD to BillingMessageCode.PURCHASE_PENDING,
-                    BillingEntitlementState.REVOKED to BillingMessageCode.PURCHASE_PENDING,
-                    BillingEntitlementState.EXPIRED to BillingMessageCode.PURCHASE_PENDING,
-                    BillingEntitlementState.UNKNOWN to BillingMessageCode.PURCHASE_PENDING,
-                )
-
-            expectedCodes.forEach { (state, expectedMessageCode) ->
-                val backend =
-                    RecordingBillingBackendClient(
-                        isConfigured = true,
-                        verifyResult =
-                            BillingEntitlementSnapshot(
-                                state = state,
-                                checkedAtMillis = NOW_MILLIS,
-                            ),
-                    )
-
-                val outcome =
-                    createUseCase(backend)(
-                        purchasedSummary(hasPendingSubscription = true),
-                    )
-
-                assertEquals(expectedMessageCode, outcome.messageCodeToApply)
             }
         }
 
     @Test
     fun blankPurchaseTokenRemainsAPurchasedSubscriptionAndIsVerifiedExactly() =
         runBlocking {
-            val backend = RecordingBillingBackendClient(isConfigured = true)
+            val backend = RecordingBillingVerificationPort(isConfigured = true)
             val purchaseSummary = purchasedSummary(purchaseToken = "")
             val useCase = createUseCase(backend)
 
             assertTrue(purchaseSummary.hasPurchasedSubscription)
-            assertEquals(
-                BillingMessageCode.VERIFYING_WITH_BACKEND,
-                useCase.messageCodeWhileSyncing(purchaseSummary),
-            )
+            assertTrue(useCase.willVerifyPurchaseWithBackend(purchaseSummary))
 
             useCase(purchaseSummary)
 
@@ -423,14 +345,14 @@ class SyncBillingEntitlementUseCaseTest {
         }
 
     private fun createUseCase(
-        backend: RecordingBillingBackendClient,
+        backend: RecordingBillingVerificationPort,
         timeProvider: RecordingTimeProvider = RecordingTimeProvider(),
         installId: String? = INSTALL_ID,
         clientOnlyModeRequested: Boolean = false,
         internalTestingBuild: Boolean = false,
     ): SyncBillingEntitlementUseCase =
         SyncBillingEntitlementUseCase(
-            billingBackendClient = backend,
+            billingVerificationPort = backend,
             timeProvider = timeProvider,
             configuration =
                 BillingSyncConfiguration(
@@ -466,14 +388,14 @@ class SyncBillingEntitlementUseCaseTest {
 
     private fun assertFailClosed(
         outcome: BillingSyncOutcome,
-        expectedMessageCode: BillingMessageCode?,
+        expectedStatus: BillingSyncStatus?,
         expectedClearsLoading: Boolean = true,
     ) {
         assertEquals(BillingEntitlementState.UNKNOWN, outcome.entitlementSnapshot.state)
         assertEquals(NOW_MILLIS, outcome.entitlementSnapshot.checkedAtMillis)
         assertNull(outcome.entitlementSnapshot.activeUntilMillis)
         assertFalse(outcome.entitlementSnapshot.isActive)
-        assertEquals(expectedMessageCode, outcome.messageCodeToApply)
+        assertEquals(expectedStatus, outcome.status)
         assertEquals(expectedClearsLoading, outcome.clearsLoading)
         assertTrue(outcome.purchaseTokensToAcknowledge.isEmpty())
     }
@@ -497,17 +419,17 @@ class SyncBillingEntitlementUseCaseTest {
         }
     }
 
-    private class RecordingBillingBackendClient(
+    private class RecordingBillingVerificationPort(
         override val isConfigured: Boolean,
         var verifyResult: BillingEntitlementSnapshot = ACTIVE_SNAPSHOT,
         var refreshResult: BillingEntitlementSnapshot? = ACTIVE_SNAPSHOT,
-    ) : BillingBackendClient {
-        val verifyRequests = mutableListOf<BillingBackendPurchaseRequest>()
+    ) : BillingVerificationPort {
+        val verifyRequests = mutableListOf<BillingVerificationRequest>()
         val refreshInstallIds = mutableListOf<String>()
         var verifyFailure: RuntimeException? = null
         var refreshFailure: RuntimeException? = null
 
-        override suspend fun verifyPurchase(request: BillingBackendPurchaseRequest): BillingEntitlementSnapshot {
+        override suspend fun verifyPurchase(request: BillingVerificationRequest): BillingEntitlementSnapshot {
             verifyRequests += request
             verifyFailure?.let { failure -> throw failure }
             return verifyResult

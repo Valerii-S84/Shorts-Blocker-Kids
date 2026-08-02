@@ -1,12 +1,9 @@
-package com.shortsblockerkids.feature.billing
+package com.shortsblockerkids.presentation.billing
 
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.shortsblockerkids.R
-import com.shortsblockerkids.core.billing.BillingMessageCode
-import com.shortsblockerkids.core.billing.BillingUiMessage
-import com.shortsblockerkids.core.billing.BillingUiState
 
 @Composable
 fun billingMessageText(message: BillingUiMessage): String {

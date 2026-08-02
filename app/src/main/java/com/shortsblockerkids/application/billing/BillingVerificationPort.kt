@@ -1,14 +1,16 @@
-package com.shortsblockerkids.core.billing
+package com.shortsblockerkids.application.billing
 
-interface BillingBackendClient {
+import com.shortsblockerkids.domain.entitlement.BillingEntitlementSnapshot
+
+interface BillingVerificationPort {
     val isConfigured: Boolean
 
-    suspend fun verifyPurchase(request: BillingBackendPurchaseRequest): BillingEntitlementSnapshot
+    suspend fun verifyPurchase(request: BillingVerificationRequest): BillingEntitlementSnapshot
 
     suspend fun refreshEntitlement(installId: String): BillingEntitlementSnapshot?
 }
 
-data class BillingBackendPurchaseRequest(
+data class BillingVerificationRequest(
     val installId: String,
     val packageName: String,
     val productId: String,
@@ -16,10 +18,10 @@ data class BillingBackendPurchaseRequest(
     val appVersion: String,
 )
 
-object DisabledBillingBackendClient : BillingBackendClient {
+object DisabledBillingVerificationPort : BillingVerificationPort {
     override val isConfigured: Boolean = false
 
-    override suspend fun verifyPurchase(request: BillingBackendPurchaseRequest): BillingEntitlementSnapshot =
+    override suspend fun verifyPurchase(request: BillingVerificationRequest): BillingEntitlementSnapshot =
         throw UnsupportedOperationException("Billing backend is not configured.")
 
     override suspend fun refreshEntitlement(installId: String): BillingEntitlementSnapshot? = null

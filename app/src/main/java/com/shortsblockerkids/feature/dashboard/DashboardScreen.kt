@@ -29,10 +29,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.shortsblockerkids.R
-import com.shortsblockerkids.core.billing.BillingUiState
-import com.shortsblockerkids.feature.billing.billingMessageText
-import com.shortsblockerkids.feature.billing.billingSubscriptionStatusText
-import com.shortsblockerkids.feature.billing.billingSubscriptionTermsText
+import com.shortsblockerkids.presentation.billing.BillingUiState
+import com.shortsblockerkids.presentation.billing.billingMessageText
+import com.shortsblockerkids.presentation.billing.billingSubscriptionStatusText
+import com.shortsblockerkids.presentation.billing.billingSubscriptionTermsText
 import com.shortsblockerkids.presentation.dashboard.DashboardUiState
 import com.shortsblockerkids.presentation.dashboard.DashboardWarningUiModel
 import com.shortsblockerkids.presentation.dashboard.ProtectedPlatformItemUiModel

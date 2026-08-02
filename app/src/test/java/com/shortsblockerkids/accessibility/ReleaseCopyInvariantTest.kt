@@ -255,46 +255,69 @@ class ReleaseCopyInvariantTest {
     }
 
     @Test
-    fun billingSafetySeamFailsClosedAndRepositoryDelegatesOrchestration() {
+    fun billingLayerAlignmentFailsClosedAndKeepsGooglePlayGatewayInfrastructureOnly() {
         val useCaseSource =
             repoFile(
                 "app/src/main/java/com/shortsblockerkids/application/billing/" +
                     "SyncBillingEntitlementUseCase.kt",
             ).readText()
-        val repositorySource =
+        val coordinatorSource =
             repoFile(
-                "app/src/main/java/com/shortsblockerkids/core/billing/PlayBillingRepository.kt",
+                "app/src/main/java/com/shortsblockerkids/presentation/billing/BillingCoordinator.kt",
+            ).readText()
+        val messageMapperSource =
+            repoFile(
+                "app/src/main/java/com/shortsblockerkids/presentation/billing/" +
+                    "BillingMessageMapper.kt",
+            ).readText()
+        val gatewaySource =
+            repoFile(
+                "app/src/main/java/com/shortsblockerkids/infrastructure/billing/" +
+                    "GooglePlayBillingGateway.kt",
             ).readText()
 
         assertTrue(useCaseSource.contains("verificationPolicy.failClosedSnapshot"))
-        assertTrue(useCaseSource.contains("BillingMessageCode.VERIFY_WITH_BACKEND_FAILED"))
-        assertTrue(useCaseSource.contains("BillingMessageCode.REFRESH_BACKEND_FAILED"))
-        assertTrue(repositorySource.contains("SyncBillingEntitlementUseCase"))
-        assertTrue(repositorySource.contains("syncBillingEntitlementUseCase(purchaseSummary)"))
-        assertTrue(repositorySource.contains("onEntitlementChanged(outcome.entitlementSnapshot)"))
-        assertTrue(repositorySource.contains("outcome.purchaseTokensToAcknowledge"))
-        assertTrue(repositorySource.contains("outcome.messageCodeToApply"))
-        assertTrue(repositorySource.contains("outcome.clearsLoading"))
         assertTrue(
-            "PlayBillingRepository must stay within 300 lines",
-            repositorySource.substringAfter("class PlayBillingRepository").lineSequence().count() <= 300,
+            useCaseSource.contains("BillingSyncStatus.BACKEND_PURCHASE_VERIFICATION_FAILED"),
+        )
+        assertTrue(
+            useCaseSource.contains("BillingSyncStatus.BACKEND_ENTITLEMENT_REFRESH_FAILED"),
+        )
+        assertFalse(useCaseSource.contains("BillingMessageCode"))
+        assertTrue(coordinatorSource.contains("SyncBillingEntitlementUseCase"))
+        assertTrue(coordinatorSource.contains("syncBillingEntitlementUseCase(event.summary)"))
+        assertTrue(coordinatorSource.contains("onEntitlementChanged(outcome.entitlementSnapshot)"))
+        assertTrue(coordinatorSource.contains("outcome.purchaseTokensToAcknowledge"))
+        assertTrue(coordinatorSource.contains("outcome.toBillingUiMessage()"))
+        assertTrue(coordinatorSource.contains("outcome.clearsLoading"))
+        assertTrue(messageMapperSource.contains("BillingMessageCode.VERIFY_WITH_BACKEND_FAILED"))
+        assertTrue(messageMapperSource.contains("BillingMessageCode.REFRESH_BACKEND_FAILED"))
+        assertTrue(gatewaySource.contains("PlayBillingConfig.MONTHLY_SUBSCRIPTION_PRODUCT_ID"))
+        assertTrue(gatewaySource.contains("?.formattedPrice"))
+        assertTrue(
+            "GooglePlayBillingGateway must stay within 300 lines",
+            gatewaySource.substringAfter("class GooglePlayBillingGateway").lineSequence().count() <= 300,
+        )
+        assertTrue(
+            "BillingCoordinator must stay within 180 lines",
+            coordinatorSource.substringAfter("class BillingCoordinator").lineSequence().count() <= 180,
         )
 
         listOf(
-            "BillingBackendClient",
+            "BillingVerificationPort",
+            "SyncBillingEntitlementUseCase",
             "verifyPurchaseWithBackend",
             "refreshEntitlementFromBackend",
             "recordFailClosedEntitlement",
             "BillingVerificationPolicy",
             "failClosedSnapshot",
             "localPurchaseSnapshot",
-            "localPurchaseMessageCode",
             ".verifyPurchase(",
             ".refreshEntitlement(",
         ).forEach { forbiddenSource ->
             assertFalse(
-                "Repository still owns billing orchestration: $forbiddenSource",
-                repositorySource.contains(forbiddenSource),
+                "Google Play gateway still owns entitlement orchestration: $forbiddenSource",
+                gatewaySource.contains(forbiddenSource),
             )
         }
     }

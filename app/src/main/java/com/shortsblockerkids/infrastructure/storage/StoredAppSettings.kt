@@ -1,6 +1,6 @@
 package com.shortsblockerkids.infrastructure.storage
 
-import com.shortsblockerkids.core.billing.BillingEntitlementState
+import com.shortsblockerkids.domain.entitlement.BillingEntitlementState
 import com.shortsblockerkids.domain.entitlement.FreeTestPolicy
 import com.shortsblockerkids.domain.protection.ProtectionConfiguration
 import com.shortsblockerkids.domain.protection.ProtectionMode

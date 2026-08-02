@@ -3,11 +3,11 @@ package com.shortsblockerkids.composition.dashboard
 import com.shortsblockerkids.accessibility.PlatformSupportMatrix
 import com.shortsblockerkids.application.model.AppSettingsSnapshot
 import com.shortsblockerkids.application.port.TimeProvider
-import com.shortsblockerkids.core.billing.BillingUiState
 import com.shortsblockerkids.domain.entitlement.EntitlementPolicy
 import com.shortsblockerkids.domain.entitlement.EntitlementSnapshot
 import com.shortsblockerkids.domain.entitlement.FreeTestPolicy
 import com.shortsblockerkids.domain.protection.ProtectionConfiguration
+import com.shortsblockerkids.presentation.billing.BillingUiState
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test

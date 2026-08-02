@@ -4,7 +4,7 @@ import com.shortsblockerkids.accessibility.PlatformSupportEntry
 import com.shortsblockerkids.accessibility.PlatformSupportMatrix
 import com.shortsblockerkids.application.model.AppSettingsSnapshot
 import com.shortsblockerkids.application.port.TimeProvider
-import com.shortsblockerkids.core.billing.BillingUiState
+import com.shortsblockerkids.presentation.billing.BillingUiState
 import com.shortsblockerkids.presentation.dashboard.DashboardBillingInput
 import com.shortsblockerkids.presentation.dashboard.DashboardEntitlementInput
 import com.shortsblockerkids.presentation.dashboard.DashboardPlatformInput
