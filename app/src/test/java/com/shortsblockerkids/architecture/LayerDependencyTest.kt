@@ -70,6 +70,35 @@ class LayerDependencyTest {
         )
     }
 
+    @Test
+    fun allSourceSetsAvoidRemovedArchitectureTypes() {
+        val forbiddenImports =
+            listOf(
+                "com.shortsblockerkids.core.model.ProtectionMode",
+                "com.shortsblockerkids.core.security.PinVerificationResult",
+                "com.shortsblockerkids.core.storage.",
+            )
+        val violations =
+            SOURCE_SET_PATHS
+                .map { relativePath -> File(repositoryRoot, relativePath) }
+                .filter(File::isDirectory)
+                .flatMap { sourceSetRoot ->
+                    sourceSetRoot
+                        .walkTopDown()
+                        .filter { file -> file.isFile && file.extension == "kt" }
+                        .flatMap { source ->
+                            imports(source)
+                                .filter { importedName ->
+                                    forbiddenImports.any(importedName::startsWith)
+                                }.map { importedName ->
+                                    "${source.relativeTo(repositoryRoot)} imports $importedName"
+                                }
+                        }
+                }
+
+        assertTrue("Removed architecture imports:\n${violations.joinToString("\n")}", violations.isEmpty())
+    }
+
     private fun assertImports(
         layer: String,
         isAllowed: (String) -> Boolean,
@@ -129,16 +158,26 @@ class LayerDependencyTest {
             .filter { file -> file.isFile && file.extension == "kt" }
             .toList()
 
-    private val sourceRoot: File by lazy {
+    private val repositoryRoot: File by lazy {
         generateSequence(File(requireNotNull(System.getProperty("user.dir")))) { directory ->
             directory.parentFile
-        }.map { directory ->
-            File(directory, "app/src/main/java/com/shortsblockerkids")
-        }.firstOrNull(File::isDirectory)
-            ?: error("Production source root not found")
+        }.firstOrNull { directory -> File(directory, "settings.gradle.kts").isFile }
+            ?: error("Repository root not found")
+    }
+
+    private val sourceRoot: File by lazy {
+        File(repositoryRoot, "app/src/main/java/com/shortsblockerkids")
     }
 
     private companion object {
         val IMPORT_PATTERN = Regex("(?m)^import\\s+([^\\s]+)")
+        val SOURCE_SET_PATHS =
+            listOf(
+                "app/src/main/java",
+                "app/src/debug/java",
+                "app/src/release/java",
+                "app/src/test/java",
+                "app/src/androidTest/java",
+            )
     }
 }

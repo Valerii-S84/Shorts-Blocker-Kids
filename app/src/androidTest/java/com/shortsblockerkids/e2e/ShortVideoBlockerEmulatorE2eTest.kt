@@ -16,8 +16,12 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.shortsblockerkids.MainActivity
 import com.shortsblockerkids.R
 import com.shortsblockerkids.accessibility.ShortsBlockerAccessibilityService
-import com.shortsblockerkids.core.model.ProtectionMode
-import com.shortsblockerkids.core.storage.SettingsRepository
+import com.shortsblockerkids.application.pin.CreatePinUseCase
+import com.shortsblockerkids.application.protection.canProtect
+import com.shortsblockerkids.application.protection.isTemporarilyAllowed
+import com.shortsblockerkids.domain.protection.ProtectionMode
+import com.shortsblockerkids.infrastructure.storage.DataStoreSettingsStore
+import com.shortsblockerkids.infrastructure.storage.SettingsPinAccessAdapter
 import com.shortsblockerkids.platform.accessibility.diagnostics.accessibilityDiagnostics
 import com.shortsblockerkids.platform.accessibility.status.AccessibilityServiceStatus
 import kotlinx.coroutines.flow.first
@@ -40,7 +44,11 @@ class ShortVideoBlockerEmulatorE2eTest {
     private val uiAutomation =
         instrumentation.getUiAutomation(UiAutomation.FLAG_DONT_SUPPRESS_ACCESSIBILITY_SERVICES)
     private val targetContext = instrumentation.targetContext
-    private val settingsRepository = SettingsRepository(targetContext)
+    private val settingsStore = DataStoreSettingsStore(targetContext)
+    private val createPinUseCase =
+        CreatePinUseCase(
+            SettingsPinAccessAdapter(pinStateStore = settingsStore),
+        )
     private var originalApplicationLocales: LocaleList? = null
 
     @Before
@@ -58,8 +66,8 @@ class ShortVideoBlockerEmulatorE2eTest {
     @After
     fun tearDown() {
         runBlocking {
-            settingsRepository.setProtectionEnabled(false)
-            settingsRepository.setTemporaryAllowUntil(null)
+            settingsStore.setProtectionEnabled(false)
+            settingsStore.setTemporaryAllowUntil(null)
         }
         disableAccessibilityService()
         waitUntil(timeoutMs = 5_000L) { !isOverlayVisible() }
@@ -180,11 +188,11 @@ class ShortVideoBlockerEmulatorE2eTest {
         assertOverlayRemainsHidden()
 
         runBlocking {
-            settingsRepository.setTemporaryAllowUntil(System.currentTimeMillis() - 1L)
+            settingsStore.setTemporaryAllowUntil(System.currentTimeMillis() - 1L)
         }
         waitUntil(timeoutMs = 2_000L) {
             runBlocking {
-                !settingsRepository
+                !settingsStore
                     .readSettings()
                     .first()
                     .isTemporarilyAllowed(System.currentTimeMillis())
@@ -257,16 +265,16 @@ class ShortVideoBlockerEmulatorE2eTest {
     @Test
     fun globalProtectionToggleControlsBlocking() {
         runBlocking {
-            settingsRepository.setProtectionEnabled(false)
-            settingsRepository.setTemporaryAllowUntil(null)
+            settingsStore.setProtectionEnabled(false)
+            settingsStore.setTemporaryAllowUntil(null)
         }
 
         launchFixture(FixturePlatform.YOUTUBE, "shorts")
         assertNoOverlay()
 
         runBlocking {
-            settingsRepository.setProtectionEnabled(true)
-            settingsRepository.recordSuccessfulProtectionActivation(System.currentTimeMillis())
+            settingsStore.setProtectionEnabled(true)
+            settingsStore.recordSuccessfulProtectionActivation(System.currentTimeMillis())
         }
         launchFixture(FixturePlatform.YOUTUBE, "shorts")
 
@@ -383,31 +391,31 @@ class ShortVideoBlockerEmulatorE2eTest {
 
     private fun dismissOverlayByDisablingProtection() {
         runBlocking {
-            settingsRepository.setProtectionEnabled(false)
+            settingsStore.setProtectionEnabled(false)
         }
         assertNoOverlay(timeoutMs = 3_000L)
         pressHome()
         runBlocking {
-            settingsRepository.setProtectionEnabled(true)
-            settingsRepository.recordSuccessfulProtectionActivation(System.currentTimeMillis())
+            settingsStore.setProtectionEnabled(true)
+            settingsStore.recordSuccessfulProtectionActivation(System.currentTimeMillis())
         }
         SystemClock.sleep(700L)
     }
 
     private fun prepareProtectionState() {
         runBlocking {
-            settingsRepository.savePin(parentPin)
-            settingsRepository.acceptAccessibilityDisclosure()
-            settingsRepository.setSelectedMode(ProtectionMode.BLOCK_SHORTS)
-            settingsRepository.setTemporaryAllowUntil(null)
-            settingsRepository.setProtectionEnabled(true)
-            settingsRepository.recordSuccessfulProtectionActivation(System.currentTimeMillis())
+            createPinUseCase(parentPin)
+            settingsStore.acceptAccessibilityDisclosure()
+            settingsStore.setSelectedMode(ProtectionMode.BLOCK_SHORTS)
+            settingsStore.setTemporaryAllowUntil(null)
+            settingsStore.setProtectionEnabled(true)
+            settingsStore.recordSuccessfulProtectionActivation(System.currentTimeMillis())
         }
         assertTrue(
             "Protection settings did not become active",
             waitUntil(timeoutMs = 3_000L) {
                 runBlocking {
-                    settingsRepository.readSettings().first().canProtect(System.currentTimeMillis())
+                    settingsStore.readSettings().first().canProtect(System.currentTimeMillis())
                 }
             },
         )
@@ -415,8 +423,8 @@ class ShortVideoBlockerEmulatorE2eTest {
 
     private fun resetProtectionEnvironment() {
         runBlocking {
-            settingsRepository.setProtectionEnabled(false)
-            settingsRepository.setTemporaryAllowUntil(null)
+            settingsStore.setProtectionEnabled(false)
+            settingsStore.setTemporaryAllowUntil(null)
         }
         disableAccessibilityService()
         pressHome()
