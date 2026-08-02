@@ -31,17 +31,23 @@ import androidx.compose.ui.unit.dp
 import com.shortsblockerkids.R
 import com.shortsblockerkids.accessibility.PlatformSupportMatrix
 import com.shortsblockerkids.accessibility.PlatformSupportStatus
+import com.shortsblockerkids.application.model.AppSettingsSnapshot
+import com.shortsblockerkids.application.model.EntitlementState
+import com.shortsblockerkids.application.protection.LocalEntitlementResolver
+import com.shortsblockerkids.application.protection.freeTestDaysRemaining
+import com.shortsblockerkids.application.protection.freeTestState
+import com.shortsblockerkids.application.protection.hasBillingEntitlement
+import com.shortsblockerkids.application.protection.isTemporarilyAllowed
+import com.shortsblockerkids.application.protection.toLocalEntitlementInput
 import com.shortsblockerkids.core.billing.BillingUiState
-import com.shortsblockerkids.core.entitlement.LocalEntitlementResolver
-import com.shortsblockerkids.core.model.EntitlementState
-import com.shortsblockerkids.core.storage.AppSettings
+import com.shortsblockerkids.domain.protection.ProtectionConfiguration
 import com.shortsblockerkids.feature.billing.billingMessageText
 import com.shortsblockerkids.feature.billing.billingSubscriptionStatusText
 import com.shortsblockerkids.feature.billing.billingSubscriptionTermsText
 
 @Composable
 fun DashboardScreen(
-    settings: AppSettings,
+    settings: AppSettingsSnapshot,
     isAccessibilityServiceEnabled: Boolean,
     isTamperProtectionEnabled: Boolean,
     billingUiState: BillingUiState,
@@ -57,12 +63,14 @@ fun DashboardScreen(
     modifier: Modifier = Modifier,
 ) {
     val nowMillis = System.currentTimeMillis()
+    val protectionConfiguration = settings.protectionConfiguration
     val freeTestState = settings.freeTestState(nowMillis)
     val entitlementState =
         LocalEntitlementResolver.resolve(
-            settings = settings,
-            isProtectionPermissionGranted = isAccessibilityServiceEnabled,
-            nowMillis = nowMillis,
+            settings.toLocalEntitlementInput(
+                isProtectionPermissionGranted = isAccessibilityServiceEnabled,
+                nowMillis = nowMillis,
+            ),
         )
     val isProtectionActive =
         entitlementState == EntitlementState.PROTECTION_ACTIVE
@@ -93,10 +101,14 @@ fun DashboardScreen(
             ) {
                 ProtectionRow(
                     label = stringResource(R.string.dashboard_title),
-                    value = protectionSwitchLabel(settings, isProtectionLocked),
+                    value =
+                        protectionSwitchLabel(
+                            protectionConfiguration,
+                            isProtectionLocked,
+                        ),
                     control = {
                         Switch(
-                            checked = settings.protectionEnabled && !isProtectionLocked,
+                            checked = protectionConfiguration.isEnabled && !isProtectionLocked,
                             onCheckedChange = onProtectionChanged,
                             enabled = !isProtectionLocked,
                         )
@@ -109,15 +121,15 @@ fun DashboardScreen(
                 )
                 ChecklistRow(
                     stringResource(R.string.dashboard_checklist_parent_pin),
-                    settings.isPinCreated,
+                    protectionConfiguration.isPinConfigured,
                 )
                 ChecklistRow(
                     stringResource(R.string.dashboard_checklist_protected_apps),
-                    settings.hasEnabledPlatforms,
+                    protectionConfiguration.hasEnabledPlatforms,
                 )
                 ChecklistRow(
                     stringResource(R.string.dashboard_checklist_accessibility_disclosure),
-                    settings.accessibilityDisclosureAccepted,
+                    protectionConfiguration.isAccessibilityDisclosureAccepted,
                 )
                 ChecklistRow(
                     stringResource(R.string.dashboard_checklist_accessibility_service),
@@ -135,20 +147,20 @@ fun DashboardScreen(
                 )
                 StatusRow(
                     stringResource(R.string.dashboard_enabled_apps),
-                    enabledAppsLabel(settings),
+                    enabledAppsLabel(protectionConfiguration),
                 )
                 PlatformSupportMatrix.protectedEntries.forEach { entry ->
                     ProtectionRow(
                         label = stringResource(entry.platformNameRes),
                         value =
-                            if (settings.isPlatformEnabled(entry.platformId)) {
+                            if (protectionConfiguration.isPlatformEnabled(entry.platformId)) {
                                 stringResource(R.string.status_enabled)
                             } else {
                                 stringResource(R.string.status_disabled)
                             },
                         control = {
                             Switch(
-                                checked = settings.isPlatformEnabled(entry.platformId),
+                                checked = protectionConfiguration.isPlatformEnabled(entry.platformId),
                                 onCheckedChange = { enabled ->
                                     onPlatformEnabledChanged(entry.platformId, enabled)
                                 },
@@ -162,7 +174,7 @@ fun DashboardScreen(
                 )
                 StatusRow(
                     stringResource(R.string.dashboard_pin),
-                    if (settings.isPinCreated) {
+                    if (protectionConfiguration.isPinConfigured) {
                         stringResource(R.string.status_created)
                     } else {
                         stringResource(R.string.status_not_created)
@@ -222,7 +234,7 @@ fun DashboardScreen(
                 if (!isAccessibilityServiceEnabled) {
                     ErrorText(stringResource(R.string.error_protection_permission_missing))
                 }
-                if (!settings.hasEnabledPlatforms) {
+                if (!protectionConfiguration.hasEnabledPlatforms) {
                     ErrorText(stringResource(R.string.error_no_protected_apps_selected))
                 }
                 if (!isProtectionActive) {
@@ -256,7 +268,7 @@ fun DashboardScreen(
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text(
-                if (settings.accessibilityDisclosureAccepted) {
+                if (protectionConfiguration.isAccessibilityDisclosureAccepted) {
                     stringResource(R.string.dashboard_open_accessibility_settings)
                 } else {
                     stringResource(R.string.dashboard_review_accessibility_disclosure)
@@ -334,7 +346,7 @@ private fun ChecklistRow(
 
 @Composable
 private fun protectionInactiveMessage(
-    settings: AppSettings,
+    settings: AppSettingsSnapshot,
     isAccessibilityServiceEnabled: Boolean,
     nowMillis: Long,
     hasBillingEntitlement: Boolean,
@@ -346,11 +358,11 @@ private fun protectionInactiveMessage(
         return stringResource(R.string.error_free_test_expired)
     }
 
-    if (!settings.protectionEnabled) {
+    if (!settings.protectionConfiguration.isEnabled) {
         return stringResource(R.string.error_protection_inactive_disabled)
     }
 
-    if (!settings.hasEnabledPlatforms) {
+    if (!settings.protectionConfiguration.hasEnabledPlatforms) {
         return stringResource(R.string.error_protection_inactive_no_apps)
     }
 
@@ -370,10 +382,10 @@ private fun protectionInactiveMessage(
 }
 
 @Composable
-private fun enabledAppsLabel(settings: AppSettings): String {
+private fun enabledAppsLabel(protectionConfiguration: ProtectionConfiguration): String {
     val enabledNames = mutableListOf<String>()
     for (entry in PlatformSupportMatrix.protectedEntries) {
-        if (settings.isPlatformEnabled(entry.platformId)) {
+        if (protectionConfiguration.isPlatformEnabled(entry.platformId)) {
             enabledNames += stringResource(entry.platformNameRes)
         }
     }
@@ -452,14 +464,14 @@ private fun EntitlementState.protectionLabel(): String =
 
 @Composable
 private fun protectionSwitchLabel(
-    settings: AppSettings,
+    protectionConfiguration: ProtectionConfiguration,
     isProtectionLocked: Boolean,
 ): String {
     if (isProtectionLocked) {
         return stringResource(R.string.status_locked)
     }
 
-    return if (settings.protectionEnabled) {
+    return if (protectionConfiguration.isEnabled) {
         stringResource(R.string.status_on)
     } else {
         stringResource(R.string.status_off)

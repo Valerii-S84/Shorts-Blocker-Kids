@@ -1,4 +1,4 @@
-package com.shortsblockerkids.core.model
+package com.shortsblockerkids.application.model
 
 enum class EntitlementState {
     FREE_TEST_NOT_STARTED,

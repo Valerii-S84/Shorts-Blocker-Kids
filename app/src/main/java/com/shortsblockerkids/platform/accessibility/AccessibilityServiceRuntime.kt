@@ -6,9 +6,10 @@ import android.view.accessibility.AccessibilityEvent
 import com.shortsblockerkids.MainActivity
 import com.shortsblockerkids.accessibility.BlockingDecisionController
 import com.shortsblockerkids.application.model.AccessibilityProtectionState
+import com.shortsblockerkids.application.model.AppSettingsSnapshot
 import com.shortsblockerkids.application.port.ProtectionSettingsPort
 import com.shortsblockerkids.application.protection.ClearExpiredTemporaryAllowUseCase
-import com.shortsblockerkids.core.storage.AppSettings
+import com.shortsblockerkids.application.protection.canProtect
 import com.shortsblockerkids.core.storage.SettingsRepository
 import com.shortsblockerkids.domain.detection.SupportedPlatform
 import com.shortsblockerkids.infrastructure.time.SystemTimeProvider
@@ -36,7 +37,7 @@ class AccessibilityServiceRuntime(
 ) {
     private lateinit var eventRouter: AccessibilityEventRouter
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-    private var latestSettings = AppSettings()
+    private var latestSettings = AppSettingsSnapshot()
     private var pinEntryRecheckJob: Job? = null
 
     fun onServiceConnected() {
@@ -149,21 +150,27 @@ class AccessibilityServiceRuntime(
         serviceScope.cancel()
     }
 
-    private fun AppSettings.toAccessibilityProtectionState(nowMillis: Long): AccessibilityProtectionState =
+    private fun AppSettingsSnapshot.toAccessibilityProtectionState(nowMillis: Long): AccessibilityProtectionState =
         AccessibilityProtectionState(
             isProtectionActive = canProtect(nowMillis),
             enabledPlatformIds =
                 SupportedPlatform.PROTECTED_PLATFORMS
-                    .filter { platform -> isPlatformEnabled(platform.id) }
-                    .mapTo(mutableSetOf()) { platform -> platform.id },
+                    .filter { platform ->
+                        protectionConfiguration.isPlatformEnabled(platform.id)
+                    }.mapTo(mutableSetOf()) { platform -> platform.id },
         )
 
     private suspend fun activeSettingsFrom(
         clearExpiredTemporaryAllowUseCase: ClearExpiredTemporaryAllowUseCase,
-        settings: AppSettings,
-    ): AppSettings =
+        settings: AppSettingsSnapshot,
+    ): AppSettingsSnapshot =
         if (clearExpiredTemporaryAllowUseCase()) {
-            settings.copy(temporaryAllowUntil = null)
+            settings.copy(
+                protectionConfiguration =
+                    settings.protectionConfiguration.copy(
+                        temporaryAllowUntilMillis = null,
+                    ),
+            )
         } else {
             settings
         }

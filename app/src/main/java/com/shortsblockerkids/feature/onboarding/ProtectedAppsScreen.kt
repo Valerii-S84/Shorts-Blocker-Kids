@@ -22,11 +22,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.shortsblockerkids.R
 import com.shortsblockerkids.accessibility.PlatformSupportMatrix
-import com.shortsblockerkids.core.storage.AppSettings
+import com.shortsblockerkids.domain.protection.ProtectionConfiguration
 
 @Composable
 fun ProtectedAppsScreen(
-    settings: AppSettings,
+    protectionConfiguration: ProtectionConfiguration,
     onPlatformEnabledChanged: (String, Boolean) -> Unit,
     onContinue: () -> Unit,
     modifier: Modifier = Modifier,
@@ -63,7 +63,7 @@ fun ProtectedAppsScreen(
                     modifier = Modifier.weight(1f),
                 )
                 Switch(
-                    checked = settings.isPlatformEnabled(entry.platformId),
+                    checked = protectionConfiguration.isPlatformEnabled(entry.platformId),
                     onCheckedChange = { enabled ->
                         onPlatformEnabledChanged(entry.platformId, enabled)
                     },
@@ -74,7 +74,7 @@ fun ProtectedAppsScreen(
         Spacer(modifier = Modifier.height(22.dp))
         Button(
             onClick = onContinue,
-            enabled = settings.hasEnabledPlatforms,
+            enabled = protectionConfiguration.hasEnabledPlatforms,
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text(stringResource(R.string.protected_apps_continue))

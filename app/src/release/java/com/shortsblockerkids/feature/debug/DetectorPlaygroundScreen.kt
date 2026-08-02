@@ -3,12 +3,12 @@ package com.shortsblockerkids.feature.debug
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import com.shortsblockerkids.application.model.AppSettingsSnapshot
 import com.shortsblockerkids.core.billing.BillingUiState
-import com.shortsblockerkids.core.storage.AppSettings
 
 @Composable
 fun DetectorPlaygroundScreen(
-    settings: AppSettings,
+    settings: AppSettingsSnapshot,
     isAccessibilityServiceEnabled: Boolean,
     billingUiState: BillingUiState,
     onBack: () -> Unit,

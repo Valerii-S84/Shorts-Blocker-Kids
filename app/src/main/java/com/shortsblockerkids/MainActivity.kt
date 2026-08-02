@@ -11,6 +11,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
+import com.shortsblockerkids.application.model.AppSettingsSnapshot
 import com.shortsblockerkids.application.pin.CreatePinUseCase
 import com.shortsblockerkids.application.pin.VerifyPinUseCase
 import com.shortsblockerkids.application.protection.ClearExpiredTemporaryAllowUseCase
@@ -18,7 +19,6 @@ import com.shortsblockerkids.application.protection.RecordSuccessfulProtectionAc
 import com.shortsblockerkids.application.protection.SetTemporaryAllowUseCase
 import com.shortsblockerkids.core.billing.HttpBillingBackendClient
 import com.shortsblockerkids.core.billing.PlayBillingRepository
-import com.shortsblockerkids.core.storage.AppSettings
 import com.shortsblockerkids.core.storage.SettingsRepository
 import com.shortsblockerkids.infrastructure.storage.SettingsPinAccessAdapter
 import com.shortsblockerkids.infrastructure.time.SystemTimeProvider
@@ -38,7 +38,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var settingsRepository: SettingsRepository
     private lateinit var billingRepository: PlayBillingRepository
     private val activityScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-    private val settingsState = mutableStateOf(AppSettings())
+    private val settingsState = mutableStateOf(AppSettingsSnapshot())
     private val accessibilityEnabledState = mutableStateOf(false)
     private val tamperProtectionEnabledState = mutableStateOf(false)
     private val temporaryAllowRequestState = mutableStateOf(false)
@@ -164,7 +164,12 @@ class MainActivity : ComponentActivity() {
                 val temporaryAllowRemoved = clearExpiredTemporaryAllowUseCase()
                 settingsState.value =
                     if (temporaryAllowRemoved) {
-                        settings.copy(temporaryAllowUntil = null)
+                        settings.copy(
+                            protectionConfiguration =
+                                settings.protectionConfiguration.copy(
+                                    temporaryAllowUntilMillis = null,
+                                ),
+                        )
                     } else {
                         settings
                     }

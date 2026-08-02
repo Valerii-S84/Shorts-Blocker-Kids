@@ -1,4 +1,4 @@
-package com.shortsblockerkids.core.entitlement
+package com.shortsblockerkids.domain.entitlement
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

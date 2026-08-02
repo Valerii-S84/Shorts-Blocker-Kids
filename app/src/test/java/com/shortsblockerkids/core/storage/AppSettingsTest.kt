@@ -1,8 +1,10 @@
 package com.shortsblockerkids.core.storage
 
+import com.shortsblockerkids.application.model.AppSettingsSnapshot
 import com.shortsblockerkids.core.billing.BillingEntitlementState
-import com.shortsblockerkids.core.entitlement.FreeTestPolicy
-import com.shortsblockerkids.core.model.EntitlementState
+import com.shortsblockerkids.domain.entitlement.FreeTestPolicy
+import com.shortsblockerkids.domain.protection.ProtectionConfiguration
+import com.shortsblockerkids.domain.protection.ProtectionMode
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -10,75 +12,24 @@ import org.junit.Test
 
 class AppSettingsTest {
     @Test
-    fun freeTestDoesNotStartOnFirstAppOpen() {
+    fun storageRecordKeepsExistingDefaults() {
         val settings = AppSettings()
 
+        assertTrue(settings.protectionEnabled)
+        assertFalse(settings.accessibilityDisclosureAccepted)
+        assertEquals(ProtectionMode.BLOCK_SHORTS, settings.selectedMode)
         assertEquals(
-            EntitlementState.FREE_TEST_NOT_STARTED,
-            settings.freeTestState(nowMillis = 1_000L),
+            ProtectionConfiguration.DEFAULT_ENABLED_PLATFORM_IDS,
+            settings.enabledPlatformIds,
         )
-        assertEquals(null, settings.freeTestDaysRemaining(nowMillis = 1_000L))
-        assertFalse(settings.canProtect(nowMillis = 1_000L))
+        assertEquals(FreeTestPolicy.DEFAULT_DURATION_DAYS, settings.freeTestDurationDays)
+        assertEquals(BillingEntitlementState.UNKNOWN, settings.billingEntitlementState)
+        assertEquals(1, settings.pinHashVersion)
+        assertEquals(0, settings.failedPinAttempts)
     }
 
     @Test
-    fun canProtectOnlyWhenLocalSetupAndFreeTestAreActive() {
-        val settings =
-            AppSettings(
-                protectionEnabled = true,
-                accessibilityDisclosureAccepted = true,
-                freeTestStartedAt = TEST_STARTED_AT,
-                pinHash = "hash",
-                pinSalt = "salt",
-            )
-
-        assertTrue(settings.canProtect(nowMillis = 1_000L))
-        assertFalse(settings.copy(protectionEnabled = false).canProtect(nowMillis = 1_000L))
-        assertFalse(
-            settings.copy(accessibilityDisclosureAccepted = false).canProtect(nowMillis = 1_000L),
-        )
-        assertFalse(settings.copy(pinHash = null).canProtect(nowMillis = 1_000L))
-    }
-
-    @Test
-    fun supportedPlatformsAreEnabledByDefault() {
-        val settings = AppSettings()
-
-        assertEquals(AppSettings.DEFAULT_ENABLED_PLATFORM_IDS, settings.enabledPlatformIds)
-        assertTrue(settings.hasEnabledPlatforms)
-        assertTrue(settings.isPlatformEnabled(AppSettings.YOUTUBE_SHORTS_PLATFORM_ID))
-        assertTrue(settings.isPlatformEnabled(AppSettings.TIKTOK_PLATFORM_ID))
-        assertTrue(settings.isPlatformEnabled(AppSettings.INSTAGRAM_REELS_PLATFORM_ID))
-        assertTrue(settings.isPlatformEnabled(AppSettings.FACEBOOK_REELS_PLATFORM_ID))
-    }
-
-    @Test
-    fun canProtectRequiresAtLeastOneEnabledPlatform() {
-        val settings =
-            activeSettings(freeTestStartedAt = TEST_STARTED_AT)
-                .copy(enabledPlatformIds = emptySet())
-
-        assertFalse(settings.hasEnabledPlatforms)
-        assertFalse(settings.canProtect(nowMillis = 1_000L))
-    }
-
-    @Test
-    fun disabledSinglePlatformDoesNotDisableOtherProtectedApps() {
-        val settings =
-            activeSettings(freeTestStartedAt = TEST_STARTED_AT)
-                .copy(
-                    enabledPlatformIds =
-                        AppSettings.DEFAULT_ENABLED_PLATFORM_IDS -
-                            AppSettings.TIKTOK_PLATFORM_ID,
-                )
-
-        assertFalse(settings.isPlatformEnabled(AppSettings.TIKTOK_PLATFORM_ID))
-        assertTrue(settings.isPlatformEnabled(AppSettings.YOUTUBE_SHORTS_PLATFORM_ID))
-        assertTrue(settings.canProtect(nowMillis = 1_000L))
-    }
-
-    @Test
-    fun pinIsCreatedOnlyWhenHashAndSaltAreBothPresent() {
+    fun pinIsConfiguredOnlyWhenHashAndSaltAreBothPresent() {
         assertTrue(AppSettings(pinHash = "hash", pinSalt = "salt").isPinCreated)
         assertFalse(AppSettings(pinHash = "", pinSalt = "salt").isPinCreated)
         assertFalse(AppSettings(pinHash = "hash", pinSalt = " ").isPinCreated)
@@ -87,264 +38,49 @@ class AppSettingsTest {
     }
 
     @Test
-    fun freeTestIsActiveOnDayOne() {
-        val settings =
-            activeSettings(
-                freeTestStartedAt = TEST_STARTED_AT,
-            )
-
-        assertEquals(
-            EntitlementState.FREE_TEST_ACTIVE,
-            settings.freeTestState(nowMillis = ONE_DAY),
-        )
-        assertTrue(settings.canProtect(nowMillis = ONE_DAY))
-    }
-
-    @Test
-    fun freeTestIsActiveOnDayTwentyBeforeExpiryTime() {
-        val settings = activeSettings(freeTestStartedAt = TEST_STARTED_AT)
-        val beforeExpiry = TWENTY_DAYS - 1L
-
-        assertEquals(EntitlementState.FREE_TEST_ACTIVE, settings.freeTestState(beforeExpiry))
-        assertEquals(1, settings.freeTestDaysRemaining(beforeExpiry))
-        assertTrue(settings.canProtect(nowMillis = beforeExpiry))
-    }
-
-    @Test
-    fun freeTestExpiresAfterTwentyDays() {
-        val settings = activeSettings(freeTestStartedAt = TEST_STARTED_AT)
-
-        assertEquals(EntitlementState.FREE_TEST_EXPIRED, settings.freeTestState(TWENTY_DAYS))
-        assertEquals(0, settings.freeTestDaysRemaining(TWENTY_DAYS))
-        assertFalse(settings.canProtect(nowMillis = TWENTY_DAYS))
-    }
-
-    @Test
-    fun activeBillingEntitlementCanProtectAfterFreeTestExpires() {
-        val settings =
-            activeSettings(freeTestStartedAt = TEST_STARTED_AT)
-                .copy(
-                    billingEntitlementState = BillingEntitlementState.ACTIVE,
-                    billingSubscriptionActive = true,
-                    billingLastVerifiedAt = TWENTY_DAYS,
-                )
-
-        assertEquals(EntitlementState.FREE_TEST_EXPIRED, settings.freeTestState(TWENTY_DAYS))
-        assertTrue(settings.hasBillingEntitlement(nowMillis = TWENTY_DAYS))
-        assertTrue(settings.canProtect(nowMillis = TWENTY_DAYS))
-    }
-
-    @Test
-    fun unconfirmedLocalBillingFlagDoesNotProtectAfterFreeTestExpires() {
-        val settings =
-            activeSettings(freeTestStartedAt = TEST_STARTED_AT)
-                .copy(
-                    billingEntitlementState = BillingEntitlementState.UNKNOWN,
-                    billingSubscriptionActive = true,
-                    billingLastVerifiedAt = TWENTY_DAYS,
-                )
-
-        assertFalse(settings.hasBillingEntitlement(nowMillis = TWENTY_DAYS))
-        assertFalse(settings.canProtect(nowMillis = TWENTY_DAYS))
-    }
-
-    @Test
-    fun activeBackendBillingEntitlementCanProtectAfterFreeTestExpires() {
-        val settings =
-            activeSettings(freeTestStartedAt = TEST_STARTED_AT)
-                .copy(
-                    billingEntitlementState = BillingEntitlementState.ACTIVE,
-                    billingSubscriptionActive = true,
-                    billingLastVerifiedAt = TWENTY_DAYS,
-                )
-
-        assertTrue(settings.hasBillingEntitlement(nowMillis = TWENTY_DAYS))
-        assertTrue(settings.canProtect(nowMillis = TWENTY_DAYS))
-    }
-
-    @Test
-    fun pendingBillingEntitlementDoesNotUnlockPaidProtection() {
-        val settings =
-            activeSettings(freeTestStartedAt = TEST_STARTED_AT)
-                .copy(
-                    billingEntitlementState = BillingEntitlementState.PENDING,
-                    billingSubscriptionActive = false,
-                    billingLastVerifiedAt = TWENTY_DAYS,
-                    billingActiveUntilMillis = TWENTY_DAYS + ONE_DAY,
-                )
-
-        assertFalse(settings.hasBillingEntitlement(nowMillis = TWENTY_DAYS))
-        assertFalse(settings.canProtect(nowMillis = TWENTY_DAYS))
-    }
-
-    @Test
-    fun staleBillingEntitlementDoesNotProtectAfterGrace() {
-        val settings =
-            activeSettings(freeTestStartedAt = TEST_STARTED_AT)
-                .copy(
-                    billingEntitlementState = BillingEntitlementState.ACTIVE,
-                    billingSubscriptionActive = true,
-                    billingLastVerifiedAt = TWENTY_DAYS,
-                )
-        val afterGrace = TWENTY_DAYS + 72L * 60L * 60L * 1_000L + 1L
-
-        assertFalse(settings.hasBillingEntitlement(nowMillis = afterGrace))
-        assertFalse(settings.canProtect(nowMillis = afterGrace))
-    }
-
-    @Test
-    fun futureBillingVerificationTimestampDoesNotProtect() {
-        val settings =
-            activeSettings(freeTestStartedAt = TEST_STARTED_AT)
-                .copy(
-                    billingEntitlementState = BillingEntitlementState.ACTIVE,
-                    billingSubscriptionActive = true,
-                    billingLastVerifiedAt = TWENTY_DAYS + 1L,
-                )
-
-        assertFalse(settings.hasBillingEntitlement(nowMillis = TWENTY_DAYS))
-        assertFalse(settings.canProtect(nowMillis = TWENTY_DAYS))
-    }
-
-    @Test
-    fun canceledActiveBillingEntitlementProtectsOnlyDuringPaidAndOfflineGraceWindows() {
-        val settings =
-            activeSettings(freeTestStartedAt = TEST_STARTED_AT)
-                .copy(
-                    billingEntitlementState = BillingEntitlementState.CANCELED_ACTIVE,
-                    billingSubscriptionActive = true,
-                    billingLastVerifiedAt = TWENTY_DAYS,
-                    billingActiveUntilMillis = TWENTY_DAYS + ONE_DAY,
-                )
-
-        assertTrue(settings.hasBillingEntitlement(nowMillis = TWENTY_DAYS + 1_000L))
-        assertFalse(settings.hasBillingEntitlement(nowMillis = TWENTY_DAYS + ONE_DAY + 1L))
-    }
-
-    @Test
-    fun canceledActiveBillingEntitlementDoesNotOutliveOfflineGrace() {
-        val settings =
-            activeSettings(freeTestStartedAt = TEST_STARTED_AT)
-                .copy(
-                    billingEntitlementState = BillingEntitlementState.CANCELED_ACTIVE,
-                    billingSubscriptionActive = true,
-                    billingLastVerifiedAt = TWENTY_DAYS,
-                    billingActiveUntilMillis = TWENTY_DAYS + 7L * ONE_DAY,
-                )
-        val afterOfflineGrace = TWENTY_DAYS + 72L * 60L * 60L * 1_000L + 1L
-
-        assertFalse(settings.hasBillingEntitlement(nowMillis = afterOfflineGrace))
-        assertFalse(settings.canProtect(nowMillis = afterOfflineGrace))
-    }
-
-    @Test
-    fun graceBillingEntitlementProtectsOnlyWithinOfflineGrace() {
-        val settings =
-            activeSettings(freeTestStartedAt = TEST_STARTED_AT)
-                .copy(
-                    billingEntitlementState = BillingEntitlementState.IN_GRACE,
-                    billingSubscriptionActive = true,
-                    billingLastVerifiedAt = TWENTY_DAYS,
-                )
-        val afterOfflineGrace = TWENTY_DAYS + 72L * 60L * 60L * 1_000L + 1L
-
-        assertTrue(settings.hasBillingEntitlement(nowMillis = TWENTY_DAYS))
-        assertTrue(settings.canProtect(nowMillis = TWENTY_DAYS))
-        assertFalse(settings.hasBillingEntitlement(nowMillis = afterOfflineGrace))
-        assertFalse(settings.canProtect(nowMillis = afterOfflineGrace))
-    }
-
-    @Test
-    fun nonPremiumBackendBillingStatesDoNotProtectAfterFreeTestExpires() {
-        val deniedStates =
-            listOf(
-                BillingEntitlementState.ON_HOLD,
-                BillingEntitlementState.EXPIRED,
-                BillingEntitlementState.REVOKED,
-                BillingEntitlementState.UNKNOWN,
-            )
-
-        deniedStates.forEach { state ->
-            val settings =
-                activeSettings(freeTestStartedAt = TEST_STARTED_AT)
-                    .copy(
-                        billingEntitlementState = state,
-                        billingSubscriptionActive = false,
-                        billingLastVerifiedAt = TWENTY_DAYS,
-                        billingActiveUntilMillis = TWENTY_DAYS + ONE_DAY,
-                    )
-
-            assertFalse("state=$state", settings.hasBillingEntitlement(nowMillis = TWENTY_DAYS))
-            assertFalse("state=$state", settings.canProtect(nowMillis = TWENTY_DAYS))
-        }
-    }
-
-    @Test
-    fun backendUnavailableUsesOnlyConservativeOfflineWindowFromLastActiveVerification() {
-        val settings =
-            activeSettings(freeTestStartedAt = TEST_STARTED_AT)
-                .copy(
-                    billingEntitlementState = BillingEntitlementState.ACTIVE,
-                    billingSubscriptionActive = true,
-                    billingLastVerifiedAt = TWENTY_DAYS,
-                )
-        val withinOfflineGrace = TWENTY_DAYS + 72L * 60L * 60L * 1_000L
-        val afterOfflineGrace = withinOfflineGrace + 1L
-
-        assertTrue(settings.hasBillingEntitlement(nowMillis = withinOfflineGrace))
-        assertTrue(settings.canProtect(nowMillis = withinOfflineGrace))
-        assertFalse(settings.hasBillingEntitlement(nowMillis = afterOfflineGrace))
-        assertFalse(settings.canProtect(nowMillis = afterOfflineGrace))
-    }
-
-    @Test
-    fun temporaryAllowDisablesProtectionUntilItExpires() {
-        val settings =
+    fun mapperExposesOnlyConsumerSafeSettings() {
+        val snapshot =
             AppSettings(
-                protectionEnabled = true,
+                protectionEnabled = false,
                 accessibilityDisclosureAccepted = true,
-                freeTestStartedAt = TEST_STARTED_AT,
                 temporaryAllowUntil = 2_000L,
-                pinHash = "hash",
-                pinSalt = "salt",
-            )
+                freeTestStartedAt = 1_000L,
+                billingInstallationId = "installation-secret",
+                billingEntitlementState = BillingEntitlementState.CANCELED_ACTIVE,
+                billingLastVerifiedAt = 3_000L,
+                billingActiveUntilMillis = 4_000L,
+                pinHash = "pin-hash",
+                pinSalt = "pin-salt",
+                failedPinAttempts = 5,
+            ).toSnapshot()
 
-        assertFalse(settings.canProtect(nowMillis = 1_500L))
-        assertTrue(settings.canProtect(nowMillis = 2_500L))
+        assertFalse(snapshot.protectionConfiguration.isEnabled)
+        assertTrue(snapshot.protectionConfiguration.isAccessibilityDisclosureAccepted)
+        assertTrue(snapshot.protectionConfiguration.isPinConfigured)
+        assertEquals(2_000L, snapshot.protectionConfiguration.temporaryAllowUntilMillis)
+        assertEquals(1_000L, snapshot.entitlement.freeTestStartedAtMillis)
+        assertTrue(snapshot.entitlement.isPaidProtectionAllowed)
+        assertEquals(3_000L, snapshot.entitlement.paidLastVerifiedAtMillis)
+        assertEquals(4_000L, snapshot.entitlement.paidActiveUntilMillis)
+        assertEquals(
+            BillingEntitlementState.CANCELED_ACTIVE.name,
+            snapshot.billingEntitlementStateName,
+        )
     }
 
     @Test
-    fun temporaryAllowReportsActiveExpiredAndMissingStates() {
-        val noAllow = AppSettings(temporaryAllowUntil = null)
-        val activeAllow = AppSettings(temporaryAllowUntil = 2_000L)
-        val expiredAllow = AppSettings(temporaryAllowUntil = 1_000L)
+    fun snapshotTypeDoesNotExposeStorageOnlyMetadata() {
+        val fieldNames = AppSettingsSnapshot::class.java.declaredFields.map { field -> field.name }
 
-        assertEquals(null, noAllow.activeTemporaryAllowUntil(nowMillis = 1_500L))
-        assertFalse(noAllow.isTemporarilyAllowed(nowMillis = 1_500L))
-        assertFalse(noAllow.hasExpiredTemporaryAllow(nowMillis = 1_500L))
-
-        assertEquals(2_000L, activeAllow.activeTemporaryAllowUntil(nowMillis = 1_500L))
-        assertTrue(activeAllow.isTemporarilyAllowed(nowMillis = 1_500L))
-        assertFalse(activeAllow.hasExpiredTemporaryAllow(nowMillis = 1_500L))
-
-        assertEquals(null, expiredAllow.activeTemporaryAllowUntil(nowMillis = 1_500L))
-        assertFalse(expiredAllow.isTemporarilyAllowed(nowMillis = 1_500L))
-        assertTrue(expiredAllow.hasExpiredTemporaryAllow(nowMillis = 1_500L))
-    }
-
-    private fun activeSettings(freeTestStartedAt: Long): AppSettings =
-        AppSettings(
-            protectionEnabled = true,
-            accessibilityDisclosureAccepted = true,
-            freeTestStartedAt = freeTestStartedAt,
-            freeTestDurationDays = FreeTestPolicy.DEFAULT_DURATION_DAYS,
-            pinHash = "hash",
-            pinSalt = "salt",
-        )
-
-    private companion object {
-        const val TEST_STARTED_AT = 0L
-        const val ONE_DAY = 24L * 60L * 60L * 1_000L
-        const val TWENTY_DAYS = FreeTestPolicy.DEFAULT_DURATION_DAYS * ONE_DAY
+        listOf(
+            "pinHash",
+            "pinSalt",
+            "pinHashVersion",
+            "failedPinAttempts",
+            "pinLockoutUntil",
+            "billingInstallationId",
+        ).forEach { forbiddenField ->
+            assertFalse("snapshot exposes $forbiddenField", forbiddenField in fieldNames)
+        }
     }
 }

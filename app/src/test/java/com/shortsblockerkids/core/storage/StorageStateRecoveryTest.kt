@@ -7,9 +7,12 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.shortsblockerkids.application.protection.canProtect
+import com.shortsblockerkids.application.protection.hasBillingEntitlement
 import com.shortsblockerkids.core.billing.BillingEntitlementState
-import com.shortsblockerkids.core.model.ProtectionMode
 import com.shortsblockerkids.core.security.PinVerificationResult
+import com.shortsblockerkids.domain.protection.ProtectionConfiguration
+import com.shortsblockerkids.domain.protection.ProtectionMode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -43,12 +46,15 @@ class StorageStateRecoveryTest {
 
             val settings = repository.readSettings().first()
 
-            assertTrue(settings.protectionEnabled)
-            assertFalse(settings.accessibilityDisclosureAccepted)
-            assertEquals(ProtectionMode.BLOCK_SHORTS, settings.selectedMode)
-            assertEquals(AppSettings.DEFAULT_ENABLED_PLATFORM_IDS, settings.enabledPlatformIds)
-            assertEquals(BillingEntitlementState.UNKNOWN, settings.billingEntitlementState)
-            assertFalse(settings.isPinCreated)
+            assertTrue(settings.protectionConfiguration.isEnabled)
+            assertFalse(settings.protectionConfiguration.isAccessibilityDisclosureAccepted)
+            assertEquals(ProtectionMode.BLOCK_SHORTS, settings.protectionConfiguration.mode)
+            assertEquals(
+                ProtectionConfiguration.DEFAULT_ENABLED_PLATFORM_IDS,
+                settings.protectionConfiguration.enabledPlatformIds,
+            )
+            assertEquals(BillingEntitlementState.UNKNOWN.name, settings.billingEntitlementStateName)
+            assertFalse(settings.protectionConfiguration.isPinConfigured)
             assertFalse(settings.canProtect(nowMillis = 1_000L))
         }
 
@@ -64,8 +70,8 @@ class StorageStateRecoveryTest {
 
             val settings = repository.readSettings().first()
 
-            assertEquals(ProtectionMode.BLOCK_SHORTS, settings.selectedMode)
-            assertEquals(BillingEntitlementState.UNKNOWN, settings.billingEntitlementState)
+            assertEquals(ProtectionMode.BLOCK_SHORTS, settings.protectionConfiguration.mode)
+            assertEquals(BillingEntitlementState.UNKNOWN.name, settings.billingEntitlementStateName)
             assertFalse(settings.hasBillingEntitlement(nowMillis = 1_000L))
         }
 
@@ -85,7 +91,7 @@ class StorageStateRecoveryTest {
             val result = repository.verifyPin("4826", nowMillis = 1_000L)
             val preferences = dataStore.data.first()
 
-            assertFalse(settings.isPinCreated)
+            assertFalse(settings.protectionConfiguration.isPinConfigured)
             assertFalse(settings.canProtect(nowMillis = 1_000L))
             assertEquals(PinVerificationResult.NotConfigured, result)
             assertEquals(5, preferences[intPreferencesKey("failedPinAttempts")])
