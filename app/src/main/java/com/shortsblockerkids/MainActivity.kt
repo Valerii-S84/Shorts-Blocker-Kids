@@ -11,6 +11,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
+import com.shortsblockerkids.application.billing.BillingSyncConfiguration
+import com.shortsblockerkids.application.billing.SyncBillingEntitlementUseCase
 import com.shortsblockerkids.application.model.AppSettingsSnapshot
 import com.shortsblockerkids.application.pin.CreatePinUseCase
 import com.shortsblockerkids.application.pin.VerifyPinUseCase
@@ -18,6 +20,7 @@ import com.shortsblockerkids.application.protection.ClearExpiredTemporaryAllowUs
 import com.shortsblockerkids.application.protection.RecordSuccessfulProtectionActivationUseCase
 import com.shortsblockerkids.application.protection.SetTemporaryAllowUseCase
 import com.shortsblockerkids.composition.dashboard.DashboardUiStateAssembler
+import com.shortsblockerkids.core.billing.BillingAvailability
 import com.shortsblockerkids.core.billing.HttpBillingBackendClient
 import com.shortsblockerkids.core.billing.PlayBillingRepository
 import com.shortsblockerkids.infrastructure.storage.DataStoreSettingsStore
@@ -67,6 +70,22 @@ class MainActivity : ComponentActivity() {
                 timeProvider = timeProvider,
                 temporaryAllowStore = settingsStore,
             )
+        val syncBillingEntitlementUseCase =
+            SyncBillingEntitlementUseCase(
+                billingBackendClient =
+                    HttpBillingBackendClient.fromBaseUrl(BuildConfig.BILLING_BACKEND_BASE_URL),
+                timeProvider = timeProvider,
+                configuration =
+                    BillingSyncConfiguration(
+                        installId =
+                            runBlocking { settingsStore.getOrCreateBillingInstallationId() },
+                        packageName = applicationContext.packageName,
+                        productId = BillingAvailability.MONTHLY_SUBSCRIPTION_PRODUCT_ID,
+                        appVersion = BuildConfig.VERSION_NAME,
+                        clientOnlyModeRequested = BuildConfig.BILLING_CLIENT_ONLY_TEST_MODE,
+                        internalTestingBuild = BuildConfig.DEBUG,
+                    ),
+            )
         billingRepository =
             PlayBillingRepository(
                 context = this,
@@ -75,12 +94,7 @@ class MainActivity : ComponentActivity() {
                         settingsStore.updateBillingEntitlement(snapshot)
                     }
                 },
-                billingBackendClient =
-                    HttpBillingBackendClient.fromBaseUrl(BuildConfig.BILLING_BACKEND_BASE_URL),
-                installId = runBlocking { settingsStore.getOrCreateBillingInstallationId() },
-                appVersion = BuildConfig.VERSION_NAME,
-                clientOnlyModeRequested = BuildConfig.BILLING_CLIENT_ONLY_TEST_MODE,
-                internalTestingBuild = BuildConfig.DEBUG,
+                syncBillingEntitlementUseCase = syncBillingEntitlementUseCase,
                 billingScope = activityScope,
             )
         temporaryAllowRequestState.value = intent.isTemporaryAllowRequest()

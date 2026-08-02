@@ -16,6 +16,9 @@ import com.android.billingclient.api.Purchase
 import com.android.billingclient.api.PurchasesUpdatedListener
 import com.android.billingclient.api.QueryProductDetailsParams
 import com.android.billingclient.api.QueryPurchasesParams
+import com.shortsblockerkids.application.billing.BillingPurchaseSummary
+import com.shortsblockerkids.application.billing.BillingSyncOutcome
+import com.shortsblockerkids.application.billing.SyncBillingEntitlementUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -24,17 +27,35 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+private fun List<Purchase>.toBillingPurchaseSummary(): BillingPurchaseSummary {
+    val subscriptionPurchases =
+        filter { purchase ->
+            BillingAvailability.MONTHLY_SUBSCRIPTION_PRODUCT_ID in purchase.products
+        }
+    val purchasedSubscriptions =
+        subscriptionPurchases.filter { purchase ->
+            purchase.purchaseState == Purchase.PurchaseState.PURCHASED
+        }
+
+    return BillingPurchaseSummary(
+        purchasedSubscriptionToken = purchasedSubscriptions.firstOrNull()?.purchaseToken,
+        hasPendingSubscription =
+            subscriptionPurchases.any { purchase ->
+                purchase.purchaseState == Purchase.PurchaseState.PENDING
+            },
+        unacknowledgedPurchasedSubscriptionTokens =
+            purchasedSubscriptions
+                .filterNot { purchase -> purchase.isAcknowledged }
+                .map { purchase -> purchase.purchaseToken },
+    )
+}
+
 class PlayBillingRepository(
     context: Context,
     private val onEntitlementChanged: (BillingEntitlementSnapshot) -> Unit,
-    private val billingBackendClient: BillingBackendClient = DisabledBillingBackendClient,
-    private val installId: String? = null,
-    private val appVersion: String = "",
-    private val clientOnlyModeRequested: Boolean = false,
-    private val internalTestingBuild: Boolean = false,
+    private val syncBillingEntitlementUseCase: SyncBillingEntitlementUseCase,
     private val billingScope: CoroutineScope =
         CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate),
-    private val nowMillis: () -> Long = System::currentTimeMillis,
 ) : PurchasesUpdatedListener {
     private val _uiState = MutableStateFlow(BillingUiState())
     val uiState: StateFlow<BillingUiState> = _uiState
@@ -54,12 +75,6 @@ class PlayBillingRepository(
     private var isConnecting = false
     private var productDetails: ProductDetails? = null
     private var subscriptionOfferToken: String? = null
-    private val packageName = context.applicationContext.packageName
-    private val verificationPolicy =
-        BillingVerificationPolicy(
-            clientOnlyModeRequested = clientOnlyModeRequested,
-            internalTestingBuild = internalTestingBuild,
-        )
 
     fun start() {
         if (billingClient.isReady) {
@@ -272,166 +287,38 @@ class PlayBillingRepository(
     }
 
     private fun processPurchases(purchases: List<Purchase>) {
-        val subscriptionPurchases =
-            purchases.filter { purchase ->
-                BillingAvailability.MONTHLY_SUBSCRIPTION_PRODUCT_ID in purchase.products
-            }
-        val purchased =
-            subscriptionPurchases.filter { it.purchaseState == Purchase.PurchaseState.PURCHASED }
-        val hasPending =
-            subscriptionPurchases.any { it.purchaseState == Purchase.PurchaseState.PENDING }
-
-        if (billingBackendClient.isConfigured && purchased.isNotEmpty()) {
-            verifyPurchaseWithBackend(purchased.first(), hasPending)
-            return
-        }
-
-        if (billingBackendClient.isConfigured && purchased.isEmpty()) {
-            refreshEntitlementFromBackend(hasPending)
-            return
-        }
-
-        if (verificationPolicy.canUseClientOnlyEntitlement) {
-            purchased
-                .filterNot { it.isAcknowledged }
-                .forEach(::acknowledgePurchase)
-        }
-
-        onEntitlementChanged(
-            verificationPolicy.localPurchaseSnapshot(
-                hasPurchasedSubscription = purchased.isNotEmpty(),
-                checkedAtMillis = nowMillis(),
-            ),
-        )
-        _uiState.update {
-            it.copy(
-                isLoading = false,
-                message =
-                    BillingUiMessage(
-                        verificationPolicy.localPurchaseMessageCode(
-                            hasPurchasedSubscription = purchased.isNotEmpty(),
-                            hasPendingSubscription = hasPending,
-                        ),
-                    ),
-            )
-        }
-    }
-
-    private fun verifyPurchaseWithBackend(
-        purchase: Purchase,
-        hasPending: Boolean,
-    ) {
-        val currentInstallId = installId
-        if (currentInstallId.isNullOrBlank()) {
-            recordFailClosedEntitlement()
+        val purchaseSummary = purchases.toBillingPurchaseSummary()
+        syncBillingEntitlementUseCase.messageCodeWhileSyncing(purchaseSummary)?.let { messageCode ->
             _uiState.update {
                 it.copy(
-                    message =
-                        BillingUiMessage(BillingMessageCode.BACKEND_VERIFICATION_NOT_READY),
+                    isLoading = true,
+                    message = BillingUiMessage(messageCode),
                 )
             }
-            return
         }
+        billingScope.launch {
+            applyBillingSyncOutcome(syncBillingEntitlementUseCase(purchaseSummary))
+        }
+    }
 
-        _uiState.update {
-            it.copy(
-                isLoading = true,
-                message = BillingUiMessage(BillingMessageCode.VERIFYING_WITH_BACKEND),
+    private fun applyBillingSyncOutcome(outcome: BillingSyncOutcome) {
+        outcome.purchaseTokensToAcknowledge.forEach(::acknowledgePurchase)
+        onEntitlementChanged(outcome.entitlementSnapshot)
+        _uiState.update { currentState ->
+            currentState.copy(
+                isLoading = if (outcome.clearsLoading) false else currentState.isLoading,
+                message =
+                    outcome.messageCodeToApply?.let(::BillingUiMessage)
+                        ?: currentState.message,
             )
         }
-        billingScope.launch {
-            runCatching {
-                billingBackendClient.verifyPurchase(
-                    BillingBackendPurchaseRequest(
-                        installId = currentInstallId,
-                        packageName = packageName,
-                        productId = BillingAvailability.MONTHLY_SUBSCRIPTION_PRODUCT_ID,
-                        purchaseToken = purchase.purchaseToken,
-                        appVersion = appVersion,
-                    ),
-                )
-            }.onSuccess { snapshot ->
-                onEntitlementChanged(snapshot)
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        message = BillingUiMessage(snapshot.messageCode(hasPending)),
-                    )
-                }
-            }.onFailure {
-                recordFailClosedEntitlement()
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        message =
-                            BillingUiMessage(BillingMessageCode.VERIFY_WITH_BACKEND_FAILED),
-                    )
-                }
-            }
-        }
     }
 
-    private fun refreshEntitlementFromBackend(hasPending: Boolean) {
-        val currentInstallId = installId
-        if (currentInstallId.isNullOrBlank()) {
-            recordFailClosedEntitlement()
-            return
-        }
-
-        billingScope.launch {
-            runCatching {
-                billingBackendClient.refreshEntitlement(currentInstallId)
-            }.onSuccess { snapshot ->
-                if (snapshot == null) {
-                    onEntitlementChanged(
-                        BillingEntitlementSnapshot(
-                            state = BillingEntitlementState.EXPIRED,
-                            checkedAtMillis = nowMillis(),
-                        ),
-                    )
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            message =
-                                BillingUiMessage(
-                                    if (hasPending) {
-                                        BillingMessageCode.PURCHASE_PENDING
-                                    } else {
-                                        BillingMessageCode.NO_ACTIVE_SUBSCRIPTION
-                                    },
-                                ),
-                        )
-                    }
-                    return@onSuccess
-                }
-                onEntitlementChanged(snapshot)
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        message = BillingUiMessage(snapshot.messageCode(hasPending)),
-                    )
-                }
-            }.onFailure {
-                recordFailClosedEntitlement()
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        message = BillingUiMessage(BillingMessageCode.REFRESH_BACKEND_FAILED),
-                    )
-                }
-            }
-        }
-    }
-
-    private fun recordFailClosedEntitlement() {
-        onEntitlementChanged(verificationPolicy.failClosedSnapshot(checkedAtMillis = nowMillis()))
-    }
-
-    private fun acknowledgePurchase(purchase: Purchase) {
+    private fun acknowledgePurchase(purchaseToken: String) {
         val params =
             AcknowledgePurchaseParams
                 .newBuilder()
-                .setPurchaseToken(purchase.purchaseToken)
+                .setPurchaseToken(purchaseToken)
                 .build()
         billingClient.acknowledgePurchase(params) { billingResult ->
             if (billingResult.responseCode != BillingClient.BillingResponseCode.OK) {
@@ -439,22 +326,6 @@ class PlayBillingRepository(
             }
         }
     }
-
-    private fun BillingEntitlementSnapshot.messageCode(hasPending: Boolean): BillingMessageCode =
-        when {
-            state == BillingEntitlementState.ACTIVE -> BillingMessageCode.SUBSCRIPTION_ACTIVE
-            state == BillingEntitlementState.CANCELED_ACTIVE ->
-                BillingMessageCode.SUBSCRIPTION_CANCELED_ACTIVE
-            state == BillingEntitlementState.IN_GRACE ->
-                BillingMessageCode.SUBSCRIPTION_IN_GRACE
-            state == BillingEntitlementState.PENDING || hasPending ->
-                BillingMessageCode.PURCHASE_PENDING
-            state == BillingEntitlementState.ON_HOLD ->
-                BillingMessageCode.PAYMENT_ISSUE
-            state == BillingEntitlementState.REVOKED -> BillingMessageCode.SUBSCRIPTION_REVOKED
-            state == BillingEntitlementState.EXPIRED -> BillingMessageCode.NO_ACTIVE_SUBSCRIPTION
-            else -> BillingMessageCode.VERIFICATION_UNAVAILABLE
-        }
 
     private fun setBillingError(
         messageCode: BillingMessageCode,
