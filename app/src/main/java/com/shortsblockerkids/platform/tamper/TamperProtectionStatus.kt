@@ -1,10 +1,11 @@
-package com.shortsblockerkids.core.tamper
+package com.shortsblockerkids.platform.tamper
 
 import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import com.shortsblockerkids.R
+import com.shortsblockerkids.core.tamper.TamperProtectionReceiver
 
 object TamperProtectionStatus {
     fun isActive(context: Context): Boolean {

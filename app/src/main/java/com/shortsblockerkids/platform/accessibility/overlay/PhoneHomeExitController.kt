@@ -1,4 +1,4 @@
-package com.shortsblockerkids.accessibility
+package com.shortsblockerkids.platform.accessibility.overlay
 
 class PhoneHomeExitController(
     private val phoneHomeAction: PhoneHomeAction,

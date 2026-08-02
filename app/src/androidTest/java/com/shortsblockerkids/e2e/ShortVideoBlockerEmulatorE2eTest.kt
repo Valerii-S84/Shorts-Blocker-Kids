@@ -15,11 +15,11 @@ import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.shortsblockerkids.MainActivity
 import com.shortsblockerkids.R
-import com.shortsblockerkids.accessibility.AccessibilityServiceStatus
 import com.shortsblockerkids.accessibility.ShortsBlockerAccessibilityService
-import com.shortsblockerkids.accessibility.accessibilityDiagnostics
 import com.shortsblockerkids.core.model.ProtectionMode
 import com.shortsblockerkids.core.storage.SettingsRepository
+import com.shortsblockerkids.platform.accessibility.diagnostics.accessibilityDiagnostics
+import com.shortsblockerkids.platform.accessibility.status.AccessibilityServiceStatus
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -170,7 +170,7 @@ class ShortVideoBlockerEmulatorE2eTest {
         waitForText(quantityText(R.plurals.pin_entry_attempts_remaining, 4))
         assertFalse(hasText(resourceText(R.string.temporary_allow_title)))
 
-        enterPin(PARENT_PIN)
+        enterPin(parentPin)
         tapText(resourceText(R.string.pin_entry_submit))
         waitForText(resourceText(R.string.temporary_allow_title))
         tapText(quantityText(R.plurals.temporary_allow_duration_minutes, 5))
@@ -341,7 +341,7 @@ class ShortVideoBlockerEmulatorE2eTest {
         tapText(resourceText(R.string.pin_entry_submit))
         waitForText(quantityText(R.plurals.pin_entry_attempts_remaining, 4))
 
-        enterPin(PARENT_PIN)
+        enterPin(parentPin)
         tapText(resourceText(R.string.pin_entry_submit))
         waitForText(resourceText(R.string.temporary_allow_title))
         tapText(quantityText(R.plurals.temporary_allow_duration_minutes, 5))
@@ -396,7 +396,7 @@ class ShortVideoBlockerEmulatorE2eTest {
 
     private fun prepareProtectionState() {
         runBlocking {
-            settingsRepository.savePin(PARENT_PIN)
+            settingsRepository.savePin(parentPin)
             settingsRepository.acceptAccessibilityDisclosure()
             settingsRepository.setSelectedMode(ProtectionMode.BLOCK_SHORTS)
             settingsRepository.setTemporaryAllowUntil(null)
@@ -785,7 +785,7 @@ class ShortVideoBlockerEmulatorE2eTest {
     }
 
     private companion object {
-        const val PARENT_PIN = "2580"
+        val parentPin = (1000..9999).random().toString()
         const val FAKE_ACTIVITY = "com.shortsblockerkids.fixtureapps.FakeSocialActivity"
         const val PIN_ACTIVITY_TIMEOUT_MS = 30_000L
     }

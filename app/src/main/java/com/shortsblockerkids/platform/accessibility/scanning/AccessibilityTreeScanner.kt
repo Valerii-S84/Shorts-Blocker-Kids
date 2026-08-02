@@ -1,4 +1,4 @@
-package com.shortsblockerkids.accessibility
+package com.shortsblockerkids.platform.accessibility.scanning
 
 import android.graphics.Rect
 import android.view.accessibility.AccessibilityNodeInfo

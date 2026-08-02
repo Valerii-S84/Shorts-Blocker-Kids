@@ -1,14 +1,18 @@
-package com.shortsblockerkids.accessibility
+package com.shortsblockerkids.platform.accessibility.routing
 
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityEvent.eventTypeToString
 import android.view.accessibility.AccessibilityNodeInfo
+import com.shortsblockerkids.accessibility.BlockingDecision
+import com.shortsblockerkids.accessibility.BlockingDecisionController
 import com.shortsblockerkids.application.port.AccessibilityDiagnosticsPort
 import com.shortsblockerkids.application.port.ProtectionSettingsPort
 import com.shortsblockerkids.application.port.TimeProvider
 import com.shortsblockerkids.domain.detection.Confidence
 import com.shortsblockerkids.domain.detection.DetectionResult
 import com.shortsblockerkids.domain.detection.ShortVideoDetectionEngine
+import com.shortsblockerkids.platform.accessibility.overlay.BlockOverlayController
+import com.shortsblockerkids.platform.accessibility.scanning.AccessibilityTreeScanner
 
 class AccessibilityEventRouter(
     private val protectionSettingsPort: ProtectionSettingsPort,

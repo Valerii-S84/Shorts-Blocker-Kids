@@ -3,6 +3,7 @@ package com.shortsblockerkids.accessibility
 import android.view.accessibility.AccessibilityEvent
 import com.shortsblockerkids.domain.detection.Confidence
 import com.shortsblockerkids.domain.detection.DetectionResult
+import com.shortsblockerkids.platform.accessibility.routing.AccessibilityEventPolicy
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

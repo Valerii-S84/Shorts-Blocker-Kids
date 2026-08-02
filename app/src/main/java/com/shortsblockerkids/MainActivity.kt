@@ -11,7 +11,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
-import com.shortsblockerkids.accessibility.AccessibilityServiceStatus
 import com.shortsblockerkids.application.pin.CreatePinUseCase
 import com.shortsblockerkids.application.pin.VerifyPinUseCase
 import com.shortsblockerkids.application.protection.ClearExpiredTemporaryAllowUseCase
@@ -21,9 +20,10 @@ import com.shortsblockerkids.core.billing.HttpBillingBackendClient
 import com.shortsblockerkids.core.billing.PlayBillingRepository
 import com.shortsblockerkids.core.storage.AppSettings
 import com.shortsblockerkids.core.storage.SettingsRepository
-import com.shortsblockerkids.core.tamper.TamperProtectionStatus
 import com.shortsblockerkids.infrastructure.storage.SettingsPinAccessAdapter
 import com.shortsblockerkids.infrastructure.time.SystemTimeProvider
+import com.shortsblockerkids.platform.accessibility.status.AccessibilityServiceStatus
+import com.shortsblockerkids.platform.tamper.TamperProtectionStatus
 import com.shortsblockerkids.presentation.app.ShortsBlockerKidsApp
 import com.shortsblockerkids.ui.theme.ShortsBlockerKidsTheme
 import kotlinx.coroutines.CoroutineScope
