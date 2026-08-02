@@ -2,7 +2,7 @@ package com.shortsblockerkids.application.port
 
 import com.shortsblockerkids.application.model.PinAttemptState
 import com.shortsblockerkids.application.model.PinCredential
-import com.shortsblockerkids.core.security.PinVerificationResult
+import com.shortsblockerkids.application.pin.PinVerificationResult
 
 interface PinStateStore {
     suspend fun savePinState(

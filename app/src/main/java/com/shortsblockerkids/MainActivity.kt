@@ -19,7 +19,7 @@ import com.shortsblockerkids.application.protection.RecordSuccessfulProtectionAc
 import com.shortsblockerkids.application.protection.SetTemporaryAllowUseCase
 import com.shortsblockerkids.core.billing.HttpBillingBackendClient
 import com.shortsblockerkids.core.billing.PlayBillingRepository
-import com.shortsblockerkids.core.storage.SettingsRepository
+import com.shortsblockerkids.infrastructure.storage.DataStoreSettingsStore
 import com.shortsblockerkids.infrastructure.storage.SettingsPinAccessAdapter
 import com.shortsblockerkids.infrastructure.time.SystemTimeProvider
 import com.shortsblockerkids.platform.accessibility.status.AccessibilityServiceStatus
@@ -35,7 +35,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 class MainActivity : ComponentActivity() {
-    private lateinit var settingsRepository: SettingsRepository
+    private lateinit var settingsStore: DataStoreSettingsStore
     private lateinit var billingRepository: PlayBillingRepository
     private val activityScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val settingsState = mutableStateOf(AppSettingsSnapshot())
@@ -45,36 +45,36 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        settingsRepository = SettingsRepository(this)
-        val pinAccessAdapter = SettingsPinAccessAdapter(settingsRepository)
+        settingsStore = DataStoreSettingsStore(this)
+        val pinAccessAdapter = SettingsPinAccessAdapter(pinStateStore = settingsStore)
         val createPinUseCase = CreatePinUseCase(pinAccessAdapter)
         val verifyPinUseCase = VerifyPinUseCase(pinAccessAdapter)
         val protectionActivationUseCase =
             RecordSuccessfulProtectionActivationUseCase(
                 timeProvider = SystemTimeProvider(),
-                protectionActivationStore = settingsRepository,
+                protectionActivationStore = settingsStore,
             )
         val setTemporaryAllowUseCase =
             SetTemporaryAllowUseCase(
                 timeProvider = SystemTimeProvider(),
-                temporaryAllowStore = settingsRepository,
+                temporaryAllowStore = settingsStore,
             )
         val clearExpiredTemporaryAllowUseCase =
             ClearExpiredTemporaryAllowUseCase(
                 timeProvider = SystemTimeProvider(),
-                temporaryAllowStore = settingsRepository,
+                temporaryAllowStore = settingsStore,
             )
         billingRepository =
             PlayBillingRepository(
                 context = this,
                 onEntitlementChanged = { snapshot ->
                     activityScope.launch {
-                        settingsRepository.updateBillingEntitlement(snapshot)
+                        settingsStore.updateBillingEntitlement(snapshot)
                     }
                 },
                 billingBackendClient =
                     HttpBillingBackendClient.fromBaseUrl(BuildConfig.BILLING_BACKEND_BASE_URL),
-                installId = runBlocking { settingsRepository.getOrCreateBillingInstallationId() },
+                installId = runBlocking { settingsStore.getOrCreateBillingInstallationId() },
                 appVersion = BuildConfig.VERSION_NAME,
                 clientOnlyModeRequested = BuildConfig.BILLING_CLIENT_ONLY_TEST_MODE,
                 internalTestingBuild = BuildConfig.DEBUG,
@@ -101,13 +101,13 @@ class MainActivity : ComponentActivity() {
                         setTemporaryAllowUseCase = setTemporaryAllowUseCase,
                         isDetectorQaVisible = BuildConfig.ACCESSIBILITY_DEBUG_TOOLS_ENABLED,
                         onProtectionEnabledChanged = { enabled ->
-                            settingsRepository.setProtectionEnabled(enabled)
+                            settingsStore.setProtectionEnabled(enabled)
                         },
                         onPlatformEnabledChanged = { platformId, enabled ->
-                            settingsRepository.setPlatformEnabled(platformId, enabled)
+                            settingsStore.setPlatformEnabled(platformId, enabled)
                         },
                         onAccessibilityDisclosureAccepted = {
-                            settingsRepository.acceptAccessibilityDisclosure()
+                            settingsStore.acceptAccessibilityDisclosure()
                         },
                         onSubscribe = {
                             billingRepository.launchPurchase(this@MainActivity)
@@ -142,7 +142,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        if (::settingsRepository.isInitialized) {
+        if (::settingsStore.isInitialized) {
             refreshState()
         }
         if (::billingRepository.isInitialized) {
@@ -160,7 +160,7 @@ class MainActivity : ComponentActivity() {
 
     private fun observeSettings(clearExpiredTemporaryAllowUseCase: ClearExpiredTemporaryAllowUseCase) {
         activityScope.launch {
-            settingsRepository.readSettings().collect { settings ->
+            settingsStore.readSettings().collect { settings ->
                 val temporaryAllowRemoved = clearExpiredTemporaryAllowUseCase()
                 settingsState.value =
                     if (temporaryAllowRemoved) {
@@ -180,7 +180,7 @@ class MainActivity : ComponentActivity() {
     private fun loadInitialSettings() {
         val initialSettings =
             runBlocking {
-                settingsRepository.readSettings().first()
+                settingsStore.readSettings().first()
             }
         settingsState.value = initialSettings
     }

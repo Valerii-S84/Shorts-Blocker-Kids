@@ -1,7 +1,6 @@
 package com.shortsblockerkids.application.pin
 
 import com.shortsblockerkids.application.port.PinAccessPort
-import com.shortsblockerkids.core.security.PinVerificationResult
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Test

@@ -1,6 +1,6 @@
 package com.shortsblockerkids.application.port
 
-import com.shortsblockerkids.core.security.PinVerificationResult
+import com.shortsblockerkids.application.pin.PinVerificationResult
 
 interface PinAccessPort {
     suspend fun createPin(pin: String)

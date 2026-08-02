@@ -1,4 +1,4 @@
-package com.shortsblockerkids.core.storage
+package com.shortsblockerkids.infrastructure.storage
 
 import com.shortsblockerkids.application.model.AppSettingsSnapshot
 import com.shortsblockerkids.core.billing.BillingEntitlementState
@@ -10,10 +10,10 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-class AppSettingsTest {
+class StoredAppSettingsTest {
     @Test
     fun storageRecordKeepsExistingDefaults() {
-        val settings = AppSettings()
+        val settings = StoredAppSettings()
 
         assertTrue(settings.protectionEnabled)
         assertFalse(settings.accessibilityDisclosureAccepted)
@@ -30,29 +30,31 @@ class AppSettingsTest {
 
     @Test
     fun pinIsConfiguredOnlyWhenHashAndSaltAreBothPresent() {
-        assertTrue(AppSettings(pinHash = "hash", pinSalt = "salt").isPinCreated)
-        assertFalse(AppSettings(pinHash = "", pinSalt = "salt").isPinCreated)
-        assertFalse(AppSettings(pinHash = "hash", pinSalt = " ").isPinCreated)
-        assertFalse(AppSettings(pinHash = null, pinSalt = "salt").isPinCreated)
-        assertFalse(AppSettings(pinHash = "hash", pinSalt = null).isPinCreated)
+        assertTrue(StoredAppSettings(pinHash = "hash", pinSalt = "salt").isPinCreated)
+        assertFalse(StoredAppSettings(pinHash = "", pinSalt = "salt").isPinCreated)
+        assertFalse(StoredAppSettings(pinHash = "hash", pinSalt = " ").isPinCreated)
+        assertFalse(StoredAppSettings(pinHash = null, pinSalt = "salt").isPinCreated)
+        assertFalse(StoredAppSettings(pinHash = "hash", pinSalt = null).isPinCreated)
     }
 
     @Test
     fun mapperExposesOnlyConsumerSafeSettings() {
         val snapshot =
-            AppSettings(
-                protectionEnabled = false,
-                accessibilityDisclosureAccepted = true,
-                temporaryAllowUntil = 2_000L,
-                freeTestStartedAt = 1_000L,
-                billingInstallationId = "installation-secret",
-                billingEntitlementState = BillingEntitlementState.CANCELED_ACTIVE,
-                billingLastVerifiedAt = 3_000L,
-                billingActiveUntilMillis = 4_000L,
-                pinHash = "pin-hash",
-                pinSalt = "pin-salt",
-                failedPinAttempts = 5,
-            ).toSnapshot()
+            DataStoreSettingsMapper.toSnapshot(
+                StoredAppSettings(
+                    protectionEnabled = false,
+                    accessibilityDisclosureAccepted = true,
+                    temporaryAllowUntil = 2_000L,
+                    freeTestStartedAt = 1_000L,
+                    billingInstallationId = "installation-secret",
+                    billingEntitlementState = BillingEntitlementState.CANCELED_ACTIVE,
+                    billingLastVerifiedAt = 3_000L,
+                    billingActiveUntilMillis = 4_000L,
+                    pinHash = "pin-hash",
+                    pinSalt = "pin-salt",
+                    failedPinAttempts = 5,
+                ),
+            )
 
         assertFalse(snapshot.protectionConfiguration.isEnabled)
         assertTrue(snapshot.protectionConfiguration.isAccessibilityDisclosureAccepted)

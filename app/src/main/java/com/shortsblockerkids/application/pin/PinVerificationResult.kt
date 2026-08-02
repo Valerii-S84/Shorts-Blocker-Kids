@@ -1,4 +1,4 @@
-package com.shortsblockerkids.core.security
+package com.shortsblockerkids.application.pin
 
 sealed interface PinVerificationResult {
     data object Success : PinVerificationResult

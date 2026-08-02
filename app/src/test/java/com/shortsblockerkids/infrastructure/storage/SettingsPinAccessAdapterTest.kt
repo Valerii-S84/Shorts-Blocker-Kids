@@ -2,11 +2,11 @@ package com.shortsblockerkids.infrastructure.storage
 
 import com.shortsblockerkids.application.model.PinAttemptState
 import com.shortsblockerkids.application.model.PinCredential
+import com.shortsblockerkids.application.pin.PinVerificationResult
 import com.shortsblockerkids.application.port.PinStateStore
 import com.shortsblockerkids.application.port.PinStateUpdate
 import com.shortsblockerkids.application.port.TimeProvider
 import com.shortsblockerkids.core.security.PinHasher
-import com.shortsblockerkids.core.security.PinVerificationResult
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame

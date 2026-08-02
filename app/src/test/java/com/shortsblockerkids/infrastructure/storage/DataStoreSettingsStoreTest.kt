@@ -1,4 +1,4 @@
-package com.shortsblockerkids.core.storage
+package com.shortsblockerkids.infrastructure.storage
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.core.okio.OkioStorage
@@ -10,11 +10,12 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
+import com.shortsblockerkids.application.pin.PinVerificationResult
+import com.shortsblockerkids.application.port.TimeProvider
 import com.shortsblockerkids.application.protection.canProtect
 import com.shortsblockerkids.application.protection.hasBillingEntitlement
 import com.shortsblockerkids.core.billing.BillingEntitlementSnapshot
 import com.shortsblockerkids.core.billing.BillingEntitlementState
-import com.shortsblockerkids.core.security.PinVerificationResult
 import com.shortsblockerkids.domain.detection.SupportedPlatform
 import com.shortsblockerkids.domain.entitlement.FreeTestPolicy
 import com.shortsblockerkids.domain.protection.ProtectionConfiguration
@@ -38,7 +39,7 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
 
-class SettingsRepositoryTest {
+class DataStoreSettingsStoreTest {
     @get:Rule
     val temporaryFolder = TemporaryFolder()
 
@@ -47,6 +48,51 @@ class SettingsRepositoryTest {
     @After
     fun tearDown() {
         scopes.forEach { it.cancel() }
+    }
+
+    @Test
+    fun storeNameAndPreferenceKeysRemainByteCompatible() {
+        assertEquals("shorts_blocker_settings", SETTINGS_STORE_NAME)
+        assertEquals(
+            listOf(
+                "protectionEnabled",
+                "accessibilityDisclosureAccepted",
+                "selectedMode",
+                "enabledPlatformIds",
+                "temporaryAllowUntil",
+                "free_test_started_at",
+                "free_test_duration_days",
+                "billing_installation_id",
+                "billing_entitlement_state",
+                "billing_subscription_active",
+                "billing_last_verified_at",
+                "billing_active_until_millis",
+                "pinHash",
+                "pinSalt",
+                "pinHashVersion",
+                "failedPinAttempts",
+                "pinLockoutUntil",
+            ),
+            listOf(
+                DataStoreSettingsMapper.protectionEnabledKey.name,
+                DataStoreSettingsMapper.accessibilityDisclosureAcceptedKey.name,
+                DataStoreSettingsMapper.selectedModeKey.name,
+                DataStoreSettingsMapper.enabledPlatformIdsKey.name,
+                DataStoreSettingsMapper.temporaryAllowUntilKey.name,
+                DataStoreSettingsMapper.freeTestStartedAtKey.name,
+                DataStoreSettingsMapper.freeTestDurationDaysKey.name,
+                DataStoreSettingsMapper.billingInstallationIdKey.name,
+                DataStoreSettingsMapper.billingEntitlementStateKey.name,
+                DataStoreSettingsMapper.billingSubscriptionActiveKey.name,
+                DataStoreSettingsMapper.billingLastVerifiedAtKey.name,
+                DataStoreSettingsMapper.billingActiveUntilMillisKey.name,
+                PinPreferenceKeys.PIN_HASH.name,
+                PinPreferenceKeys.PIN_SALT.name,
+                PinPreferenceKeys.PIN_HASH_VERSION.name,
+                PinPreferenceKeys.FAILED_PIN_ATTEMPTS.name,
+                PinPreferenceKeys.PIN_LOCKOUT_UNTIL.name,
+            ),
+        )
     }
 
     @Test
@@ -103,7 +149,7 @@ class SettingsRepositoryTest {
     fun repeatedActivationPreservesFreeTestStartAndDurationAndReenablesProtection() =
         runBlocking {
             val dataStore = createDataStore("free-test-repeat")
-            val repository = SettingsRepository(dataStore)
+            val repository = DataStoreSettingsStore(dataStore)
             repository.recordSuccessfulProtectionActivation(nowMillis = 5_000L)
             dataStore.edit { preferences ->
                 preferences[intPreferencesKey("free_test_duration_days")] = 30
@@ -234,7 +280,7 @@ class SettingsRepositoryTest {
                 preferences[stringSetPreferencesKey("enabledPlatformIds")] =
                     setOf(SupportedPlatform.YOUTUBE_SHORTS.id, "unknown_platform")
             }
-            val repository = SettingsRepository(dataStore)
+            val repository = DataStoreSettingsStore(dataStore)
 
             assertEquals(
                 setOf(SupportedPlatform.YOUTUBE_SHORTS.id),
@@ -325,7 +371,7 @@ class SettingsRepositoryTest {
             dataStore.edit { preferences ->
                 preferences[stringPreferencesKey("billing_installation_id")] = " "
             }
-            val repository = SettingsRepository(dataStore)
+            val repository = DataStoreSettingsStore(dataStore)
 
             val installId = repository.getOrCreateBillingInstallationId()
 
@@ -338,7 +384,7 @@ class SettingsRepositoryTest {
     fun storesExactTemporaryAllowTimestampUnderExistingKey() =
         runBlocking {
             val dataStore = createDataStore("allow-timestamp")
-            val repository = SettingsRepository(dataStore)
+            val repository = DataStoreSettingsStore(dataStore)
 
             repository.setTemporaryAllowUntil(901_234L)
 
@@ -579,7 +625,7 @@ class SettingsRepositoryTest {
                 preferences[stringPreferencesKey("pinHash")] = "not-base64"
                 preferences[stringPreferencesKey("pinSalt")] = "not-base64"
             }
-            val repository = SettingsRepository(dataStore)
+            val repository = DataStoreSettingsStore(dataStore)
 
             assertEquals(PinVerificationResult.NotConfigured, repository.verifyPin("4826"))
         }
@@ -597,10 +643,23 @@ class SettingsRepositoryTest {
             assertTrue(restartedRepository.verifyPin("4827") is PinVerificationResult.Failure)
         }
 
-    private fun createRepository(name: String): SettingsRepository {
+    private fun createRepository(name: String): DataStoreSettingsStore {
         val dataStore = createDataStore(name)
-        return SettingsRepository(dataStore)
+        return DataStoreSettingsStore(dataStore)
     }
+
+    private suspend fun DataStoreSettingsStore.savePin(pin: String) {
+        SettingsPinAccessAdapter(pinStateStore = this).createPin(pin)
+    }
+
+    private suspend fun DataStoreSettingsStore.verifyPin(
+        pin: String,
+        nowMillis: Long = System.currentTimeMillis(),
+    ): PinVerificationResult =
+        SettingsPinAccessAdapter(
+            pinStateStore = this,
+            timeProvider = TimeProvider { nowMillis },
+        ).verifyPin(pin)
 
     private fun createDataStore(name: String): DataStore<Preferences> {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
