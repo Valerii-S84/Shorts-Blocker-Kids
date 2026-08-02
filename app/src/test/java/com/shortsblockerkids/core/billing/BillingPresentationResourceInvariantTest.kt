@@ -127,6 +127,12 @@ class BillingPresentationResourceInvariantTest {
 
         val BILLING_DOMAIN_SOURCES =
             setOf(
+                "app/src/main/java/com/shortsblockerkids/application/billing/" +
+                    "BillingPurchaseSummary.kt",
+                "app/src/main/java/com/shortsblockerkids/application/billing/" +
+                    "BillingSyncOutcome.kt",
+                "app/src/main/java/com/shortsblockerkids/application/billing/" +
+                    "SyncBillingEntitlementUseCase.kt",
                 "app/src/main/java/com/shortsblockerkids/core/billing/BillingAvailability.kt",
                 "app/src/main/java/com/shortsblockerkids/core/billing/BillingUiState.kt",
                 "app/src/main/java/com/shortsblockerkids/core/billing/BillingVerificationPolicy.kt",

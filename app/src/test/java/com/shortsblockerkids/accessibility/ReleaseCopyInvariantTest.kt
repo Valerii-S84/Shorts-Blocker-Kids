@@ -255,18 +255,48 @@ class ReleaseCopyInvariantTest {
     }
 
     @Test
-    fun billingRepositoryRecordsFailClosedEntitlementOnBackendFailures() {
+    fun billingSafetySeamFailsClosedAndRepositoryDelegatesOrchestration() {
+        val useCaseSource =
+            repoFile(
+                "app/src/main/java/com/shortsblockerkids/application/billing/" +
+                    "SyncBillingEntitlementUseCase.kt",
+            ).readText()
         val repositorySource =
             repoFile(
                 "app/src/main/java/com/shortsblockerkids/core/billing/PlayBillingRepository.kt",
             ).readText()
-        val failureRecordings =
-            Regex("\\.onFailure \\{\\s+recordFailClosedEntitlement\\(")
-                .findAll(repositorySource)
-                .count()
 
-        assertTrue(repositorySource.contains("verificationPolicy.failClosedSnapshot"))
-        assertTrue("expected verify and refresh failure handlers", failureRecordings >= 2)
+        assertTrue(useCaseSource.contains("verificationPolicy.failClosedSnapshot"))
+        assertTrue(useCaseSource.contains("BillingMessageCode.VERIFY_WITH_BACKEND_FAILED"))
+        assertTrue(useCaseSource.contains("BillingMessageCode.REFRESH_BACKEND_FAILED"))
+        assertTrue(repositorySource.contains("SyncBillingEntitlementUseCase"))
+        assertTrue(repositorySource.contains("syncBillingEntitlementUseCase(purchaseSummary)"))
+        assertTrue(repositorySource.contains("onEntitlementChanged(outcome.entitlementSnapshot)"))
+        assertTrue(repositorySource.contains("outcome.purchaseTokensToAcknowledge"))
+        assertTrue(repositorySource.contains("outcome.messageCodeToApply"))
+        assertTrue(repositorySource.contains("outcome.clearsLoading"))
+        assertTrue(
+            "PlayBillingRepository must stay within 300 lines",
+            repositorySource.substringAfter("class PlayBillingRepository").lineSequence().count() <= 300,
+        )
+
+        listOf(
+            "BillingBackendClient",
+            "verifyPurchaseWithBackend",
+            "refreshEntitlementFromBackend",
+            "recordFailClosedEntitlement",
+            "BillingVerificationPolicy",
+            "failClosedSnapshot",
+            "localPurchaseSnapshot",
+            "localPurchaseMessageCode",
+            ".verifyPurchase(",
+            ".refreshEntitlement(",
+        ).forEach { forbiddenSource ->
+            assertFalse(
+                "Repository still owns billing orchestration: $forbiddenSource",
+                repositorySource.contains(forbiddenSource),
+            )
+        }
     }
 
     @Test
