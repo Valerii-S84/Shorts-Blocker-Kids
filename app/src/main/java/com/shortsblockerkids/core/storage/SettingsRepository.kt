@@ -11,17 +11,20 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.shortsblockerkids.application.model.AppSettingsSnapshot
 import com.shortsblockerkids.application.port.PinStateStore
 import com.shortsblockerkids.application.port.ProtectionActivationStore
+import com.shortsblockerkids.application.port.SettingsStatePort
 import com.shortsblockerkids.application.port.TemporaryAllowStore
 import com.shortsblockerkids.application.port.TimeProvider
 import com.shortsblockerkids.core.billing.BillingEntitlementSnapshot
 import com.shortsblockerkids.core.billing.BillingEntitlementState
-import com.shortsblockerkids.core.entitlement.FreeTestPolicy
-import com.shortsblockerkids.core.model.ProtectionMode
 import com.shortsblockerkids.core.security.PinHasher
 import com.shortsblockerkids.core.security.PinRateLimiter
 import com.shortsblockerkids.core.security.PinVerificationResult
+import com.shortsblockerkids.domain.entitlement.FreeTestPolicy
+import com.shortsblockerkids.domain.protection.ProtectionConfiguration
+import com.shortsblockerkids.domain.protection.ProtectionMode
 import com.shortsblockerkids.infrastructure.storage.DataStorePinStateStore
 import com.shortsblockerkids.infrastructure.storage.PinPreferenceKeys
 import com.shortsblockerkids.infrastructure.storage.SettingsPinAccessAdapter
@@ -41,7 +44,8 @@ class SettingsRepository(
     private val pinHasher: PinHasher = PinHasher(),
     private val pinRateLimiter: PinRateLimiter = PinRateLimiter(),
 ) : ProtectionActivationStore,
-    TemporaryAllowStore {
+    TemporaryAllowStore,
+    SettingsStatePort {
     private val pinStateStore: PinStateStore = DataStorePinStateStore(dataStore)
 
     constructor(
@@ -56,7 +60,9 @@ class SettingsRepository(
 
     internal fun pinStateStore(): PinStateStore = pinStateStore
 
-    fun readSettings(): Flow<AppSettings> = dataStore.data.map { it.toAppSettings() }
+    override fun readSettings(): Flow<AppSettingsSnapshot> = readStoredSettings().map { settings -> settings.toSnapshot() }
+
+    internal fun readStoredSettings(): Flow<AppSettings> = dataStore.data.map { preferences -> preferences.toAppSettings() }
 
     suspend fun setProtectionEnabled(enabled: Boolean) {
         dataStore.edit { preferences ->
@@ -97,7 +103,7 @@ class SettingsRepository(
     }
 
     suspend fun getOrCreateBillingInstallationId(): String {
-        val current = readSettings().first().billingInstallationId
+        val current = readStoredSettings().first().billingInstallationId
         if (!current.isNullOrBlank()) {
             return current
         }
@@ -107,7 +113,7 @@ class SettingsRepository(
                 preferences[KEY_BILLING_INSTALLATION_ID] = created
             }
         }
-        return readSettings().first().billingInstallationId ?: created
+        return readStoredSettings().first().billingInstallationId ?: created
     }
 
     suspend fun setDisclosureAccepted(accepted: Boolean) {
@@ -126,7 +132,7 @@ class SettingsRepository(
         platformId: String,
         enabled: Boolean,
     ) {
-        require(platformId in AppSettings.DEFAULT_ENABLED_PLATFORM_IDS) {
+        require(platformId in ProtectionConfiguration.DEFAULT_ENABLED_PLATFORM_IDS) {
             "Unsupported protected platform id: $platformId"
         }
         dataStore.edit { preferences ->
@@ -227,9 +233,9 @@ class SettingsRepository(
     private fun Preferences.enabledPlatformIds(): Set<String> =
         this[KEY_ENABLED_PLATFORM_IDS]
             ?.filterTo(mutableSetOf()) { platformId ->
-                platformId in AppSettings.DEFAULT_ENABLED_PLATFORM_IDS
+                platformId in ProtectionConfiguration.DEFAULT_ENABLED_PLATFORM_IDS
             }
-            ?: AppSettings.DEFAULT_ENABLED_PLATFORM_IDS
+            ?: ProtectionConfiguration.DEFAULT_ENABLED_PLATFORM_IDS
 
     companion object {
         private val KEY_PROTECTION_ENABLED = booleanPreferencesKey("protectionEnabled")

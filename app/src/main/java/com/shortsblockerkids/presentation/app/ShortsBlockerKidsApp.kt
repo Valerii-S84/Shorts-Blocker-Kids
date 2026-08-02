@@ -10,12 +10,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import com.shortsblockerkids.application.model.AppSettingsSnapshot
 import com.shortsblockerkids.application.pin.CreatePinUseCase
 import com.shortsblockerkids.application.pin.VerifyPinUseCase
 import com.shortsblockerkids.application.protection.RecordSuccessfulProtectionActivationUseCase
 import com.shortsblockerkids.application.protection.SetTemporaryAllowUseCase
 import com.shortsblockerkids.core.billing.BillingUiState
-import com.shortsblockerkids.core.storage.AppSettings
 import com.shortsblockerkids.domain.protection.ProtectionActivationPolicy
 import com.shortsblockerkids.feature.blocking.TemporaryAllowCompletion
 import com.shortsblockerkids.feature.blocking.TemporaryAllowFlowController
@@ -34,7 +34,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 internal fun ShortsBlockerKidsApp(
-    settings: AppSettings,
+    settings: AppSettingsSnapshot,
     isAccessibilityServiceEnabled: Boolean,
     isTamperProtectionEnabled: Boolean,
     isTemporaryAllowRequested: Boolean,
@@ -81,17 +81,19 @@ internal fun ShortsBlockerKidsApp(
                     },
                 ),
         ) {
-            ShortsBlockerKidsCoordinator(isPinCreated = settings.isPinCreated)
+            ShortsBlockerKidsCoordinator(
+                isPinCreated = settings.protectionConfiguration.isPinConfigured,
+            )
         }
 
-    LaunchedEffect(settings.isPinCreated, coordinator.isUnlocked) {
-        coordinator.onPinConfigurationObserved(settings.isPinCreated)
+    LaunchedEffect(settings.protectionConfiguration.isPinConfigured, coordinator.isUnlocked) {
+        coordinator.onPinConfigurationObserved(settings.protectionConfiguration.isPinConfigured)
     }
 
-    LaunchedEffect(isTemporaryAllowRequested, settings.isPinCreated) {
+    LaunchedEffect(isTemporaryAllowRequested, settings.protectionConfiguration.isPinConfigured) {
         if (
             isTemporaryAllowRequested &&
-            coordinator.onTemporaryAllowRequested(settings.isPinCreated)
+            coordinator.onTemporaryAllowRequested(settings.protectionConfiguration.isPinConfigured)
         ) {
             onTemporaryAllowRequestConsumed()
         }
@@ -100,19 +102,20 @@ internal fun ShortsBlockerKidsApp(
     LaunchedEffect(
         coordinator.currentScreen,
         isAccessibilityServiceEnabled,
-        settings.freeTestStartedAt,
-        settings.protectionEnabled,
-        settings.accessibilityDisclosureAccepted,
-        settings.isPinCreated,
+        settings.entitlement.freeTestStartedAtMillis,
+        settings.protectionConfiguration.isEnabled,
+        settings.protectionConfiguration.isAccessibilityDisclosureAccepted,
+        settings.protectionConfiguration.isPinConfigured,
     ) {
         if (
             coordinator.currentScreen == AppScreen.Dashboard &&
             ProtectionActivationPolicy.shouldStartFreeTest(
                 isAccessibilityServiceEnabled = isAccessibilityServiceEnabled,
-                isProtectionEnabled = settings.protectionEnabled,
-                isAccessibilityDisclosureAccepted = settings.accessibilityDisclosureAccepted,
-                isPinConfigured = settings.isPinCreated,
-                isFreeTestAlreadyStarted = settings.freeTestStartedAt != null,
+                isProtectionEnabled = settings.protectionConfiguration.isEnabled,
+                isAccessibilityDisclosureAccepted =
+                    settings.protectionConfiguration.isAccessibilityDisclosureAccepted,
+                isPinConfigured = settings.protectionConfiguration.isPinConfigured,
+                isFreeTestAlreadyStarted = settings.entitlement.freeTestStartedAtMillis != null,
             )
         ) {
             recordSuccessfulProtectionActivationUseCase()
@@ -143,7 +146,7 @@ internal fun ShortsBlockerKidsApp(
                     onUnlocked = {
                         val shouldDisableProtection =
                             coordinator.onParentUnlocked(
-                                settings.accessibilityDisclosureAccepted,
+                                settings.protectionConfiguration.isAccessibilityDisclosureAccepted,
                             )
                         if (shouldDisableProtection) {
                             coroutineScope.launch {
@@ -157,7 +160,7 @@ internal fun ShortsBlockerKidsApp(
 
             AppScreen.ProtectedApps ->
                 ProtectedAppsScreen(
-                    settings = settings,
+                    protectionConfiguration = settings.protectionConfiguration,
                     onPlatformEnabledChanged = { platformId, enabled ->
                         coroutineScope.launch {
                             onPlatformEnabledChanged(platformId, enabled)
@@ -227,7 +230,7 @@ internal fun ShortsBlockerKidsApp(
                     onOpenAccessibilitySettings = {
                         if (
                             coordinator.onAccessibilitySettingsRequested(
-                                settings.accessibilityDisclosureAccepted,
+                                settings.protectionConfiguration.isAccessibilityDisclosureAccepted,
                             )
                         ) {
                             onOpenAccessibilitySettings()

@@ -1,4 +1,4 @@
-package com.shortsblockerkids.core.entitlement
+package com.shortsblockerkids.domain.entitlement
 
 object FreeTestPolicy {
     const val DEFAULT_DURATION_DAYS = 20

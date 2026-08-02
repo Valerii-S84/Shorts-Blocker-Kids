@@ -10,11 +10,15 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
+import com.shortsblockerkids.application.protection.canProtect
+import com.shortsblockerkids.application.protection.hasBillingEntitlement
 import com.shortsblockerkids.core.billing.BillingEntitlementSnapshot
 import com.shortsblockerkids.core.billing.BillingEntitlementState
-import com.shortsblockerkids.core.entitlement.FreeTestPolicy
-import com.shortsblockerkids.core.model.ProtectionMode
 import com.shortsblockerkids.core.security.PinVerificationResult
+import com.shortsblockerkids.domain.detection.SupportedPlatform
+import com.shortsblockerkids.domain.entitlement.FreeTestPolicy
+import com.shortsblockerkids.domain.protection.ProtectionConfiguration
+import com.shortsblockerkids.domain.protection.ProtectionMode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -52,10 +56,11 @@ class SettingsRepositoryTest {
 
             repository.savePin("4826")
             val settings = repository.readSettings().first()
+            val storedSettings = repository.readStoredSettings().first()
 
-            assertTrue(settings.isPinCreated)
-            assertNotNull(settings.pinSalt)
-            assertFalse(settings.pinHash.orEmpty().contains("4826"))
+            assertTrue(settings.protectionConfiguration.isPinConfigured)
+            assertNotNull(storedSettings.pinSalt)
+            assertFalse(storedSettings.pinHash.orEmpty().contains("4826"))
             assertEquals(PinVerificationResult.Success, repository.verifyPin("4826"))
             assertTrue(repository.verifyPin("4827") is PinVerificationResult.Failure)
         }
@@ -65,21 +70,33 @@ class SettingsRepositoryTest {
         runBlocking {
             val repository = createRepository("free-test-start")
 
-            assertEquals(null, repository.readSettings().first().freeTestStartedAt)
+            assertEquals(
+                null,
+                repository
+                    .readSettings()
+                    .first()
+                    .entitlement.freeTestStartedAtMillis,
+            )
 
             repository.savePin("4826")
             repository.setDisclosureAccepted(true)
             repository.setProtectionEnabled(true)
 
-            assertEquals(null, repository.readSettings().first().freeTestStartedAt)
+            assertEquals(
+                null,
+                repository
+                    .readSettings()
+                    .first()
+                    .entitlement.freeTestStartedAtMillis,
+            )
 
             repository.setProtectionEnabled(false)
             repository.recordSuccessfulProtectionActivation(nowMillis = 5_000L)
             val settings = repository.readSettings().first()
 
-            assertTrue(settings.protectionEnabled)
-            assertEquals(5_000L, settings.freeTestStartedAt)
-            assertEquals(FreeTestPolicy.DEFAULT_DURATION_DAYS, settings.freeTestDurationDays)
+            assertTrue(settings.protectionConfiguration.isEnabled)
+            assertEquals(5_000L, settings.entitlement.freeTestStartedAtMillis)
+            assertEquals(FreeTestPolicy.DEFAULT_DURATION_DAYS, settings.entitlement.freeTestDurationDays)
         }
 
     @Test
@@ -96,9 +113,9 @@ class SettingsRepositoryTest {
             repository.recordSuccessfulProtectionActivation(nowMillis = 10_000L)
             val settings = repository.readSettings().first()
 
-            assertTrue(settings.protectionEnabled)
-            assertEquals(5_000L, settings.freeTestStartedAt)
-            assertEquals(30, settings.freeTestDurationDays)
+            assertTrue(settings.protectionConfiguration.isEnabled)
+            assertEquals(5_000L, settings.entitlement.freeTestStartedAtMillis)
+            assertEquals(30, settings.entitlement.freeTestDurationDays)
         }
 
     @Test
@@ -112,8 +129,8 @@ class SettingsRepositoryTest {
             restartedRepository.recordSuccessfulProtectionActivation(nowMillis = 10_000L)
             val settings = restartedRepository.readSettings().first()
 
-            assertEquals(5_000L, settings.freeTestStartedAt)
-            assertEquals(FreeTestPolicy.DEFAULT_DURATION_DAYS, settings.freeTestDurationDays)
+            assertEquals(5_000L, settings.entitlement.freeTestStartedAtMillis)
+            assertEquals(FreeTestPolicy.DEFAULT_DURATION_DAYS, settings.entitlement.freeTestDurationDays)
         }
 
     @Test
@@ -141,7 +158,13 @@ class SettingsRepositoryTest {
 
             repository.setSelectedMode(ProtectionMode.BLOCK_SHORTS)
 
-            assertEquals(ProtectionMode.BLOCK_SHORTS, repository.readSettings().first().selectedMode)
+            assertEquals(
+                ProtectionMode.BLOCK_SHORTS,
+                repository
+                    .readSettings()
+                    .first()
+                    .protectionConfiguration.mode,
+            )
         }
 
     @Test
@@ -149,19 +172,32 @@ class SettingsRepositoryTest {
         runBlocking {
             val firstRepository = createRepository("enabled-platforms")
 
-            firstRepository.setPlatformEnabled(AppSettings.TIKTOK_PLATFORM_ID, false)
-            firstRepository.setPlatformEnabled(AppSettings.FACEBOOK_REELS_PLATFORM_ID, false)
+            firstRepository.setPlatformEnabled(SupportedPlatform.TIKTOK.id, false)
+            firstRepository.setPlatformEnabled(SupportedPlatform.FACEBOOK_REELS.id, false)
             val firstSettings = firstRepository.readSettings().first()
 
-            assertFalse(firstSettings.isPlatformEnabled(AppSettings.TIKTOK_PLATFORM_ID))
-            assertFalse(firstSettings.isPlatformEnabled(AppSettings.FACEBOOK_REELS_PLATFORM_ID))
-            assertTrue(firstSettings.isPlatformEnabled(AppSettings.YOUTUBE_SHORTS_PLATFORM_ID))
+            assertFalse(
+                firstSettings.protectionConfiguration.isPlatformEnabled(SupportedPlatform.TIKTOK.id),
+            )
+            assertFalse(
+                firstSettings.protectionConfiguration.isPlatformEnabled(
+                    SupportedPlatform.FACEBOOK_REELS.id,
+                ),
+            )
+            assertTrue(
+                firstSettings.protectionConfiguration.isPlatformEnabled(
+                    SupportedPlatform.YOUTUBE_SHORTS.id,
+                ),
+            )
             cancelOpenStores()
 
             val restartedRepository = createRepository("enabled-platforms")
             val restartedSettings = restartedRepository.readSettings().first()
 
-            assertEquals(firstSettings.enabledPlatformIds, restartedSettings.enabledPlatformIds)
+            assertEquals(
+                firstSettings.protectionConfiguration.enabledPlatformIds,
+                restartedSettings.protectionConfiguration.enabledPlatformIds,
+            )
         }
 
     @Test
@@ -172,18 +208,21 @@ class SettingsRepositoryTest {
             repository.setDisclosureAccepted(true)
             repository.recordSuccessfulProtectionActivation(nowMillis = 1_000L)
 
-            AppSettings.DEFAULT_ENABLED_PLATFORM_IDS.forEach { platformId ->
+            ProtectionConfiguration.DEFAULT_ENABLED_PLATFORM_IDS.forEach { platformId ->
                 repository.setPlatformEnabled(platformId, false)
             }
             val disabledSettings = repository.readSettings().first()
 
-            assertEquals(emptySet<String>(), disabledSettings.enabledPlatformIds)
+            assertEquals(emptySet<String>(), disabledSettings.protectionConfiguration.enabledPlatformIds)
             assertFalse(disabledSettings.canProtect(nowMillis = 1_500L))
 
-            repository.setPlatformEnabled(AppSettings.INSTAGRAM_REELS_PLATFORM_ID, true)
+            repository.setPlatformEnabled(SupportedPlatform.INSTAGRAM_REELS.id, true)
             val reenabledSettings = repository.readSettings().first()
 
-            assertEquals(setOf(AppSettings.INSTAGRAM_REELS_PLATFORM_ID), reenabledSettings.enabledPlatformIds)
+            assertEquals(
+                setOf(SupportedPlatform.INSTAGRAM_REELS.id),
+                reenabledSettings.protectionConfiguration.enabledPlatformIds,
+            )
             assertTrue(reenabledSettings.canProtect(nowMillis = 1_500L))
         }
 
@@ -193,13 +232,16 @@ class SettingsRepositoryTest {
             val dataStore = createDataStore("unknown-platform")
             dataStore.edit { preferences ->
                 preferences[stringSetPreferencesKey("enabledPlatformIds")] =
-                    setOf(AppSettings.YOUTUBE_SHORTS_PLATFORM_ID, "unknown_platform")
+                    setOf(SupportedPlatform.YOUTUBE_SHORTS.id, "unknown_platform")
             }
             val repository = SettingsRepository(dataStore)
 
             assertEquals(
-                setOf(AppSettings.YOUTUBE_SHORTS_PLATFORM_ID),
-                repository.readSettings().first().enabledPlatformIds,
+                setOf(SupportedPlatform.YOUTUBE_SHORTS.id),
+                repository
+                    .readSettings()
+                    .first()
+                    .protectionConfiguration.enabledPlatformIds,
             )
         }
 
@@ -221,16 +263,18 @@ class SettingsRepositoryTest {
 
             repository.updateBillingEntitlement(isActive = true, checkedAtMillis = 4_000L)
             val activeSettings = repository.readSettings().first()
+            val activeStoredSettings = repository.readStoredSettings().first()
 
-            assertTrue(activeSettings.billingSubscriptionActive)
-            assertEquals(4_000L, activeSettings.billingLastVerifiedAt)
+            assertTrue(activeStoredSettings.billingSubscriptionActive)
+            assertEquals(4_000L, activeSettings.entitlement.paidLastVerifiedAtMillis)
             assertTrue(activeSettings.hasBillingEntitlement(nowMillis = 4_000L))
 
             repository.updateBillingEntitlement(isActive = false, checkedAtMillis = 5_000L)
             val inactiveSettings = repository.readSettings().first()
+            val inactiveStoredSettings = repository.readStoredSettings().first()
 
-            assertFalse(inactiveSettings.billingSubscriptionActive)
-            assertEquals(5_000L, inactiveSettings.billingLastVerifiedAt)
+            assertFalse(inactiveStoredSettings.billingSubscriptionActive)
+            assertEquals(5_000L, inactiveSettings.entitlement.paidLastVerifiedAtMillis)
             assertFalse(inactiveSettings.hasBillingEntitlement(nowMillis = 5_000L))
         }
 
@@ -247,10 +291,14 @@ class SettingsRepositoryTest {
                 ),
             )
             val settings = repository.readSettings().first()
+            val storedSettings = repository.readStoredSettings().first()
 
-            assertTrue(settings.billingSubscriptionActive)
-            assertEquals(BillingEntitlementState.CANCELED_ACTIVE, settings.billingEntitlementState)
-            assertEquals(8_000L, settings.billingActiveUntilMillis)
+            assertTrue(storedSettings.billingSubscriptionActive)
+            assertEquals(
+                BillingEntitlementState.CANCELED_ACTIVE,
+                storedSettings.billingEntitlementState,
+            )
+            assertEquals(8_000L, settings.entitlement.paidActiveUntilMillis)
             assertTrue(settings.hasBillingEntitlement(nowMillis = 4_500L))
         }
 
@@ -282,7 +330,7 @@ class SettingsRepositoryTest {
             val installId = repository.getOrCreateBillingInstallationId()
 
             assertTrue(installId.isNotBlank())
-            assertEquals(installId, repository.readSettings().first().billingInstallationId)
+            assertEquals(installId, repository.readStoredSettings().first().billingInstallationId)
             assertEquals(installId, repository.getOrCreateBillingInstallationId())
         }
 
@@ -299,7 +347,13 @@ class SettingsRepositoryTest {
                 901_234L,
                 storedPreferences[longPreferencesKey("temporaryAllowUntil")],
             )
-            assertEquals(901_234L, repository.readSettings().first().temporaryAllowUntil)
+            assertEquals(
+                901_234L,
+                repository
+                    .readSettings()
+                    .first()
+                    .protectionConfiguration.temporaryAllowUntilMillis,
+            )
         }
 
     @Test
@@ -319,7 +373,7 @@ class SettingsRepositoryTest {
             val settings = repository.readSettings().first()
 
             assertTrue(removed)
-            assertEquals(null, settings.temporaryAllowUntil)
+            assertEquals(null, settings.protectionConfiguration.temporaryAllowUntilMillis)
             assertTrue(settings.canProtect(nowMillis = 1_500L))
         }
 
@@ -329,7 +383,13 @@ class SettingsRepositoryTest {
             val repository = createRepository("clear-allow-no-op")
 
             val missingRemoved = repository.removeTemporaryAllowIf { true }
-            assertEquals(null, repository.readSettings().first().temporaryAllowUntil)
+            assertEquals(
+                null,
+                repository
+                    .readSettings()
+                    .first()
+                    .protectionConfiguration.temporaryAllowUntilMillis,
+            )
 
             repository.setTemporaryAllowUntil(3_000L)
             val activeRemoved =
@@ -339,7 +399,13 @@ class SettingsRepositoryTest {
 
             assertFalse(missingRemoved)
             assertFalse(activeRemoved)
-            assertEquals(3_000L, repository.readSettings().first().temporaryAllowUntil)
+            assertEquals(
+                3_000L,
+                repository
+                    .readSettings()
+                    .first()
+                    .protectionConfiguration.temporaryAllowUntilMillis,
+            )
         }
 
     @Test
@@ -350,7 +416,13 @@ class SettingsRepositoryTest {
             repository.setTemporaryAllowUntil(3_000L)
             repository.setTemporaryAllowUntil(null)
 
-            assertEquals(null, repository.readSettings().first().temporaryAllowUntil)
+            assertEquals(
+                null,
+                repository
+                    .readSettings()
+                    .first()
+                    .protectionConfiguration.temporaryAllowUntilMillis,
+            )
         }
 
     @Test
@@ -366,11 +438,11 @@ class SettingsRepositoryTest {
 
             val fifth = repository.verifyPin("1111", nowMillis = 2_000L)
             assertEquals(PinVerificationResult.Locked(untilMillis = 32_000L), fifth)
-            assertEquals(5, repository.readSettings().first().failedPinAttempts)
+            assertEquals(5, repository.readStoredSettings().first().failedPinAttempts)
 
             val sixth = repository.verifyPin("1111", nowMillis = 32_001L)
             assertEquals(PinVerificationResult.Locked(untilMillis = 92_001L), sixth)
-            assertEquals(6, repository.readSettings().first().failedPinAttempts)
+            assertEquals(6, repository.readStoredSettings().first().failedPinAttempts)
         }
 
     @Test
@@ -390,13 +462,16 @@ class SettingsRepositoryTest {
             repeat(5) { attempt ->
                 repository.verifyPin("1111", nowMillis = 1_000L + attempt)
             }
-            val lockedBeforeRetry = repository.readSettings().first()
+            val lockedBeforeRetry = repository.readStoredSettings().first()
 
             assertEquals(
                 PinVerificationResult.Locked(untilMillis = 31_004L),
                 repository.verifyPin("4826", nowMillis = 2_000L),
             )
-            assertEquals(lockedBeforeRetry.failedPinAttempts, repository.readSettings().first().failedPinAttempts)
+            assertEquals(
+                lockedBeforeRetry.failedPinAttempts,
+                repository.readStoredSettings().first().failedPinAttempts,
+            )
         }
 
     @Test
@@ -441,7 +516,7 @@ class SettingsRepositoryTest {
             assertTrue(repository.verifyPin("4827") is PinVerificationResult.Failure)
             val settings = repository.readSettings().first()
 
-            assertEquals(null, settings.temporaryAllowUntil)
+            assertEquals(null, settings.protectionConfiguration.temporaryAllowUntilMillis)
             assertTrue(settings.canProtect(nowMillis = 1_500L))
         }
 
@@ -468,8 +543,8 @@ class SettingsRepositoryTest {
             }
             val settings = repository.readSettings().first()
 
-            assertEquals(null, settings.temporaryAllowUntil)
-            assertTrue(settings.protectionEnabled)
+            assertEquals(null, settings.protectionConfiguration.temporaryAllowUntilMillis)
+            assertTrue(settings.protectionConfiguration.isEnabled)
             assertTrue(settings.canProtect(nowMillis = 2_500L))
         }
 
