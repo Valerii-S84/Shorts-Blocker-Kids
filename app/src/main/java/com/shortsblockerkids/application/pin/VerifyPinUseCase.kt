@@ -1,7 +1,6 @@
 package com.shortsblockerkids.application.pin
 
 import com.shortsblockerkids.application.port.PinAccessPort
-import com.shortsblockerkids.core.security.PinVerificationResult
 
 class VerifyPinUseCase(
     private val pinAccessPort: PinAccessPort,

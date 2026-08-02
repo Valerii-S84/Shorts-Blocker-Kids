@@ -20,10 +20,12 @@ class EntitlementBoundaryTest {
         CONSUMER_SOURCES.forEach { relativePath ->
             val source = source(relativePath)
 
-            assertFalse(
-                "$relativePath imports storage AppSettings",
-                source.contains("com.shortsblockerkids.core.storage.AppSettings"),
-            )
+            STORAGE_RECORD_NAMES.forEach { storageRecordName ->
+                assertFalse(
+                    "$relativePath imports $storageRecordName",
+                    source.contains(storageRecordName),
+                )
+            }
         }
     }
 
@@ -71,6 +73,11 @@ class EntitlementBoundaryTest {
                 "failedPinAttempts",
                 "pinLockoutUntil",
                 "billingInstallationId",
+            )
+        val STORAGE_RECORD_NAMES =
+            listOf(
+                "com.shortsblockerkids.core.storage.AppSettings",
+                "com.shortsblockerkids.infrastructure.storage.StoredAppSettings",
             )
         val CONSUMER_SOURCES =
             listOf(

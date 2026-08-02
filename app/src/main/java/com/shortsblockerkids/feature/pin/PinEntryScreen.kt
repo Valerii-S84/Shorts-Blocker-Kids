@@ -29,9 +29,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.shortsblockerkids.R
+import com.shortsblockerkids.application.pin.PinVerificationResult
 import com.shortsblockerkids.application.pin.VerifyPinUseCase
 import com.shortsblockerkids.core.security.PinPolicy
-import com.shortsblockerkids.core.security.PinVerificationResult
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 

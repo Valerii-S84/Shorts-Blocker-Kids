@@ -1,11 +1,11 @@
-package com.shortsblockerkids.core.storage
+package com.shortsblockerkids.infrastructure.storage
 
 import com.shortsblockerkids.core.billing.BillingEntitlementState
 import com.shortsblockerkids.domain.entitlement.FreeTestPolicy
 import com.shortsblockerkids.domain.protection.ProtectionConfiguration
 import com.shortsblockerkids.domain.protection.ProtectionMode
 
-internal data class AppSettings(
+internal data class StoredAppSettings(
     val protectionEnabled: Boolean = true,
     val accessibilityDisclosureAccepted: Boolean = false,
     val selectedMode: ProtectionMode = ProtectionMode.BLOCK_SHORTS,

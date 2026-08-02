@@ -2,14 +2,13 @@ package com.shortsblockerkids.infrastructure.storage
 
 import com.shortsblockerkids.application.model.PinAttemptState
 import com.shortsblockerkids.application.model.PinCredential
+import com.shortsblockerkids.application.pin.PinVerificationResult
 import com.shortsblockerkids.application.port.PinAccessPort
 import com.shortsblockerkids.application.port.PinStateStore
 import com.shortsblockerkids.application.port.PinStateUpdate
 import com.shortsblockerkids.application.port.TimeProvider
 import com.shortsblockerkids.core.security.PinHasher
 import com.shortsblockerkids.core.security.PinRateLimiter
-import com.shortsblockerkids.core.security.PinVerificationResult
-import com.shortsblockerkids.core.storage.SettingsRepository
 import com.shortsblockerkids.infrastructure.time.SystemTimeProvider
 
 internal class SettingsPinAccessAdapter internal constructor(
@@ -18,18 +17,6 @@ internal class SettingsPinAccessAdapter internal constructor(
     private val pinRateLimiter: PinRateLimiter = PinRateLimiter(),
     private val timeProvider: TimeProvider = SystemTimeProvider(),
 ) : PinAccessPort {
-    internal constructor(
-        settingsRepository: SettingsRepository,
-        pinHasher: PinHasher = PinHasher(),
-        pinRateLimiter: PinRateLimiter = PinRateLimiter(),
-        timeProvider: TimeProvider = SystemTimeProvider(),
-    ) : this(
-        pinStateStore = settingsRepository.pinStateStore(),
-        pinHasher = pinHasher,
-        pinRateLimiter = pinRateLimiter,
-        timeProvider = timeProvider,
-    )
-
     override suspend fun createPin(pin: String) {
         val salt = pinHasher.generateSalt()
         pinStateStore.savePinState(

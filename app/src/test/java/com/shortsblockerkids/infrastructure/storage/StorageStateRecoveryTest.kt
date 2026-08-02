@@ -1,4 +1,4 @@
-package com.shortsblockerkids.core.storage
+package com.shortsblockerkids.infrastructure.storage
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
@@ -7,10 +7,11 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.shortsblockerkids.application.pin.PinVerificationResult
+import com.shortsblockerkids.application.port.TimeProvider
 import com.shortsblockerkids.application.protection.canProtect
 import com.shortsblockerkids.application.protection.hasBillingEntitlement
 import com.shortsblockerkids.core.billing.BillingEntitlementState
-import com.shortsblockerkids.core.security.PinVerificationResult
 import com.shortsblockerkids.domain.protection.ProtectionConfiguration
 import com.shortsblockerkids.domain.protection.ProtectionMode
 import kotlinx.coroutines.CoroutineScope
@@ -42,7 +43,7 @@ class StorageStateRecoveryTest {
     @Test
     fun emptyStorageUsesSafeDefaults() =
         runBlocking {
-            val repository = SettingsRepository(createDataStore("empty"))
+            val repository = DataStoreSettingsStore(createDataStore("empty"))
 
             val settings = repository.readSettings().first()
 
@@ -66,7 +67,7 @@ class StorageStateRecoveryTest {
                 preferences[stringPreferencesKey("selectedMode")] = "DELETE_ALL_APPS"
                 preferences[stringPreferencesKey("billing_entitlement_state")] = "ROOTED"
             }
-            val repository = SettingsRepository(dataStore)
+            val repository = DataStoreSettingsStore(dataStore)
 
             val settings = repository.readSettings().first()
 
@@ -85,7 +86,7 @@ class StorageStateRecoveryTest {
                 preferences[intPreferencesKey("failedPinAttempts")] = 5
                 preferences[longPreferencesKey("pinLockoutUntil")] = 31_000L
             }
-            val repository = SettingsRepository(dataStore)
+            val repository = DataStoreSettingsStore(dataStore)
 
             val settings = repository.readSettings().first()
             val result = repository.verifyPin("4826", nowMillis = 1_000L)
@@ -106,4 +107,13 @@ class StorageStateRecoveryTest {
             produceFile = { File(temporaryFolder.root, "$name.preferences_pb") },
         )
     }
+
+    private suspend fun DataStoreSettingsStore.verifyPin(
+        pin: String,
+        nowMillis: Long,
+    ): PinVerificationResult =
+        SettingsPinAccessAdapter(
+            pinStateStore = this,
+            timeProvider = TimeProvider { nowMillis },
+        ).verifyPin(pin)
 }

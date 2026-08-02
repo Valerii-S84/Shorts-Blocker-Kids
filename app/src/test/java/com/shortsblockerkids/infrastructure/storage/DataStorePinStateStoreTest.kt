@@ -11,9 +11,9 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.shortsblockerkids.application.model.PinAttemptState
 import com.shortsblockerkids.application.model.PinCredential
+import com.shortsblockerkids.application.pin.PinVerificationResult
 import com.shortsblockerkids.application.port.PinStateUpdate
 import com.shortsblockerkids.core.security.PinHasher
-import com.shortsblockerkids.core.security.PinVerificationResult
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
