@@ -1,4 +1,4 @@
-package com.shortsblockerkids.accessibility
+package com.shortsblockerkids.platform.accessibility.diagnostics
 
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent

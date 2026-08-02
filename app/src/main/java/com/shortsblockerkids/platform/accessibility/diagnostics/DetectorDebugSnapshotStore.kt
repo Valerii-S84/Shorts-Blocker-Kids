@@ -1,4 +1,4 @@
-package com.shortsblockerkids.accessibility
+package com.shortsblockerkids.platform.accessibility.diagnostics
 
 import com.shortsblockerkids.BuildConfig
 import com.shortsblockerkids.domain.detection.AccessibilityTreeSnapshot

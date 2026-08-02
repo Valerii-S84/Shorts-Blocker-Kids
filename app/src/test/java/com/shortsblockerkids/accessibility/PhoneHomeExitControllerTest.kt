@@ -1,5 +1,8 @@
 package com.shortsblockerkids.accessibility
 
+import com.shortsblockerkids.platform.accessibility.overlay.DelayedActionScheduler
+import com.shortsblockerkids.platform.accessibility.overlay.PhoneHomeAction
+import com.shortsblockerkids.platform.accessibility.overlay.PhoneHomeExitController
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -93,8 +96,8 @@ class PhoneHomeExitControllerTest {
     private fun blockOverlayControllerSource(): String {
         val path =
             listOf(
-                "src/main/java/com/shortsblockerkids/accessibility/BlockOverlayController.kt",
-                "app/src/main/java/com/shortsblockerkids/accessibility/BlockOverlayController.kt",
+                "src/main/java/com/shortsblockerkids/platform/accessibility/overlay/BlockOverlayController.kt",
+                "app/src/main/java/com/shortsblockerkids/platform/accessibility/overlay/BlockOverlayController.kt",
             ).map(::File)
                 .first(File::isFile)
         return path.readText()

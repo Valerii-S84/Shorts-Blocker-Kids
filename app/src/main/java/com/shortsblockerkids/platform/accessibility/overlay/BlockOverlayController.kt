@@ -1,4 +1,4 @@
-package com.shortsblockerkids.accessibility
+package com.shortsblockerkids.platform.accessibility.overlay
 
 import android.accessibilityservice.AccessibilityService
 import android.content.res.Configuration

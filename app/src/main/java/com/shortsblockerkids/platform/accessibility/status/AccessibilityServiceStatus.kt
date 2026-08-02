@@ -1,8 +1,9 @@
-package com.shortsblockerkids.accessibility
+package com.shortsblockerkids.platform.accessibility.status
 
 import android.content.ComponentName
 import android.content.Context
 import android.provider.Settings
+import com.shortsblockerkids.accessibility.ShortsBlockerAccessibilityService
 
 object AccessibilityServiceStatus {
     fun isEnabled(context: Context): Boolean {

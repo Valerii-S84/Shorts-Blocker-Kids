@@ -32,7 +32,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.shortsblockerkids.BuildConfig
 import com.shortsblockerkids.R
-import com.shortsblockerkids.accessibility.accessibilityDiagnostics
 import com.shortsblockerkids.core.billing.BillingUiState
 import com.shortsblockerkids.core.entitlement.LocalEntitlementResolver
 import com.shortsblockerkids.core.storage.AppSettings
@@ -41,6 +40,7 @@ import com.shortsblockerkids.domain.detection.AccessibilityTreeSnapshot
 import com.shortsblockerkids.domain.detection.DetectionResult
 import com.shortsblockerkids.domain.detection.YouTubeShortsDetector
 import com.shortsblockerkids.feature.billing.billingMessageText
+import com.shortsblockerkids.platform.accessibility.diagnostics.accessibilityDiagnostics
 
 @Composable
 fun DetectorPlaygroundScreen(

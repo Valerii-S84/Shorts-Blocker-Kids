@@ -2,6 +2,7 @@ package com.shortsblockerkids.accessibility
 
 import com.shortsblockerkids.domain.detection.AccessibilityNodeSignal
 import com.shortsblockerkids.domain.detection.AccessibilityTreeSnapshot
+import com.shortsblockerkids.platform.accessibility.diagnostics.DetectorDebugSnapshotStore
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
