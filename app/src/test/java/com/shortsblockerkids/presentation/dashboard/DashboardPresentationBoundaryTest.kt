@@ -35,6 +35,40 @@ class DashboardPresentationBoundaryTest {
     }
 
     @Test
+    fun activityDelegatesDashboardStateAssembly() {
+        val activity = source(MAIN_ACTIVITY)
+
+        assertTrue(activity.contains("DashboardUiStateAssembler(timeProvider)"))
+        assertTrue(activity.contains("dashboardUiStateProvider ="))
+        assertFalse(activity.contains("DashboardStateFactory"))
+        assertFalse(activity.contains("PlatformSupportMatrix.entries.map"))
+    }
+
+    @Test
+    fun appReassemblesDashboardStateAfterNavigationChanges() {
+        val app = source(APP_ROOT)
+        val navigationRead = app.indexOf("val currentScreen = coordinator.currentScreen")
+        val stateAssembly = app.indexOf("val dashboardUiState = dashboardUiStateProvider()")
+
+        assertTrue(app.contains("dashboardUiStateProvider: () -> DashboardUiState"))
+        assertTrue("Navigation must be observed before state assembly", navigationRead >= 0)
+        assertTrue("Dashboard state must be assembled after navigation is observed", stateAssembly > navigationRead)
+    }
+
+    @Test
+    fun dashboardProductionSourcesStayWithinHardLineLimit() {
+        val dashboardDirectory = File(repositoryRoot, DASHBOARD_PRESENTATION_ROOT)
+        val oversized =
+            dashboardDirectory
+                .listFiles { file -> file.isFile && file.extension == "kt" }
+                .orEmpty()
+                .associate { file -> file.name to file.readLines().size }
+                .filterValues { lineCount -> lineCount > MAX_PRODUCTION_CLASS_LINES }
+
+        assertTrue("Oversized dashboard production sources: $oversized", oversized.isEmpty())
+    }
+
+    @Test
     fun dashboardPresentationReferencesExistingStringResources() {
         val referencedResources =
             RESOURCE_SOURCES
@@ -86,6 +120,9 @@ class DashboardPresentationBoundaryTest {
 
     private companion object {
         const val SOURCE_ROOT = "app/src/main/java/com/shortsblockerkids"
+        const val MAIN_ACTIVITY = "$SOURCE_ROOT/MainActivity.kt"
+        const val APP_ROOT = "$SOURCE_ROOT/presentation/app/ShortsBlockerKidsApp.kt"
+        const val DASHBOARD_PRESENTATION_ROOT = "$SOURCE_ROOT/presentation/dashboard"
         const val DASHBOARD_SCREEN = "$SOURCE_ROOT/feature/dashboard/DashboardScreen.kt"
         const val PROTECTED_APPS_SCREEN =
             "$SOURCE_ROOT/feature/onboarding/ProtectedAppsScreen.kt"
@@ -98,7 +135,7 @@ class DashboardPresentationBoundaryTest {
         val BOUNDARY_PATHS =
             listOf(
                 "$SOURCE_ROOT/presentation/dashboard",
-                "$SOURCE_ROOT/presentation/app/ShortsBlockerKidsApp.kt",
+                APP_ROOT,
                 DASHBOARD_SCREEN,
                 PROTECTED_APPS_SCREEN,
                 DEBUG_SCREEN,
@@ -107,6 +144,7 @@ class DashboardPresentationBoundaryTest {
         val RESOURCE_SOURCES =
             listOf(
                 "$SOURCE_ROOT/presentation/dashboard/DashboardStateFactory.kt",
+                "$SOURCE_ROOT/presentation/dashboard/DashboardPlatformUiMapper.kt",
                 DASHBOARD_SCREEN,
                 PROTECTED_APPS_SCREEN,
             )
@@ -124,5 +162,6 @@ class DashboardPresentationBoundaryTest {
                 "AccessibilityNodeInfo",
             )
         val RESOURCE_REFERENCE = Regex("R\\.string\\.([a-z0-9_]+)")
+        const val MAX_PRODUCTION_CLASS_LINES = 300
     }
 }

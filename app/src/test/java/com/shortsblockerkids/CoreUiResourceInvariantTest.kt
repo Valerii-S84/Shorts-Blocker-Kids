@@ -77,14 +77,14 @@ class CoreUiResourceInvariantTest {
     fun platformModelKeepsTechnicalIdentitySeparateFromPresentation() {
         val platformSource = repoFile(PLATFORM_SOURCE).readText()
         val dashboardSource = repoFile(DASHBOARD_SOURCE).readText()
-        val dashboardFactorySource = repoFile(DASHBOARD_FACTORY_SOURCE).readText()
+        val dashboardPlatformMapperSource = repoFile(DASHBOARD_PLATFORM_MAPPER_SOURCE).readText()
 
         assertFalse(platformSource.contains("val displayName: String"))
         assertFalse(platformSource.contains("val platformName: String"))
         assertFalse(platformSource.contains("\"YouTube Shorts\""))
         assertTrue(platformSource.contains("R.string.platform_youtube_shorts"))
         assertTrue(dashboardSource.contains("stringResource(item.statusRes)"))
-        assertTrue(dashboardFactorySource.contains("R.string.platform_status_supported"))
+        assertTrue(dashboardPlatformMapperSource.contains("R.string.platform_status_supported"))
         assertTrue(platformSource.contains("const val TIKTOK_REGIONAL_PACKAGE"))
         assertTrue(platformSource.contains("const val FACEBOOK_LITE_PACKAGE"))
     }
@@ -160,8 +160,8 @@ class CoreUiResourceInvariantTest {
             "app/src/debug/java/com/shortsblockerkids/feature/debug/DetectorPlaygroundScreen.kt"
         const val PLATFORM_SOURCE =
             "app/src/main/java/com/shortsblockerkids/accessibility/SupportedPlatform.kt"
-        const val DASHBOARD_FACTORY_SOURCE =
-            "app/src/main/java/com/shortsblockerkids/presentation/dashboard/DashboardStateFactory.kt"
+        const val DASHBOARD_PLATFORM_MAPPER_SOURCE =
+            "app/src/main/java/com/shortsblockerkids/presentation/dashboard/DashboardPlatformUiMapper.kt"
 
         val DASHBOARD_MOVED_LITERALS =
             setOf(

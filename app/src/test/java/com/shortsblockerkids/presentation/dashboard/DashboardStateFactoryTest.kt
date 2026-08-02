@@ -295,7 +295,7 @@ class DashboardStateFactoryTest {
             createState(
                 input.copy(
                     billing =
-                        DashboardStateFactory.BillingInput(
+                        DashboardBillingInput(
                             uiState = billingUiState,
                             entitlementStateName = "PRODUCT_LOADED",
                         ),
@@ -310,12 +310,12 @@ class DashboardStateFactoryTest {
         assertEquals(R.string.dashboard_open_accessibility_settings, state.actions.accessibilitySettingsLabelRes)
     }
 
-    private fun createState(input: DashboardStateFactory.Input): DashboardUiState = DashboardStateFactory.create(input)
+    private fun createState(input: DashboardStateInput): DashboardUiState = DashboardStateFactory.create(input)
 
-    private fun eligibleInput(): DashboardStateFactory.Input =
-        DashboardStateFactory.Input(
+    private fun eligibleInput(): DashboardStateInput =
+        DashboardStateInput(
             protection =
-                DashboardStateFactory.ProtectionInput(
+                DashboardProtectionInput(
                     isEnabled = true,
                     isAccessibilityDisclosureAccepted = true,
                     modeName = ProtectionMode.BLOCK_SHORTS.name,
@@ -326,7 +326,7 @@ class DashboardStateFactoryTest {
                     isPinConfigured = true,
                 ),
             entitlement =
-                DashboardStateFactory.EntitlementInput(
+                DashboardEntitlementInput(
                     freeTestStartedAtMillis = 0L,
                     freeTestDurationDays = FreeTestPolicy.DEFAULT_DURATION_DAYS,
                     isPaidProtectionAllowed = false,
@@ -334,13 +334,13 @@ class DashboardStateFactoryTest {
                     paidActiveUntilMillis = null,
                 ),
             billing =
-                DashboardStateFactory.BillingInput(
+                DashboardBillingInput(
                     uiState = BillingUiState(),
                     entitlementStateName = "UNKNOWN",
                 ),
             platforms =
                 PlatformSupportMatrix.entries.map { entry ->
-                    DashboardStateFactory.PlatformInput(
+                    DashboardPlatformInput(
                         platformId = entry.platformId,
                         nameRes = entry.platformNameRes,
                         packageName = entry.packageName,
@@ -348,7 +348,7 @@ class DashboardStateFactoryTest {
                     )
                 },
             runtime =
-                DashboardStateFactory.RuntimeInput(
+                DashboardRuntimeInput(
                     isAccessibilityServiceEnabled = true,
                     isTamperProtectionEnabled = false,
                     nowMillis = NOW_MILLIS,

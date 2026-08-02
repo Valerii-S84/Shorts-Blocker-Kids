@@ -38,7 +38,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 internal fun ShortsBlockerKidsApp(
-    dashboardUiState: DashboardUiState,
+    dashboardUiStateProvider: () -> DashboardUiState,
     isTemporaryAllowRequested: Boolean,
     isDetectorQaVisible: Boolean,
     createPinUseCase: CreatePinUseCase,
@@ -83,9 +83,11 @@ internal fun ShortsBlockerKidsApp(
                 ),
         ) {
             ShortsBlockerKidsCoordinator(
-                isPinCreated = dashboardUiState.setup.isPinConfigured,
+                isPinCreated = dashboardUiStateProvider().setup.isPinConfigured,
             )
         }
+    val currentScreen = coordinator.currentScreen
+    val dashboardUiState = dashboardUiStateProvider()
 
     LaunchedEffect(dashboardUiState.setup.isPinConfigured, coordinator.isUnlocked) {
         coordinator.onPinConfigurationObserved(dashboardUiState.setup.isPinConfigured)
@@ -101,7 +103,7 @@ internal fun ShortsBlockerKidsApp(
     }
 
     LaunchedEffect(
-        coordinator.currentScreen,
+        currentScreen,
         dashboardUiState.setup.isAccessibilityServiceEnabled,
         dashboardUiState.entitlement.isFreeTestStarted,
         dashboardUiState.protection.isEnabled,
@@ -109,7 +111,7 @@ internal fun ShortsBlockerKidsApp(
         dashboardUiState.setup.isPinConfigured,
     ) {
         if (
-            coordinator.currentScreen == AppScreen.Dashboard &&
+            currentScreen == AppScreen.Dashboard &&
             ProtectionActivationPolicy.shouldStartFreeTest(
                 isAccessibilityServiceEnabled =
                     dashboardUiState.setup.isAccessibilityServiceEnabled,
@@ -126,7 +128,7 @@ internal fun ShortsBlockerKidsApp(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        when (coordinator.currentScreen) {
+        when (currentScreen) {
             AppScreen.Welcome ->
                 WelcomeScreen(
                     onStart = coordinator::onWelcomeStarted,
