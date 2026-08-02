@@ -50,7 +50,7 @@ class BillingPresentationResourceInvariantTest {
         )
         assertTrue(repository.contains("?.formattedPrice"))
         assertTrue(dashboard.contains("billingSubscriptionTermsText(billingUiState.productPrice)"))
-        assertTrue(debugScreen.contains("billingMessageText(billingUiState.message)"))
+        assertTrue(debugScreen.contains("billingMessageText(uiState.billing.uiState.message)"))
         assertFalse(dashboard.contains("BillingCopy"))
         assertFalse(dashboard.contains("statusMessage"))
         assertFalse(repository.contains("statusMessage"))

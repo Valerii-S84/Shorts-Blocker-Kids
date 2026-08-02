@@ -11,6 +11,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
+import com.shortsblockerkids.accessibility.PlatformSupportMatrix
 import com.shortsblockerkids.application.model.AppSettingsSnapshot
 import com.shortsblockerkids.application.pin.CreatePinUseCase
 import com.shortsblockerkids.application.pin.VerifyPinUseCase
@@ -25,6 +26,7 @@ import com.shortsblockerkids.infrastructure.time.SystemTimeProvider
 import com.shortsblockerkids.platform.accessibility.status.AccessibilityServiceStatus
 import com.shortsblockerkids.platform.tamper.TamperProtectionStatus
 import com.shortsblockerkids.presentation.app.ShortsBlockerKidsApp
+import com.shortsblockerkids.presentation.dashboard.DashboardStateFactory
 import com.shortsblockerkids.ui.theme.ShortsBlockerKidsTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -49,19 +51,20 @@ class MainActivity : ComponentActivity() {
         val pinAccessAdapter = SettingsPinAccessAdapter(pinStateStore = settingsStore)
         val createPinUseCase = CreatePinUseCase(pinAccessAdapter)
         val verifyPinUseCase = VerifyPinUseCase(pinAccessAdapter)
+        val timeProvider = SystemTimeProvider()
         val protectionActivationUseCase =
             RecordSuccessfulProtectionActivationUseCase(
-                timeProvider = SystemTimeProvider(),
+                timeProvider = timeProvider,
                 protectionActivationStore = settingsStore,
             )
         val setTemporaryAllowUseCase =
             SetTemporaryAllowUseCase(
-                timeProvider = SystemTimeProvider(),
+                timeProvider = timeProvider,
                 temporaryAllowStore = settingsStore,
             )
         val clearExpiredTemporaryAllowUseCase =
             ClearExpiredTemporaryAllowUseCase(
-                timeProvider = SystemTimeProvider(),
+                timeProvider = timeProvider,
                 temporaryAllowStore = settingsStore,
             )
         billingRepository =
@@ -89,12 +92,66 @@ class MainActivity : ComponentActivity() {
             ShortsBlockerKidsTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     val billingUiState by billingRepository.uiState.collectAsState()
+                    val appSettings = settingsState.value
+                    val dashboardUiState =
+                        DashboardStateFactory.create(
+                            DashboardStateFactory.Input(
+                                protection =
+                                    DashboardStateFactory.ProtectionInput(
+                                        isEnabled = appSettings.protectionConfiguration.isEnabled,
+                                        isAccessibilityDisclosureAccepted =
+                                            appSettings.protectionConfiguration
+                                                .isAccessibilityDisclosureAccepted,
+                                        modeName = appSettings.protectionConfiguration.mode.name,
+                                        enabledPlatformIds =
+                                            appSettings.protectionConfiguration.enabledPlatformIds,
+                                        temporaryAllowUntilMillis =
+                                            appSettings.protectionConfiguration
+                                                .temporaryAllowUntilMillis,
+                                        isPinConfigured =
+                                            appSettings.protectionConfiguration.isPinConfigured,
+                                    ),
+                                entitlement =
+                                    DashboardStateFactory.EntitlementInput(
+                                        freeTestStartedAtMillis =
+                                            appSettings.entitlement.freeTestStartedAtMillis,
+                                        freeTestDurationDays =
+                                            appSettings.entitlement.freeTestDurationDays,
+                                        isPaidProtectionAllowed =
+                                            appSettings.entitlement.isPaidProtectionAllowed,
+                                        paidLastVerifiedAtMillis =
+                                            appSettings.entitlement.paidLastVerifiedAtMillis,
+                                        paidActiveUntilMillis =
+                                            appSettings.entitlement.paidActiveUntilMillis,
+                                    ),
+                                billing =
+                                    DashboardStateFactory.BillingInput(
+                                        uiState = billingUiState,
+                                        entitlementStateName =
+                                            appSettings.billingEntitlementStateName,
+                                    ),
+                                platforms =
+                                    PlatformSupportMatrix.entries.map { entry ->
+                                        DashboardStateFactory.PlatformInput(
+                                            platformId = entry.platformId,
+                                            nameRes = entry.platformNameRes,
+                                            packageName = entry.packageName,
+                                            supportStatusName = entry.status.name,
+                                        )
+                                    },
+                                runtime =
+                                    DashboardStateFactory.RuntimeInput(
+                                        isAccessibilityServiceEnabled =
+                                            accessibilityEnabledState.value,
+                                        isTamperProtectionEnabled =
+                                            tamperProtectionEnabledState.value,
+                                        nowMillis = timeProvider.currentTimeMillis(),
+                                    ),
+                            ),
+                        )
                     ShortsBlockerKidsApp(
-                        settings = settingsState.value,
-                        isAccessibilityServiceEnabled = accessibilityEnabledState.value,
-                        isTamperProtectionEnabled = tamperProtectionEnabledState.value,
+                        dashboardUiState = dashboardUiState,
                         isTemporaryAllowRequested = temporaryAllowRequestState.value,
-                        billingUiState = billingUiState,
                         createPinUseCase = createPinUseCase,
                         verifyPinUseCase = verifyPinUseCase,
                         recordSuccessfulProtectionActivationUseCase = protectionActivationUseCase,
