@@ -57,4 +57,4 @@ Project-specific facts for Shorts Blocker Kids.
 - Branching strategy: not configured; do not create, push, merge, rebase, or rewrite branches without explicit user request
 - Merge strategy: not configured
 - PR title format: not configured
-- PR requirements: not configured
+- PR requirements: create pull requests and PR comments through the GitHub connector; do not require or check `gh` authentication when the connector supports the requested operation; use `gh` only as an explicitly requested fallback
