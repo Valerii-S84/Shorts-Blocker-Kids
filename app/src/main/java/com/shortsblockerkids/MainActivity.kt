@@ -16,6 +16,7 @@ import com.shortsblockerkids.application.billing.SyncBillingEntitlementUseCase
 import com.shortsblockerkids.application.model.AppSettingsSnapshot
 import com.shortsblockerkids.application.pin.CreatePinUseCase
 import com.shortsblockerkids.application.pin.VerifyPinUseCase
+import com.shortsblockerkids.application.port.AccessibilityServiceStatusPort
 import com.shortsblockerkids.application.protection.ClearExpiredTemporaryAllowUseCase
 import com.shortsblockerkids.application.protection.RecordSuccessfulProtectionActivationUseCase
 import com.shortsblockerkids.application.protection.SetTemporaryAllowUseCase
@@ -59,6 +60,10 @@ class MainActivity : ComponentActivity() {
         val protectionActivationUseCase =
             RecordSuccessfulProtectionActivationUseCase(
                 timeProvider = timeProvider,
+                accessibilityServiceStatusPort =
+                    AccessibilityServiceStatusPort {
+                        AccessibilityServiceStatus.isEnabled(applicationContext)
+                    },
                 protectionActivationStore = settingsStore,
             )
         val setTemporaryAllowUseCase =

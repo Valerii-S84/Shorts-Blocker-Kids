@@ -17,6 +17,7 @@ import com.shortsblockerkids.MainActivity
 import com.shortsblockerkids.R
 import com.shortsblockerkids.accessibility.ShortsBlockerAccessibilityService
 import com.shortsblockerkids.application.pin.CreatePinUseCase
+import com.shortsblockerkids.application.port.ProtectionActivationOperation
 import com.shortsblockerkids.application.protection.canProtect
 import com.shortsblockerkids.application.protection.isTemporarilyAllowed
 import com.shortsblockerkids.domain.protection.ProtectionMode
@@ -274,7 +275,7 @@ class ShortVideoBlockerEmulatorE2eTest {
 
         runBlocking {
             settingsStore.setProtectionEnabled(true)
-            settingsStore.recordSuccessfulProtectionActivation(System.currentTimeMillis())
+            completeProtectionActivationForTest(System.currentTimeMillis())
         }
         launchFixture(FixturePlatform.YOUTUBE, "shorts")
 
@@ -397,7 +398,7 @@ class ShortVideoBlockerEmulatorE2eTest {
         pressHome()
         runBlocking {
             settingsStore.setProtectionEnabled(true)
-            settingsStore.recordSuccessfulProtectionActivation(System.currentTimeMillis())
+            completeProtectionActivationForTest(System.currentTimeMillis())
         }
         SystemClock.sleep(700L)
     }
@@ -409,7 +410,7 @@ class ShortVideoBlockerEmulatorE2eTest {
             settingsStore.setSelectedMode(ProtectionMode.BLOCK_SHORTS)
             settingsStore.setTemporaryAllowUntil(null)
             settingsStore.setProtectionEnabled(true)
-            settingsStore.recordSuccessfulProtectionActivation(System.currentTimeMillis())
+            completeProtectionActivationForTest(System.currentTimeMillis())
         }
         assertTrue(
             "Protection settings did not become active",
@@ -779,6 +780,12 @@ class ShortVideoBlockerEmulatorE2eTest {
             }
         } finally {
             descriptor.close()
+        }
+    }
+
+    private suspend fun completeProtectionActivationForTest(nowMillis: Long) {
+        settingsStore.completeProtectionActivation {
+            ProtectionActivationOperation.Record(nowMillis)
         }
     }
 

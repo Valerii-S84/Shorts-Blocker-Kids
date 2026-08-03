@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.preferencesDataStore
 import com.shortsblockerkids.application.model.AppSettingsSnapshot
 import com.shortsblockerkids.application.port.PinStateStore
+import com.shortsblockerkids.application.port.ProtectionActivationOperation
 import com.shortsblockerkids.application.port.ProtectionActivationStore
 import com.shortsblockerkids.application.port.SettingsStatePort
 import com.shortsblockerkids.application.port.TemporaryAllowStore
@@ -46,16 +47,37 @@ class DataStoreSettingsStore(
         }
     }
 
-    override suspend fun recordSuccessfulProtectionActivation(nowMillis: Long) {
+    override suspend fun completeProtectionActivation(
+        decision: (AppSettingsSnapshot) -> ProtectionActivationOperation,
+    ): ProtectionActivationOperation {
+        var operation: ProtectionActivationOperation =
+            ProtectionActivationOperation.PrerequisitesNotMet
         dataStore.edit { preferences ->
-            preferences[DataStoreSettingsMapper.protectionEnabledKey] = true
-            preferences[DataStoreSettingsMapper.freeTestDurationDaysKey] =
-                preferences[DataStoreSettingsMapper.freeTestDurationDaysKey]
-                    ?: FreeTestPolicy.DEFAULT_DURATION_DAYS
-            if (preferences[DataStoreSettingsMapper.freeTestStartedAtKey] == null) {
-                preferences[DataStoreSettingsMapper.freeTestStartedAtKey] = nowMillis
+            operation =
+                decision(
+                    DataStoreSettingsMapper.toSnapshot(
+                        DataStoreSettingsMapper.toStoredAppSettings(preferences),
+                    ),
+                )
+            when (val currentOperation = operation) {
+                is ProtectionActivationOperation.Record -> {
+                    preferences[DataStoreSettingsMapper.protectionEnabledKey] = true
+                    preferences[DataStoreSettingsMapper.freeTestDurationDaysKey] =
+                        preferences[DataStoreSettingsMapper.freeTestDurationDaysKey]
+                            ?: FreeTestPolicy.DEFAULT_DURATION_DAYS
+                    if (preferences[DataStoreSettingsMapper.freeTestStartedAtKey] == null) {
+                        preferences[DataStoreSettingsMapper.freeTestStartedAtKey] =
+                            currentOperation.nowMillis
+                    }
+                }
+
+                ProtectionActivationOperation.AlreadyStarted ->
+                    preferences[DataStoreSettingsMapper.protectionEnabledKey] = true
+
+                ProtectionActivationOperation.PrerequisitesNotMet -> Unit
             }
         }
+        return operation
     }
 
     suspend fun updateBillingEntitlement(
