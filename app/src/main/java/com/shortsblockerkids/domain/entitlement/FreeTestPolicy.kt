@@ -15,7 +15,11 @@ object FreeTestPolicy {
         nowMillis: Long,
     ): Boolean {
         val startedAt = startedAtMillis ?: return false
-        return nowMillis < expiresAtMillis(startedAt, durationDays)
+        val expiresAt = expiresAtMillis(startedAt, durationDays)
+        if (expiresAt <= startedAt) {
+            return false
+        }
+        return nowMillis >= startedAt && nowMillis < expiresAt
     }
 
     fun daysRemaining(
