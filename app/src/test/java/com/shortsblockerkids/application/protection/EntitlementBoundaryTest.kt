@@ -83,8 +83,8 @@ class EntitlementBoundaryTest {
             listOf(
                 "$SOURCE_ROOT/MainActivity.kt",
                 "$SOURCE_ROOT/presentation/app/ShortsBlockerKidsApp.kt",
-                "$SOURCE_ROOT/feature/dashboard/DashboardScreen.kt",
-                "$SOURCE_ROOT/feature/onboarding/ProtectedAppsScreen.kt",
+                "$SOURCE_ROOT/presentation/dashboard/DashboardScreen.kt",
+                "$SOURCE_ROOT/presentation/onboarding/ProtectedAppsScreen.kt",
                 "$SOURCE_ROOT/platform/accessibility/AccessibilityServiceRuntime.kt",
             )
         val OLD_TYPE_PATHS =

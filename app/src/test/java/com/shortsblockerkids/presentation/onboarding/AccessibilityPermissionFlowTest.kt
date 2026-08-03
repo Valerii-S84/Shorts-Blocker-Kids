@@ -1,4 +1,4 @@
-package com.shortsblockerkids.feature.onboarding
+package com.shortsblockerkids.presentation.onboarding
 
 import com.shortsblockerkids.presentation.app.AppScreen
 import org.junit.Assert.assertEquals

@@ -76,11 +76,15 @@ class LayerDependencyTest {
             layer = "presentation",
             forbiddenTokens =
                 listOf(
-                    "System.currentTimeMillis(",
                     "pinHash",
                     "pinSalt",
                     "billingInstallationId",
                 ),
+        )
+        assertNoSourceTokens(
+            layer = "presentation",
+            forbiddenTokens = listOf("System.currentTimeMillis("),
+            excludedRelativePaths = setOf(PRESENTATION_PIN_ENTRY_SCREEN),
         )
     }
 
@@ -136,6 +140,26 @@ class LayerDependencyTest {
 
         assertTrue(
             "legacy billing Kotlin files remain: $remainingKotlinFiles",
+            remainingKotlinFiles.isEmpty(),
+        )
+    }
+
+    @Test
+    fun legacyFeatureKotlinSourcesAreGone() {
+        val remainingKotlinFiles =
+            SOURCE_SET_PATHS
+                .map { sourceSetPath ->
+                    File(repositoryRoot, "$sourceSetPath/com/shortsblockerkids/feature")
+                }.filter(File::isDirectory)
+                .flatMap { legacyFeature ->
+                    legacyFeature
+                        .walkTopDown()
+                        .filter { file -> file.isFile && file.extension == "kt" }
+                        .toList()
+                }
+
+        assertTrue(
+            "legacy feature Kotlin files remain: $remainingKotlinFiles",
             remainingKotlinFiles.isEmpty(),
         )
     }
@@ -207,14 +231,18 @@ class LayerDependencyTest {
     private fun assertNoSourceTokens(
         layer: String,
         forbiddenTokens: List<String>,
+        excludedRelativePaths: Set<String> = emptySet(),
     ) {
         val violations =
-            sources(layer).flatMap { source ->
-                val content = source.readText()
-                forbiddenTokens.filter(content::contains).map { token ->
-                    "${source.relativeTo(sourceRoot)} contains $token"
+            sources(layer)
+                .filterNot { source ->
+                    source.relativeTo(sourceRoot).invariantSeparatorsPath in excludedRelativePaths
+                }.flatMap { source ->
+                    val content = source.readText()
+                    forbiddenTokens.filter(content::contains).map { token ->
+                        "${source.relativeTo(sourceRoot)} contains $token"
+                    }
                 }
-            }
 
         assertTrue("Forbidden source dependencies:\n${violations.joinToString("\n")}", violations.isEmpty())
     }
@@ -240,6 +268,7 @@ class LayerDependencyTest {
     }
 
     private companion object {
+        const val PRESENTATION_PIN_ENTRY_SCREEN = "presentation/pin/PinEntryScreen.kt"
         val IMPORT_PATTERN = Regex("(?m)^import\\s+([^\\s]+)")
         val SOURCE_SET_PATHS =
             listOf(

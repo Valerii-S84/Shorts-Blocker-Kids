@@ -1,4 +1,4 @@
-package com.shortsblockerkids.feature.dashboard
+package com.shortsblockerkids.presentation.dashboard
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -33,9 +33,6 @@ import com.shortsblockerkids.presentation.billing.BillingUiState
 import com.shortsblockerkids.presentation.billing.billingMessageText
 import com.shortsblockerkids.presentation.billing.billingSubscriptionStatusText
 import com.shortsblockerkids.presentation.billing.billingSubscriptionTermsText
-import com.shortsblockerkids.presentation.dashboard.DashboardUiState
-import com.shortsblockerkids.presentation.dashboard.DashboardWarningUiModel
-import com.shortsblockerkids.presentation.dashboard.ProtectedPlatformItemUiModel
 
 data class DashboardCallbacks(
     val protection: DashboardProtectionCallbacks,

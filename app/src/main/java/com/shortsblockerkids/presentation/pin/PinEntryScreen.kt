@@ -1,4 +1,4 @@
-package com.shortsblockerkids.feature.pin
+package com.shortsblockerkids.presentation.pin
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

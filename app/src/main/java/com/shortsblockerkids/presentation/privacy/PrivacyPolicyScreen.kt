@@ -1,4 +1,4 @@
-package com.shortsblockerkids.feature.privacy
+package com.shortsblockerkids.presentation.privacy
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement

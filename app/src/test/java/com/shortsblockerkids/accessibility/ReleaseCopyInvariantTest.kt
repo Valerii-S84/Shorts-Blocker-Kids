@@ -113,7 +113,7 @@ class ReleaseCopyInvariantTest {
     fun protectedAppsSetupScreenIsScrollableBeforeAccessibilitySetup() {
         val protectedAppsScreen =
             repoFile(
-                "app/src/main/java/com/shortsblockerkids/feature/onboarding/ProtectedAppsScreen.kt",
+                "app/src/main/java/com/shortsblockerkids/presentation/onboarding/ProtectedAppsScreen.kt",
             ).readText()
 
         assertTrue(protectedAppsScreen.contains("import androidx.compose.foundation.rememberScrollState"))
