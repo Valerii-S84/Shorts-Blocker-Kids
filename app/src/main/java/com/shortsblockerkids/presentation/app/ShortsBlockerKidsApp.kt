@@ -12,9 +12,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import com.shortsblockerkids.application.pin.CreatePinUseCase
 import com.shortsblockerkids.application.pin.VerifyPinUseCase
+import com.shortsblockerkids.application.protection.ProtectionActivationIntent
+import com.shortsblockerkids.application.protection.ProtectionActivationResult
 import com.shortsblockerkids.application.protection.RecordSuccessfulProtectionActivationUseCase
 import com.shortsblockerkids.application.protection.SetTemporaryAllowUseCase
-import com.shortsblockerkids.domain.protection.ProtectionActivationPolicy
 import com.shortsblockerkids.presentation.blocking.TemporaryAllowCompletion
 import com.shortsblockerkids.presentation.blocking.TemporaryAllowFlowController
 import com.shortsblockerkids.presentation.blocking.TemporaryAllowScreen
@@ -102,28 +103,18 @@ internal fun ShortsBlockerKidsApp(
         }
     }
 
-    LaunchedEffect(
-        currentScreen,
-        dashboardUiState.setup.isAccessibilityServiceEnabled,
-        dashboardUiState.entitlement.isFreeTestStarted,
-        dashboardUiState.protection.isEnabled,
-        dashboardUiState.setup.isAccessibilityDisclosureAccepted,
-        dashboardUiState.setup.isPinConfigured,
-    ) {
-        if (
-            currentScreen == AppScreen.Dashboard &&
-            ProtectionActivationPolicy.shouldStartFreeTest(
-                isAccessibilityServiceEnabled =
-                    dashboardUiState.setup.isAccessibilityServiceEnabled,
-                isProtectionEnabled = dashboardUiState.protection.isEnabled,
-                isAccessibilityDisclosureAccepted =
-                    dashboardUiState.setup.isAccessibilityDisclosureAccepted,
-                isPinConfigured = dashboardUiState.setup.isPinConfigured,
-                isFreeTestAlreadyStarted = dashboardUiState.entitlement.isFreeTestStarted,
-            )
-        ) {
-            recordSuccessfulProtectionActivationUseCase()
-            onStateChanged()
+    LaunchedEffect(currentScreen, dashboardUiState) {
+        if (currentScreen == AppScreen.Dashboard) {
+            when (
+                recordSuccessfulProtectionActivationUseCase(
+                    ProtectionActivationIntent.COMPLETE_CURRENT_CONFIGURATION,
+                )
+            ) {
+                ProtectionActivationResult.ACTIVATED -> onStateChanged()
+                ProtectionActivationResult.ALREADY_STARTED,
+                ProtectionActivationResult.PREREQUISITES_NOT_MET,
+                -> Unit
+            }
         }
     }
 
@@ -196,11 +187,21 @@ internal fun ShortsBlockerKidsApp(
                     onOpenAccessibilitySettings = onOpenAccessibilitySettings,
                     onEnabled = {
                         onStateChanged()
-                        if (dashboardUiState.setup.isAccessibilityServiceEnabled) {
-                            coroutineScope.launch {
-                                recordSuccessfulProtectionActivationUseCase()
-                                onStateChanged()
-                                coordinator.onAccessibilityEnablementCompleted()
+                        coroutineScope.launch {
+                            when (
+                                recordSuccessfulProtectionActivationUseCase(
+                                    ProtectionActivationIntent.ENABLE_PROTECTION,
+                                )
+                            ) {
+                                ProtectionActivationResult.ACTIVATED,
+                                ProtectionActivationResult.ALREADY_STARTED,
+                                -> {
+                                    onStateChanged()
+                                    coordinator.onAccessibilityEnablementCompleted()
+                                }
+
+                                ProtectionActivationResult.PREREQUISITES_NOT_MET ->
+                                    onStateChanged()
                             }
                         }
                     },
@@ -216,12 +217,20 @@ internal fun ShortsBlockerKidsApp(
                                     onProtectionChanged = { enabled ->
                                         if (enabled) {
                                             coroutineScope.launch {
-                                                if (dashboardUiState.setup.isAccessibilityServiceEnabled) {
-                                                    recordSuccessfulProtectionActivationUseCase()
-                                                } else {
-                                                    onProtectionEnabledChanged(true)
+                                                when (
+                                                    recordSuccessfulProtectionActivationUseCase(
+                                                        ProtectionActivationIntent.ENABLE_PROTECTION,
+                                                    )
+                                                ) {
+                                                    ProtectionActivationResult.ACTIVATED ->
+                                                        onStateChanged()
+
+                                                    ProtectionActivationResult.ALREADY_STARTED ->
+                                                        onStateChanged()
+
+                                                    ProtectionActivationResult.PREREQUISITES_NOT_MET ->
+                                                        onStateChanged()
                                                 }
-                                                onStateChanged()
                                             }
                                         } else {
                                             coordinator.onProtectionDisableRequested()

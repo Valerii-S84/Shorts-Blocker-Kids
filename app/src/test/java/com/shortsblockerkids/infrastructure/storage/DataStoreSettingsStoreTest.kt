@@ -11,6 +11,7 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.shortsblockerkids.application.pin.PinVerificationResult
+import com.shortsblockerkids.application.port.ProtectionActivationOperation
 import com.shortsblockerkids.application.port.TimeProvider
 import com.shortsblockerkids.application.protection.canProtect
 import com.shortsblockerkids.application.protection.hasBillingEntitlement
@@ -137,7 +138,7 @@ class DataStoreSettingsStoreTest {
             )
 
             repository.setProtectionEnabled(false)
-            repository.recordSuccessfulProtectionActivation(nowMillis = 5_000L)
+            repository.completeProtectionActivationForTest(nowMillis = 5_000L)
             val settings = repository.readSettings().first()
 
             assertTrue(settings.protectionConfiguration.isEnabled)
@@ -150,13 +151,13 @@ class DataStoreSettingsStoreTest {
         runBlocking {
             val dataStore = createDataStore("free-test-repeat")
             val repository = DataStoreSettingsStore(dataStore)
-            repository.recordSuccessfulProtectionActivation(nowMillis = 5_000L)
+            repository.completeProtectionActivationForTest(nowMillis = 5_000L)
             dataStore.edit { preferences ->
                 preferences[intPreferencesKey("free_test_duration_days")] = 30
             }
             repository.setProtectionEnabled(false)
 
-            repository.recordSuccessfulProtectionActivation(nowMillis = 10_000L)
+            repository.completeProtectionActivationForTest(nowMillis = 10_000L)
             val settings = repository.readSettings().first()
 
             assertTrue(settings.protectionConfiguration.isEnabled)
@@ -168,11 +169,11 @@ class DataStoreSettingsStoreTest {
     fun appRestartDoesNotResetFreeTestTimer() =
         runBlocking {
             val firstRepository = createRepository("free-test-restart")
-            firstRepository.recordSuccessfulProtectionActivation(nowMillis = 5_000L)
+            firstRepository.completeProtectionActivationForTest(nowMillis = 5_000L)
             cancelOpenStores()
 
             val restartedRepository = createRepository("free-test-restart")
-            restartedRepository.recordSuccessfulProtectionActivation(nowMillis = 10_000L)
+            restartedRepository.completeProtectionActivationForTest(nowMillis = 10_000L)
             val settings = restartedRepository.readSettings().first()
 
             assertEquals(5_000L, settings.entitlement.freeTestStartedAtMillis)
@@ -186,7 +187,7 @@ class DataStoreSettingsStoreTest {
 
             repository.savePin("4826")
             repository.setDisclosureAccepted(true)
-            repository.recordSuccessfulProtectionActivation(nowMillis = 1_000L)
+            repository.completeProtectionActivationForTest(nowMillis = 1_000L)
             repository.setTemporaryAllowUntil(2_000L)
 
             val allowedSettings = repository.readSettings().first()
@@ -252,7 +253,7 @@ class DataStoreSettingsStoreTest {
             val repository = createRepository("all-platforms-disabled")
             repository.savePin("4826")
             repository.setDisclosureAccepted(true)
-            repository.recordSuccessfulProtectionActivation(nowMillis = 1_000L)
+            repository.completeProtectionActivationForTest(nowMillis = 1_000L)
 
             ProtectionConfiguration.DEFAULT_ENABLED_PLATFORM_IDS.forEach { platformId ->
                 repository.setPlatformEnabled(platformId, false)
@@ -409,7 +410,7 @@ class DataStoreSettingsStoreTest {
 
             repository.savePin("4826")
             repository.setDisclosureAccepted(true)
-            repository.recordSuccessfulProtectionActivation(nowMillis = 1_000L)
+            repository.completeProtectionActivationForTest(nowMillis = 1_000L)
             repository.setTemporaryAllowUntil(2_000L)
 
             val removed =
@@ -557,7 +558,7 @@ class DataStoreSettingsStoreTest {
             val repository = createRepository("incorrect-pin-no-allow")
             repository.savePin("4826")
             repository.setDisclosureAccepted(true)
-            repository.recordSuccessfulProtectionActivation(nowMillis = 1_000L)
+            repository.completeProtectionActivationForTest(nowMillis = 1_000L)
 
             assertTrue(repository.verifyPin("4827") is PinVerificationResult.Failure)
             val settings = repository.readSettings().first()
@@ -582,7 +583,7 @@ class DataStoreSettingsStoreTest {
             val repository = createRepository("empty-pin-protection")
             repository.savePin("4826")
             repository.setDisclosureAccepted(true)
-            repository.recordSuccessfulProtectionActivation(nowMillis = 1_000L)
+            repository.completeProtectionActivationForTest(nowMillis = 1_000L)
 
             repeat(5) { attempt ->
                 repository.verifyPin("", nowMillis = 2_000L + attempt)
@@ -650,6 +651,12 @@ class DataStoreSettingsStoreTest {
 
     private suspend fun DataStoreSettingsStore.savePin(pin: String) {
         SettingsPinAccessAdapter(pinStateStore = this).createPin(pin)
+    }
+
+    private suspend fun DataStoreSettingsStore.completeProtectionActivationForTest(nowMillis: Long) {
+        completeProtectionActivation {
+            ProtectionActivationOperation.Record(nowMillis)
+        }
     }
 
     private suspend fun DataStoreSettingsStore.verifyPin(
