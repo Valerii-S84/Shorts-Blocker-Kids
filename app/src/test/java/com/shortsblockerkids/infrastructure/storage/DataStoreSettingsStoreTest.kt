@@ -651,7 +651,7 @@ class DataStoreSettingsStoreTest {
 
             repository.savePin("4826")
 
-            assertTrue(repository.verifyPin("") is PinVerificationResult.Failure)
+            assertEquals(PinVerificationResult.InvalidInput, repository.verifyPin(""))
         }
 
     @Test
@@ -663,7 +663,10 @@ class DataStoreSettingsStoreTest {
             repository.completeProtectionActivationForTest(nowMillis = 1_000L)
 
             repeat(5) { attempt ->
-                repository.verifyPin("", nowMillis = 2_000L + attempt)
+                assertEquals(
+                    PinVerificationResult.InvalidInput,
+                    repository.verifyPin("", nowMillis = 2_000L + attempt),
+                )
             }
             val settings = repository.readSettings().first()
 
@@ -673,16 +676,25 @@ class DataStoreSettingsStoreTest {
         }
 
     @Test
-    fun emptyPinLockoutRejectsCorrectPinUntilLockoutExpires() =
+    fun repeatedEmptyPinDoesNotIncrementAttemptsOrLockOutCorrectPin() =
         runBlocking {
             val repository = createRepository("empty-pin-lockout")
             repository.savePin("4826")
 
             repeat(5) { attempt ->
-                repository.verifyPin("", nowMillis = 1_000L + attempt)
+                assertEquals(
+                    PinVerificationResult.InvalidInput,
+                    repository.verifyPin("", nowMillis = 1_000L + attempt),
+                )
             }
+            val storedSettings = repository.readStoredSettings().first()
 
-            assertTrue(repository.verifyPin("4826", nowMillis = 2_000L) is PinVerificationResult.Locked)
+            assertEquals(0, storedSettings.failedPinAttempts)
+            assertNull(storedSettings.pinLockoutUntil)
+            assertEquals(
+                PinVerificationResult.Success,
+                repository.verifyPin("4826", nowMillis = 2_000L),
+            )
         }
 
     @Test
@@ -692,7 +704,7 @@ class DataStoreSettingsStoreTest {
 
             repository.savePin("4826")
 
-            assertTrue(repository.verifyPin("482") is PinVerificationResult.Failure)
+            assertEquals(PinVerificationResult.InvalidInput, repository.verifyPin("482"))
         }
 
     @Test

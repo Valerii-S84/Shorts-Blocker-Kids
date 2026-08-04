@@ -99,6 +99,23 @@ class DataStorePinStateStoreTest {
         }
 
     @Test
+    fun invalidVerificationInputUsesOneUpdateWithoutPreReadOrAttemptMutation() =
+        runBlocking {
+            val delegate = createDataStore("invalid-input-atomic")
+            delegate.writeKnownPinState(failedAttempts = 4)
+            val dataStore = RecordingDataStore(delegate)
+
+            val result = verifyPinUseCase(dataStore, nowMillis = 1_000L)("")
+
+            assertEquals(PinVerificationResult.InvalidInput, result)
+            assertEquals(1, dataStore.updateDataCount)
+            assertEquals(0, dataStore.dataReadCount)
+            val preferences = delegate.data.first()
+            assertEquals(4, preferences[intPreferencesKey("failedPinAttempts")])
+            assertNull(preferences[longPreferencesKey("pinLockoutUntil")])
+        }
+
+    @Test
     fun concurrentFailuresUseLatestAttemptStateWithoutLostUpdates() =
         runBlocking {
             val dataStore = createDataStore("concurrent-failures")

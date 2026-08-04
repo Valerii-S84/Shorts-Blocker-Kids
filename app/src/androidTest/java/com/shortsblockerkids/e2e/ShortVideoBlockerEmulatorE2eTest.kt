@@ -176,6 +176,11 @@ class ShortVideoBlockerEmulatorE2eTest {
             text = resourceText(R.string.pin_entry_title),
             timeoutMs = PIN_ACTIVITY_TIMEOUT_MS,
         )
+        enterPin("482")
+        tapText(resourceText(R.string.pin_entry_submit))
+        waitForText(resourceText(R.string.pin_entry_error_incomplete))
+        assertFalse(hasText(resourceText(R.string.temporary_allow_title)))
+
         enterPin("0000")
         tapText(resourceText(R.string.pin_entry_submit))
         waitForText(quantityText(R.plurals.pin_entry_attempts_remaining, 4))

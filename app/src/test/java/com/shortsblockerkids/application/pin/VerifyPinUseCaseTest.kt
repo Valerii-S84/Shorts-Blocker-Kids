@@ -37,15 +37,40 @@ class VerifyPinUseCaseTest {
         }
 
     @Test
-    fun invalidMatchingInputCannotUnlockAndStillRecordsFailure() =
+    fun malformedInputsReturnInvalidInputWithoutHashingOrMutatingAttempts() =
         runBlocking {
-            val fixture = fixture(storedCredential = credential(pin = "482"))
+            listOf("", "482", "48269x", "4826901").forEach { malformedPin ->
+                val initialState = PinAttemptState(failedAttempts = 4)
+                val fixture =
+                    fixture(
+                        storedCredential = credential(pin = malformedPin),
+                        attemptState = initialState,
+                    )
+
+                val result = fixture.useCase(malformedPin)
+
+                assertSame(PinVerificationResult.InvalidInput, result)
+                assertEquals(initialState, fixture.stateStore.attemptState)
+                assertEquals(null, fixture.stateStore.lastUpdate?.updatedAttemptState)
+                assertEquals(emptyList<HashInput>(), fixture.pinHasher.hashInputs)
+                assertEquals(emptyList<MatchInput>(), fixture.pinHasher.matchInputs)
+                fixture.assertSingleBoundaryCall()
+            }
+        }
+
+    @Test
+    fun malformedInputDuringActiveLockoutReturnsInvalidInputAndPreservesLockout() =
+        runBlocking {
+            val initialState = PinAttemptState(failedAttempts = 5, lockoutUntil = 31_000L)
+            val fixture = fixture(attemptState = initialState, nowMillis = 2_000L)
 
             val result = fixture.useCase("482")
 
-            assertEquals(PinVerificationResult.Failure(remainingAttempts = 4), result)
-            assertEquals(PinAttemptState(failedAttempts = 1), fixture.stateStore.attemptState)
-            assertEquals(1, fixture.pinHasher.matchInputs.size)
+            assertSame(PinVerificationResult.InvalidInput, result)
+            assertEquals(initialState, fixture.stateStore.attemptState)
+            assertEquals(null, fixture.stateStore.lastUpdate?.updatedAttemptState)
+            assertEquals(emptyList<HashInput>(), fixture.pinHasher.hashInputs)
+            assertEquals(emptyList<MatchInput>(), fixture.pinHasher.matchInputs)
             fixture.assertSingleBoundaryCall()
         }
 

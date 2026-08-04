@@ -54,9 +54,12 @@ fun PinEntryScreen(
         isVerifying = true
         coroutineScope.launch {
             val result = verifyPinUseCase(submittedPin)
-            onStateChanged()
+            if (result != PinVerificationResult.InvalidInput) {
+                onStateChanged()
+            }
             when (result) {
                 PinVerificationResult.Success -> onUnlocked()
+                PinVerificationResult.InvalidInput -> message = PinEntryMessage.Incomplete
                 PinVerificationResult.NotConfigured -> message = PinEntryMessage.NotConfigured
                 is PinVerificationResult.Failure -> {
                     message = PinEntryMessage.WrongPin(result.remainingAttempts)
@@ -122,6 +125,7 @@ fun PinEntryScreen(
 @Composable
 private fun PinEntryMessage.localizedMessage(): String =
     when (this) {
+        PinEntryMessage.Incomplete -> stringResource(R.string.pin_entry_error_incomplete)
         PinEntryMessage.NotConfigured -> stringResource(R.string.pin_entry_error_not_configured)
         is PinEntryMessage.WrongPin ->
             pluralStringResource(
@@ -140,6 +144,8 @@ private fun PinEntryMessage.localizedMessage(): String =
 private fun PinVerificationResult.Locked.remainingMinutes(): Long = TimeUnit.MILLISECONDS.toMinutes(remainingMillis).coerceAtLeast(1L)
 
 private sealed interface PinEntryMessage {
+    data object Incomplete : PinEntryMessage
+
     data object NotConfigured : PinEntryMessage
 
     data class WrongPin(

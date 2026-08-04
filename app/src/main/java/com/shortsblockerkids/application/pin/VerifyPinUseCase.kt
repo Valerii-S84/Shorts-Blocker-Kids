@@ -28,6 +28,9 @@ class VerifyPinUseCase(
         attemptState: PinAttemptState,
         nowMillis: Long,
     ): PinStateUpdate {
+        if (!PinPolicy.isVerificationInputComplete(pin)) {
+            return PinStateUpdate(PinVerificationResult.InvalidInput)
+        }
         if (credential == null) {
             return PinStateUpdate(PinVerificationResult.NotConfigured)
         }
@@ -38,7 +41,7 @@ class VerifyPinUseCase(
         val matches =
             verifyCredential(pin, credential)
                 ?: return PinStateUpdate(PinVerificationResult.NotConfigured)
-        if (PinPolicy.isVerificationInputComplete(pin) && matches) {
+        if (matches) {
             return PinStateUpdate(
                 result = PinVerificationResult.Success,
                 updatedAttemptState = PinAttemptState(),
