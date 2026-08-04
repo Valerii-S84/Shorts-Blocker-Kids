@@ -11,5 +11,6 @@ sealed interface PinVerificationResult {
 
     data class Locked(
         val untilMillis: Long,
+        val remainingMillis: Long,
     ) : PinVerificationResult
 }

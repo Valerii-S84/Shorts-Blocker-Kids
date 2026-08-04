@@ -12,11 +12,16 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import com.shortsblockerkids.application.model.PinAttemptState
 import com.shortsblockerkids.application.model.PinCredential
 import com.shortsblockerkids.application.pin.PinVerificationResult
+import com.shortsblockerkids.application.pin.VerifyPinUseCase
+import com.shortsblockerkids.application.port.PinHashingPort
 import com.shortsblockerkids.application.port.PinStateUpdate
-import com.shortsblockerkids.core.security.PinHasher
+import com.shortsblockerkids.application.port.TimeProvider
+import com.shortsblockerkids.infrastructure.security.Pbkdf2PinHasher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -26,6 +31,7 @@ import okio.Path.Companion.toOkioPath
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -70,51 +76,51 @@ class DataStorePinStateStoreTest {
         }
 
     @Test
-    fun verificationUsesOneUpdateWithoutPreRead() =
+    fun verificationUseCaseUsesOneUpdateWithoutPreRead() =
         runBlocking {
             val delegate = createDataStore("atomic")
-            delegate.edit { preferences ->
-                preferences[stringPreferencesKey("pinHash")] = "encoded-hash"
-                preferences[stringPreferencesKey("pinSalt")] = "encoded-salt"
-                preferences[intPreferencesKey("pinHashVersion")] = 1
-                preferences[intPreferencesKey("failedPinAttempts")] = 4
-            }
+            delegate.writeKnownPinState(failedAttempts = 4)
             val dataStore = RecordingDataStore(delegate)
-            var observedCredential: PinCredential? = null
-            var observedAttemptState: PinAttemptState? = null
 
-            val result =
-                DataStorePinStateStore(dataStore).verifyAndUpdateAtomically {
-                    credential,
-                    attemptState,
-                    ->
-                    observedCredential = credential
-                    observedAttemptState = attemptState
-                    PinStateUpdate(
-                        result = PinVerificationResult.Locked(untilMillis = 31_000L),
-                        updatedAttemptState =
-                            PinAttemptState(
-                                failedAttempts = 5,
-                                lockoutUntil = 31_000L,
-                            ),
-                    )
-                }
+            val result = verifyPinUseCase(dataStore, nowMillis = 1_000L)("4827")
 
             assertEquals(
-                PinCredential(
-                    hashBase64 = "encoded-hash",
-                    saltBase64 = "encoded-salt",
-                    hashVersion = 1,
+                PinVerificationResult.Locked(
+                    untilMillis = 31_000L,
+                    remainingMillis = 30_000L,
                 ),
-                observedCredential,
+                result,
             )
-            assertEquals(PinAttemptState(failedAttempts = 4), observedAttemptState)
-            assertEquals(PinVerificationResult.Locked(untilMillis = 31_000L), result)
             assertEquals(1, dataStore.updateDataCount)
             assertEquals(0, dataStore.dataReadCount)
             val preferences = delegate.data.first()
             assertEquals(5, preferences[intPreferencesKey("failedPinAttempts")])
             assertEquals(31_000L, preferences[longPreferencesKey("pinLockoutUntil")])
+        }
+
+    @Test
+    fun concurrentFailuresUseLatestAttemptStateWithoutLostUpdates() =
+        runBlocking {
+            val dataStore = createDataStore("concurrent-failures")
+            dataStore.writeKnownPinState()
+            val useCase = verifyPinUseCase(dataStore, nowMillis = 1_000L)
+
+            val results =
+                List(4) {
+                    async(Dispatchers.Default) { useCase("4827") }
+                }.awaitAll()
+
+            assertTrue(results.all { it is PinVerificationResult.Failure })
+            assertEquals(
+                setOf(1, 2, 3, 4),
+                results
+                    .map { it as PinVerificationResult.Failure }
+                    .map(PinVerificationResult.Failure::remainingAttempts)
+                    .toSet(),
+            )
+            val preferences = dataStore.data.first()
+            assertEquals(4, preferences[intPreferencesKey("failedPinAttempts")])
+            assertNull(preferences[longPreferencesKey("pinLockoutUntil")])
         }
 
     @Test
@@ -133,7 +139,7 @@ class DataStorePinStateStoreTest {
                     credential,
                     attemptState,
                     ->
-                    assertEquals(PinHasher.CURRENT_VERSION, credential?.hashVersion)
+                    assertEquals(PinHashingPort.CURRENT_VERSION, credential?.hashVersion)
                     assertEquals(
                         PinAttemptState(
                             failedAttempts = 6,
@@ -167,6 +173,33 @@ class DataStorePinStateStoreTest {
         )
     }
 
+    private fun verifyPinUseCase(
+        dataStore: DataStore<Preferences>,
+        nowMillis: Long,
+    ): VerifyPinUseCase =
+        VerifyPinUseCase(
+            pinStateStore = DataStorePinStateStore(dataStore),
+            pinHasher = Pbkdf2PinHasher(),
+            timeProvider = TimeProvider { nowMillis },
+        )
+
+    private suspend fun DataStore<Preferences>.writeKnownPinState(
+        failedAttempts: Int = 0,
+        hashVersion: Int? = PinHashingPort.CURRENT_VERSION,
+    ) {
+        edit { preferences ->
+            preferences[stringPreferencesKey("pinHash")] = LEGACY_HASH_BASE64
+            preferences[stringPreferencesKey("pinSalt")] = LEGACY_SALT_BASE64
+            if (hashVersion == null) {
+                preferences.remove(intPreferencesKey("pinHashVersion"))
+            } else {
+                preferences[intPreferencesKey("pinHashVersion")] = hashVersion
+            }
+            preferences[intPreferencesKey("failedPinAttempts")] = failedAttempts
+            preferences.remove(longPreferencesKey("pinLockoutUntil"))
+        }
+    }
+
     private class RecordingDataStore(
         private val delegate: DataStore<Preferences>,
     ) : DataStore<Preferences> {
@@ -185,5 +218,10 @@ class DataStorePinStateStoreTest {
             updateDataCount += 1
             return delegate.updateData(transform)
         }
+    }
+
+    private companion object {
+        const val LEGACY_SALT_BASE64 = "AAECAwQFBgcICQoLDA0ODw=="
+        const val LEGACY_HASH_BASE64 = "JJfkH+VveNsEbC4vvoIyDBewEbKwjYEa29445Woz1lY="
     }
 }

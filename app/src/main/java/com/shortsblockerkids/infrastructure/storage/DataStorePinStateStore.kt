@@ -10,9 +10,9 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import com.shortsblockerkids.application.model.PinAttemptState
 import com.shortsblockerkids.application.model.PinCredential
 import com.shortsblockerkids.application.pin.PinVerificationResult
+import com.shortsblockerkids.application.port.PinHashingPort
 import com.shortsblockerkids.application.port.PinStateStore
 import com.shortsblockerkids.application.port.PinStateUpdate
-import com.shortsblockerkids.core.security.PinHasher
 
 internal class DataStorePinStateStore(
     private val dataStore: DataStore<Preferences>,
@@ -53,7 +53,8 @@ internal class DataStorePinStateStore(
         return PinCredential(
             hashBase64 = hash,
             saltBase64 = salt,
-            hashVersion = this[PinPreferenceKeys.PIN_HASH_VERSION] ?: PinHasher.CURRENT_VERSION,
+            hashVersion =
+                this[PinPreferenceKeys.PIN_HASH_VERSION] ?: PinHashingPort.CURRENT_VERSION,
         )
     }
 

@@ -7,7 +7,7 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.shortsblockerkids.application.model.AppSettingsSnapshot
-import com.shortsblockerkids.core.security.PinHasher
+import com.shortsblockerkids.application.port.PinHashingPort
 import com.shortsblockerkids.domain.entitlement.BillingEntitlementState
 import com.shortsblockerkids.domain.entitlement.EntitlementSnapshot
 import com.shortsblockerkids.domain.entitlement.FreeTestPolicy
@@ -57,7 +57,7 @@ internal object DataStoreSettingsMapper {
             pinHash = preferences[PinPreferenceKeys.PIN_HASH],
             pinSalt = preferences[PinPreferenceKeys.PIN_SALT],
             pinHashVersion =
-                preferences[PinPreferenceKeys.PIN_HASH_VERSION] ?: PinHasher.CURRENT_VERSION,
+                preferences[PinPreferenceKeys.PIN_HASH_VERSION] ?: PinHashingPort.CURRENT_VERSION,
             failedPinAttempts = preferences[PinPreferenceKeys.FAILED_PIN_ATTEMPTS] ?: 0,
             pinLockoutUntil = preferences[PinPreferenceKeys.PIN_LOCKOUT_UNTIL],
         )

@@ -20,9 +20,10 @@ import com.shortsblockerkids.application.pin.CreatePinUseCase
 import com.shortsblockerkids.application.port.ProtectionActivationOperation
 import com.shortsblockerkids.application.protection.canProtect
 import com.shortsblockerkids.application.protection.isTemporarilyAllowed
+import com.shortsblockerkids.domain.pin.PinValidationResult
 import com.shortsblockerkids.domain.protection.ProtectionMode
+import com.shortsblockerkids.infrastructure.security.Pbkdf2PinHasher
 import com.shortsblockerkids.infrastructure.storage.DataStoreSettingsStore
-import com.shortsblockerkids.infrastructure.storage.SettingsPinAccessAdapter
 import com.shortsblockerkids.platform.accessibility.diagnostics.accessibilityDiagnostics
 import com.shortsblockerkids.platform.accessibility.status.AccessibilityServiceStatus
 import kotlinx.coroutines.flow.first
@@ -48,7 +49,8 @@ class ShortVideoBlockerEmulatorE2eTest {
     private val settingsStore = DataStoreSettingsStore(targetContext)
     private val createPinUseCase =
         CreatePinUseCase(
-            SettingsPinAccessAdapter(pinStateStore = settingsStore),
+            pinStateStore = settingsStore,
+            pinHasher = Pbkdf2PinHasher(),
         )
     private var originalApplicationLocales: LocaleList? = null
 
@@ -179,7 +181,7 @@ class ShortVideoBlockerEmulatorE2eTest {
         waitForText(quantityText(R.plurals.pin_entry_attempts_remaining, 4))
         assertFalse(hasText(resourceText(R.string.temporary_allow_title)))
 
-        enterPin(parentPin)
+        enterPin(PARENT_PIN)
         tapText(resourceText(R.string.pin_entry_submit))
         waitForText(resourceText(R.string.temporary_allow_title))
         tapText(quantityText(R.plurals.temporary_allow_duration_minutes, 5))
@@ -350,7 +352,7 @@ class ShortVideoBlockerEmulatorE2eTest {
         tapText(resourceText(R.string.pin_entry_submit))
         waitForText(quantityText(R.plurals.pin_entry_attempts_remaining, 4))
 
-        enterPin(parentPin)
+        enterPin(PARENT_PIN)
         tapText(resourceText(R.string.pin_entry_submit))
         waitForText(resourceText(R.string.temporary_allow_title))
         tapText(quantityText(R.plurals.temporary_allow_duration_minutes, 5))
@@ -405,7 +407,10 @@ class ShortVideoBlockerEmulatorE2eTest {
 
     private fun prepareProtectionState() {
         runBlocking {
-            createPinUseCase(parentPin)
+            assertEquals(
+                PinValidationResult.Valid,
+                createPinUseCase(PARENT_PIN, PARENT_PIN),
+            )
             settingsStore.acceptAccessibilityDisclosure()
             settingsStore.setSelectedMode(ProtectionMode.BLOCK_SHORTS)
             settingsStore.setTemporaryAllowUntil(null)
@@ -800,7 +805,7 @@ class ShortVideoBlockerEmulatorE2eTest {
     }
 
     private companion object {
-        val parentPin = (1000..9999).random().toString()
+        const val PARENT_PIN = "4826"
         const val FAKE_ACTIVITY = "com.shortsblockerkids.fixtureapps.FakeSocialActivity"
         const val PIN_ACTIVITY_TIMEOUT_MS = 30_000L
     }

@@ -27,9 +27,8 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.shortsblockerkids.R
 import com.shortsblockerkids.application.pin.CreatePinUseCase
-import com.shortsblockerkids.core.security.PinPolicy
-import com.shortsblockerkids.core.security.PinValidationReason
-import com.shortsblockerkids.core.security.PinValidationResult
+import com.shortsblockerkids.domain.pin.PinValidationReason
+import com.shortsblockerkids.domain.pin.PinValidationResult
 import kotlinx.coroutines.launch
 
 @Composable
@@ -86,13 +85,15 @@ fun PinSetupScreen(
         Button(
             onClick = {
                 val submittedPin = pin
-                when (val result = PinPolicy.validate(submittedPin, confirmation)) {
-                    PinValidationResult.Valid ->
-                        coroutineScope.launch {
-                            createPinUseCase(submittedPin)
+                val submittedConfirmation = confirmation
+                coroutineScope.launch {
+                    when (val result = createPinUseCase(submittedPin, submittedConfirmation)) {
+                        PinValidationResult.Valid -> {
                             onPinCreated()
                         }
-                    is PinValidationResult.Invalid -> error = result.reason
+
+                        is PinValidationResult.Invalid -> error = result.reason
+                    }
                 }
             },
             modifier = Modifier.fillMaxWidth(),

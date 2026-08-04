@@ -84,7 +84,69 @@ class LayerDependencyTest {
         assertNoSourceTokens(
             layer = "presentation",
             forbiddenTokens = listOf("System.currentTimeMillis("),
-            excludedRelativePaths = setOf(PRESENTATION_PIN_ENTRY_SCREEN),
+        )
+    }
+
+    @Test
+    fun pinPolicyAndRateLimiterStayOutOfPresentationAndInfrastructure() {
+        val forbiddenTokens =
+            listOf(
+                "com.shortsblockerkids.domain.pin.PinPolicy",
+                "com.shortsblockerkids.domain.pin.PinRateLimiter",
+                "com.shortsblockerkids.domain.pin.*",
+            )
+        val violations =
+            SOURCE_SET_PATHS.flatMap { sourceSetPath ->
+                listOf("presentation", "infrastructure").flatMap { layer ->
+                    File(
+                        repositoryRoot,
+                        "$sourceSetPath/com/shortsblockerkids/$layer",
+                    ).takeIf(File::isDirectory)
+                        ?.walkTopDown()
+                        ?.filter { source -> source.isFile && source.extension == "kt" }
+                        ?.flatMap { source ->
+                            forbiddenTokens
+                                .filter(source.readText()::contains)
+                                .map { token ->
+                                    "${source.relativeTo(repositoryRoot)} contains $token"
+                                }
+                        }?.toList()
+                        .orEmpty()
+                }
+            }
+
+        assertTrue(
+            "PIN policy boundary violations:\n${violations.joinToString("\n")}",
+            violations.isEmpty(),
+        )
+    }
+
+    @Test
+    fun legacyPinBoundarySourcesAreGone() {
+        val remainingKotlinFiles =
+            SOURCE_SET_PATHS.flatMap { sourceSetPath ->
+                val packageRoot = File(repositoryRoot, "$sourceSetPath/com/shortsblockerkids")
+                listOf(
+                    File(packageRoot, "core/security"),
+                    File(packageRoot, "application/port/PinAccessPort.kt"),
+                    File(packageRoot, "infrastructure/storage/SettingsPinAccessAdapter.kt"),
+                ).flatMap { candidate ->
+                    when {
+                        candidate.isDirectory ->
+                            candidate
+                                .walkTopDown()
+                                .filter { file -> file.isFile && file.extension == "kt" }
+                                .toList()
+
+                        candidate.isFile -> listOf(candidate)
+                        else -> emptyList()
+                    }
+                }
+            }
+
+        assertTrue(
+            "legacy PIN boundary sources remain: $remainingKotlinFiles",
+            remainingKotlinFiles.isEmpty(),
         )
     }
 
@@ -169,8 +231,10 @@ class LayerDependencyTest {
         val forbiddenImports =
             listOf(
                 "com.shortsblockerkids.core.model.ProtectionMode",
-                "com.shortsblockerkids.core.security.PinVerificationResult",
+                "com.shortsblockerkids.core.security.",
                 "com.shortsblockerkids.core.storage.",
+                "com.shortsblockerkids.application.port.PinAccessPort",
+                "com.shortsblockerkids.infrastructure.storage.SettingsPinAccessAdapter",
             )
         val violations =
             SOURCE_SET_PATHS
@@ -268,7 +332,6 @@ class LayerDependencyTest {
     }
 
     private companion object {
-        const val PRESENTATION_PIN_ENTRY_SCREEN = "presentation/pin/PinEntryScreen.kt"
         val IMPORT_PATTERN = Regex("(?m)^import\\s+([^\\s]+)")
         val SOURCE_SET_PATHS =
             listOf(
