@@ -31,7 +31,6 @@ import androidx.compose.ui.unit.dp
 import com.shortsblockerkids.R
 import com.shortsblockerkids.application.pin.PinVerificationResult
 import com.shortsblockerkids.application.pin.VerifyPinUseCase
-import com.shortsblockerkids.core.security.PinPolicy
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
@@ -46,23 +45,21 @@ fun PinEntryScreen(
     var message by remember { mutableStateOf<PinEntryMessage?>(null) }
     var isVerifying by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
-    val canSubmit = PinPolicy.isVerificationInputComplete(pin)
 
     fun submitPin() {
         if (isVerifying) {
             return
         }
         val submittedPin = pin
-        if (!PinPolicy.isVerificationInputComplete(submittedPin)) {
-            message = PinEntryMessage.Incomplete
-            return
-        }
         isVerifying = true
         coroutineScope.launch {
             val result = verifyPinUseCase(submittedPin)
-            onStateChanged()
+            if (result != PinVerificationResult.InvalidInput) {
+                onStateChanged()
+            }
             when (result) {
                 PinVerificationResult.Success -> onUnlocked()
+                PinVerificationResult.InvalidInput -> message = PinEntryMessage.Incomplete
                 PinVerificationResult.NotConfigured -> message = PinEntryMessage.NotConfigured
                 is PinVerificationResult.Failure -> {
                     message = PinEntryMessage.WrongPin(result.remainingAttempts)
@@ -117,7 +114,7 @@ fun PinEntryScreen(
         Spacer(modifier = Modifier.height(24.dp))
         Button(
             onClick = { submitPin() },
-            enabled = canSubmit && !isVerifying,
+            enabled = !isVerifying,
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text(stringResource(R.string.pin_entry_submit))
@@ -144,10 +141,7 @@ private fun PinEntryMessage.localizedMessage(): String =
             )
     }
 
-private fun PinVerificationResult.Locked.remainingMinutes(): Long {
-    val remainingMillis = (untilMillis - System.currentTimeMillis()).coerceAtLeast(0L)
-    return TimeUnit.MILLISECONDS.toMinutes(remainingMillis).coerceAtLeast(1L)
-}
+private fun PinVerificationResult.Locked.remainingMinutes(): Long = TimeUnit.MILLISECONDS.toMinutes(remainingMillis).coerceAtLeast(1L)
 
 private sealed interface PinEntryMessage {
     data object Incomplete : PinEntryMessage

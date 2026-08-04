@@ -1,4 +1,4 @@
-package com.shortsblockerkids.core.security
+package com.shortsblockerkids.domain.pin
 
 class PinRateLimiter {
     fun recordFailure(

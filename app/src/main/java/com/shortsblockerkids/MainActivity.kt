@@ -24,8 +24,8 @@ import com.shortsblockerkids.composition.dashboard.DashboardUiStateAssembler
 import com.shortsblockerkids.infrastructure.billing.GooglePlayBillingGateway
 import com.shortsblockerkids.infrastructure.billing.HttpBillingVerificationAdapter
 import com.shortsblockerkids.infrastructure.billing.PlayBillingConfig
+import com.shortsblockerkids.infrastructure.security.Pbkdf2PinHasher
 import com.shortsblockerkids.infrastructure.storage.DataStoreSettingsStore
-import com.shortsblockerkids.infrastructure.storage.SettingsPinAccessAdapter
 import com.shortsblockerkids.infrastructure.time.SystemTimeProvider
 import com.shortsblockerkids.platform.accessibility.status.AccessibilityServiceStatus
 import com.shortsblockerkids.platform.tamper.TamperProtectionStatus
@@ -52,10 +52,19 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         settingsStore = DataStoreSettingsStore(this)
-        val pinAccessAdapter = SettingsPinAccessAdapter(pinStateStore = settingsStore)
-        val createPinUseCase = CreatePinUseCase(pinAccessAdapter)
-        val verifyPinUseCase = VerifyPinUseCase(pinAccessAdapter)
         val timeProvider = SystemTimeProvider()
+        val pinHasher = Pbkdf2PinHasher()
+        val createPinUseCase =
+            CreatePinUseCase(
+                pinStateStore = settingsStore,
+                pinHasher = pinHasher,
+            )
+        val verifyPinUseCase =
+            VerifyPinUseCase(
+                pinStateStore = settingsStore,
+                pinHasher = pinHasher,
+                timeProvider = timeProvider,
+            )
         val dashboardUiStateAssembler = DashboardUiStateAssembler(timeProvider)
         val protectionActivationUseCase =
             RecordSuccessfulProtectionActivationUseCase(

@@ -10,7 +10,10 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
+import com.shortsblockerkids.application.pin.CreatePinUseCase
 import com.shortsblockerkids.application.pin.PinVerificationResult
+import com.shortsblockerkids.application.pin.VerifyPinUseCase
+import com.shortsblockerkids.application.port.PinHashingPort
 import com.shortsblockerkids.application.port.ProtectionActivationOperation
 import com.shortsblockerkids.application.port.TimeProvider
 import com.shortsblockerkids.application.protection.canProtect
@@ -19,8 +22,10 @@ import com.shortsblockerkids.domain.detection.SupportedPlatform
 import com.shortsblockerkids.domain.entitlement.BillingEntitlementSnapshot
 import com.shortsblockerkids.domain.entitlement.BillingEntitlementState
 import com.shortsblockerkids.domain.entitlement.FreeTestPolicy
+import com.shortsblockerkids.domain.pin.PinValidationResult
 import com.shortsblockerkids.domain.protection.ProtectionConfiguration
 import com.shortsblockerkids.domain.protection.ProtectionMode
+import com.shortsblockerkids.infrastructure.security.Pbkdf2PinHasher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -33,12 +38,14 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
+import java.util.Base64
 
 class DataStoreSettingsStoreTest {
     @get:Rule
@@ -99,17 +106,72 @@ class DataStoreSettingsStoreTest {
     @Test
     fun createsPinHashAndVerifiesPinWithoutPlainTextStorage() =
         runBlocking {
-            val repository = createRepository("pin")
+            val dataStore = createDataStore("pin")
+            val repository = DataStoreSettingsStore(dataStore)
 
             repository.savePin("4826")
             val settings = repository.readSettings().first()
             val storedSettings = repository.readStoredSettings().first()
+            val rawPreferences = dataStore.data.first().asMap()
 
             assertTrue(settings.protectionConfiguration.isPinConfigured)
             assertNotNull(storedSettings.pinSalt)
             assertFalse(storedSettings.pinHash.orEmpty().contains("4826"))
+            assertEquals(
+                setOf("pinHash", "pinSalt", "pinHashVersion", "failedPinAttempts"),
+                rawPreferences.keys.map { key -> key.name }.toSet(),
+            )
+            assertTrue(
+                rawPreferences.values.none { value -> value.toString().contains("4826") },
+            )
             assertEquals(PinVerificationResult.Success, repository.verifyPin("4826"))
             assertTrue(repository.verifyPin("4827") is PinVerificationResult.Failure)
+        }
+
+    @Test
+    fun hardCodedLegacyCredentialWithoutVersionVerifies() =
+        runBlocking {
+            val dataStore = createDataStore("legacy-pin")
+            dataStore.writeLegacyPinCredential()
+            val repository = DataStoreSettingsStore(dataStore)
+
+            assertEquals(PinVerificationResult.Success, repository.verifyPin(LEGACY_PIN))
+            assertNull(dataStore.data.first()[intPreferencesKey("pinHashVersion")])
+        }
+
+    @Test
+    fun unknownHashVersionKeepsNonDispatchVerification() =
+        runBlocking {
+            val dataStore = createDataStore("unknown-pin-version")
+            dataStore.writeLegacyPinCredential(hashVersion = 999)
+            val repository = DataStoreSettingsStore(dataStore)
+
+            assertEquals(PinVerificationResult.Success, repository.verifyPin(LEGACY_PIN))
+            assertEquals(999, dataStore.data.first()[intPreferencesKey("pinHashVersion")])
+        }
+
+    @Test
+    fun newPinKeepsLegacyBase64Representation() =
+        runBlocking {
+            val dataStore = createDataStore("pin-format")
+            val repository = DataStoreSettingsStore(dataStore)
+
+            repository.savePin(LEGACY_PIN)
+
+            val stored = dataStore.data.first()
+            val salt = requireNotNull(stored[stringPreferencesKey("pinSalt")])
+            val hash = requireNotNull(stored[stringPreferencesKey("pinHash")])
+            val saltBytes = Base64.getDecoder().decode(salt)
+            val hashBytes = Base64.getDecoder().decode(hash)
+            assertEquals(16, saltBytes.size)
+            assertEquals(32, hashBytes.size)
+            assertEquals(salt, Base64.getEncoder().encodeToString(saltBytes))
+            assertEquals(hash, Base64.getEncoder().encodeToString(hashBytes))
+            assertEquals(
+                PinHashingPort.CURRENT_VERSION,
+                stored[intPreferencesKey("pinHashVersion")],
+            )
+            assertFalse(hash.contains(LEGACY_PIN))
         }
 
     @Test
@@ -484,11 +546,23 @@ class DataStoreSettingsStoreTest {
             }
 
             val fifth = repository.verifyPin("1111", nowMillis = 2_000L)
-            assertEquals(PinVerificationResult.Locked(untilMillis = 32_000L), fifth)
+            assertEquals(
+                PinVerificationResult.Locked(
+                    untilMillis = 32_000L,
+                    remainingMillis = 30_000L,
+                ),
+                fifth,
+            )
             assertEquals(5, repository.readStoredSettings().first().failedPinAttempts)
 
             val sixth = repository.verifyPin("1111", nowMillis = 32_001L)
-            assertEquals(PinVerificationResult.Locked(untilMillis = 92_001L), sixth)
+            assertEquals(
+                PinVerificationResult.Locked(
+                    untilMillis = 92_001L,
+                    remainingMillis = 60_000L,
+                ),
+                sixth,
+            )
             assertEquals(6, repository.readStoredSettings().first().failedPinAttempts)
         }
 
@@ -512,7 +586,10 @@ class DataStoreSettingsStoreTest {
             val lockedBeforeRetry = repository.readStoredSettings().first()
 
             assertEquals(
-                PinVerificationResult.Locked(untilMillis = 31_004L),
+                PinVerificationResult.Locked(
+                    untilMillis = 31_004L,
+                    remainingMillis = 29_004L,
+                ),
                 repository.verifyPin("4826", nowMillis = 2_000L),
             )
             assertEquals(
@@ -574,7 +651,7 @@ class DataStoreSettingsStoreTest {
 
             repository.savePin("4826")
 
-            assertTrue(repository.verifyPin("") is PinVerificationResult.Failure)
+            assertEquals(PinVerificationResult.InvalidInput, repository.verifyPin(""))
         }
 
     @Test
@@ -586,7 +663,10 @@ class DataStoreSettingsStoreTest {
             repository.completeProtectionActivationForTest(nowMillis = 1_000L)
 
             repeat(5) { attempt ->
-                repository.verifyPin("", nowMillis = 2_000L + attempt)
+                assertEquals(
+                    PinVerificationResult.InvalidInput,
+                    repository.verifyPin("", nowMillis = 2_000L + attempt),
+                )
             }
             val settings = repository.readSettings().first()
 
@@ -596,16 +676,25 @@ class DataStoreSettingsStoreTest {
         }
 
     @Test
-    fun emptyPinLockoutRejectsCorrectPinUntilLockoutExpires() =
+    fun repeatedEmptyPinDoesNotIncrementAttemptsOrLockOutCorrectPin() =
         runBlocking {
             val repository = createRepository("empty-pin-lockout")
             repository.savePin("4826")
 
             repeat(5) { attempt ->
-                repository.verifyPin("", nowMillis = 1_000L + attempt)
+                assertEquals(
+                    PinVerificationResult.InvalidInput,
+                    repository.verifyPin("", nowMillis = 1_000L + attempt),
+                )
             }
+            val storedSettings = repository.readStoredSettings().first()
 
-            assertTrue(repository.verifyPin("4826", nowMillis = 2_000L) is PinVerificationResult.Locked)
+            assertEquals(0, storedSettings.failedPinAttempts)
+            assertNull(storedSettings.pinLockoutUntil)
+            assertEquals(
+                PinVerificationResult.Success,
+                repository.verifyPin("4826", nowMillis = 2_000L),
+            )
         }
 
     @Test
@@ -615,7 +704,7 @@ class DataStoreSettingsStoreTest {
 
             repository.savePin("4826")
 
-            assertTrue(repository.verifyPin("482") is PinVerificationResult.Failure)
+            assertEquals(PinVerificationResult.InvalidInput, repository.verifyPin("482"))
         }
 
     @Test
@@ -650,7 +739,12 @@ class DataStoreSettingsStoreTest {
     }
 
     private suspend fun DataStoreSettingsStore.savePin(pin: String) {
-        SettingsPinAccessAdapter(pinStateStore = this).createPin(pin)
+        val result =
+            CreatePinUseCase(
+                pinStateStore = this,
+                pinHasher = Pbkdf2PinHasher(),
+            )(pin, pin)
+        assertEquals(PinValidationResult.Valid, result)
     }
 
     private suspend fun DataStoreSettingsStore.completeProtectionActivationForTest(nowMillis: Long) {
@@ -661,12 +755,25 @@ class DataStoreSettingsStoreTest {
 
     private suspend fun DataStoreSettingsStore.verifyPin(
         pin: String,
-        nowMillis: Long = System.currentTimeMillis(),
+        nowMillis: Long = 1_000L,
     ): PinVerificationResult =
-        SettingsPinAccessAdapter(
+        VerifyPinUseCase(
             pinStateStore = this,
+            pinHasher = Pbkdf2PinHasher(),
             timeProvider = TimeProvider { nowMillis },
-        ).verifyPin(pin)
+        )(pin)
+
+    private suspend fun DataStore<Preferences>.writeLegacyPinCredential(hashVersion: Int? = null) {
+        edit { preferences ->
+            preferences[stringPreferencesKey("pinHash")] = LEGACY_HASH_BASE64
+            preferences[stringPreferencesKey("pinSalt")] = LEGACY_SALT_BASE64
+            if (hashVersion == null) {
+                preferences.remove(intPreferencesKey("pinHashVersion"))
+            } else {
+                preferences[intPreferencesKey("pinHashVersion")] = hashVersion
+            }
+        }
+    }
 
     private fun createDataStore(name: String): DataStore<Preferences> {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -685,5 +792,11 @@ class DataStoreSettingsStoreTest {
     private fun cancelOpenStores() {
         scopes.forEach { it.cancel() }
         scopes.clear()
+    }
+
+    private companion object {
+        const val LEGACY_PIN = "4826"
+        const val LEGACY_SALT_BASE64 = "AAECAwQFBgcICQoLDA0ODw=="
+        const val LEGACY_HASH_BASE64 = "JJfkH+VveNsEbC4vvoIyDBewEbKwjYEa29445Woz1lY="
     }
 }

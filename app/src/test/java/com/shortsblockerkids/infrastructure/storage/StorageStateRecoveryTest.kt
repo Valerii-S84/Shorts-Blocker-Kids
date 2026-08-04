@@ -8,12 +8,14 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.shortsblockerkids.application.pin.PinVerificationResult
+import com.shortsblockerkids.application.pin.VerifyPinUseCase
 import com.shortsblockerkids.application.port.TimeProvider
 import com.shortsblockerkids.application.protection.canProtect
 import com.shortsblockerkids.application.protection.hasBillingEntitlement
 import com.shortsblockerkids.domain.entitlement.BillingEntitlementState
 import com.shortsblockerkids.domain.protection.ProtectionConfiguration
 import com.shortsblockerkids.domain.protection.ProtectionMode
+import com.shortsblockerkids.infrastructure.security.Pbkdf2PinHasher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -112,8 +114,9 @@ class StorageStateRecoveryTest {
         pin: String,
         nowMillis: Long,
     ): PinVerificationResult =
-        SettingsPinAccessAdapter(
+        VerifyPinUseCase(
             pinStateStore = this,
+            pinHasher = Pbkdf2PinHasher(),
             timeProvider = TimeProvider { nowMillis },
-        ).verifyPin(pin)
+        )(pin)
 }

@@ -1,4 +1,4 @@
-package com.shortsblockerkids.core.security
+package com.shortsblockerkids.domain.pin
 
 object PinPolicy {
     private val weakPins = setOf("0000", "1111", "1234", "123456")
@@ -11,15 +11,12 @@ object PinPolicy {
         if (!isVerificationInputComplete(pin)) {
             return PinValidationResult.Invalid(PinValidationReason.INVALID_LENGTH)
         }
-
         if (pin in weakPins) {
             return PinValidationResult.Invalid(PinValidationReason.WEAK_PIN)
         }
-
         if (pin != confirmation) {
             return PinValidationResult.Invalid(PinValidationReason.CONFIRMATION_MISMATCH)
         }
-
         return PinValidationResult.Valid
     }
 
