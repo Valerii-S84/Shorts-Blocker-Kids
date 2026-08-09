@@ -28,6 +28,7 @@ import com.shortsblockerkids.domain.protection.ProtectionMode
 import com.shortsblockerkids.infrastructure.security.Pbkdf2PinHasher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
@@ -55,7 +56,9 @@ class DataStoreSettingsStoreTest {
 
     @After
     fun tearDown() {
-        scopes.forEach { it.cancel() }
+        runBlocking {
+            cancelOpenStores()
+        }
     }
 
     @Test
@@ -789,8 +792,11 @@ class DataStoreSettingsStoreTest {
         )
     }
 
-    private fun cancelOpenStores() {
-        scopes.forEach { it.cancel() }
+    private suspend fun cancelOpenStores() {
+        scopes.forEach { scope ->
+            scope.cancel()
+            scope.coroutineContext[Job]?.join()
+        }
         scopes.clear()
     }
 
