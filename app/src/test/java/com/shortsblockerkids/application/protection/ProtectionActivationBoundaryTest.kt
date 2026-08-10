@@ -2,6 +2,7 @@ package com.shortsblockerkids.application.protection
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 
@@ -12,6 +13,26 @@ class ProtectionActivationBoundaryTest {
 
         assertFalse(source.contains("ProtectionActivationPolicy"))
         assertFalse(source.contains("shouldStartFreeTest"))
+    }
+
+    @Test
+    fun composeShellDelegatesActivationDecisionsToCoveredCoordinator() {
+        val source = source(PRESENTATION_APP)
+
+        assertTrue(source.contains("ProtectionActivationUiCoordinator"))
+        assertFalse(source.contains("ProtectionActivationIntent"))
+        assertFalse(source.contains("ProtectionActivationResult"))
+    }
+
+    @Test
+    fun coverageExclusionsKeepActivationCoordinatorInTheDenominator() {
+        val buildScript = source(APP_BUILD_SCRIPT)
+
+        assertTrue(buildScript.contains("**/com/shortsblockerkids/MainActivity*.*"))
+        assertTrue(buildScript.contains("**/presentation/app/MainActivityKt*.*"))
+        assertFalse(buildScript.contains("**/MainActivity*.*"))
+        assertFalse(buildScript.contains("**/presentation/app/**"))
+        assertFalse(buildScript.contains("ProtectionActivationUiCoordinator"))
     }
 
     @Test
@@ -48,6 +69,7 @@ class ProtectionActivationBoundaryTest {
     private companion object {
         const val SOURCE_ROOT = "app/src/main/java/com/shortsblockerkids"
         const val PRESENTATION_APP = "$SOURCE_ROOT/presentation/app/ShortsBlockerKidsApp.kt"
+        const val APP_BUILD_SCRIPT = "app/build.gradle.kts"
         const val ACTIVATION_USE_CASE =
             "$SOURCE_ROOT/application/protection/RecordSuccessfulProtectionActivationUseCase.kt"
     }

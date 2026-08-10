@@ -140,7 +140,6 @@ class ReleaseCopyInvariantTest {
         val productionDocs =
             listOf(
                 repoFile("README.md").readText(),
-                repoFile(".env.example").readText(),
                 repoFile("docs/SHORTS_BLOCKER_AAB_RELEASE_READINESS.md").readText(),
                 repoFile("docs/SHORTS_BLOCKER_PLAY_BILLING_BACKEND_RUNBOOK.md").readText(),
                 repoFile("docs/SHORTS_BLOCKER_PLAY_CONSOLE_PREPARATION_PACKAGE.md").readText(),

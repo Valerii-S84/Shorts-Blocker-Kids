@@ -27,6 +27,7 @@ import com.shortsblockerkids.infrastructure.billing.PlayBillingConfig
 import com.shortsblockerkids.infrastructure.security.Pbkdf2PinHasher
 import com.shortsblockerkids.infrastructure.storage.DataStoreSettingsStore
 import com.shortsblockerkids.infrastructure.time.SystemTimeProvider
+import com.shortsblockerkids.platform.accessibility.diagnostics.accessibilityDiagnostics
 import com.shortsblockerkids.platform.accessibility.status.AccessibilityServiceStatus
 import com.shortsblockerkids.platform.tamper.TamperProtectionStatus
 import com.shortsblockerkids.presentation.app.ShortsBlockerKidsApp
@@ -135,6 +136,7 @@ class MainActivity : ComponentActivity() {
                             )
                         },
                         isTemporaryAllowRequested = temporaryAllowRequestState.value,
+                        accessibilityDiagnosticsPort = accessibilityDiagnostics,
                         createPinUseCase = createPinUseCase,
                         verifyPinUseCase = verifyPinUseCase,
                         recordSuccessfulProtectionActivationUseCase = protectionActivationUseCase,

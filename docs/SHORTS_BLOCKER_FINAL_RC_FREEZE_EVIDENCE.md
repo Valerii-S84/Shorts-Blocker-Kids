@@ -211,7 +211,9 @@ real production host deployment
 real Google service-account credential parsing/loading
 Google Play Developer API purchase verification
 Play Console RTDN Pub/Sub authenticated push delivery
-license-tester purchase/restore/lifecycle flows
+license-tester purchase/restore/lifecycle flows (pending external execution via
+  internal testing + runbook in
+  docs/SHORTS_BLOCKER_PLAY_BILLING_INTERNAL_TEST_RUNBOOK.md)
 ```
 
 Android release gate after stale artifact cleanup:
@@ -479,8 +481,9 @@ May 24, 2026:
   allows PBL 7 until August 31, 2026 and PBL 8 until August 31, 2027. PBL 9.0.0
   is therefore not deprecated.
 - Billing testing: official guidance recommends license testers, Play Billing
-  Lab, and Google Play test tracks for Billing integration validation. Those
-  purchase flows were not executed locally in this freeze pass.
+  Lab, and Google Play test tracks for Billing integration validation. This
+  freeze pass did not execute those flows locally or through an internal-test
+  track in this repository environment.
 - Data Safety: Google requires a Data safety form for published apps including
   closed, open, and production testing tracks; internal-only testing is exempt.
   The project has draft Data Safety/Privacy content, but Play Console submission
@@ -514,7 +517,13 @@ Official sources checked:
 - Play App Signing acceptance was not verified.
 - Data Safety form was not submitted in Play Console.
 - Accessibility declaration/demo was not submitted in Play Console.
-- License tester purchase, pending purchase, cancel, grace, restore, and renewal
-  flows were not executed through Google Play.
+- Manual Google Play billing lifecycle verification for Slice 15 is still pending:
+  - BIL-01..BIL-16 (purchase, restore, pending, cancel, grace/account-hold,
+    expiry, and renewal).
+  - BIL-16 includes RTDN lifecycle refresh/processing checks.
+  - Reference runbook:
+    `docs/SHORTS_BLOCKER_PLAY_BILLING_INTERNAL_TEST_RUNBOOK.md`
+  - Runbook status in this pass: external execution pending from Play Console and
+    Play-enabled devices.
 - Real-device detector QA for TikTok, Instagram, and Facebook remains required
   before claiming production support beyond code-level readiness.
