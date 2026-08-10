@@ -10,10 +10,10 @@ import com.shortsblockerkids.application.model.AppSettingsSnapshot
 import com.shortsblockerkids.application.port.ProtectionSettingsPort
 import com.shortsblockerkids.application.port.SettingsStatePort
 import com.shortsblockerkids.application.port.TemporaryAllowStore
+import com.shortsblockerkids.application.port.TimeProvider
 import com.shortsblockerkids.application.protection.ClearExpiredTemporaryAllowUseCase
 import com.shortsblockerkids.application.protection.canProtect
 import com.shortsblockerkids.domain.detection.SupportedPlatform
-import com.shortsblockerkids.infrastructure.time.SystemTimeProvider
 import com.shortsblockerkids.platform.accessibility.detection.ProductionDetectorRegistry
 import com.shortsblockerkids.platform.accessibility.diagnostics.DebugAccessibilityLogger
 import com.shortsblockerkids.platform.accessibility.diagnostics.DetectorDebugSnapshotStore
@@ -37,6 +37,7 @@ class AccessibilityServiceRuntime(
     private val service: AccessibilityService,
     private val settingsStatePort: SettingsStatePort,
     private val temporaryAllowStore: TemporaryAllowStore,
+    private val timeProvider: TimeProvider,
 ) {
     private lateinit var eventRouter: AccessibilityEventRouter
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -44,7 +45,6 @@ class AccessibilityServiceRuntime(
     private var pinEntryRecheckJob: Job? = null
 
     fun onServiceConnected() {
-        val timeProvider = SystemTimeProvider()
         val clearExpiredTemporaryAllowUseCase =
             ClearExpiredTemporaryAllowUseCase(
                 timeProvider = timeProvider,

@@ -58,7 +58,7 @@ class LayerDependencyTest {
     }
 
     @Test
-    fun presentationDoesNotImportOuterImplementationsOrFrameworkPayloads() {
+    fun presentationAcrossProductionSourceSetsDoesNotImportOuterImplementationsOrFrameworkPayloads() {
         assertNoImportsWithPrefixes(
             layer = "presentation",
             forbiddenPrefixes =
@@ -84,6 +84,44 @@ class LayerDependencyTest {
         assertNoSourceTokens(
             layer = "presentation",
             forbiddenTokens = listOf("System.currentTimeMillis("),
+        )
+    }
+
+    @Test
+    fun platformDoesNotImportOuterImplementationLayers() {
+        assertNoImportsWithPrefixes(
+            layer = "platform",
+            forbiddenPrefixes =
+                listOf(
+                    "com.shortsblockerkids.presentation.",
+                    "com.shortsblockerkids.composition.",
+                    "com.shortsblockerkids.infrastructure.",
+                ),
+        )
+    }
+
+    @Test
+    fun compositionDoesNotImportInfrastructureOrPlatform() {
+        assertNoImportsWithPrefixes(
+            layer = "composition",
+            forbiddenPrefixes =
+                listOf(
+                    "com.shortsblockerkids.infrastructure.",
+                    "com.shortsblockerkids.platform.",
+                ),
+        )
+    }
+
+    @Test
+    fun infrastructureDoesNotImportPresentationOrCompositionOrPlatform() {
+        assertNoImportsWithPrefixes(
+            layer = "infrastructure",
+            forbiddenPrefixes =
+                listOf(
+                    "com.shortsblockerkids.presentation.",
+                    "com.shortsblockerkids.composition.",
+                    "com.shortsblockerkids.platform.",
+                ),
         )
     }
 
@@ -259,12 +297,13 @@ class LayerDependencyTest {
 
     private fun assertImports(
         layer: String,
+        sourceSets: List<String> = PRODUCTION_SOURCE_SET_PATHS,
         isAllowed: (File, String) -> Boolean,
     ) {
         val violations =
-            sources(layer).flatMap { source ->
+            sources(layer = layer, sourceSets = sourceSets).flatMap { source ->
                 imports(source).filterNot { importedName -> isAllowed(source, importedName) }.map { importedName ->
-                    "${source.relativeTo(sourceRoot)} imports $importedName"
+                    "${sourceRelativeToRepository(source)} imports $importedName"
                 }
             }
 
@@ -273,15 +312,16 @@ class LayerDependencyTest {
 
     private fun assertNoImportsWithPrefixes(
         layer: String,
+        sourceSets: List<String> = PRODUCTION_SOURCE_SET_PATHS,
         forbiddenPrefixes: List<String>,
     ) {
         val violations =
-            sources(layer).flatMap { source ->
+            sources(layer = layer, sourceSets = sourceSets).flatMap { source ->
                 imports(source)
                     .filter { importedName ->
                         forbiddenPrefixes.any(importedName::startsWith)
                     }.map { importedName ->
-                        "${source.relativeTo(sourceRoot)} imports $importedName"
+                        "${sourceRelativeToRepository(source)} imports $importedName"
                     }
             }
 
@@ -289,22 +329,26 @@ class LayerDependencyTest {
     }
 
     private fun assertNoDirectSystemTime(layer: String) {
-        assertNoSourceTokens(layer, listOf("System.currentTimeMillis("))
+        assertNoSourceTokens(
+            layer = layer,
+            forbiddenTokens = listOf("System.currentTimeMillis("),
+        )
     }
 
     private fun assertNoSourceTokens(
         layer: String,
+        sourceSets: List<String> = PRODUCTION_SOURCE_SET_PATHS,
         forbiddenTokens: List<String>,
         excludedRelativePaths: Set<String> = emptySet(),
     ) {
         val violations =
-            sources(layer)
+            sources(layer, sourceSets)
                 .filterNot { source ->
-                    source.relativeTo(sourceRoot).invariantSeparatorsPath in excludedRelativePaths
+                    sourceRelativeToRepository(source) in excludedRelativePaths
                 }.flatMap { source ->
                     val content = source.readText()
                     forbiddenTokens.filter(content::contains).map { token ->
-                        "${source.relativeTo(sourceRoot)} contains $token"
+                        "${sourceRelativeToRepository(source)} contains $token"
                     }
                 }
 
@@ -314,11 +358,18 @@ class LayerDependencyTest {
     private fun imports(source: File): List<String> =
         IMPORT_PATTERN.findAll(source.readText()).map { match -> match.groupValues[1] }.toList()
 
-    private fun sources(layer: String): List<File> =
-        File(sourceRoot, layer)
-            .walkTopDown()
-            .filter { file -> file.isFile && file.extension == "kt" }
-            .toList()
+    private fun sources(
+        layer: String,
+        sourceSets: List<String> = PRODUCTION_SOURCE_SET_PATHS,
+    ): List<File> =
+        sourceSets
+            .map { sourceSetPath -> File(repositoryRoot, "$sourceSetPath/com/shortsblockerkids/$layer") }
+            .filter(File::isDirectory)
+            .flatMap { layerRoot ->
+                layerRoot.walkTopDown().filter { file -> file.isFile && file.extension == "kt" }.toList()
+            }
+
+    private fun sourceRelativeToRepository(source: File): String = source.relativeTo(repositoryRoot).invariantSeparatorsPath
 
     private val repositoryRoot: File by lazy {
         generateSequence(File(requireNotNull(System.getProperty("user.dir")))) { directory ->
@@ -333,6 +384,12 @@ class LayerDependencyTest {
 
     private companion object {
         val IMPORT_PATTERN = Regex("(?m)^import\\s+([^\\s]+)")
+        val PRODUCTION_SOURCE_SET_PATHS =
+            listOf(
+                "app/src/main/java",
+                "app/src/debug/java",
+                "app/src/release/java",
+            )
         val SOURCE_SET_PATHS =
             listOf(
                 "app/src/main/java",

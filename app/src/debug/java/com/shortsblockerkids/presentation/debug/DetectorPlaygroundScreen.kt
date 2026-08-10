@@ -32,17 +32,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.shortsblockerkids.BuildConfig
 import com.shortsblockerkids.R
+import com.shortsblockerkids.application.port.AccessibilityDiagnosticsPort
 import com.shortsblockerkids.domain.detection.AccessibilityNodeSignal
 import com.shortsblockerkids.domain.detection.AccessibilityTreeSnapshot
 import com.shortsblockerkids.domain.detection.DetectionResult
 import com.shortsblockerkids.domain.detection.YouTubeShortsDetector
-import com.shortsblockerkids.platform.accessibility.diagnostics.accessibilityDiagnostics
 import com.shortsblockerkids.presentation.billing.billingMessageText
 import com.shortsblockerkids.presentation.dashboard.DashboardUiState
 
 @Composable
 fun DetectorPlaygroundScreen(
     uiState: DashboardUiState,
+    accessibilityDiagnosticsPort: AccessibilityDiagnosticsPort,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -84,7 +85,7 @@ fun DetectorPlaygroundScreen(
             ) {
                 QaRow(
                     stringResource(R.string.debug_detected_package),
-                    accessibilityDiagnostics.lastDetectorResultText()
+                    accessibilityDiagnosticsPort.lastDetectorResultText()
                         ?: stringResource(R.string.debug_disabled),
                 )
                 QaRow(
@@ -93,7 +94,7 @@ fun DetectorPlaygroundScreen(
                 )
                 QaRow(
                     stringResource(R.string.debug_blocking_decision),
-                    accessibilityDiagnostics.lastBlockingDecisionText()
+                    accessibilityDiagnosticsPort.lastBlockingDecisionText()
                         ?: stringResource(R.string.debug_disabled),
                 )
                 QaRow(
@@ -181,14 +182,14 @@ fun DetectorPlaygroundScreen(
                 Text(
                     stringResource(
                         R.string.debug_snapshot_format,
-                        accessibilityDiagnostics.lastDebugSnapshotText().toString(),
+                        accessibilityDiagnosticsPort.lastDebugSnapshotText().toString(),
                     ),
                 )
             }
         }
         Button(
             onClick = {
-                accessibilityDiagnostics.requestDebugSnapshot()
+                accessibilityDiagnosticsPort.requestDebugSnapshot()
                 selectedResult =
                     selectedResult.copy(
                         overlayMessage = snapshotRequestedMessage,
@@ -200,7 +201,7 @@ fun DetectorPlaygroundScreen(
         }
         Button(
             onClick = {
-                accessibilityDiagnostics.requestDebugOverlay()
+                accessibilityDiagnosticsPort.requestDebugOverlay()
                 selectedResult =
                     selectedResult.copy(
                         overlayMessage = overlayRequestedMessage,
