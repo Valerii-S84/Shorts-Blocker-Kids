@@ -3,6 +3,8 @@ package com.shortsblockerkids.application.pin
 import com.shortsblockerkids.application.model.PinAttemptState
 import com.shortsblockerkids.application.model.PinCredential
 import com.shortsblockerkids.application.port.PinHashingPort
+import com.shortsblockerkids.application.port.PinLockoutClock
+import com.shortsblockerkids.application.port.PinLockoutTime
 import com.shortsblockerkids.application.port.PinStateStore
 import com.shortsblockerkids.application.port.PinStateUpdate
 import com.shortsblockerkids.application.port.TimeProvider
@@ -61,7 +63,13 @@ class VerifyPinUseCaseTest {
     @Test
     fun malformedInputDuringActiveLockoutReturnsInvalidInputAndPreservesLockout() =
         runBlocking {
-            val initialState = PinAttemptState(failedAttempts = 5, lockoutUntil = 31_000L)
+            val initialState =
+                PinAttemptState(
+                    failedAttempts = 5,
+                    lockoutUntil = 31_000L,
+                    lockoutElapsedRealtimeUntil = 31_000L,
+                    lockoutBootCount = 1,
+                )
             val fixture = fixture(attemptState = initialState, nowMillis = 2_000L)
 
             val result = fixture.useCase("482")
@@ -131,6 +139,8 @@ class VerifyPinUseCaseTest {
                     PinAttemptState(
                         failedAttempts = case.failedAttempts,
                         lockoutUntil = NOW_MILLIS + case.durationMillis,
+                        lockoutElapsedRealtimeUntil = NOW_MILLIS + case.durationMillis,
+                        lockoutBootCount = 1,
                     ),
                     fixture.stateStore.attemptState,
                 )
@@ -141,7 +151,13 @@ class VerifyPinUseCaseTest {
     @Test
     fun activeLockoutReturnsRemainingTimeWithoutIncrementOrHashing() =
         runBlocking {
-            val initialState = PinAttemptState(failedAttempts = 5, lockoutUntil = 31_000L)
+            val initialState =
+                PinAttemptState(
+                    failedAttempts = 5,
+                    lockoutUntil = 31_000L,
+                    lockoutElapsedRealtimeUntil = 31_000L,
+                    lockoutBootCount = 1,
+                )
             val fixture = fixture(attemptState = initialState, nowMillis = 2_000L)
 
             val result = fixture.useCase("4826")
@@ -161,7 +177,13 @@ class VerifyPinUseCaseTest {
         runBlocking {
             val fixture =
                 fixture(
-                    attemptState = PinAttemptState(failedAttempts = 5, lockoutUntil = NOW_MILLIS),
+                    attemptState =
+                        PinAttemptState(
+                            failedAttempts = 5,
+                            lockoutUntil = NOW_MILLIS,
+                            lockoutElapsedRealtimeUntil = NOW_MILLIS,
+                            lockoutBootCount = 1,
+                        ),
                 )
 
             val result = fixture.useCase("4826")
@@ -233,6 +255,107 @@ class VerifyPinUseCaseTest {
             fixture.assertSingleBoundaryCall()
         }
 
+    @Test
+    fun movingWallClockForwardDoesNotExpirePinLockout() =
+        runBlocking {
+            val fixture = fixture(attemptState = PinAttemptState(failedAttempts = 4))
+            fixture.useCase("1111")
+            val lockedState = fixture.stateStore.attemptState
+
+            fixture.timeProvider.nowMillis += 86_400_000L
+            fixture.timeProvider.elapsedRealtimeMillis += 1_000L
+            val result = fixture.useCase("4826") as PinVerificationResult.Locked
+
+            assertEquals(29_000L, result.remainingMillis)
+            assertEquals(lockedState, fixture.stateStore.attemptState)
+            assertEquals(1, fixture.pinHasher.hashInputs.size)
+        }
+
+    @Test
+    fun movingWallClockBackwardDoesNotExtendPinLockout() =
+        runBlocking {
+            val fixture = fixture(attemptState = PinAttemptState(failedAttempts = 4))
+            fixture.useCase("1111")
+
+            fixture.timeProvider.nowMillis -= 86_400_000L
+            fixture.timeProvider.elapsedRealtimeMillis += 1_000L
+            val result = fixture.useCase("4826") as PinVerificationResult.Locked
+            assertEquals(29_000L, result.remainingMillis)
+
+            fixture.timeProvider.elapsedRealtimeMillis += 29_000L
+            assertSame(PinVerificationResult.Success, fixture.useCase("4826"))
+            assertEquals(PinAttemptState(), fixture.stateStore.attemptState)
+        }
+
+    @Test
+    fun elapsedTimeAloneExpiresLockoutAtExactBoundary() =
+        runBlocking {
+            val fixture = fixture(attemptState = PinAttemptState(failedAttempts = 4))
+            fixture.useCase("1111")
+
+            fixture.timeProvider.elapsedRealtimeMillis += 29_999L
+            val result = fixture.useCase("4826") as PinVerificationResult.Locked
+            assertEquals(1L, result.remainingMillis)
+
+            fixture.timeProvider.elapsedRealtimeMillis += 1L
+            assertSame(PinVerificationResult.Success, fixture.useCase("4826"))
+        }
+
+    @Test
+    fun rebootRestartsDelayOnceEvenWhenNewUptimeExceedsOldDeadline() =
+        runBlocking {
+            val fixture = fixture(attemptState = PinAttemptState(failedAttempts = 4))
+            fixture.useCase("1111")
+            fixture.timeProvider.bootCount = 2
+            fixture.timeProvider.elapsedRealtimeMillis = 100_000L
+            fixture.timeProvider.nowMillis += 86_400_000L
+
+            val restarted = fixture.useCase("4826") as PinVerificationResult.Locked
+            assertEquals(30_000L, restarted.remainingMillis)
+            assertEquals(5, fixture.stateStore.attemptState.failedAttempts)
+            assertEquals(2, fixture.stateStore.attemptState.lockoutBootCount)
+
+            fixture.timeProvider.elapsedRealtimeMillis += 29_999L
+            val waiting = fixture.useCase("4826") as PinVerificationResult.Locked
+            assertEquals(1L, waiting.remainingMillis)
+            fixture.timeProvider.elapsedRealtimeMillis += 1L
+            assertSame(PinVerificationResult.Success, fixture.useCase("4826"))
+        }
+
+    @Test
+    fun legacyWallDeadlineMigratesToBoundedElapsedDelayWithoutAddingFailure() =
+        runBlocking {
+            val fixture =
+                fixture(
+                    attemptState = PinAttemptState(failedAttempts = 7, lockoutUntil = 500L),
+                    nowMillis = 86_400_000L,
+                )
+            fixture.timeProvider.elapsedRealtimeMillis = 1_000L
+
+            val migrated = fixture.useCase("4826") as PinVerificationResult.Locked
+            assertEquals(300_000L, migrated.remainingMillis)
+            assertEquals(7, fixture.stateStore.attemptState.failedAttempts)
+            assertEquals(301_000L, fixture.stateStore.attemptState.lockoutElapsedRealtimeUntil)
+
+            fixture.timeProvider.elapsedRealtimeMillis = 301_000L
+            assertSame(PinVerificationResult.Success, fixture.useCase("4826"))
+        }
+
+    @Test
+    fun failedPinAfterElapsedExpiryEscalatesDespiteWallClockJump() =
+        runBlocking {
+            val fixture = fixture(attemptState = PinAttemptState(failedAttempts = 4))
+            fixture.useCase("1111")
+            fixture.timeProvider.elapsedRealtimeMillis += 30_000L
+            fixture.timeProvider.nowMillis += 86_400_000L
+
+            val result = fixture.useCase("1111") as PinVerificationResult.Locked
+
+            assertEquals(60_000L, result.remainingMillis)
+            assertEquals(6, fixture.stateStore.attemptState.failedAttempts)
+            assertEquals(91_000L, fixture.stateStore.attemptState.lockoutElapsedRealtimeUntil)
+        }
+
     private fun fixture(
         storedCredential: PinCredential? = credential(),
         attemptState: PinAttemptState = PinAttemptState(),
@@ -242,7 +365,7 @@ class VerifyPinUseCaseTest {
         val stateStore = RecordingPinStateStore(storedCredential, attemptState)
         val timeProvider = RecordingTimeProvider(nowMillis)
         return Fixture(
-            useCase = VerifyPinUseCase(stateStore, pinHasher, timeProvider),
+            useCase = VerifyPinUseCase(stateStore, pinHasher, timeProvider, timeProvider),
             stateStore = stateStore,
             pinHasher = pinHasher,
             timeProvider = timeProvider,
@@ -283,13 +406,25 @@ class VerifyPinUseCaseTest {
     ) {
         fun assertSingleBoundaryCall() {
             assertEquals(1, timeProvider.callCount)
+            assertEquals(1, timeProvider.lockoutReadCount)
             assertEquals(1, stateStore.atomicCallCount)
         }
     }
 
     private class RecordingTimeProvider(
-        private val nowMillis: Long,
-    ) : TimeProvider {
+        var nowMillis: Long,
+    ) : TimeProvider,
+        PinLockoutClock {
+        var elapsedRealtimeMillis: Long = nowMillis
+        var bootCount: Int = 1
+        var lockoutReadCount: Int = 0
+            private set
+
+        override fun read(): PinLockoutTime {
+            lockoutReadCount += 1
+            return PinLockoutTime(elapsedRealtimeMillis, bootCount)
+        }
+
         var callCount: Int = 0
             private set
 

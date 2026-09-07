@@ -9,6 +9,8 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.shortsblockerkids.application.pin.PinVerificationResult
 import com.shortsblockerkids.application.pin.VerifyPinUseCase
+import com.shortsblockerkids.application.port.PinLockoutClock
+import com.shortsblockerkids.application.port.PinLockoutTime
 import com.shortsblockerkids.application.port.TimeProvider
 import com.shortsblockerkids.application.protection.canProtect
 import com.shortsblockerkids.application.protection.hasBillingEntitlement
@@ -118,5 +120,6 @@ class StorageStateRecoveryTest {
             pinStateStore = this,
             pinHasher = Pbkdf2PinHasher(),
             timeProvider = TimeProvider { nowMillis },
+            lockoutClock = PinLockoutClock { PinLockoutTime(nowMillis, 1) },
         )(pin)
 }

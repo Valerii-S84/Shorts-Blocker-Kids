@@ -14,6 +14,8 @@ import com.shortsblockerkids.application.pin.CreatePinUseCase
 import com.shortsblockerkids.application.pin.PinVerificationResult
 import com.shortsblockerkids.application.pin.VerifyPinUseCase
 import com.shortsblockerkids.application.port.PinHashingPort
+import com.shortsblockerkids.application.port.PinLockoutClock
+import com.shortsblockerkids.application.port.PinLockoutTime
 import com.shortsblockerkids.application.port.ProtectionActivationOperation
 import com.shortsblockerkids.application.port.TimeProvider
 import com.shortsblockerkids.application.protection.canProtect
@@ -764,6 +766,7 @@ class DataStoreSettingsStoreTest {
             pinStateStore = this,
             pinHasher = Pbkdf2PinHasher(),
             timeProvider = TimeProvider { nowMillis },
+            lockoutClock = PinLockoutClock { PinLockoutTime(nowMillis, 1) },
         )(pin)
 
     private suspend fun DataStore<Preferences>.writeLegacyPinCredential(hashVersion: Int? = null) {

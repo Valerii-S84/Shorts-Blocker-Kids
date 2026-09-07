@@ -26,6 +26,7 @@ import com.shortsblockerkids.infrastructure.billing.HttpBillingVerificationAdapt
 import com.shortsblockerkids.infrastructure.billing.PlayBillingConfig
 import com.shortsblockerkids.infrastructure.security.Pbkdf2PinHasher
 import com.shortsblockerkids.infrastructure.storage.DataStoreSettingsStore
+import com.shortsblockerkids.infrastructure.time.AndroidPinLockoutClock
 import com.shortsblockerkids.infrastructure.time.SystemTimeProvider
 import com.shortsblockerkids.platform.accessibility.diagnostics.accessibilityDiagnostics
 import com.shortsblockerkids.platform.accessibility.status.AccessibilityServiceStatus
@@ -65,6 +66,7 @@ class MainActivity : ComponentActivity() {
                 pinStateStore = settingsStore,
                 pinHasher = pinHasher,
                 timeProvider = timeProvider,
+                lockoutClock = AndroidPinLockoutClock(this),
             )
         val dashboardUiStateAssembler = DashboardUiStateAssembler(timeProvider)
         val protectionActivationUseCase =

@@ -62,6 +62,8 @@ internal class DataStorePinStateStore(
         PinAttemptState(
             failedAttempts = this[PinPreferenceKeys.FAILED_PIN_ATTEMPTS] ?: 0,
             lockoutUntil = this[PinPreferenceKeys.PIN_LOCKOUT_UNTIL],
+            lockoutElapsedRealtimeUntil = this[PinPreferenceKeys.PIN_LOCKOUT_ELAPSED_REALTIME_UNTIL],
+            lockoutBootCount = this[PinPreferenceKeys.PIN_LOCKOUT_BOOT_COUNT],
         )
 
     private fun MutablePreferences.writeAttemptState(attemptState: PinAttemptState) {
@@ -70,6 +72,16 @@ internal class DataStorePinStateStore(
             remove(PinPreferenceKeys.PIN_LOCKOUT_UNTIL)
         } else {
             this[PinPreferenceKeys.PIN_LOCKOUT_UNTIL] = attemptState.lockoutUntil
+        }
+        if (attemptState.lockoutElapsedRealtimeUntil == null) {
+            remove(PinPreferenceKeys.PIN_LOCKOUT_ELAPSED_REALTIME_UNTIL)
+        } else {
+            this[PinPreferenceKeys.PIN_LOCKOUT_ELAPSED_REALTIME_UNTIL] = attemptState.lockoutElapsedRealtimeUntil
+        }
+        if (attemptState.lockoutBootCount == null) {
+            remove(PinPreferenceKeys.PIN_LOCKOUT_BOOT_COUNT)
+        } else {
+            this[PinPreferenceKeys.PIN_LOCKOUT_BOOT_COUNT] = attemptState.lockoutBootCount
         }
     }
 }
@@ -80,4 +92,6 @@ internal object PinPreferenceKeys {
     val PIN_HASH_VERSION = intPreferencesKey("pinHashVersion")
     val FAILED_PIN_ATTEMPTS = intPreferencesKey("failedPinAttempts")
     val PIN_LOCKOUT_UNTIL = longPreferencesKey("pinLockoutUntil")
+    val PIN_LOCKOUT_ELAPSED_REALTIME_UNTIL = longPreferencesKey("pinLockoutElapsedRealtimeUntil")
+    val PIN_LOCKOUT_BOOT_COUNT = intPreferencesKey("pinLockoutBootCount")
 }

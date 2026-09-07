@@ -14,6 +14,8 @@ import com.shortsblockerkids.application.model.PinCredential
 import com.shortsblockerkids.application.pin.PinVerificationResult
 import com.shortsblockerkids.application.pin.VerifyPinUseCase
 import com.shortsblockerkids.application.port.PinHashingPort
+import com.shortsblockerkids.application.port.PinLockoutClock
+import com.shortsblockerkids.application.port.PinLockoutTime
 import com.shortsblockerkids.application.port.PinStateUpdate
 import com.shortsblockerkids.application.port.TimeProvider
 import com.shortsblockerkids.infrastructure.security.Pbkdf2PinHasher
@@ -55,6 +57,8 @@ class DataStorePinStateStoreTest {
             dataStore.edit { preferences ->
                 preferences[intPreferencesKey("failedPinAttempts")] = 4
                 preferences[longPreferencesKey("pinLockoutUntil")] = 9_000L
+                preferences[longPreferencesKey("pinLockoutElapsedRealtimeUntil")] = 9_000L
+                preferences[intPreferencesKey("pinLockoutBootCount")] = 1
             }
 
             DataStorePinStateStore(dataStore).savePinState(
@@ -73,6 +77,8 @@ class DataStorePinStateStoreTest {
             assertEquals(7, preferences[intPreferencesKey("pinHashVersion")])
             assertEquals(0, preferences[intPreferencesKey("failedPinAttempts")])
             assertNull(preferences[longPreferencesKey("pinLockoutUntil")])
+            assertNull(preferences[longPreferencesKey("pinLockoutElapsedRealtimeUntil")])
+            assertNull(preferences[intPreferencesKey("pinLockoutBootCount")])
         }
 
     @Test
@@ -96,6 +102,8 @@ class DataStorePinStateStoreTest {
             val preferences = delegate.data.first()
             assertEquals(5, preferences[intPreferencesKey("failedPinAttempts")])
             assertEquals(31_000L, preferences[longPreferencesKey("pinLockoutUntil")])
+            assertEquals(31_000L, preferences[longPreferencesKey("pinLockoutElapsedRealtimeUntil")])
+            assertEquals(1, preferences[intPreferencesKey("pinLockoutBootCount")])
         }
 
     @Test
@@ -198,6 +206,7 @@ class DataStorePinStateStoreTest {
             pinStateStore = DataStorePinStateStore(dataStore),
             pinHasher = Pbkdf2PinHasher(),
             timeProvider = TimeProvider { nowMillis },
+            lockoutClock = PinLockoutClock { PinLockoutTime(nowMillis, 1) },
         )
 
     private suspend fun DataStore<Preferences>.writeKnownPinState(
