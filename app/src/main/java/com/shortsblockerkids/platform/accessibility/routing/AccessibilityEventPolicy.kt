@@ -4,6 +4,7 @@ import android.view.accessibility.AccessibilityEvent
 
 class AccessibilityEventPolicy(
     private val scanDebounceMs: Long = DEFAULT_SCAN_DEBOUNCE_MS,
+    private val requestRescan: (Long) -> Unit = {},
 ) {
     private var lastScanAtMillis: Long? = null
 
@@ -19,6 +20,7 @@ class AccessibilityEventPolicy(
 
         val lastScanAt = lastScanAtMillis
         if (lastScanAt != null && nowMillis - lastScanAt < scanDebounceMs) {
+            requestRescan(scanDebounceMs - (nowMillis - lastScanAt))
             return false
         }
 
@@ -28,6 +30,10 @@ class AccessibilityEventPolicy(
 
     fun reset() {
         lastScanAtMillis = null
+    }
+
+    fun onRootUnavailable() {
+        requestRescan(scanDebounceMs)
     }
 
     companion object {

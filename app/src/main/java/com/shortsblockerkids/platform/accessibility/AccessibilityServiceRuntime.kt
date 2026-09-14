@@ -43,6 +43,7 @@ class AccessibilityServiceRuntime(
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var latestSettings = AppSettingsSnapshot()
     private var pinEntryRecheckJob: Job? = null
+    private var scanRecheckJob: Job? = null
 
     fun onServiceConnected() {
         val clearExpiredTemporaryAllowUseCase =
@@ -87,7 +88,7 @@ class AccessibilityServiceRuntime(
             AccessibilityEventRouter(
                 protectionSettingsPort = protectionSettingsPort,
                 timeProvider = timeProvider,
-                eventPolicy = AccessibilityEventPolicy(),
+                eventPolicy = AccessibilityEventPolicy(requestRescan = ::scheduleScanRecheck),
                 treeScanner = AccessibilityTreeScanner(),
                 detectionEngine = ProductionDetectorRegistry.create(),
                 blockingDecisionController = blockingDecisionController,
@@ -142,6 +143,7 @@ class AccessibilityServiceRuntime(
             eventRouter.shutdown()
         }
         pinEntryRecheckJob?.cancel()
+        scanRecheckJob?.cancel()
     }
 
     fun onDestroy() {
@@ -149,6 +151,7 @@ class AccessibilityServiceRuntime(
             eventRouter.shutdown()
         }
         pinEntryRecheckJob?.cancel()
+        scanRecheckJob?.cancel()
         serviceScope.cancel()
     }
 
@@ -176,6 +179,15 @@ class AccessibilityServiceRuntime(
         } else {
             settings
         }
+
+    private fun scheduleScanRecheck(delayMillis: Long) {
+        scanRecheckJob?.cancel()
+        scanRecheckJob =
+            serviceScope.launch {
+                delay(delayMillis)
+                routeCurrentWindow()
+            }
+    }
 
     private fun schedulePinEntryRecheck() {
         pinEntryRecheckJob?.cancel()

@@ -105,7 +105,11 @@ class AccessibilityEventRouter(
             return
         }
 
-        val root = rootProvider() ?: return
+        val root = rootProvider()
+        if (root == null) {
+            eventPolicy.onRootUnavailable()
+            return
+        }
         val snapshot = treeScanner.scan(root)
         diagnostics.captureDebugSnapshotIfRequested(
             packageName = supportedPackageName,
