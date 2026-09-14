@@ -1,5 +1,6 @@
 package com.shortsblockerkids
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
@@ -30,9 +31,11 @@ import com.shortsblockerkids.infrastructure.time.AndroidPinLockoutClock
 import com.shortsblockerkids.infrastructure.time.SystemTimeProvider
 import com.shortsblockerkids.platform.accessibility.diagnostics.accessibilityDiagnostics
 import com.shortsblockerkids.platform.accessibility.status.AccessibilityServiceStatus
+import com.shortsblockerkids.platform.locale.AppLanguage
 import com.shortsblockerkids.platform.tamper.TamperProtectionStatus
 import com.shortsblockerkids.presentation.app.ShortsBlockerKidsApp
 import com.shortsblockerkids.presentation.billing.BillingCoordinator
+import com.shortsblockerkids.presentation.language.LanguagePicker
 import com.shortsblockerkids.ui.theme.ShortsBlockerKidsTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -43,6 +46,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 class MainActivity : ComponentActivity() {
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(AppLanguage.localizedContext(newBase))
+    }
+
     private lateinit var settingsStore: DataStoreSettingsStore
     private lateinit var billingCoordinator: BillingCoordinator
     private val activityScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -127,6 +134,11 @@ class MainActivity : ComponentActivity() {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     val billingUiState by billingCoordinator.uiState.collectAsState()
                     ShortsBlockerKidsApp(
+                        languagePicker = {
+                            LanguagePicker(AppLanguage.currentTag(this)) { tag ->
+                                AppLanguage.select(this, tag)
+                            }
+                        },
                         dashboardUiStateProvider = {
                             dashboardUiStateAssembler.create(
                                 settings = settingsState.value,

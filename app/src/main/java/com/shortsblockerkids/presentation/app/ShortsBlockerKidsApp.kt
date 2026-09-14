@@ -58,6 +58,7 @@ internal fun ShortsBlockerKidsApp(
     onStateChanged: () -> Unit,
     onTemporaryAllowFlowClosed: () -> Unit,
     onTemporaryAllowRequestConsumed: () -> Unit,
+    languagePicker: @Composable () -> Unit = {},
 ) {
     val coroutineScope = rememberCoroutineScope()
     val temporaryAllowFlowController =
@@ -196,6 +197,7 @@ internal fun ShortsBlockerKidsApp(
 
             AppScreen.Dashboard ->
                 DashboardScreen(
+                    languagePicker = languagePicker,
                     uiState = dashboardUiState,
                     callbacks =
                         DashboardCallbacks(

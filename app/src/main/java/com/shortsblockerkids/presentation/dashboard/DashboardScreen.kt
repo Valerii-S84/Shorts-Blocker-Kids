@@ -63,6 +63,7 @@ fun DashboardScreen(
     uiState: DashboardUiState,
     callbacks: DashboardCallbacks,
     modifier: Modifier = Modifier,
+    languagePicker: @Composable () -> Unit = {},
 ) {
     Column(
         modifier =
@@ -249,15 +250,8 @@ fun DashboardScreen(
         ) {
             Text(stringResource(uiState.actions.tamperProtectionLabelRes))
         }
-        callbacks.navigation.onOpenDebugQa?.let { openDebugQa ->
-            Spacer(modifier = Modifier.height(12.dp))
-            OutlinedButton(
-                onClick = openDebugQa,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(stringResource(R.string.dashboard_local_qa))
-            }
-        }
+        Spacer(modifier = Modifier.height(12.dp))
+        languagePicker()
     }
 }
 
