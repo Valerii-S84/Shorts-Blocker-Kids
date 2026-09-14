@@ -5,7 +5,7 @@
     <string name="accessibility_service_description">Erkennt YouTube Shorts, den TikTok-Kurzvideo-Feed, Instagram Reels und Facebook Reels lokal, wenn der Schutz aktiviert ist, und schließt den Blockierungsbildschirm, nachdem Sie diese Bereiche verlassen haben.</string>
     <string name="blocking_overlay_title">Kurzvideo blockiert</string>
     <string name="blocking_overlay_message">Zum vorübergehenden Erlauben von Kurzvideos oder zum Ändern des Schutzes ist die Eltern-PIN erforderlich.</string>
-    <string name="blocking_overlay_exit_shorts">Zum Startbildschirm</string>
+    <string name="blocking_overlay_exit_shorts">Video schließen</string>
     <string name="blocking_overlay_enter_pin">PIN eingeben</string>
     <string name="tamper_protection_label">Shorts Blocker Kids-Manipulationsschutz</string>
     <string name="tamper_protection_description">Optionaler, von den Eltern gesteuerter Geräteadministrator-Schutz, der die Deinstallation erschwert, solange er aktiv ist.</string>
@@ -19,7 +19,7 @@
 
     <!-- Accessibility disclosure -->
     <string name="accessibility_disclosure_title">Berechtigung für Bedienungshilfen</string>
-    <string name="accessibility_disclosure_body">Shorts Blocker Kids verwendet den Android-Bedienungshilfedienst, um zu erkennen, wenn geschützte Kurzvideo-Bereiche geöffnet sind, und einen Blockierungsbildschirm anzuzeigen. Geschützt werden YouTube Shorts, der TikTok-Kurzvideo-Feed, Instagram Reels und Facebook Reels. Das regionale TikTok-Paket com.ss.android.ugc.trill und Facebook Lite werden nicht unterstützt. Für YouTube Shorts liegen bereits Smoke-Test-Nachweise von einem echten Gerät vor. TikTok, Instagram Reels und Facebook Reels sind durch Detektor- und Unit-Tests abgedeckt, erfordern aber weiterhin Qualitätssicherung auf echten Geräten, bevor ihre Funktion in der Produktivversion als bestätigt gilt.\n\nWenn Kurzvideos blockiert sind, kann der Zugriff mit der Eltern-PIN vorübergehend erlaubt werden. Ohne die Eltern-PIN bleibt der Blockierungsbildschirm aktiv, solange ein geschützter Kurzvideo-Bereich geöffnet ist.\n\nDie App erfasst oder übermittelt keine Daten von Kindern, Aktivitäten in unterstützten Apps, Wiedergabeverläufe, Videotitel, URLs, Kontonamen, Kommentare, Nachrichten, Bildschirmaufnahmen, Audiodaten, Standortdaten, Kontakte, Browserverläufe oder Rohdaten des Bedienungshilfen-Baums. Es gibt kein Kontosystem, keine Analysen und keine Werbung. Das Backend wird ausschließlich zur Überprüfung der Google Play-Abrechnung verwendet. Regeln und PIN-Schutz bleiben lokal auf diesem Smartphone.\n\nDie Blockierung funktioniert, wenn der Schutz EINGESCHALTET und der Android-Bedienungshilfedienst aktiv ist. Wird diese Berechtigung deaktiviert oder die App entfernt, endet die Blockierung.</string>
+    <string name="accessibility_disclosure_body">Shorts Blocker Kids verwendet den Android-Bedienungshilfedienst, um zu erkennen, wenn geschützte Kurzvideo-Bereiche geöffnet sind, und einen Blockierungsbildschirm anzuzeigen. Geschützt werden YouTube Shorts, der TikTok-Kurzvideo-Feed, Instagram Reels und Facebook Reels. Das regionale TikTok-Paket com.ss.android.ugc.trill und Facebook Lite werden nicht unterstützt.\n\nWenn Kurzvideos blockiert sind, kann der Zugriff mit der Eltern-PIN vorübergehend erlaubt werden. Ohne die Eltern-PIN bleibt der Blockierungsbildschirm aktiv, solange ein geschützter Kurzvideo-Bereich geöffnet ist.\n\nDie App erfasst oder übermittelt keine Daten von Kindern, Aktivitäten in unterstützten Apps, Wiedergabeverläufe, Videotitel, URLs, Kontonamen, Kommentare, Nachrichten, Bildschirmaufnahmen, Audiodaten, Standortdaten, Kontakte, Browserverläufe oder Rohdaten des Bedienungshilfen-Baums. Es gibt kein Kontosystem, keine Analysen und keine Werbung. Das Backend wird ausschließlich zur Überprüfung der Google Play-Abrechnung verwendet. Regeln und PIN-Schutz bleiben lokal auf diesem Smartphone.\n\nDie Blockierung funktioniert, wenn der Schutz EINGESCHALTET und der Android-Bedienungshilfedienst aktiv ist. Wird diese Berechtigung deaktiviert oder die App entfernt, endet die Blockierung.</string>
     <string name="accessibility_disclosure_accept">Zustimmen und fortfahren</string>
 
     <!-- Privacy policy -->
@@ -48,7 +48,7 @@
 
     <!-- Welcome -->
     <string name="welcome_title">Shorts Blocker Kids</string>
-    <string name="welcome_subtitle">Blockiert unterstützte Kurzvideo-Bereiche auf dem Smartphone eines Kindes.\nKein Konto. Kein Server. Nur Eltern-PIN.</string>
+    <string name="welcome_subtitle">Blockiert unterstützte Kurzvideo-Bereiche auf dem Smartphone eines Kindes.\nKein Konto. Nur Eltern-PIN.</string>
     <string name="welcome_start">Starten</string>
 
     <!-- Protected apps -->

@@ -24,6 +24,8 @@ class PolicyCopyResourceInvariantTest {
         assertTrue(accessibility.wordCount() >= 145)
         assertTrue(privacy.wordCount() >= 120)
         assertTrue(tamper.wordCount() >= 70)
+        assertFalse(accessibility.contains("real-device QA"))
+        assertFalse(accessibility.contains("smoke evidence"))
 
         ACCESSIBILITY_CLAIMS.forEach { claim ->
             assertTrue("Missing accessibility claim: " + claim, accessibility.contains(claim))
@@ -181,9 +183,6 @@ class PolicyCopyResourceInvariantTest {
                 "Facebook Reels",
                 "com.ss.android.ugc.trill",
                 "Facebook Lite are not supported",
-                "prior real-device smoke evidence",
-                "detector and unit coverage",
-                "real-device QA",
                 "parent PIN can temporarily allow access",
                 "does not collect or send child data",
                 "raw Accessibility tree dumps",

@@ -44,7 +44,7 @@ class ReleaseCopyInvariantTest {
         assertTrue(policyResourceText.contains("com.ss.android.ugc.trill"))
         assertTrue(policyResourceText.contains("Facebook Lite"))
         assertTrue(policyResourceText.contains("not supported"))
-        assertTrue(policyResourceText.contains("real-device QA"))
+        assertFalse(policyResourceText.contains("prior real-device smoke evidence"))
         assertFalse(policyResourceText.contains("code-level detectors"))
         assertFalse(policyResourceText.contains("YouTube-only"))
         assertFalse(policyResourceText.contains("supports all"))

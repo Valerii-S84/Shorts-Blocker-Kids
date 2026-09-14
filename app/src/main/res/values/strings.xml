@@ -5,7 +5,7 @@
     <string name="accessibility_service_description">Detects YouTube Shorts, TikTok short-video feed, Instagram Reels, and Facebook Reels locally when protection is enabled and closes the blocking screen after you leave them.</string>
     <string name="blocking_overlay_title">Short video blocked</string>
     <string name="blocking_overlay_message">Parent PIN is required to allow short videos or change protection.</string>
-    <string name="blocking_overlay_exit_shorts">Exit to phone home</string>
+    <string name="blocking_overlay_exit_shorts">Close video</string>
     <string name="blocking_overlay_enter_pin">Enter PIN</string>
     <string name="tamper_protection_label">Shorts Blocker Kids Tamper Protection</string>
     <string name="tamper_protection_description">Optional parent-controlled Device Admin protection that makes uninstall harder while active.</string>
@@ -19,7 +19,7 @@
 
     <!-- Accessibility disclosure -->
     <string name="accessibility_disclosure_title">Accessibility Permission</string>
-    <string name="accessibility_disclosure_body">Shorts Blocker Kids uses Android Accessibility Service to detect when protected short-video surfaces are open and show a blocking overlay. The protected surfaces are YouTube Shorts, TikTok short-video feed, Instagram Reels, and Facebook Reels. TikTok regional package com.ss.android.ugc.trill and Facebook Lite are not supported. YouTube Shorts has prior real-device smoke evidence. TikTok, Instagram Reels, and Facebook Reels have detector and unit coverage, but still require real-device QA before they are production-verified.\n\nWhen short videos are blocked, the parent PIN can temporarily allow access. Without the parent PIN, the blocking overlay stays active while a protected short-video surface is open.\n\nThe app does not collect or send child data, supported app activity, watch history, video titles, URLs, account names, comments, messages, screen recordings, audio, location, contacts, browsing history, or raw Accessibility tree dumps. There is no account system, analytics, or ads. Backend behavior is limited to Google Play billing verification. Rules and PIN protection stay locally on this phone.\n\nBlocking works when Protection is ON and Android Accessibility Service is active. If that permission is turned off or the app is removed, blocking stops.</string>
+    <string name="accessibility_disclosure_body">Shorts Blocker Kids uses Android Accessibility Service to detect when protected short-video surfaces are open and show a blocking overlay. The protected surfaces are YouTube Shorts, TikTok short-video feed, Instagram Reels, and Facebook Reels. TikTok regional package com.ss.android.ugc.trill and Facebook Lite are not supported.\n\nWhen short videos are blocked, the parent PIN can temporarily allow access. Without the parent PIN, the blocking overlay stays active while a protected short-video surface is open.\n\nThe app does not collect or send child data, supported app activity, watch history, video titles, URLs, account names, comments, messages, screen recordings, audio, location, contacts, browsing history, or raw Accessibility tree dumps. There is no account system, analytics, or ads. Backend behavior is limited to Google Play billing verification. Rules and PIN protection stay locally on this phone.\n\nBlocking works when Protection is ON and Android Accessibility Service is active. If that permission is turned off or the app is removed, blocking stops.</string>
     <string name="accessibility_disclosure_accept">I agree and continue</string>
 
     <!-- Privacy policy -->
@@ -48,7 +48,7 @@
 
     <!-- Welcome -->
     <string name="welcome_title">Shorts Blocker Kids</string>
-    <string name="welcome_subtitle">Blocks supported short-video surfaces on a child’s phone.\nNo account. No server. Parent PIN only.</string>
+    <string name="welcome_subtitle">Blocks supported short-video surfaces on a child’s phone.\nNo account. Parent PIN only.</string>
     <string name="welcome_start">Start</string>
 
     <!-- Protected apps -->
