@@ -159,6 +159,30 @@ class HttpBillingVerificationAdapterTest {
     }
 
     @Test
+    fun nullBackendStateAndMissingActiveUntilUseSafeDefaults() {
+        runBlocking {
+            SingleResponseHttpServer(
+                statusCode = 200,
+                responseBody =
+                    """
+                    {
+                      "state": null,
+                      "checked_at_millis": 902
+                    }
+                    """.trimIndent(),
+            ).use { server ->
+                val client = HttpBillingVerificationAdapter(server.baseUrl, nowMillis = { 999L })
+
+                val snapshot = client.refreshEntitlement("install-id")
+
+                assertEquals(BillingEntitlementState.UNKNOWN, snapshot?.state)
+                assertEquals(902L, snapshot?.checkedAtMillis)
+                assertEquals(null, snapshot?.activeUntilMillis)
+            }
+        }
+    }
+
+    @Test
     fun missingStateAndInvalidTimestampsUseSafeDefaults() {
         runBlocking {
             SingleResponseHttpServer(
@@ -183,6 +207,34 @@ class HttpBillingVerificationAdapterTest {
     }
 
     @Test
+    fun purchaseVerificationHttpErrorsSurfaceStatusWithoutResponseBodyDetails() {
+        runBlocking {
+            SingleResponseHttpServer(
+                statusCode = 503,
+                responseBody = """{"error":"purchase token stays private"}""",
+            ).use { server ->
+                val client = HttpBillingVerificationAdapter(server.baseUrl)
+
+                val error =
+                    runCatching {
+                        client.verifyPurchase(
+                            BillingVerificationRequest(
+                                installId = "install-id",
+                                packageName = "com.shortsblockerkids",
+                                productId = PlayBillingConfig.MONTHLY_SUBSCRIPTION_PRODUCT_ID,
+                                purchaseToken = "private-token",
+                                appVersion = "0.1.0",
+                            ),
+                        )
+                    }.exceptionOrNull()
+
+                assertTrue(error is IllegalStateException)
+                assertEquals("Billing backend returned HTTP 503.", error?.message)
+            }
+        }
+    }
+
+    @Test
     fun backendHttpErrorsSurfaceStatusWithoutResponseBodyDetails() {
         runBlocking {
             SingleResponseHttpServer(
@@ -197,6 +249,25 @@ class HttpBillingVerificationAdapterTest {
 
                 assertTrue(error is IllegalStateException)
                 assertEquals("Billing backend returned HTTP 409.", error?.message)
+            }
+        }
+    }
+
+    @Test
+    fun backendHttpErrorsWithoutBodyStillSurfaceOnlyStatus() {
+        runBlocking {
+            SingleResponseHttpServer(
+                statusCode = 500,
+                responseBody = "",
+            ).use { server ->
+                val client = HttpBillingVerificationAdapter(server.baseUrl)
+
+                val error =
+                    runCatching { client.refreshEntitlement("install-id") }
+                        .exceptionOrNull()
+
+                assertTrue(error is IllegalStateException)
+                assertEquals("Billing backend returned HTTP 500.", error?.message)
             }
         }
     }

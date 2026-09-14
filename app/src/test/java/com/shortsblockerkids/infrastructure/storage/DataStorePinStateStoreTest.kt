@@ -182,6 +182,36 @@ class DataStorePinStateStoreTest {
             assertEquals(61_000L, preferences[longPreferencesKey("pinLockoutUntil")])
         }
 
+    @Test
+    fun missingOrBlankCredentialFieldsAreTreatedAsNotConfigured() =
+        runBlocking {
+            val cases =
+                listOf(
+                    CredentialFields(hash = null, salt = "encoded-salt"),
+                    CredentialFields(hash = "", salt = "encoded-salt"),
+                    CredentialFields(hash = "encoded-hash", salt = null),
+                    CredentialFields(hash = "encoded-hash", salt = "   "),
+                )
+
+            cases.forEachIndexed { index, fields ->
+                val dataStore = createDataStore("partial-credential-$index")
+                dataStore.edit { preferences ->
+                    fields.hash?.let { preferences[stringPreferencesKey("pinHash")] = it }
+                    fields.salt?.let { preferences[stringPreferencesKey("pinSalt")] = it }
+                    preferences[intPreferencesKey("failedPinAttempts")] = 2
+                }
+
+                val result =
+                    DataStorePinStateStore(dataStore).verifyAndUpdateAtomically { credential, attemptState ->
+                        assertNull(credential)
+                        assertEquals(PinAttemptState(failedAttempts = 2), attemptState)
+                        PinStateUpdate(PinVerificationResult.NotConfigured)
+                    }
+
+                assertEquals(PinVerificationResult.NotConfigured, result)
+            }
+        }
+
     private fun createDataStore(name: String): DataStore<Preferences> {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         scopes += scope
@@ -245,6 +275,11 @@ class DataStorePinStateStoreTest {
             return delegate.updateData(transform)
         }
     }
+
+    private data class CredentialFields(
+        val hash: String?,
+        val salt: String?,
+    )
 
     private companion object {
         const val LEGACY_SALT_BASE64 = "AAECAwQFBgcICQoLDA0ODw=="

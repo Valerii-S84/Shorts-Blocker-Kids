@@ -216,6 +216,24 @@ class ShortVideoDetectorContractTest {
     }
 
     @Test
+    fun viewPagerClassFallbackBlocksOnlyWithPlatformShortVideoContext() {
+        platformCases.filterNot { platformCase ->
+            platformCase.detector is YouTubeShortsDetector
+        }.forEach { platformCase ->
+            val result =
+                platformCase.detector.detect(
+                    packageName = platformCase.packageName,
+                    snapshot = viewPagerFallbackSnapshot(platformCase),
+                )
+
+            assertEquals(platformCase.name, Confidence.HIGH, result.confidence)
+            assertTrue(platformCase.name, result.shouldBlock)
+            assertTrue(platformCase.name, result.matchedSignals.contains(DetectorSignal.REEL_CONTAINER.id))
+            assertTrue(platformCase.name, result.matchedSignals.contains(DetectorSignal.VERTICAL_FULLSCREEN.id))
+        }
+    }
+
+    @Test
     fun tiktokStrongStructuralEvidenceWithoutContainerDoesNotBlock() {
         val result =
             TikTokShortVideoDetector().detect(
@@ -387,6 +405,30 @@ class ShortVideoDetectorContractTest {
                     node(contentDescriptionSignals = setOf("like"), left = ACTION_RAIL_LEFT, top = 730),
                     node(contentDescriptionSignals = setOf("comment"), left = ACTION_RAIL_LEFT, top = 1_080),
                     node(contentDescriptionSignals = setOf("share"), left = ACTION_RAIL_LEFT, top = 1_430),
+                ),
+        )
+
+    private fun viewPagerFallbackSnapshot(platformCase: PlatformCase): AccessibilityTreeSnapshot =
+        AccessibilityTreeSnapshot(
+            nodes =
+                listOf(
+                    rootNode(),
+                    node(
+                        className = "androidx.viewpager.widget.ViewPager",
+                        viewIdResourceName = "${platformCase.packageName}:id/main_surface",
+                        isScrollable = false,
+                        left = 0,
+                        top = 0,
+                        right = SCREEN_WIDTH,
+                        bottom = SHORT_VIDEO_BOTTOM,
+                        width = SCREEN_WIDTH,
+                        height = SHORT_VIDEO_BOTTOM,
+                        depth = 2,
+                    ),
+                    node(contentDescriptionSignals = setOf(platformCase.explicitSignal), left = 430, top = 40),
+                    node(contentDescriptionSignals = setOf(platformCase.primaryActionSignals[0]), left = ACTION_RAIL_LEFT, top = 730),
+                    node(contentDescriptionSignals = setOf(platformCase.primaryActionSignals[1]), left = ACTION_RAIL_LEFT, top = 1_080),
+                    node(contentDescriptionSignals = setOf(platformCase.primaryActionSignals[2]), left = ACTION_RAIL_LEFT, top = 1_430),
                 ),
         )
 

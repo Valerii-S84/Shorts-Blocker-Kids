@@ -59,6 +59,23 @@ class ShortVideoDetectionEngineTest {
     }
 
     @Test
+    fun nullPackageIsIgnoredWithoutCallingDetector() {
+        val detector =
+            RecordingDetector(
+                supportedPackages = setOf(YouTubeShortsDetector.YOUTUBE_PACKAGE),
+                result = blockingResult(),
+            )
+        val engine = ShortVideoDetectionEngine(listOf(detector))
+
+        val result = engine.detect(null, emptySnapshot())
+
+        assertFalse(engine.supportsPackage(null))
+        assertEquals(null, engine.platformForPackage(null))
+        assertEquals(DetectionResult.None, result)
+        assertEquals(0, detector.callCount)
+    }
+
+    @Test
     fun packageForPlatformWithoutRegisteredDetectorIsIgnored() {
         val engine = ShortVideoDetectionEngine(listOf(YouTubeShortsDetector()))
         val fixture = DetectorFixtureLoader.load("tiktok_feed_high.json")

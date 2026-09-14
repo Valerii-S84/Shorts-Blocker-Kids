@@ -79,6 +79,26 @@ class BillingCoordinatorTest {
     }
 
     @Test
+    fun unavailableProductDetailsDisablePurchaseStart() {
+        val gateway = RecordingPlayBillingGateway()
+        val coordinator = createCoordinator(gateway = gateway)
+
+        gateway.emit(
+            PlayBillingEvent.ProductDetailsLoaded(
+                productPrice = null,
+                isProductAvailable = false,
+                canStartPurchase = false,
+            ),
+        )
+
+        val state = coordinator.uiState.value
+        assertFalse(state.isLoading)
+        assertEquals(null, state.productPrice)
+        assertFalse(state.canStartPurchase)
+        assertEquals(BillingMessageCode.PRODUCT_UNAVAILABLE, state.message.code)
+    }
+
+    @Test
     fun messageOnlyGatewayEventsChangeNoOtherUiState() {
         val gateway = RecordingPlayBillingGateway()
         val coordinator = createCoordinator(gateway = gateway)
@@ -121,6 +141,37 @@ class BillingCoordinatorTest {
         assertTrue(state.canStartPurchase)
         assertEquals(BillingMessageCode.OPEN_PURCHASE_FLOW_FAILED, state.message.code)
         assertEquals(5, state.message.responseCode)
+    }
+
+    @Test
+    fun failureEventCanClearGatewayReadinessAndPurchaseAvailability() {
+        val gateway = RecordingPlayBillingGateway()
+        val coordinator = createCoordinator(gateway = gateway)
+        gateway.emit(PlayBillingEvent.Connected)
+        gateway.emit(
+            PlayBillingEvent.ProductDetailsLoaded(
+                productPrice = "Play price",
+                isProductAvailable = true,
+                canStartPurchase = true,
+            ),
+        )
+
+        gateway.emit(
+            PlayBillingEvent.OperationFailed(
+                operation = PlayBillingOperation.LOAD_PRODUCT_DETAILS,
+                responseCode = 3,
+                isReady = false,
+                canStartPurchase = false,
+            ),
+        )
+
+        val state = coordinator.uiState.value
+        assertFalse(state.isReady)
+        assertFalse(state.isLoading)
+        assertFalse(state.isPurchaseInProgress)
+        assertFalse(state.canStartPurchase)
+        assertEquals(BillingMessageCode.LOAD_SUBSCRIPTION_FAILED, state.message.code)
+        assertEquals(3, state.message.responseCode)
     }
 
     @Test

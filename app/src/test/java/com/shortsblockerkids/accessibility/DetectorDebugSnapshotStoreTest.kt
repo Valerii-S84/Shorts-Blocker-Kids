@@ -33,6 +33,21 @@ class DetectorDebugSnapshotStoreTest {
     }
 
     @Test
+    fun disabledStoreDoesNotListSnapshots() {
+        val store = DetectorDebugSnapshotStore(temporaryFolder.root, isEnabled = false)
+        File(temporaryFolder.root, "youtube_snapshot_1000.txt").writeText("snapshot")
+
+        assertTrue(store.listSnapshots().isEmpty())
+    }
+
+    @Test
+    fun enabledStoreReturnsEmptyListWhenDirectoryDoesNotExist() {
+        val store = DetectorDebugSnapshotStore(File(temporaryFolder.root, "missing"), isEnabled = true)
+
+        assertTrue(store.listSnapshots().isEmpty())
+    }
+
+    @Test
     fun enabledStoreWritesSanitizedSnapshot() {
         val store = DetectorDebugSnapshotStore(temporaryFolder.root, isEnabled = true)
 
@@ -49,9 +64,23 @@ class DetectorDebugSnapshotStoreTest {
         val text = file.readText()
         assertTrue(text.contains("package=com.google.android.youtube"))
         assertTrue(text.contains("id=reel_watch_sequence"))
+        assertTrue(text.contains("id= signals=[] visible=false"))
         assertTrue(text.contains("signals=[like, share]"))
         assertFalse(text.contains("private video title"))
         assertEquals(listOf(file), store.listSnapshots())
+    }
+
+    @Test
+    fun enabledStoreListsOnlySnapshotFilesNewestFirst() {
+        val store = DetectorDebugSnapshotStore(temporaryFolder.root, isEnabled = true)
+        val older = File(temporaryFolder.root, "youtube_snapshot_1000.txt").apply { writeText("older") }
+        val newer = File(temporaryFolder.root, "youtube_snapshot_2000.txt").apply { writeText("newer") }
+        File(temporaryFolder.root, "notes.txt").writeText("ignore")
+        File(temporaryFolder.root, "youtube_snapshot_directory").mkdir()
+        older.setLastModified(1_000L)
+        newer.setLastModified(2_000L)
+
+        assertEquals(listOf(newer, older), store.listSnapshots())
     }
 
     private fun snapshot(): AccessibilityTreeSnapshot =
@@ -72,6 +101,21 @@ class DetectorDebugSnapshotStoreTest {
                         width = 1080,
                         height = 2140,
                         depth = 2,
+                    ),
+                    AccessibilityNodeSignal(
+                        className = "android.view.View",
+                        viewIdResourceName = null,
+                        contentDescriptionSignals = emptySet(),
+                        isClickable = false,
+                        isScrollable = false,
+                        isVisibleToUser = false,
+                        left = 10,
+                        top = 10,
+                        right = 20,
+                        bottom = 20,
+                        width = 10,
+                        height = 10,
+                        depth = 3,
                     ),
                 ),
         )

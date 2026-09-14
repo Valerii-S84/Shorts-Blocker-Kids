@@ -342,6 +342,39 @@ class VerifyPinUseCaseTest {
         }
 
     @Test
+    fun staleIncompleteLegacyLockoutWithoutRateLimitAllowsVerification() =
+        runBlocking {
+            val fixture =
+                fixture(
+                    attemptState = PinAttemptState(failedAttempts = 1, lockoutUntil = 500L),
+                    nowMillis = 1_000L,
+                )
+
+            assertSame(PinVerificationResult.Success, fixture.useCase("4826"))
+            assertEquals(PinAttemptState(), fixture.stateStore.attemptState)
+        }
+
+    @Test
+    fun staleBootMismatchWithoutRateLimitAllowsVerification() =
+        runBlocking {
+            val fixture =
+                fixture(
+                    attemptState =
+                        PinAttemptState(
+                            failedAttempts = 1,
+                            lockoutUntil = 31_000L,
+                            lockoutElapsedRealtimeUntil = 31_000L,
+                            lockoutBootCount = 1,
+                        ),
+                    nowMillis = 1_000L,
+                )
+            fixture.timeProvider.bootCount = 2
+
+            assertSame(PinVerificationResult.Success, fixture.useCase("4826"))
+            assertEquals(PinAttemptState(), fixture.stateStore.attemptState)
+        }
+
+    @Test
     fun failedPinAfterElapsedExpiryEscalatesDespiteWallClockJump() =
         runBlocking {
             val fixture = fixture(attemptState = PinAttemptState(failedAttempts = 4))

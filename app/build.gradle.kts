@@ -186,15 +186,20 @@ val unitTestCoverageExclusions =
         "**/platform/accessibility/diagnostics/LastDetectorResult*.*",
         "**/platform/accessibility/diagnostics/RuntimeProtectionState*.*",
         "**/platform/accessibility/overlay/BlockOverlayController*.*",
+        "**/platform/accessibility/overlay/BlockedPlaybackExit*.*",
         "**/platform/accessibility/routing/AccessibilityEventRouter*.*",
         "**/platform/accessibility/scanning/AccessibilityTreeScanner*.*",
         "**/platform/accessibility/status/AccessibilityServiceStatus*.*",
+        "**/platform/locale/AppLanguage*.*",
+        "**/platform/tamper/TamperProtectionStatus*.*",
         "**/accessibility/ShortsBlockerAccessibilityService*.*",
         "**/infrastructure/billing/GooglePlayBillingGateway*.*",
+        "**/infrastructure/time/AndroidPinLockoutClock*.*",
         "**/presentation/billing/BillingPresentation*.*",
         "**/presentation/dashboard/Dashboard*Callbacks*.*",
         "**/presentation/dashboard/DashboardScreenKt*.*",
         "**/presentation/debug/**",
+        "**/presentation/language/LanguagePickerKt*.*",
         "**/presentation/pin/**",
         "**/presentation/privacy/**",
         "**/presentation/tamper/TamperProtectionDisclosureScreenKt*.*",
@@ -260,7 +265,7 @@ tasks.register<JacocoCoverageVerification>("jacocoDebugUnitTestCoverageVerificat
             limit {
                 counter = "BRANCH"
                 value = "COVEREDRATIO"
-                minimum = "0.90".toBigDecimal()
+                minimum = "0.95".toBigDecimal()
             }
         }
     }
