@@ -103,6 +103,100 @@ class YouTubeShortsDetectorTest {
         assertEquals(listOf(DetectorSignal.SHORTS_IDENTIFIER.id), result.matchedSignals)
     }
 
+    @Test
+    fun homeFeedWithShortsShelfAndGenericPagerDoesNotBlock() {
+        val home = normalYouTubeWatchSnapshot()
+        val snapshot =
+            home.copy(
+                nodes =
+                    home.nodes +
+                        listOf(
+                            node(
+                                className = "androidx.viewpager.widget.ViewPager",
+                                width = 1080,
+                                height = 2100,
+                                isScrollable = true,
+                            ),
+                            node(
+                                viewIdResourceName = "com.google.android.youtube:id/reel_shelf",
+                                width = 1080,
+                                height = 400,
+                            ),
+                        ),
+            )
+        assertFalse(detector.detect(YouTubeShortsDetector.YOUTUBE_PACKAGE, snapshot).shouldBlock)
+    }
+
+    @Test
+    fun fullscreenShortsRecommendationContainerWithoutPlayerActionsDoesNotBlock() {
+        val home = normalYouTubeWatchSnapshot()
+        val snapshot =
+            home.copy(
+                nodes =
+                    home.nodes +
+                        node(
+                            viewIdResourceName = "com.google.android.youtube:id/shorts_container",
+                            width = 1080,
+                            height = 2100,
+                            isScrollable = true,
+                        ),
+            )
+        assertFalse(detector.detect(YouTubeShortsDetector.YOUTUBE_PACKAGE, snapshot).shouldBlock)
+    }
+
+    @Test
+    fun largeUnknownShortsSurfaceWithActionRailBlocks() {
+        val result =
+            detector.detect(
+                YouTubeShortsDetector.YOUTUBE_PACKAGE,
+                genericShortsSurfaceSnapshot(surfaceHeight = 2100),
+            )
+
+        assertTrue(result.shouldBlock)
+        assertEquals(Confidence.HIGH, result.confidence)
+        assertTrue(result.matchedSignals.contains(DetectorSignal.REEL_CONTAINER.id))
+    }
+
+    @Test
+    fun shortUnknownShortsSurfaceWithActionRailStaysBelowBlockingConfidence() {
+        val result =
+            detector.detect(
+                YouTubeShortsDetector.YOUTUBE_PACKAGE,
+                genericShortsSurfaceSnapshot(surfaceHeight = 1100),
+            )
+
+        assertFalse(result.shouldBlock)
+        assertEquals(Confidence.MEDIUM, result.confidence)
+        assertFalse(result.matchedSignals.contains(DetectorSignal.REEL_CONTAINER.id))
+    }
+
+    @Test
+    fun hiddenPlayerBehindHomeFeedDoesNotBlock() {
+        val player = shortsSnapshot()
+        val snapshot =
+            player.copy(
+                nodes =
+                    player.nodes.map { node ->
+                        if (node.viewIdResourceName?.endsWith("reel_watch_sequence") == true) {
+                            node.copy(isVisibleToUser = false)
+                        } else {
+                            node
+                        }
+                    },
+            )
+        assertFalse(detector.detect(YouTubeShortsDetector.YOUTUBE_PACKAGE, snapshot).shouldBlock)
+    }
+
+    @Test
+    fun dedicatedFullscreenPlayerBlocksWithoutLocalizedActionLabels() {
+        val snapshot =
+            shortsSnapshot().copy(
+                nodes = shortsSnapshot().nodes.map { it.copy(contentDescriptionSignals = emptySet()) },
+            )
+
+        assertTrue(detector.detect(YouTubeShortsDetector.YOUTUBE_PACKAGE, snapshot).shouldBlock)
+    }
+
     private fun normalYouTubeWatchSnapshot(): AccessibilityTreeSnapshot =
         AccessibilityTreeSnapshot(
             nodes =
@@ -138,6 +232,26 @@ class YouTubeShortsDetectorTest {
                         isScrollable = true,
                     ),
                     node(contentDescriptionSignals = contentDescriptionSignals, left = 40, top = 40),
+                    node(contentDescriptionSignals = setOf("like"), left = 930, top = 780),
+                    node(contentDescriptionSignals = setOf("comments"), left = 930, top = 1110),
+                    node(contentDescriptionSignals = setOf("share"), left = 930, top = 1440),
+                ),
+        )
+
+    private fun genericShortsSurfaceSnapshot(surfaceHeight: Int): AccessibilityTreeSnapshot =
+        AccessibilityTreeSnapshot(
+            nodes =
+                listOf(
+                    node(width = 1080, height = 2200, right = 1080, bottom = 2200, depth = 0),
+                    node(
+                        viewIdResourceName = "com.google.android.youtube:id/shorts_unknown_surface",
+                        width = 1080,
+                        height = surfaceHeight,
+                        right = 1080,
+                        bottom = surfaceHeight,
+                        depth = 2,
+                        isScrollable = true,
+                    ),
                     node(contentDescriptionSignals = setOf("like"), left = 930, top = 780),
                     node(contentDescriptionSignals = setOf("comments"), left = 930, top = 1110),
                     node(contentDescriptionSignals = setOf("share"), left = 930, top = 1440),

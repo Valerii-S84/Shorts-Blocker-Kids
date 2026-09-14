@@ -130,9 +130,13 @@ class DetectorBranchHardeningTest {
                         ),
                 )
 
-            assertFalse(detectorCase.name, leftRailResult.shouldBlock)
-            assertFalse(detectorCase.name, compactRailResult.shouldBlock)
-            assertFalse(detectorCase.name, hiddenRailResult.shouldBlock)
+            val actionRailSignal = com.shortsblockerkids.domain.detection.DetectorSignal.ACTION_RAIL.id
+            listOf(leftRailResult, compactRailResult, hiddenRailResult).forEach { result ->
+                assertFalse(detectorCase.name, result.matchedSignals.contains(actionRailSignal))
+                if (detectorCase != youtubeCase) {
+                    assertFalse(detectorCase.name, result.shouldBlock)
+                }
+            }
         }
     }
 
@@ -175,7 +179,7 @@ class DetectorBranchHardeningTest {
     }
 
     @Test
-    fun youtubeBlocksEveryHighConfidenceShortsCombination() {
+    fun youtubeBlocksDedicatedPlayerWithoutActionsButRejectsGenericPager() {
         val detector = YouTubeShortsDetector()
 
         val identifierAndReel =
@@ -210,7 +214,7 @@ class DetectorBranchHardeningTest {
             )
 
         assertTrue(identifierAndReel.shouldBlock)
-        assertTrue(identifierActionAndFeed.shouldBlock)
+        assertFalse(identifierActionAndFeed.shouldBlock)
         assertTrue(reelAndAction.shouldBlock)
     }
 

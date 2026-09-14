@@ -100,6 +100,17 @@ class YouTubeShortsDetectorFixtureTest {
     }
 
     @Test
+    fun shortsWithGenericReelPlayerIdRemainBlocked() {
+        val result = detectFixture("youtube_shorts_reel_generic_player_id_high.json")
+
+        assertEquals(Confidence.HIGH, result.confidence)
+        assertTrue(result.shouldBlock)
+        assertTrue(result.matchedSignals.contains(DetectorSignal.REEL_CONTAINER.id))
+        assertTrue(result.matchedSignals.contains(DetectorSignal.ACTION_RAIL.id))
+        assertTrue(result.matchedSignals.contains(DetectorSignal.VERTICAL_FULLSCREEN.id))
+    }
+
+    @Test
     fun switchingFromNormalVideoToShortsTriggersBlockerDecisionInput() {
         val normal = detectFixture("youtube_normal_video.json")
         val shorts = detectFixture("youtube_shorts_reel_high.json")

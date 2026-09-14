@@ -21,6 +21,10 @@ class YouTubeShortsDetector(
         val hasActionRail = snapshot.hasShortsActionRail(matchedSignals)
         val hasVerticalFullscreen = snapshot.hasVerticalFullscreen(matchedSignals)
         val hasRepeatedVerticalFeed = snapshot.hasRepeatedVerticalFeed(matchedSignals)
+        val hasDedicatedPlayer =
+            snapshot.hasVerticalFullscreenSignal(matchedSignals) {
+                it.viewIdResourceName?.substringAfterLast('/') in DEDICATED_PLAYER_VIEW_IDS
+            }
 
         val score =
             weightedScore(
@@ -33,12 +37,11 @@ class YouTubeShortsDetector(
 
         val confidence =
             when {
+                hasDedicatedPlayer -> Confidence.HIGH
                 isHighConfidenceShorts(
-                    hasShortsIdentifier = hasShortsIdentifier,
                     hasReelContainer = hasReelContainer,
                     hasActionRail = hasActionRail,
                     hasVerticalFullscreen = hasVerticalFullscreen,
-                    hasRepeatedVerticalFeed = hasRepeatedVerticalFeed,
                 ) -> Confidence.HIGH
                 score >= 4 && hasShortsIdentifier -> Confidence.MEDIUM
                 score > 0 -> Confidence.LOW
@@ -51,8 +54,11 @@ class YouTubeShortsDetector(
     private fun AccessibilityTreeSnapshot.hasShortsIdentifier(matchedSignals: MutableSet<DetectorSignal>): Boolean {
         val matched =
             nodes.any { node ->
-                node.contentDescriptionSignals.any { it in ShortVideoTextSignals.shortsIdentifiers } ||
-                    node.viewIdResourceName.containsAnyIgnoringCase("shorts")
+                node.isVisibleToUser &&
+                    (
+                        node.contentDescriptionSignals.any { it in ShortVideoTextSignals.shortsIdentifiers } ||
+                            node.viewIdResourceName.containsAnyIgnoringCase("shorts")
+                    )
             }
 
         if (matched) {
@@ -65,15 +71,7 @@ class YouTubeShortsDetector(
     private fun AccessibilityTreeSnapshot.hasReelContainer(matchedSignals: MutableSet<DetectorSignal>): Boolean {
         val matched =
             nodes.any { node ->
-                node.viewIdResourceName.containsAnyIgnoringCase(
-                    "reel",
-                    "reel_watch_sequence",
-                    "reel_player_page",
-                    "shorts_player",
-                    "shorts_watch",
-                    "shorts_video",
-                    "shorts_container",
-                )
+                node.isVisibleToUser && node.isShortsContainerCandidate()
             }
 
         if (matched) {
@@ -97,30 +95,45 @@ class YouTubeShortsDetector(
         hasRepeatedVerticalFeedSignal(matchedSignals) { it.isShortsSurfaceCandidate() }
 
     private fun isHighConfidenceShorts(
-        hasShortsIdentifier: Boolean,
         hasReelContainer: Boolean,
         hasActionRail: Boolean,
         hasVerticalFullscreen: Boolean,
-        hasRepeatedVerticalFeed: Boolean,
     ): Boolean {
         if (!hasVerticalFullscreen) {
             return false
         }
 
-        return hasReelContainer &&
-            hasActionRail ||
-            hasShortsIdentifier &&
-            hasReelContainer ||
-            hasShortsIdentifier &&
-            hasActionRail &&
-            hasRepeatedVerticalFeed
+        return hasReelContainer && hasActionRail
     }
 
     private fun AccessibilityNodeSignal.isShortsSurfaceCandidate(): Boolean =
-        viewIdResourceName.containsAnyIgnoringCase("reel", "shorts") ||
+        isShortsContainerCandidate() ||
             className.containsAnyIgnoringCase("viewpager")
+
+    private fun AccessibilityNodeSignal.isShortsContainerCandidate(): Boolean =
+        viewIdResourceName?.substringAfterLast('/') in PLAYER_VIEW_IDS ||
+            viewIdResourceName.containsAnyIgnoringCase("reel") ||
+            isLargeShortsViewId()
+
+    private fun AccessibilityNodeSignal.isLargeShortsViewId(): Boolean =
+        viewIdResourceName.containsAnyIgnoringCase("shorts") &&
+            width >= YOUTUBE_MIN_SURFACE_WIDTH &&
+            height >= YOUTUBE_MIN_SURFACE_HEIGHT
 
     companion object {
         const val YOUTUBE_PACKAGE = "com.google.android.youtube"
+        private val PLAYER_VIEW_IDS =
+            setOf(
+                "reel_watch_sequence",
+                "reel_player_page",
+                "reel_player_view",
+                "shorts_player",
+                "shorts_watch",
+                "shorts_video",
+                "shorts_container",
+            )
+        private val DEDICATED_PLAYER_VIEW_IDS = PLAYER_VIEW_IDS - "shorts_container"
+        private const val YOUTUBE_MIN_SURFACE_WIDTH = 720
+        private const val YOUTUBE_MIN_SURFACE_HEIGHT = 1200
     }
 }
