@@ -1,135 +1,143 @@
 package com.shortsblockerkids.accessibility
 
 import com.shortsblockerkids.platform.accessibility.overlay.DelayedActionScheduler
-import com.shortsblockerkids.platform.accessibility.overlay.PhoneHomeAction
 import com.shortsblockerkids.platform.accessibility.overlay.PhoneHomeExitController
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.io.File
 
 class PhoneHomeExitControllerTest {
     @Test
-    fun successfulExitCallsPhoneHomeAndSchedulesOverlayDismiss() {
-        val action = RecordingPhoneHomeAction(result = true)
-        val scheduler = RecordingDelayedActionScheduler()
-        var completionCount = 0
-        val controller =
-            PhoneHomeExitController(
-                phoneHomeAction = action,
-                delayedActionScheduler = scheduler,
-                onExitCompleted = { completionCount += 1 },
-            )
-
-        val exited = controller.exitToPhoneHome()
-
-        assertTrue(exited)
-        assertEquals(1, action.callCount)
-        assertEquals(PhoneHomeExitController.EXIT_DISMISS_DELAY_MS, scheduler.delayMillis)
-        assertEquals(0, completionCount)
-
-        scheduler.runScheduledAction()
-
-        assertEquals(1, completionCount)
+    fun waitsForTwoConfirmedClosedObservationsBeforeDismissing() {
+        val scenario = ExitScenario()
+        scenario.closed = true
+        scenario.controller.exitShorts()
+        assertEquals(0, scenario.completed)
+        scenario.tick()
+        assertEquals(0, scenario.completed)
+        scenario.tick()
+        assertEquals(1, scenario.completed)
     }
 
     @Test
-    fun failedExitKeepsOverlayVisibleAndAllowsRetry() {
-        val action = RecordingPhoneHomeAction(result = false)
-        val scheduler = RecordingDelayedActionScheduler()
-        var completionCount = 0
-        val controller =
-            PhoneHomeExitController(
-                phoneHomeAction = action,
-                delayedActionScheduler = scheduler,
-                onExitCompleted = { completionCount += 1 },
-            )
-
-        val failed = controller.exitToPhoneHome()
-        assertFalse(failed)
-        assertEquals(1, action.callCount)
-        assertEquals(null, scheduler.delayMillis)
-        assertEquals(0, completionCount)
-
-        action.result = true
-        val retried = controller.exitToPhoneHome()
-        scheduler.runScheduledAction()
-
-        assertTrue(retried)
-        assertEquals(2, action.callCount)
-        assertEquals(PhoneHomeExitController.EXIT_DISMISS_DELAY_MS, scheduler.delayMillis)
-        assertEquals(1, completionCount)
+    fun acceptedBackActionDoesNotDismissWhileVideoOrPipRemains() {
+        val scenario = ExitScenario()
+        scenario.controller.exitShorts()
+        repeat(PhoneHomeExitController.MAX_EXIT_ATTEMPTS) { scenario.tick() }
+        assertEquals(0, scenario.completed)
+        assertEquals(1, scenario.failed)
+        assertEquals(PhoneHomeExitController.MAX_EXIT_ATTEMPTS, scenario.actions)
     }
 
     @Test
-    fun successfulExitDismissesOverlayWithoutSecondTap() {
-        val action = RecordingPhoneHomeAction(result = true)
-        val scheduler = RecordingDelayedActionScheduler()
-        var completionCount = 0
-        val controller =
-            PhoneHomeExitController(
-                phoneHomeAction = action,
-                delayedActionScheduler = scheduler,
-                onExitCompleted = { completionCount += 1 },
-            )
-
-        controller.exitToPhoneHome()
-        scheduler.runScheduledAction()
-
-        assertEquals(1, action.callCount)
-        assertEquals(1, completionCount)
+    fun pictureInPictureAppearingDuringTransitionKeepsOverlay() {
+        val scenario = ExitScenario()
+        scenario.closed = true
+        scenario.controller.exitShorts()
+        scenario.tick()
+        scenario.closed = false
+        scenario.tick()
+        assertEquals(0, scenario.completed)
+        assertEquals(2, scenario.actions)
     }
 
     @Test
-    fun blockOverlayExitUsesHomeActionWithoutYouTubeNavigationFallbacks() {
-        val source = blockOverlayControllerSource()
-
-        assertTrue(source.contains("GLOBAL_ACTION_HOME"))
-        assertFalse(source.contains("bottom_bar_home"))
-        assertFalse(source.contains("AccessibilityNodeInfo.ACTION_CLICK"))
-        assertFalse(source.contains("Intent.ACTION_VIEW"))
-        assertFalse(source.contains("https://www.youtube.com/"))
-        assertFalse(source.contains("GLOBAL_ACTION_BACK"))
+    fun failedActionKeepsOverlayAndAllowsRetry() {
+        val scenario = ExitScenario()
+        scenario.actionAccepted = false
+        scenario.controller.exitShorts()
+        repeat(PhoneHomeExitController.MAX_EXIT_ATTEMPTS) { scenario.tick() }
+        assertEquals(1, scenario.failed)
+        assertEquals(0, scenario.completed)
+        scenario.actionAccepted = true
+        scenario.closed = true
+        scenario.controller.exitShorts()
+        scenario.tick()
+        scenario.tick()
+        assertEquals(1, scenario.completed)
     }
 
-    private fun blockOverlayControllerSource(): String {
-        val path =
-            listOf(
-                "src/main/java/com/shortsblockerkids/platform/accessibility/overlay/BlockOverlayController.kt",
-                "app/src/main/java/com/shortsblockerkids/platform/accessibility/overlay/BlockOverlayController.kt",
-            ).map(::File)
-                .first(File::isFile)
-        return path.readText()
+    @Test
+    fun temporarilyUnavailableWindowIsRetriedBeforeFailing() {
+        val scenario = ExitScenario()
+        scenario.actionAccepted = false
+        scenario.controller.exitShorts()
+        assertEquals(0, scenario.failed)
+        scenario.actionAccepted = true
+        scenario.closed = true
+        repeat(3) { scenario.tick() }
+        assertEquals(1, scenario.completed)
+        assertEquals(0, scenario.failed)
     }
 
-    private class RecordingPhoneHomeAction(
-        var result: Boolean,
-    ) : PhoneHomeAction {
-        var callCount = 0
-            private set
-
-        override fun exitToPhoneHome(): Boolean {
-            callCount += 1
-            return result
-        }
+    @Test
+    fun cancelledExitCannotDismissNewOverlay() {
+        val scenario = ExitScenario()
+        scenario.closed = true
+        scenario.controller.exitShorts()
+        scenario.tick()
+        scenario.controller.cancel()
+        scenario.tick()
+        assertEquals(0, scenario.completed)
     }
 
-    private class RecordingDelayedActionScheduler : DelayedActionScheduler {
-        var delayMillis: Long? = null
-            private set
-        private var scheduledAction: (() -> Unit)? = null
+    @Test
+    fun cancelBeforeAcceptedExitCheckDropsScheduledCheck() {
+        val scenario = ExitScenario()
+        scenario.closed = true
+        scenario.controller.exitShorts()
 
-        override fun schedule(
-            delayMillis: Long,
-            action: () -> Unit,
-        ) {
-            this.delayMillis = delayMillis
-            scheduledAction = action
-        }
+        scenario.controller.cancel()
+        scenario.tick()
 
-        fun runScheduledAction() {
-            scheduledAction?.invoke()
+        assertEquals(0, scenario.completed)
+        assertEquals(0, scenario.failed)
+    }
+
+    @Test
+    fun cancelBeforeFailedActionRetryDropsScheduledRetry() {
+        val scenario = ExitScenario()
+        scenario.actionAccepted = false
+        scenario.controller.exitShorts()
+
+        scenario.controller.cancel()
+        scenario.actionAccepted = true
+        scenario.closed = true
+        scenario.tick()
+
+        assertEquals(0, scenario.completed)
+        assertEquals(0, scenario.failed)
+        assertEquals(1, scenario.actions)
+    }
+
+    @Test
+    fun repeatedTapDoesNotStartOverlappingExitActions() {
+        val scenario = ExitScenario()
+        scenario.controller.exitShorts()
+        scenario.controller.exitShorts()
+        assertEquals(1, scenario.actions)
+    }
+
+    private class ExitScenario {
+        var actionAccepted = true
+        var closed = false
+        var actions = 0
+        var completed = 0
+        var failed = 0
+        private val scheduled = ArrayDeque<() -> Unit>()
+        val controller =
+            PhoneHomeExitController(
+                exitAction = {
+                    actions += 1
+                    actionAccepted
+                },
+                isPlaybackClosed = { closed },
+                delayedActionScheduler = DelayedActionScheduler { _, action -> scheduled.addLast(action) },
+                onExitCompleted = { completed += 1 },
+                onExitFailed = { failed += 1 },
+            )
+
+        fun tick() {
+            scheduled.removeFirst().invoke()
         }
     }
 }

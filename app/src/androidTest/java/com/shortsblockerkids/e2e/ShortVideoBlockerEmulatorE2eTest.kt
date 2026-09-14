@@ -1,5 +1,6 @@
 package com.shortsblockerkids.e2e
 
+import android.accessibilityservice.AccessibilityServiceInfo
 import android.app.LocaleManager
 import android.app.UiAutomation
 import android.content.ComponentName
@@ -56,6 +57,10 @@ class ShortVideoBlockerEmulatorE2eTest {
 
     @Before
     fun setUp() {
+        uiAutomation.serviceInfo =
+            uiAutomation.serviceInfo.apply {
+                flags = flags or AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
+            }
         originalApplicationLocales = currentApplicationLocales()
         resetProtectionEnvironment()
         clearApplicationLocale()

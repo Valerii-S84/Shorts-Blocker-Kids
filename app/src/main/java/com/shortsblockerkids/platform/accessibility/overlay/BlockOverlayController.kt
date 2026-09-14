@@ -17,6 +17,7 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import com.shortsblockerkids.R
+import com.shortsblockerkids.platform.locale.AppLanguage
 import kotlin.math.roundToInt
 
 class BlockOverlayController(
@@ -28,12 +29,13 @@ class BlockOverlayController(
 ) {
     private val windowManager = service.getSystemService(WindowManager::class.java)
     private val mainHandler = Handler(Looper.getMainLooper())
-    private val phoneHomeExitController =
+    private val playbackExit = BlockedPlaybackExit(service)
+    private var exitButton: Button? = null
+    private var pinButton: Button? = null
+    private val exitController =
         PhoneHomeExitController(
-            phoneHomeAction =
-                PhoneHomeAction {
-                    service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME)
-                },
+            exitAction = playbackExit::exitPlayer,
+            isPlaybackClosed = playbackExit::isPlaybackClosed,
             delayedActionScheduler =
                 DelayedActionScheduler { delayMillis, action ->
                     mainHandler.postDelayed({ action() }, delayMillis)
@@ -41,6 +43,10 @@ class BlockOverlayController(
             onExitCompleted = {
                 dismissOverlay()
                 onShortsCloseCompleted()
+            },
+            onExitFailed = {
+                exitButton?.isEnabled = true
+                pinButton?.isEnabled = true
             },
         )
     private var overlayView: View? = null
@@ -53,6 +59,7 @@ class BlockOverlayController(
             return false
         }
 
+        playbackExit.captureBlockedPackage()
         val view = buildOverlayView()
         val params =
             WindowManager
@@ -60,7 +67,8 @@ class BlockOverlayController(
                     WindowManager.LayoutParams.MATCH_PARENT,
                     WindowManager.LayoutParams.MATCH_PARENT,
                     WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
-                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                        WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
                     PixelFormat.TRANSLUCENT,
                 ).apply {
                     gravity = Gravity.CENTER
@@ -74,6 +82,9 @@ class BlockOverlayController(
     }
 
     fun dismissOverlay() {
+        exitController.cancel()
+        exitButton = null
+        pinButton = null
         val view = overlayView
         overlayView = null
         if (view == null) {
@@ -115,7 +126,7 @@ class BlockOverlayController(
 
     private fun appNameText(): TextView =
         TextView(service).apply {
-            text = service.getString(R.string.app_name)
+            text = localizedString(R.string.app_name)
             setTextColor(BRAND_COLOR)
             textSize = if (isCompactHeight()) 16f else 18f
             gravity = Gravity.CENTER
@@ -125,7 +136,7 @@ class BlockOverlayController(
 
     private fun titleText(): TextView =
         TextView(service).apply {
-            text = service.getString(R.string.blocking_overlay_title)
+            text = localizedString(R.string.blocking_overlay_title)
             setTextColor(Color.rgb(24, 31, 44))
             textSize = if (isCompactHeight()) 26f else 32f
             gravity = Gravity.CENTER
@@ -135,7 +146,7 @@ class BlockOverlayController(
 
     private fun messageText(): TextView =
         TextView(service).apply {
-            text = service.getString(R.string.blocking_overlay_message)
+            text = localizedString(R.string.blocking_overlay_message)
             setTextColor(Color.rgb(54, 65, 82))
             textSize = if (isCompactHeight()) 16f else 18f
             gravity = Gravity.CENTER
@@ -158,22 +169,23 @@ class BlockOverlayController(
 
     private fun exitShortsButton(): Button =
         overlayButton(
-            text = service.getString(R.string.blocking_overlay_exit_shorts),
+            text = localizedString(R.string.blocking_overlay_exit_shorts),
             backgroundColor = BRAND_COLOR,
             textColor = Color.WHITE,
         ).apply {
+            exitButton = this
             setOnClickListener {
-                isEnabled = false
-                exitToPhoneHome(this)
+                requestPlayerExit()
             }
         }
 
     private fun enterPinButton(): Button =
         overlayButton(
-            text = service.getString(R.string.blocking_overlay_enter_pin),
+            text = localizedString(R.string.blocking_overlay_enter_pin),
             backgroundColor = Color.WHITE,
             textColor = BRAND_COLOR,
         ).apply {
+            pinButton = this
             background =
                 roundedBackground(
                     color = Color.WHITE,
@@ -202,10 +214,12 @@ class BlockOverlayController(
             setPadding(16.dp(), 10.dp(), 16.dp(), 10.dp())
         }
 
-    private fun exitToPhoneHome(button: Button) {
-        if (!phoneHomeExitController.exitToPhoneHome()) {
-            button.isEnabled = true
-        }
+    private fun localizedString(resourceId: Int): String = AppLanguage.localizedContext(service).getString(resourceId)
+
+    private fun requestPlayerExit() {
+        exitButton?.isEnabled = false
+        pinButton?.isEnabled = false
+        exitController.exitShorts()
     }
 
     private fun frameMatchParent(): FrameLayout.LayoutParams =
