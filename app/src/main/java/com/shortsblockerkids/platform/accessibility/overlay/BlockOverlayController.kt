@@ -50,15 +50,25 @@ class BlockOverlayController(
             },
         )
     private var overlayView: View? = null
+    private var fallbackExitController: PhoneHomeExitController? = null
 
     val isOverlayVisible: Boolean
         get() = overlayView != null
 
     fun showBlockedOverlay(): Boolean {
         if (overlayView != null) {
-            return false
+            return true
         }
 
+        return try {
+            addBlockedOverlay()
+        } catch (_: RuntimeException) {
+            // Window/context failures are handled by the router's bounded exit fallback.
+            false
+        }
+    }
+
+    private fun addBlockedOverlay(): Boolean {
         playbackExit.captureBlockedPackage()
         val view = buildOverlayView()
         val params =
@@ -81,7 +91,48 @@ class BlockOverlayController(
         }.getOrDefault(false)
     }
 
+    fun exitBlockedPlayback(packageName: String, completed: (Boolean) -> Unit) {
+        if (overlayView == null) {
+            completed(false)
+            return
+        }
+        exitButton?.isEnabled = false
+        pinButton?.isEnabled = false
+        // Keep the barrier until the bounded, package-guarded exit is confirmed.
+        exitAfterOverlayFailure(packageName) { closed ->
+            completed(closed)
+            if (closed) {
+                dismissOverlay()
+                onShortsCloseCompleted()
+            } else {
+                exitButton?.isEnabled = true
+                pinButton?.isEnabled = true
+            }
+        }
+    }
+
+    fun exitAfterOverlayFailure(packageName: String, completed: (Boolean) -> Unit) {
+        fallbackExitController?.cancel()
+        val fallback = PhoneHomeExitController(
+            exitAction = {
+                runCatching { playbackExit.exitIfStillDetected(packageName) }.getOrDefault(false)
+            },
+            isPlaybackClosed = {
+                runCatching { playbackExit.isPlaybackClosed() }.getOrDefault(false)
+            },
+            delayedActionScheduler = DelayedActionScheduler { delayMillis, action ->
+                mainHandler.postDelayed({ action() }, delayMillis)
+            },
+            onExitCompleted = { completed(true) },
+            onExitFailed = { completed(false) },
+        )
+        fallbackExitController = fallback
+        fallback.exitShorts()
+    }
+
     fun dismissOverlay() {
+        fallbackExitController?.cancel()
+        fallbackExitController = null
         exitController.cancel()
         exitButton = null
         pinButton = null

@@ -8,6 +8,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.Button
+import androidx.compose.foundation.layout.Column
+import androidx.compose.ui.res.stringResource
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -18,7 +22,10 @@ import com.shortsblockerkids.application.model.AppSettingsSnapshot
 import com.shortsblockerkids.application.pin.CreatePinUseCase
 import com.shortsblockerkids.application.pin.VerifyPinUseCase
 import com.shortsblockerkids.application.port.AccessibilityServiceStatusPort
-import com.shortsblockerkids.application.protection.ClearExpiredTemporaryAllowUseCase
+import com.shortsblockerkids.application.settings.ObserveSettingsUseCase
+import com.shortsblockerkids.application.settings.SettingsReadState
+import com.shortsblockerkids.application.port.SettingsStatePort
+import com.shortsblockerkids.application.port.TimeProvider
 import com.shortsblockerkids.application.protection.RecordSuccessfulProtectionActivationUseCase
 import com.shortsblockerkids.application.protection.SetTemporaryAllowUseCase
 import com.shortsblockerkids.composition.dashboard.DashboardUiStateAssembler
@@ -42,9 +49,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 
 class MainActivity : ComponentActivity() {
     override fun attachBaseContext(newBase: Context) {
@@ -54,7 +61,9 @@ class MainActivity : ComponentActivity() {
     private lateinit var settingsStore: DataStoreSettingsStore
     private lateinit var billingCoordinator: BillingCoordinator
     private val activityScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-    private val settingsState = mutableStateOf(AppSettingsSnapshot())
+    private val settingsState = mutableStateOf<AppSettingsSnapshot?>(null)
+    private val settingsReadState = mutableStateOf<SettingsReadState>(SettingsReadState.Loading)
+    private var settingsJob: Job? = null
     private val accessibilityEnabledState = mutableStateOf(false)
     private val tamperProtectionEnabledState = mutableStateOf(false)
     private val temporaryAllowRequestState = mutableStateOf(false)
@@ -91,49 +100,28 @@ class MainActivity : ComponentActivity() {
                 timeProvider = timeProvider,
                 temporaryAllowStore = settingsStore,
             )
-        val clearExpiredTemporaryAllowUseCase =
-            ClearExpiredTemporaryAllowUseCase(
-                timeProvider = timeProvider,
-                temporaryAllowStore = settingsStore,
-            )
-        val syncBillingEntitlementUseCase =
-            SyncBillingEntitlementUseCase(
-                billingVerificationPort =
-                    HttpBillingVerificationAdapter.fromBaseUrl(
-                        BuildConfig.BILLING_BACKEND_BASE_URL,
-                        AndroidBillingInstallationStore(applicationContext.noBackupFilesDir),
-                    ),
-                timeProvider = timeProvider,
-                configuration =
-                    BillingSyncConfiguration(
-                        installId =
-                            runBlocking { settingsStore.getOrCreateBillingInstallationId() },
-                        packageName = applicationContext.packageName,
-                        productId = PlayBillingConfig.MONTHLY_SUBSCRIPTION_PRODUCT_ID,
-                        appVersion = BuildConfig.VERSION_NAME,
-                        clientOnlyModeRequested = BuildConfig.BILLING_CLIENT_ONLY_TEST_MODE,
-                        internalTestingBuild = BuildConfig.DEBUG,
-                    ),
-            )
-        billingCoordinator =
-            BillingCoordinator(
-                billingGateway = GooglePlayBillingGateway(this),
-                syncBillingEntitlementUseCase = syncBillingEntitlementUseCase,
-                onEntitlementChanged = { snapshot ->
-                    activityScope.launch {
-                        settingsStore.updateBillingEntitlement(snapshot)
-                    }
-                },
-                billingScope = activityScope,
-            )
         temporaryAllowRequestState.value = intent.isTemporaryAllowRequest()
-        loadInitialSettings()
-        observeSettings(clearExpiredTemporaryAllowUseCase)
+        observeSettings()
         refreshState()
 
         setContent {
             ShortsBlockerKidsTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
+                    if (settingsReadState.value !is SettingsReadState.Ready) {
+                        Column {
+                            Text(stringResource(
+                                if (settingsReadState.value is SettingsReadState.Loading)
+                                    R.string.settings_loading else R.string.settings_unavailable,
+                            ))
+                            val failure = settingsReadState.value as? SettingsReadState.Unavailable
+                            if (failure != null && !failure.retryScheduled) {
+                                Button(onClick = ::observeSettings) {
+                                    Text(stringResource(R.string.settings_retry))
+                                }
+                            }
+                        }
+                        return@Surface
+                    }
                     val billingUiState by billingCoordinator.uiState.collectAsState()
                     ShortsBlockerKidsApp(
                         languagePicker = {
@@ -143,7 +131,7 @@ class MainActivity : ComponentActivity() {
                         },
                         dashboardUiStateProvider = {
                             dashboardUiStateAssembler.create(
-                                settings = settingsState.value,
+                                settings = checkNotNull(settingsState.value),
                                 billingUiState = billingUiState,
                                 isAccessibilityServiceEnabled =
                                     accessibilityEnabledState.value,
@@ -216,31 +204,66 @@ class MainActivity : ComponentActivity() {
         super.onDestroy()
     }
 
-    private fun observeSettings(clearExpiredTemporaryAllowUseCase: ClearExpiredTemporaryAllowUseCase) {
-        activityScope.launch {
-            settingsStore.readSettings().collect { settings ->
-                val temporaryAllowRemoved = clearExpiredTemporaryAllowUseCase()
-                settingsState.value =
-                    if (temporaryAllowRemoved) {
-                        settings.copy(
-                            protectionConfiguration =
-                                settings.protectionConfiguration.copy(
-                                    temporaryAllowUntilMillis = null,
-                                ),
-                        )
-                    } else {
-                        settings
+    private fun observeSettings() {
+        settingsJob?.cancel()
+        settingsReadState.value = SettingsReadState.Loading
+        settingsJob = activityScope.launch {
+            var installationId: String? = null
+            val initialStatePort = object : SettingsStatePort {
+                override fun readSettings() = settingsStore.readSettings().map { snapshot ->
+                    if (!::billingCoordinator.isInitialized && installationId == null) {
+                        installationId = settingsStore.getOrCreateBillingInstallationId()
                     }
+                    snapshot
+                }
+            }
+            ObserveSettingsUseCase(initialStatePort)().collect { state ->
+                if (state is SettingsReadState.Ready) {
+                    if (!::billingCoordinator.isInitialized) {
+                        initializeBilling(checkNotNull(installationId), SystemTimeProvider())
+                        if (lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)) {
+                            billingCoordinator.start()
+                        }
+                    }
+                    settingsState.value = state.snapshot
+                }
+                // Removing the app content also removes any PIN/settings navigation on failure.
+                settingsReadState.value = state
             }
         }
     }
 
-    private fun loadInitialSettings() {
-        val initialSettings =
-            runBlocking {
-                settingsStore.readSettings().first()
-            }
-        settingsState.value = initialSettings
+    private fun initializeBilling(installationId: String, timeProvider: TimeProvider) {
+        val syncBillingEntitlementUseCase =
+            SyncBillingEntitlementUseCase(
+                billingVerificationPort =
+                    HttpBillingVerificationAdapter.fromBaseUrl(
+                        BuildConfig.BILLING_BACKEND_BASE_URL,
+                        AndroidBillingInstallationStore(applicationContext.noBackupFilesDir),
+                    ),
+                timeProvider = timeProvider,
+                configuration =
+                    BillingSyncConfiguration(
+                        installId =
+                            installationId,
+                        packageName = applicationContext.packageName,
+                        productId = PlayBillingConfig.MONTHLY_SUBSCRIPTION_PRODUCT_ID,
+                        appVersion = BuildConfig.VERSION_NAME,
+                        clientOnlyModeRequested = BuildConfig.BILLING_CLIENT_ONLY_TEST_MODE,
+                        internalTestingBuild = BuildConfig.DEBUG,
+                    ),
+            )
+        billingCoordinator =
+            BillingCoordinator(
+                billingGateway = GooglePlayBillingGateway(this),
+                syncBillingEntitlementUseCase = syncBillingEntitlementUseCase,
+                onEntitlementChanged = { snapshot ->
+                    activityScope.launch {
+                        settingsStore.updateBillingEntitlement(snapshot)
+                    }
+                },
+                billingScope = activityScope,
+            )
     }
 
     private fun refreshState() {

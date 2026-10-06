@@ -42,7 +42,7 @@ class DataStoreSettingsStore(
     internal fun readStoredSettings(): Flow<StoredAppSettings> = dataStore.data.map(DataStoreSettingsMapper::toStoredAppSettings)
 
     suspend fun setProtectionEnabled(enabled: Boolean) {
-        dataStore.edit { preferences ->
+        editSettings { preferences ->
             preferences[DataStoreSettingsMapper.protectionEnabledKey] = enabled
         }
     }
@@ -52,7 +52,7 @@ class DataStoreSettingsStore(
     ): ProtectionActivationOperation {
         var operation: ProtectionActivationOperation =
             ProtectionActivationOperation.PrerequisitesNotMet
-        dataStore.edit { preferences ->
+        editSettings { preferences ->
             operation =
                 decision(
                     DataStoreSettingsMapper.toSnapshot(
@@ -93,7 +93,7 @@ class DataStoreSettingsStore(
     }
 
     suspend fun updateBillingEntitlement(snapshot: BillingEntitlementSnapshot) {
-        dataStore.edit { preferences ->
+        editSettings { preferences ->
             preferences[DataStoreSettingsMapper.billingSubscriptionActiveKey] = snapshot.isActive
             preferences[DataStoreSettingsMapper.billingEntitlementStateKey] = snapshot.state.name
             preferences[DataStoreSettingsMapper.billingLastVerifiedAtKey] = snapshot.checkedAtMillis
@@ -110,7 +110,7 @@ class DataStoreSettingsStore(
             return current
         }
         val created = UUID.randomUUID().toString()
-        dataStore.edit { preferences ->
+        editSettings { preferences ->
             if (preferences[DataStoreSettingsMapper.billingInstallationIdKey].isNullOrBlank()) {
                 preferences[DataStoreSettingsMapper.billingInstallationIdKey] = created
             }
@@ -119,13 +119,13 @@ class DataStoreSettingsStore(
     }
 
     suspend fun setDisclosureAccepted(accepted: Boolean) {
-        dataStore.edit { preferences ->
+        editSettings { preferences ->
             preferences[DataStoreSettingsMapper.accessibilityDisclosureAcceptedKey] = accepted
         }
     }
 
     suspend fun setSelectedMode(mode: ProtectionMode) {
-        dataStore.edit { preferences ->
+        editSettings { preferences ->
             preferences[DataStoreSettingsMapper.selectedModeKey] = mode.name
         }
     }
@@ -137,7 +137,7 @@ class DataStoreSettingsStore(
         require(platformId in ProtectionConfiguration.DEFAULT_ENABLED_PLATFORM_IDS) {
             "Unsupported protected platform id: $platformId"
         }
-        dataStore.edit { preferences ->
+        editSettings { preferences ->
             val current = DataStoreSettingsMapper.enabledPlatformIds(preferences)
             preferences[DataStoreSettingsMapper.enabledPlatformIdsKey] =
                 if (enabled) {
@@ -153,7 +153,7 @@ class DataStoreSettingsStore(
     }
 
     override suspend fun setTemporaryAllowUntil(allowUntilMillis: Long?) {
-        dataStore.edit { preferences ->
+        editSettings { preferences ->
             preferences.setNullableLong(
                 DataStoreSettingsMapper.temporaryAllowUntilKey,
                 allowUntilMillis,
@@ -163,15 +163,19 @@ class DataStoreSettingsStore(
 
     override suspend fun removeTemporaryAllowIf(shouldRemove: (Long) -> Boolean): Boolean {
         var removed = false
-        dataStore.edit { preferences ->
+        editSettings { preferences ->
             val allowUntil =
-                preferences[DataStoreSettingsMapper.temporaryAllowUntilKey] ?: return@edit
+                preferences[DataStoreSettingsMapper.temporaryAllowUntilKey] ?: return@editSettings
             if (shouldRemove(allowUntil)) {
                 preferences.remove(DataStoreSettingsMapper.temporaryAllowUntilKey)
                 removed = true
             }
         }
         return removed
+    }
+
+    private suspend fun editSettings(transform: suspend (MutablePreferences) -> Unit) {
+        dataStore.edit(transform)
     }
 
     private fun MutablePreferences.setNullableLong(

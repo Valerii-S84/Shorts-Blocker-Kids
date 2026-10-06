@@ -4,6 +4,7 @@ import android.accessibilityservice.AccessibilityService
 import android.view.accessibility.AccessibilityEvent
 import com.shortsblockerkids.infrastructure.storage.DataStoreSettingsStore
 import com.shortsblockerkids.infrastructure.time.SystemTimeProvider
+import com.shortsblockerkids.infrastructure.time.ElapsedRealtimeProvider
 import com.shortsblockerkids.platform.accessibility.AccessibilityServiceRuntime
 
 class ShortsBlockerAccessibilityService : AccessibilityService() {
@@ -14,6 +15,7 @@ class ShortsBlockerAccessibilityService : AccessibilityService() {
             settingsStatePort = settingsStore,
             temporaryAllowStore = settingsStore,
             timeProvider = SystemTimeProvider(),
+            intervalClock = ElapsedRealtimeProvider(),
         )
     }
 

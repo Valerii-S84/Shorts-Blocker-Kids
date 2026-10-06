@@ -1,11 +1,14 @@
 package com.shortsblockerkids.infrastructure.storage
 
+import android.content.Context
+import android.content.ContextWrapper
 import androidx.datastore.core.DataStore
 import androidx.datastore.core.okio.OkioStorage
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.PreferencesSerializer
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -33,6 +36,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import okio.FileSystem
@@ -49,6 +54,9 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
 import java.util.Base64
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 
 class DataStoreSettingsStoreTest {
     @get:Rule
@@ -134,6 +142,25 @@ class DataStoreSettingsStoreTest {
         }
 
     @Test
+    fun contextConstructorUsesApplicationContextBackedSettingsStore() =
+        runBlocking {
+            val repository =
+                DataStoreSettingsStore(
+                    FileBackedContext(temporaryFolder.newFolder("context-store")),
+                )
+
+            repository.setProtectionEnabled(false)
+
+            assertFalse(
+                repository
+                    .readSettings()
+                    .first()
+                    .protectionConfiguration
+                    .isEnabled,
+            )
+        }
+
+    @Test
     fun hardCodedLegacyCredentialWithoutVersionVerifies() =
         runBlocking {
             val dataStore = createDataStore("legacy-pin")
@@ -214,6 +241,23 @@ class DataStoreSettingsStoreTest {
         }
 
     @Test
+    fun prerequisitesNotMetActivationLeavesStoredSettingsUntouched() =
+        runBlocking {
+            val repository = createRepository("activation-prerequisites-not-met")
+
+            repository.setProtectionEnabled(false)
+            val operation =
+                repository.completeProtectionActivation {
+                    ProtectionActivationOperation.PrerequisitesNotMet
+                }
+            val settings = repository.readSettings().first()
+
+            assertEquals(ProtectionActivationOperation.PrerequisitesNotMet, operation)
+            assertFalse(settings.protectionConfiguration.isEnabled)
+            assertEquals(null, settings.entitlement.freeTestStartedAtMillis)
+        }
+
+    @Test
     fun repeatedActivationPreservesFreeTestStartAndDurationAndReenablesProtection() =
         runBlocking {
             val dataStore = createDataStore("free-test-repeat")
@@ -231,6 +275,164 @@ class DataStoreSettingsStoreTest {
             assertEquals(5_000L, settings.entitlement.freeTestStartedAtMillis)
             assertEquals(30, settings.entitlement.freeTestDurationDays)
         }
+
+    @Test
+    fun alreadyStartedActivationReenablesProtectionWithoutRestartingFreeTest() =
+        runBlocking {
+            val repository = createRepository("activation-already-started")
+            repository.completeProtectionActivationForTest(nowMillis = 5_000L)
+            repository.setProtectionEnabled(false)
+
+            val operation =
+                repository.completeProtectionActivation {
+                    ProtectionActivationOperation.AlreadyStarted
+                }
+
+            val settings = repository.readSettings().first()
+            assertEquals(ProtectionActivationOperation.AlreadyStarted, operation)
+            assertTrue(settings.protectionConfiguration.isEnabled)
+            assertEquals(5_000L, settings.entitlement.freeTestStartedAtMillis)
+        }
+
+    @Test
+    fun synchronousDataStoreMutatorsApplySettingsWithoutSuspension() =
+        runBlocking {
+            val dataStore = ImmediatePreferencesDataStore()
+            val repository = DataStoreSettingsStore(dataStore)
+
+            repository.setProtectionEnabled(false)
+            repository.setDisclosureAccepted(true)
+            repository.setSelectedMode(ProtectionMode.BLOCK_SHORTS)
+            repository.setPlatformEnabled(SupportedPlatform.TIKTOK.id, false)
+            repository.updateBillingEntitlement(
+                BillingEntitlementSnapshot(
+                    state = BillingEntitlementState.CANCELED_ACTIVE,
+                    checkedAtMillis = 4_000L,
+                    activeUntilMillis = 8_000L,
+                ),
+            )
+            repository.setTemporaryAllowUntil(9_000L)
+            val removed = repository.removeTemporaryAllowIf { allowUntilMillis ->
+                allowUntilMillis > 10_000L
+            }
+            val installationId = repository.getOrCreateBillingInstallationId()
+
+            val settings = repository.readSettings().first()
+            assertFalse(settings.protectionConfiguration.isEnabled)
+            assertTrue(settings.protectionConfiguration.isAccessibilityDisclosureAccepted)
+            assertFalse(
+                settings.protectionConfiguration.isPlatformEnabled(SupportedPlatform.TIKTOK.id),
+            )
+            assertEquals(8_000L, settings.entitlement.paidActiveUntilMillis)
+            assertEquals(9_000L, settings.protectionConfiguration.temporaryAllowUntilMillis)
+            assertFalse(removed)
+            assertTrue(installationId.isNotBlank())
+        }
+
+    @Test
+    fun suspendingDataStoreMutatorsResumeSettingsEdits() =
+        runBlocking {
+            val dataStore = SuspendingPreferencesDataStore()
+            val repository = DataStoreSettingsStore(dataStore)
+
+            repository.setProtectionEnabled(false)
+            repository.completeProtectionActivation {
+                ProtectionActivationOperation.Record(nowMillis = 7_000L)
+            }
+            repository.updateBillingEntitlement(isActive = false, checkedAtMillis = 8_000L)
+            repository.getOrCreateBillingInstallationId()
+            repository.setDisclosureAccepted(false)
+            repository.setSelectedMode(ProtectionMode.BLOCK_SHORTS)
+            repository.setPlatformEnabled(SupportedPlatform.FACEBOOK_REELS.id, true)
+            repository.setTemporaryAllowUntil(null)
+            val removed = repository.removeTemporaryAllowIf { true }
+
+            val settings = repository.readSettings().first()
+            assertTrue(settings.protectionConfiguration.isEnabled)
+            assertEquals(7_000L, settings.entitlement.freeTestStartedAtMillis)
+            assertEquals(8_000L, settings.entitlement.paidLastVerifiedAtMillis)
+            assertTrue(settings.protectionConfiguration.isPlatformEnabled(SupportedPlatform.FACEBOOK_REELS.id))
+            assertEquals(null, settings.protectionConfiguration.temporaryAllowUntilMillis)
+            assertFalse(removed)
+        }
+
+    @Test
+    fun dataStoreEditFailuresPropagateFromSettingsMutators() {
+        val repository = DataStoreSettingsStore(FailingPreferencesDataStore())
+        val mutators =
+            listOf<suspend () -> Unit>(
+                { repository.setProtectionEnabled(true) },
+                {
+                    repository.completeProtectionActivation {
+                        ProtectionActivationOperation.AlreadyStarted
+                    }
+                },
+                { repository.updateBillingEntitlement(isActive = true, checkedAtMillis = 1_000L) },
+                {
+                    repository.updateBillingEntitlement(
+                        BillingEntitlementSnapshot(
+                            state = BillingEntitlementState.EXPIRED,
+                            checkedAtMillis = 1_000L,
+                        ),
+                    )
+                },
+                { repository.getOrCreateBillingInstallationId() },
+                { repository.setDisclosureAccepted(true) },
+                { repository.setSelectedMode(ProtectionMode.BLOCK_SHORTS) },
+                { repository.setPlatformEnabled(SupportedPlatform.YOUTUBE_SHORTS.id, true) },
+                { repository.setTemporaryAllowUntil(1_000L) },
+                { repository.removeTemporaryAllowIf { true } },
+            )
+
+        mutators.forEach { mutator ->
+            val failure =
+                assertThrows(IllegalStateException::class.java) {
+                    runBlocking {
+                        mutator()
+                    }
+                }
+            assertEquals("edit failed", failure.message)
+        }
+    }
+
+    @Test
+    fun suspendingDataStoreEditFailuresPropagateFromSettingsMutators() {
+        val repository = DataStoreSettingsStore(SuspendingFailingPreferencesDataStore())
+        val mutators =
+            listOf<suspend () -> Unit>(
+                { repository.setProtectionEnabled(true) },
+                {
+                    repository.completeProtectionActivation {
+                        ProtectionActivationOperation.AlreadyStarted
+                    }
+                },
+                { repository.updateBillingEntitlement(isActive = true, checkedAtMillis = 1_000L) },
+                {
+                    repository.updateBillingEntitlement(
+                        BillingEntitlementSnapshot(
+                            state = BillingEntitlementState.EXPIRED,
+                            checkedAtMillis = 1_000L,
+                        ),
+                    )
+                },
+                { repository.getOrCreateBillingInstallationId() },
+                { repository.setDisclosureAccepted(true) },
+                { repository.setSelectedMode(ProtectionMode.BLOCK_SHORTS) },
+                { repository.setPlatformEnabled(SupportedPlatform.YOUTUBE_SHORTS.id, true) },
+                { repository.setTemporaryAllowUntil(1_000L) },
+                { repository.removeTemporaryAllowIf { true } },
+            )
+
+        mutators.forEach { mutator ->
+            val failure =
+                assertThrows(IllegalStateException::class.java) {
+                    runBlocking {
+                        mutator()
+                    }
+                }
+            assertEquals("suspending edit failed", failure.message)
+        }
+    }
 
     @Test
     fun appRestartDoesNotResetFreeTestTimer() =
@@ -393,6 +595,53 @@ class DataStoreSettingsStoreTest {
         }
 
     @Test
+    fun defaultBillingEntitlementTimestampUsesCurrentWallClockMillis() =
+        runBlocking {
+            val repository = createRepository("billing-default-time")
+            val before = System.currentTimeMillis()
+
+            repository.updateBillingEntitlement(isActive = true)
+
+            val verifiedAt =
+                requireNotNull(
+                    repository
+                        .readSettings()
+                        .first()
+                        .entitlement
+                        .paidLastVerifiedAtMillis,
+                )
+            val after = System.currentTimeMillis()
+            assertTrue(verifiedAt in before..after)
+        }
+
+    @Test
+    fun inactiveBillingSnapshotClearsPreviouslyStoredActiveUntilTimestamp() =
+        runBlocking {
+            val repository = createRepository("billing-clear-active-until")
+            repository.updateBillingEntitlement(
+                BillingEntitlementSnapshot(
+                    state = BillingEntitlementState.CANCELED_ACTIVE,
+                    checkedAtMillis = 4_000L,
+                    activeUntilMillis = 8_000L,
+                ),
+            )
+
+            repository.updateBillingEntitlement(
+                BillingEntitlementSnapshot(
+                    state = BillingEntitlementState.EXPIRED,
+                    checkedAtMillis = 9_000L,
+                    activeUntilMillis = null,
+                ),
+            )
+
+            val settings = repository.readSettings().first()
+            val storedSettings = repository.readStoredSettings().first()
+            assertFalse(storedSettings.billingSubscriptionActive)
+            assertEquals(null, settings.entitlement.paidActiveUntilMillis)
+            assertFalse(settings.hasBillingEntitlement(nowMillis = 9_000L))
+        }
+
+    @Test
     fun persistsBackendBillingEntitlementLifecycleState() =
         runBlocking {
             val repository = createRepository("billing-state")
@@ -433,6 +682,19 @@ class DataStoreSettingsStoreTest {
         }
 
     @Test
+    fun getOrCreateBillingInstallationIdKeepsExistingStoredId() =
+        runBlocking {
+            val dataStore = createDataStore("existing-billing-install")
+            dataStore.edit { preferences ->
+                preferences[stringPreferencesKey("billing_installation_id")] = "existing-install"
+            }
+            val repository = DataStoreSettingsStore(dataStore)
+
+            assertEquals("existing-install", repository.getOrCreateBillingInstallationId())
+            assertEquals("existing-install", repository.readStoredSettings().first().billingInstallationId)
+        }
+
+    @Test
     fun blankBillingInstallationIdIsReplacedWithStableRandomId() =
         runBlocking {
             val dataStore = createDataStore("blank-billing-install")
@@ -467,6 +729,22 @@ class DataStoreSettingsStoreTest {
                     .readSettings()
                     .first()
                     .protectionConfiguration.temporaryAllowUntilMillis,
+            )
+        }
+
+    @Test
+    fun acceptAccessibilityDisclosureStoresAcceptedDisclosureState() =
+        runBlocking {
+            val repository = createRepository("accept-disclosure")
+
+            repository.acceptAccessibilityDisclosure()
+
+            assertTrue(
+                repository
+                    .readSettings()
+                    .first()
+                    .protectionConfiguration
+                    .isAccessibilityDisclosureAccepted,
             )
         }
 
@@ -793,6 +1071,69 @@ class DataStoreSettingsStoreTest {
                 ),
             scope = scope,
         )
+    }
+
+    private class ImmediatePreferencesDataStore : DataStore<Preferences> {
+        private val state = MutableStateFlow(emptyPreferences())
+
+        override val data: Flow<Preferences> = state
+
+        override suspend fun updateData(transform: suspend (Preferences) -> Preferences): Preferences {
+            val updated = transform(state.value)
+            state.value = updated
+            return updated
+        }
+    }
+
+    private class SuspendingPreferencesDataStore : DataStore<Preferences> {
+        private val state = MutableStateFlow(emptyPreferences())
+
+        override val data: Flow<Preferences> = state
+
+        override suspend fun updateData(transform: suspend (Preferences) -> Preferences): Preferences =
+            suspendCoroutine { continuation ->
+                Thread {
+                    try {
+                        val updated =
+                            runBlocking {
+                                transform(state.value)
+                            }
+                        state.value = updated
+                        continuation.resume(updated)
+                    } catch (error: Throwable) {
+                        continuation.resumeWithException(error)
+                    }
+                }.start()
+            }
+    }
+
+    private class FailingPreferencesDataStore : DataStore<Preferences> {
+        override val data: Flow<Preferences> = MutableStateFlow(emptyPreferences())
+
+        override suspend fun updateData(transform: suspend (Preferences) -> Preferences): Preferences {
+            throw IllegalStateException("edit failed")
+        }
+    }
+
+    private class SuspendingFailingPreferencesDataStore : DataStore<Preferences> {
+        override val data: Flow<Preferences> = MutableStateFlow(emptyPreferences())
+
+        override suspend fun updateData(transform: suspend (Preferences) -> Preferences): Preferences =
+            suspendCoroutine { continuation ->
+                Thread {
+                    continuation.resumeWithException(
+                        IllegalStateException("suspending edit failed"),
+                    )
+                }.start()
+            }
+    }
+
+    private class FileBackedContext(
+        private val root: File,
+    ) : ContextWrapper(null) {
+        override fun getApplicationContext(): Context = this
+
+        override fun getFilesDir(): File = root
     }
 
     private suspend fun cancelOpenStores() {

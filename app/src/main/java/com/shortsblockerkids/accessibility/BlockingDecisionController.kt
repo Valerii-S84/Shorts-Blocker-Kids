@@ -1,8 +1,11 @@
 package com.shortsblockerkids.accessibility
 
 import com.shortsblockerkids.domain.detection.DetectionResult
+import com.shortsblockerkids.application.port.MonotonicTimeProvider
 
+/** Uses the injected session clock; explicit nowMillis must be monotonic when no clock is supplied. */
 class BlockingDecisionController(
+    private val monotonicTimeProvider: MonotonicTimeProvider? = null,
     private val blockCooldownMs: Long = DEFAULT_BLOCK_COOLDOWN_MS,
     private val detectionDebounceMs: Long = DEFAULT_DETECTION_DEBOUNCE_MS,
     private val pinEntryLaunchGraceMs: Long = DEFAULT_PIN_ENTRY_LAUNCH_GRACE_MS,
@@ -18,6 +21,7 @@ class BlockingDecisionController(
         result: DetectionResult,
         nowMillis: Long,
     ): BlockingDecision {
+        val intervalNowMillis = monotonicTimeProvider?.elapsedRealtimeMillis() ?: nowMillis
         if (!isInSupportedApp || !isProtectionActive) {
             lastHighDetectionAtMillis = null
             pinEntryRequestedAtMillis = null
@@ -26,7 +30,7 @@ class BlockingDecisionController(
         }
 
         if (!result.shouldBlock) {
-            val keepPinEntryGrace = isPinEntryLaunchGraceActive(nowMillis)
+            val keepPinEntryGrace = isPinEntryLaunchGraceActive(intervalNowMillis)
             lastHighDetectionAtMillis = null
             if (!keepPinEntryGrace) {
                 pinEntryRequestedAtMillis = null
@@ -34,17 +38,17 @@ class BlockingDecisionController(
             return BlockingDecision.Ignore
         }
 
-        if (overlayVisible || isPinEntryLaunchGraceActive(nowMillis) || isWithinCooldown(nowMillis)) {
+        if (overlayVisible || isPinEntryLaunchGraceActive(intervalNowMillis) || isWithinCooldown(intervalNowMillis)) {
             return BlockingDecision.Ignore
         }
 
-        if (isWithinDetectionDebounce(nowMillis)) {
-            lastHighDetectionAtMillis = nowMillis
+        if (isWithinDetectionDebounce(intervalNowMillis)) {
+            lastHighDetectionAtMillis = intervalNowMillis
             return BlockingDecision.Ignore
         }
 
-        lastHighDetectionAtMillis = nowMillis
-        lastBlockAtMillis = nowMillis
+        lastHighDetectionAtMillis = intervalNowMillis
+        lastBlockAtMillis = intervalNowMillis
         overlayVisible = true
         return BlockingDecision.ShowOverlay
     }
@@ -54,10 +58,11 @@ class BlockingDecisionController(
     }
 
     fun onPinEntryRequested(nowMillis: Long) {
-        pinEntryRequestedAtMillis = nowMillis
+        pinEntryRequestedAtMillis = monotonicTimeProvider?.elapsedRealtimeMillis() ?: nowMillis
     }
 
-    fun shouldIgnoreUnsupportedPackageEvent(nowMillis: Long): Boolean = overlayVisible || isPinEntryLaunchGraceActive(nowMillis)
+    fun shouldIgnoreUnsupportedPackageEvent(nowMillis: Long): Boolean =
+        overlayVisible || isPinEntryLaunchGraceActive(monotonicTimeProvider?.elapsedRealtimeMillis() ?: nowMillis)
 
     fun reset() {
         lastHighDetectionAtMillis = null

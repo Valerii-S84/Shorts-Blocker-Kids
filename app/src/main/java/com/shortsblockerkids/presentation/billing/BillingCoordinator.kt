@@ -46,56 +46,60 @@ class BillingCoordinator(
 
     private fun onBillingEvent(event: PlayBillingEvent) {
         when (event) {
-            PlayBillingEvent.Connecting -> updateConnecting(event)
-            PlayBillingEvent.Connected -> updateConnected(event)
-            PlayBillingEvent.Disconnected -> updateDisconnected(event)
+            PlayBillingEvent.Connecting -> updateConnecting()
+            PlayBillingEvent.Connected -> updateConnected()
+            PlayBillingEvent.Disconnected -> updateDisconnected()
             PlayBillingEvent.ProductDetailsLoading ->
                 _uiState.update { it.copy(isLoading = true) }
-            PlayBillingEvent.OpeningPurchaseFlow ->
-                _uiState.update {
-                    it.copy(
-                        isPurchaseInProgress = true,
-                        message = requireNotNull(event.toBillingUiMessage()),
-                    )
-                }
+            PlayBillingEvent.OpeningPurchaseFlow -> updateOpeningPurchaseFlow()
             PlayBillingEvent.PurchaseFlowFinished ->
                 _uiState.update { it.copy(isPurchaseInProgress = false) }
             is PlayBillingEvent.ProductDetailsLoaded -> updateProductDetails(event)
             is PlayBillingEvent.PurchasesObserved -> processPurchases(event)
             is PlayBillingEvent.OperationFailed -> updateFailure(event)
-            PlayBillingEvent.SubscriptionNotReady,
-            PlayBillingEvent.ManageSubscriptionUnavailable,
-            PlayBillingEvent.PurchaseCanceled,
-            -> updateMessage(event)
+            PlayBillingEvent.SubscriptionNotReady ->
+                updateMessage(BillingMessageCode.SUBSCRIPTION_NOT_READY)
+            PlayBillingEvent.ManageSubscriptionUnavailable ->
+                updateMessage(BillingMessageCode.MANAGE_SUBSCRIPTION_UNAVAILABLE)
+            PlayBillingEvent.PurchaseCanceled -> updateMessage(BillingMessageCode.PURCHASE_CANCELED)
         }
     }
 
-    private fun updateConnecting(event: PlayBillingEvent) {
+    private fun updateConnecting() {
         _uiState.update {
             it.copy(
                 isLoading = true,
-                message = requireNotNull(event.toBillingUiMessage()),
+                message = BillingUiMessage(BillingMessageCode.CONNECTING),
             )
         }
     }
 
-    private fun updateConnected(event: PlayBillingEvent) {
+    private fun updateConnected() {
         _uiState.update {
             it.copy(
                 isReady = true,
                 isLoading = false,
-                message = requireNotNull(event.toBillingUiMessage()),
+                message = BillingUiMessage(BillingMessageCode.CONNECTED),
             )
         }
     }
 
-    private fun updateDisconnected(event: PlayBillingEvent) {
+    private fun updateDisconnected() {
         _uiState.update {
             it.copy(
                 isReady = false,
                 isLoading = false,
                 canStartPurchase = false,
-                message = requireNotNull(event.toBillingUiMessage()),
+                message = BillingUiMessage(BillingMessageCode.DISCONNECTED),
+            )
+        }
+    }
+
+    private fun updateOpeningPurchaseFlow() {
+        _uiState.update {
+            it.copy(
+                isPurchaseInProgress = true,
+                message = BillingUiMessage(BillingMessageCode.OPENING_PURCHASE_FLOW),
             )
         }
     }
@@ -106,7 +110,14 @@ class BillingCoordinator(
                 isLoading = false,
                 productPrice = event.productPrice,
                 canStartPurchase = event.canStartPurchase,
-                message = requireNotNull(event.toBillingUiMessage()),
+                message =
+                    BillingUiMessage(
+                        if (event.isProductAvailable) {
+                            BillingMessageCode.PRODUCT_LOADED
+                        } else {
+                            BillingMessageCode.PRODUCT_UNAVAILABLE
+                        },
+                    ),
             )
         }
     }
@@ -118,13 +129,17 @@ class BillingCoordinator(
                 isLoading = false,
                 isPurchaseInProgress = false,
                 canStartPurchase = event.canStartPurchase,
-                message = requireNotNull(event.toBillingUiMessage()),
+                message =
+                    BillingUiMessage(
+                        code = event.operation.toBillingMessageCode(),
+                        responseCode = event.responseCode,
+                    ),
             )
         }
     }
 
-    private fun updateMessage(event: PlayBillingEvent) {
-        _uiState.update { it.copy(message = requireNotNull(event.toBillingUiMessage())) }
+    private fun updateMessage(messageCode: BillingMessageCode) {
+        _uiState.update { it.copy(message = BillingUiMessage(messageCode)) }
     }
 
     private fun processPurchases(event: PlayBillingEvent.PurchasesObserved) {

@@ -243,4 +243,7 @@
     <string name="debug_scenario_search">Simulate Search</string>
     <string name="debug_scenario_shorts_high_confidence">Simulate Shorts HIGH confidence</string>
     <string name="debug_scenario_non_youtube">Simulate non-YouTube app</string>
+    <string name="settings_loading">Loading saved settings...</string>
+    <string name="settings_unavailable">Saved settings are unavailable. Settings and PIN access are locked until reading succeeds.</string>
+    <string name="settings_retry">Retry</string>
 </resources>

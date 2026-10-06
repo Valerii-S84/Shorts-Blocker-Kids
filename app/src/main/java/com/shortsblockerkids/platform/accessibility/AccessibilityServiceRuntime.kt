@@ -11,7 +11,9 @@ import com.shortsblockerkids.application.port.ProtectionSettingsPort
 import com.shortsblockerkids.application.port.SettingsStatePort
 import com.shortsblockerkids.application.port.TemporaryAllowStore
 import com.shortsblockerkids.application.port.TimeProvider
-import com.shortsblockerkids.application.protection.ClearExpiredTemporaryAllowUseCase
+import com.shortsblockerkids.application.settings.ObserveSettingsUseCase
+import com.shortsblockerkids.application.settings.SettingsReadState
+import com.shortsblockerkids.application.port.MonotonicTimeProvider
 import com.shortsblockerkids.application.protection.canProtect
 import com.shortsblockerkids.domain.detection.SupportedPlatform
 import com.shortsblockerkids.platform.accessibility.detection.ProductionDetectorRegistry
@@ -29,38 +31,33 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 
 class AccessibilityServiceRuntime(
     private val service: AccessibilityService,
     private val settingsStatePort: SettingsStatePort,
     private val temporaryAllowStore: TemporaryAllowStore,
     private val timeProvider: TimeProvider,
+    private val intervalClock: MonotonicTimeProvider,
 ) {
     private lateinit var eventRouter: AccessibilityEventRouter
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-    private var latestSettings = AppSettingsSnapshot()
+    private var latestSettings: AppSettingsSnapshot? = null
+    private var settingsJob: Job? = null
     private var pinEntryRecheckJob: Job? = null
     private var scanRecheckJob: Job? = null
+    private val temporaryAllowDeadlineScheduler =
+        TemporaryAllowDeadlineScheduler(
+            scope = serviceScope,
+            timeProvider = timeProvider,
+            onDeadline = ::routeCurrentWindow,
+        )
 
     fun onServiceConnected() {
-        val clearExpiredTemporaryAllowUseCase =
-            ClearExpiredTemporaryAllowUseCase(
-                timeProvider = timeProvider,
-                temporaryAllowStore = temporaryAllowStore,
-            )
-        latestSettings =
-            runBlocking(Dispatchers.IO) {
-                activeSettingsFrom(
-                    clearExpiredTemporaryAllowUseCase = clearExpiredTemporaryAllowUseCase,
-                    settings = settingsStatePort.readSettings().first(),
-                )
-            }
         val protectionSettingsPort =
             ProtectionSettingsPort { nowMillis ->
-                latestSettings.toAccessibilityProtectionState(nowMillis)
+                latestSettings?.toAccessibilityProtectionState(nowMillis)
+                    ?: AccessibilityProtectionState(false, emptySet())
             }
         val diagnostics =
             configureAccessibilityDiagnostics(
@@ -83,12 +80,15 @@ class AccessibilityServiceRuntime(
                     }
                 service.startActivity(intent)
             }
-        val blockingDecisionController = BlockingDecisionController()
+        val blockingDecisionController = BlockingDecisionController(monotonicTimeProvider = intervalClock)
         eventRouter =
             AccessibilityEventRouter(
                 protectionSettingsPort = protectionSettingsPort,
                 timeProvider = timeProvider,
-                eventPolicy = AccessibilityEventPolicy(requestRescan = ::scheduleScanRecheck),
+                eventPolicy = AccessibilityEventPolicy(
+                    monotonicTimeProvider = intervalClock,
+                    requestRescan = ::scheduleScanRecheck,
+                ),
                 treeScanner = AccessibilityTreeScanner(),
                 detectionEngine = ProductionDetectorRegistry.create(),
                 blockingDecisionController = blockingDecisionController,
@@ -110,20 +110,29 @@ class AccessibilityServiceRuntime(
                     ),
                 diagnostics = diagnostics,
             )
-        serviceScope.launch {
-            settingsStatePort.readSettings().collect { settings ->
-                val nowMillis = timeProvider.currentTimeMillis()
-                val wasProtectionActive = latestSettings.canProtect(nowMillis)
-                val activeSettings =
-                    activeSettingsFrom(
-                        clearExpiredTemporaryAllowUseCase = clearExpiredTemporaryAllowUseCase,
-                        settings = settings,
-                    )
-                latestSettings = activeSettings
-                if (!activeSettings.canProtect(nowMillis)) {
-                    eventRouter.dismissBlockingState()
-                } else if (!wasProtectionActive) {
-                    routeCurrentWindow()
+        settingsJob?.cancel()
+        settingsJob = serviceScope.launch {
+            ObserveSettingsUseCase(settingsStatePort)().collect { state ->
+                when (state) {
+                    is SettingsReadState.Ready -> {
+                        latestSettings = state.snapshot
+                        temporaryAllowDeadlineScheduler.schedule(
+                            state.snapshot.protectionConfiguration.temporaryAllowUntilMillis,
+                        )
+                        if (!state.snapshot.canProtect(timeProvider.currentTimeMillis())) {
+                            eventRouter.dismissBlockingState()
+                        } else {
+                            routeCurrentWindow()
+                        }
+                    }
+                    is SettingsReadState.Unavailable -> {
+                        // Only a successfully read snapshot from this service session survives failure.
+                        diagnostics.recordBlockingDecision(
+                            if (latestSettings == null) "SettingsUnavailableProtectionDegraded"
+                            else "SettingsUnavailableUsingLastSnapshot",
+                        )
+                    }
+                    SettingsReadState.Loading -> Unit
                 }
             }
         }
@@ -131,7 +140,7 @@ class AccessibilityServiceRuntime(
 
     fun onAccessibilityEvent(event: AccessibilityEvent?) {
         val safeEvent = event ?: return
-        if (!::eventRouter.isInitialized) {
+        if (!::eventRouter.isInitialized || latestSettings == null) {
             return
         }
 
@@ -144,6 +153,7 @@ class AccessibilityServiceRuntime(
         }
         pinEntryRecheckJob?.cancel()
         scanRecheckJob?.cancel()
+        temporaryAllowDeadlineScheduler.cancel()
     }
 
     fun onDestroy() {
@@ -152,6 +162,7 @@ class AccessibilityServiceRuntime(
         }
         pinEntryRecheckJob?.cancel()
         scanRecheckJob?.cancel()
+        temporaryAllowDeadlineScheduler.cancel()
         serviceScope.cancel()
     }
 
@@ -164,21 +175,6 @@ class AccessibilityServiceRuntime(
                         protectionConfiguration.isPlatformEnabled(platform.id)
                     }.mapTo(mutableSetOf()) { platform -> platform.id },
         )
-
-    private suspend fun activeSettingsFrom(
-        clearExpiredTemporaryAllowUseCase: ClearExpiredTemporaryAllowUseCase,
-        settings: AppSettingsSnapshot,
-    ): AppSettingsSnapshot =
-        if (clearExpiredTemporaryAllowUseCase()) {
-            settings.copy(
-                protectionConfiguration =
-                    settings.protectionConfiguration.copy(
-                        temporaryAllowUntilMillis = null,
-                    ),
-            )
-        } else {
-            settings
-        }
 
     private fun scheduleScanRecheck(delayMillis: Long) {
         scanRecheckJob?.cancel()
@@ -200,7 +196,7 @@ class AccessibilityServiceRuntime(
 
     @Suppress("DEPRECATION")
     private fun routeCurrentWindow() {
-        if (!::eventRouter.isInitialized) {
+        if (!::eventRouter.isInitialized || latestSettings == null) {
             return
         }
         val packageName = service.rootInActiveWindow?.packageName ?: return

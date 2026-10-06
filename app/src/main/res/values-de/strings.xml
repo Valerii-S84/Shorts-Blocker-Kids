@@ -243,4 +243,7 @@
     <string name="debug_scenario_search">Suche simulieren</string>
     <string name="debug_scenario_shorts_high_confidence">Shorts mit hoher Konfidenz simulieren</string>
     <string name="debug_scenario_non_youtube">Andere App als YouTube simulieren</string>
+    <string name="settings_loading">Gespeicherte Einstellungen werden geladen...</string>
+    <string name="settings_unavailable">Gespeicherte Einstellungen sind nicht verfügbar. Einstellungen und PIN-Zugriff bleiben bis zum erfolgreichen Lesen gesperrt.</string>
+    <string name="settings_retry">Erneut versuchen</string>
 </resources>

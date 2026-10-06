@@ -94,4 +94,36 @@ class BillingVerificationPolicyTest {
         assertEquals(2_000L, snapshot.checkedAtMillis)
         assertFalse(snapshot.isActive)
     }
+
+    @Test
+    fun defaultsKeepClientOnlyEntitlementDisabled() {
+        val policy = BillingVerificationPolicy()
+
+        assertFalse(policy.clientOnlyModeRequested)
+        assertFalse(policy.internalTestingBuild)
+        assertFalse(policy.canUseClientOnlyEntitlement)
+    }
+
+    @Test
+    fun dataClassCopyAndEqualityKeepPolicyFlagsVisible() {
+        val policy =
+            BillingVerificationPolicy(
+                clientOnlyModeRequested = true,
+                internalTestingBuild = false,
+            )
+
+        val internalTestingPolicy = policy.copy(internalTestingBuild = true)
+
+        assertEquals(policy, policy.copy())
+        assertEquals(policy.hashCode(), policy.copy().hashCode())
+        assertEquals(
+            BillingVerificationPolicy(
+                clientOnlyModeRequested = true,
+                internalTestingBuild = true,
+            ),
+            internalTestingPolicy,
+        )
+        assertTrue(internalTestingPolicy.canUseClientOnlyEntitlement)
+        assertTrue(policy.toString().contains("clientOnlyModeRequested=true"))
+    }
 }

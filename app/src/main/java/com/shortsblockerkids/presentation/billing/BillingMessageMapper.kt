@@ -29,7 +29,7 @@ internal fun PlayBillingEvent.toBillingUiMessage(): BillingUiMessage? =
             )
         is PlayBillingEvent.OperationFailed ->
             BillingUiMessage(
-                code = operation.messageCode(),
+                code = operation.toBillingMessageCode(),
                 responseCode = responseCode,
             )
         PlayBillingEvent.ProductDetailsLoading,
@@ -55,7 +55,7 @@ internal fun BillingSyncOutcome.toBillingUiMessage(): BillingUiMessage? =
 
 internal fun billingVerificationProgressMessage(): BillingUiMessage = BillingUiMessage(BillingMessageCode.VERIFYING_WITH_BACKEND)
 
-private fun PlayBillingOperation.messageCode(): BillingMessageCode =
+internal fun PlayBillingOperation.toBillingMessageCode(): BillingMessageCode =
     when (this) {
         PlayBillingOperation.SETUP -> BillingMessageCode.BILLING_UNAVAILABLE
         PlayBillingOperation.OPEN_PURCHASE_FLOW ->

@@ -251,4 +251,7 @@
     <string name="debug_scenario_search">Імітувати пошук</string>
     <string name="debug_scenario_shorts_high_confidence">Імітувати Shorts із високою впевненістю</string>
     <string name="debug_scenario_non_youtube">Імітувати застосунок, відмінний від YouTube</string>
+    <string name="settings_loading">Завантаження збережених налаштувань...</string>
+    <string name="settings_unavailable">Збережені налаштування недоступні. Налаштування та введення PIN заблоковано до успішного читання.</string>
+    <string name="settings_retry">Повторити</string>
 </resources>

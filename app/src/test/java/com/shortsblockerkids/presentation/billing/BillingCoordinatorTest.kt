@@ -265,6 +265,84 @@ class BillingCoordinatorTest {
         assertEquals(BillingMessageCode.CONNECTING, coordinator.uiState.value.message.code)
     }
 
+    @Test
+    fun backendPurchaseVerificationFailureClearsLoadingAndShowsFailureMessage() {
+        val gateway = RecordingPlayBillingGateway()
+        val storedSnapshots = mutableListOf<BillingEntitlementSnapshot>()
+        val coordinator =
+            createCoordinator(
+                gateway = gateway,
+                port = RecordingVerificationPort(
+                    isConfigured = true,
+                    verifyFailure = IllegalStateException("backend rejected purchase"),
+                ),
+                onEntitlementChanged = storedSnapshots::add,
+            )
+
+        gateway.emit(
+            PlayBillingEvent.PurchasesObserved(
+                BillingPurchaseSummary(
+                    purchasedSubscriptionToken = "token",
+                    hasPendingSubscription = true,
+                ),
+            ),
+        )
+
+        val state = coordinator.uiState.value
+        assertFalse(state.isLoading)
+        assertEquals(BillingMessageCode.VERIFY_WITH_BACKEND_FAILED, state.message.code)
+        assertEquals(BillingEntitlementState.UNKNOWN, storedSnapshots.single().state)
+    }
+
+    @Test
+    fun backendRefreshFailureClearsLoadingAndShowsFailureMessage() {
+        val gateway = RecordingPlayBillingGateway()
+        val storedSnapshots = mutableListOf<BillingEntitlementSnapshot>()
+        val coordinator =
+            createCoordinator(
+                gateway = gateway,
+                port = RecordingVerificationPort(
+                    isConfigured = true,
+                    refreshFailure = IllegalStateException("backend unavailable"),
+                ),
+                onEntitlementChanged = storedSnapshots::add,
+            )
+
+        gateway.emit(
+            PlayBillingEvent.PurchasesObserved(
+                BillingPurchaseSummary(purchasedSubscriptionToken = null),
+            ),
+        )
+
+        val state = coordinator.uiState.value
+        assertFalse(state.isLoading)
+        assertEquals(BillingMessageCode.REFRESH_BACKEND_FAILED, state.message.code)
+        assertEquals(BillingEntitlementState.UNKNOWN, storedSnapshots.single().state)
+    }
+
+    @Test
+    fun purchaseWithoutBackendAndWithoutClientOnlyModeShowsBackendRequired() {
+        val gateway = RecordingPlayBillingGateway()
+        val storedSnapshots = mutableListOf<BillingEntitlementSnapshot>()
+        val coordinator =
+            createCoordinator(
+                gateway = gateway,
+                onEntitlementChanged = storedSnapshots::add,
+            )
+
+        gateway.emit(
+            PlayBillingEvent.PurchasesObserved(
+                BillingPurchaseSummary(purchasedSubscriptionToken = "token"),
+            ),
+        )
+
+        val state = coordinator.uiState.value
+        assertFalse(state.isLoading)
+        assertEquals(BillingMessageCode.BACKEND_VERIFICATION_REQUIRED, state.message.code)
+        assertEquals(BillingEntitlementState.EXPIRED, storedSnapshots.single().state)
+        assertTrue(gateway.acknowledgedTokens.isEmpty())
+    }
+
     private fun createCoordinator(
         gateway: RecordingPlayBillingGateway,
         port: BillingVerificationPort = RecordingVerificationPort(isConfigured = false),
@@ -334,11 +412,18 @@ class BillingCoordinatorTest {
     private class RecordingVerificationPort(
         override val isConfigured: Boolean,
         private val verificationResult: CompletableDeferred<BillingEntitlementSnapshot>? = null,
+        private val verifyFailure: RuntimeException? = null,
+        private val refreshFailure: RuntimeException? = null,
     ) : BillingVerificationPort {
-        override suspend fun verifyPurchase(request: BillingVerificationRequest): BillingEntitlementSnapshot =
-            verificationResult?.await() ?: ACTIVE_SNAPSHOT
+        override suspend fun verifyPurchase(request: BillingVerificationRequest): BillingEntitlementSnapshot {
+            verifyFailure?.let { throw it }
+            return verificationResult?.await() ?: ACTIVE_SNAPSHOT
+        }
 
-        override suspend fun refreshEntitlement(installId: String): BillingEntitlementSnapshot? = ACTIVE_SNAPSHOT
+        override suspend fun refreshEntitlement(installId: String): BillingEntitlementSnapshot? {
+            refreshFailure?.let { throw it }
+            return ACTIVE_SNAPSHOT
+        }
     }
 
     private companion object {

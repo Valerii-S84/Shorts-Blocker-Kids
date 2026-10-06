@@ -213,7 +213,7 @@ class UkrainianResourceCatalogTest {
     private companion object {
         const val DEFAULT_CATALOG = "app/src/main/res/values/strings.xml"
         const val UKRAINIAN_CATALOG = "app/src/main/res/values-uk/strings.xml"
-        const val EXPECTED_STRING_COUNT = 197
+        const val EXPECTED_STRING_COUNT = 200
         const val EXPECTED_PLURAL_COUNT = 4
 
         val REQUIRED_UKRAINIAN_QUANTITIES = setOf("one", "few", "many", "other")

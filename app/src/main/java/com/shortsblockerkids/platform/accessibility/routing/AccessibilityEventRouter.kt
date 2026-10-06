@@ -24,6 +24,14 @@ class AccessibilityEventRouter(
     private val blockOverlayController: BlockOverlayController,
     private val diagnostics: AccessibilityDiagnosticsPort,
 ) {
+    private val protectionExecutor = BlockingProtectionExecutor(
+        showOverlay = blockOverlayController::showBlockedOverlay,
+        startFallback = blockOverlayController::exitAfterOverlayFailure,
+        recordOutcome = diagnostics::recordBlockingDecision,
+        onOverlayFailed = blockingDecisionController::onOverlayDismissed,
+        startPlaybackExit = blockOverlayController::exitBlockedPlayback,
+    )
+
     fun route(
         event: AccessibilityEvent,
         rootProvider: () -> AccessibilityNodeInfo?,
@@ -67,6 +75,20 @@ class AccessibilityEventRouter(
             return
         }
 
+        val root = rootProvider()
+        if (root == null) {
+            eventPolicy.onRootUnavailable()
+            return
+        }
+        if (!eventPolicy.isRootPackageConsistent(supportedPackageName, root.packageName?.toString())) {
+            diagnostics.logIgnoredEvent(
+                packageName = packageName,
+                eventType = event.eventType,
+                reason = "event and active root packages differ",
+            )
+            return
+        }
+
         if (diagnostics.consumeDebugOverlayRequest()) {
             val decision =
                 blockingDecisionController.evaluate(
@@ -81,7 +103,7 @@ class AccessibilityEventRouter(
                         ),
                     nowMillis = nowMillis,
                 )
-            handleDecision(decision)
+            handleDecision(decision, supportedPackageName)
             return
         }
 
@@ -95,7 +117,7 @@ class AccessibilityEventRouter(
                     result = DetectionResult.None,
                     nowMillis = nowMillis,
                 )
-            handleDecision(decision)
+            handleDecision(decision, supportedPackageName)
             eventPolicy.reset()
             diagnostics.clearDetectorResult()
             return
@@ -105,11 +127,6 @@ class AccessibilityEventRouter(
             return
         }
 
-        val root = rootProvider()
-        if (root == null) {
-            eventPolicy.onRootUnavailable()
-            return
-        }
         val snapshot = treeScanner.scan(root)
         diagnostics.captureDebugSnapshotIfRequested(
             packageName = supportedPackageName,
@@ -133,7 +150,7 @@ class AccessibilityEventRouter(
                 result = result,
                 nowMillis = nowMillis,
             )
-        handleDecision(decision)
+        handleDecision(decision, supportedPackageName)
     }
 
     fun shutdown() {
@@ -141,23 +158,20 @@ class AccessibilityEventRouter(
     }
 
     fun dismissBlockingState() {
+        protectionExecutor.reset()
         blockOverlayController.dismissOverlay()
         blockingDecisionController.reset()
         eventPolicy.reset()
         diagnostics.clearDetectorResult()
     }
 
-    private fun handleDecision(decision: BlockingDecision) {
-        diagnostics.recordBlockingDecision(decision.name)
+    private fun handleDecision(decision: BlockingDecision, packageName: String) {
         when (decision) {
-            BlockingDecision.ShowOverlay -> {
-                if (!blockOverlayController.showBlockedOverlay()) {
-                    if (!blockOverlayController.isOverlayVisible) {
-                        blockingDecisionController.onOverlayDismissed()
-                    }
-                }
+            BlockingDecision.ShowOverlay -> protectionExecutor.protect(packageName)
+            BlockingDecision.DismissOverlay -> {
+                blockOverlayController.dismissOverlay()
+                diagnostics.recordBlockingDecision(decision.name)
             }
-            BlockingDecision.DismissOverlay -> blockOverlayController.dismissOverlay()
             BlockingDecision.Ignore -> Unit
         }
     }

@@ -4,6 +4,7 @@ import android.accessibilityservice.AccessibilityService
 import android.os.Build
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
+import com.shortsblockerkids.domain.detection.DetectionResult
 import com.shortsblockerkids.platform.accessibility.detection.ProductionDetectorRegistry
 import com.shortsblockerkids.platform.accessibility.scanning.AccessibilityTreeScanner
 
@@ -19,6 +20,24 @@ class BlockedPlaybackExit(
         val root = service.rootInActiveWindow
         blockedPackage = root?.packageName?.toString()
         root?.recycle()
+    }
+
+    @Suppress("DEPRECATION")
+    fun exitIfStillDetected(expectedPackage: String): Boolean {
+        val root = service.rootInActiveWindow ?: return false
+        val shouldExit = try {
+            val currentPackage = root.packageName?.toString()
+            currentPackage == expectedPackage && canExitAfterOverlayFailure(
+                expectedPackage,
+                currentPackage,
+                detector.detect(expectedPackage, scanner.scan(root)),
+            )
+        } finally {
+            root.recycle()
+        }
+        if (!shouldExit) return false
+        blockedPackage = expectedPackage
+        return exitPlayer()
     }
 
     @Suppress("DEPRECATION")
@@ -101,3 +120,9 @@ class BlockedPlaybackExit(
             )
     }
 }
+
+internal fun canExitAfterOverlayFailure(
+    expectedPackage: String,
+    currentPackage: String?,
+    currentDetection: DetectionResult,
+): Boolean = currentPackage == expectedPackage && currentDetection.shouldBlock

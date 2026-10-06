@@ -81,4 +81,44 @@ class AccessibilityEventPolicyTest {
 
         assertTrue(requestedDelays.isEmpty())
     }
+
+    @Test
+    fun matchingRootPackageAllowsScanWithoutRescan() {
+        val requestedDelays = mutableListOf<Long>()
+        val policy = AccessibilityEventPolicy(requestRescan = { requestedDelays += it })
+
+        assertTrue(policy.isRootPackageConsistent("com.google.android.youtube", "com.google.android.youtube"))
+        assertTrue(requestedDelays.isEmpty())
+    }
+
+    @Test
+    fun differentSupportedPlatformRootIsRejectedBeforeUsingEventPlatformGate() {
+        val requestedDelays = mutableListOf<Long>()
+        val policy = AccessibilityEventPolicy(requestRescan = { requestedDelays += it })
+
+        assertFalse(policy.isRootPackageConsistent("com.google.android.youtube", "com.instagram.android"))
+        assertEquals(listOf(500L), requestedDelays)
+    }
+
+    @Test
+    fun missingOrUnsupportedRootPackageCannotAuthorizeDetection() {
+        val requestedDelays = mutableListOf<Long>()
+        val policy = AccessibilityEventPolicy(requestRescan = { requestedDelays += it })
+
+        for (rootPackage in listOf(null, "", "com.example.unprotected")) {
+            assertFalse(policy.isRootPackageConsistent("com.google.android.youtube", rootPackage))
+        }
+        assertEquals(listOf(500L, 500L, 500L), requestedDelays)
+    }
+
+    @Test
+    fun changedRootCanBeScannedByItsOwnFreshEventAfterMismatch() {
+        val requestedDelays = mutableListOf<Long>()
+        val policy = AccessibilityEventPolicy(requestRescan = { requestedDelays += it })
+
+        assertFalse(policy.isRootPackageConsistent("com.google.android.youtube", "com.instagram.android"))
+        assertTrue(policy.isRootPackageConsistent("com.instagram.android", "com.instagram.android"))
+        assertTrue(policy.shouldScan(AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED, 1_000L))
+        assertEquals(listOf(500L), requestedDelays)
+    }
 }
