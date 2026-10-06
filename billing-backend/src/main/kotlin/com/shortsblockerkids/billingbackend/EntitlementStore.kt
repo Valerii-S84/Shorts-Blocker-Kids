@@ -11,6 +11,10 @@ import java.nio.file.Path
 import java.security.MessageDigest
 
 interface EntitlementStorage {
+    fun createInstallation(installId: String, bearerHash: String): Boolean
+
+    fun installationBearerHash(installId: String): String?
+
     fun upsert(record: EntitlementRecord)
 
     fun findByInstallId(installId: String): EntitlementRecord?
@@ -32,10 +36,24 @@ class EntitlementStore(
 ) : EntitlementStorage {
     private val records = linkedMapOf<String, EntitlementRecord>()
     private val processedRtdnIds = linkedSetOf<String>()
+    private val installationAuthorizations = linkedMapOf<String, String>()
 
     init {
         load()
     }
+
+    @Synchronized
+    override fun createInstallation(installId: String, bearerHash: String): Boolean {
+        if (installId in records || installId in installationAuthorizations) {
+            return false
+        }
+        installationAuthorizations[installId] = bearerHash
+        persist()
+        return true
+    }
+
+    @Synchronized
+    override fun installationBearerHash(installId: String): String? = installationAuthorizations[installId]
 
     @Synchronized
     override fun upsert(record: EntitlementRecord) {
@@ -89,6 +107,9 @@ class EntitlementStore(
             return
         }
         val root = JsonBodies.json.parseToJsonElement(text).jsonObject
+        (root["installation_authorizations"] as? JsonObject)?.forEach { (installId, value) ->
+            installationAuthorizations[installId] = value.jsonPrimitive.content
+        }
         processedRtdnIds.addAll(
             (root["processed_rtdn_ids"] as? JsonArray)
                 ?.mapNotNull { it.jsonPrimitive.content }
@@ -129,6 +150,8 @@ class EntitlementStore(
         val root =
             JsonObject(
                 mapOf(
+                    "installation_authorizations" to
+                        JsonObject(installationAuthorizations.mapValues { JsonPrimitive(it.value) }),
                     "processed_rtdn_ids" to JsonArray(processedRtdnIds.map(::JsonPrimitive)),
                     "entitlements" to JsonArray(records.values.map(::recordToJson)),
                 ),

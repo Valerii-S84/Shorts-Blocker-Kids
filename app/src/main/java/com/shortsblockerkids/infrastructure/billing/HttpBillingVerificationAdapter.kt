@@ -7,6 +7,8 @@ import com.shortsblockerkids.domain.entitlement.BillingEntitlementSnapshot
 import com.shortsblockerkids.domain.entitlement.BillingEntitlementState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -21,25 +23,28 @@ import java.net.URLEncoder
 class HttpBillingVerificationAdapter(
     private val baseUrl: String,
     private val nowMillis: () -> Long = System::currentTimeMillis,
+    private val installationStore: BillingInstallationStore,
 ) : BillingVerificationPort {
     override val isConfigured: Boolean = baseUrl.isNotBlank()
+    private val registrationMutex = Mutex()
 
     override suspend fun verifyPurchase(request: BillingVerificationRequest): BillingEntitlementSnapshot =
         withContext(Dispatchers.IO) {
             if (!isConfigured) {
                 throw IllegalStateException("Billing backend is not configured.")
             }
+            val installation = installation()
             val body =
                 JsonObject(
                     mapOf(
-                        "install_id" to JsonPrimitive(request.installId),
+                        "install_id" to JsonPrimitive(installation.installId),
                         "package_name" to JsonPrimitive(request.packageName),
                         "product_id" to JsonPrimitive(request.productId),
                         "purchase_token" to JsonPrimitive(request.purchaseToken),
                         "app_version" to JsonPrimitive(request.appVersion),
                     ),
                 ).toString()
-            val response = postJson("/billing/play/verify", body)
+            val response = postJson("/billing/play/verify", body, installation)
             parseEntitlement(response)
         }
 
@@ -48,16 +53,32 @@ class HttpBillingVerificationAdapter(
             if (!isConfigured) {
                 return@withContext null
             }
-            val encodedInstallId = URLEncoder.encode(installId, Charsets.UTF_8.name())
-            val response = getJson("/entitlement/status?install_id=$encodedInstallId")
+            val installation = installation()
+            val encodedInstallId = URLEncoder.encode(installation.installId, Charsets.UTF_8.name())
+            val response = getJson("/entitlement/status?install_id=$encodedInstallId", installation)
             parseEntitlement(response)
+        }
+
+    private suspend fun installation(): BillingInstallation =
+        registrationMutex.withLock {
+            installationStore.read() ?: run {
+                val response = postJson("/billing/installations", "{}")
+                val installation =
+                    BillingInstallation(
+                        installId = requireNotNull(response["install_id"]).jsonPrimitive.content,
+                        bearerToken = requireNotNull(response["bearer_token"]).jsonPrimitive.content,
+                    )
+                installationStore.write(installation)
+                installation
+            }
         }
 
     private fun postJson(
         path: String,
         body: String,
+        installation: BillingInstallation? = null,
     ): JsonObject {
-        val connection = openConnection(path)
+        val connection = openConnection(path, installation)
         connection.requestMethod = "POST"
         connection.doOutput = true
         connection.setRequestProperty("Content-Type", "application/json")
@@ -65,14 +86,16 @@ class HttpBillingVerificationAdapter(
         return readJson(connection)
     }
 
-    private fun getJson(path: String): JsonObject {
-        val connection = openConnection(path)
+    private fun getJson(path: String, installation: BillingInstallation): JsonObject {
+        val connection = openConnection(path, installation)
         connection.requestMethod = "GET"
         return readJson(connection)
     }
 
-    private fun openConnection(path: String): HttpURLConnection =
+    private fun openConnection(path: String, installation: BillingInstallation?): HttpURLConnection =
         (URI("${baseUrl.trimEnd('/')}$path").toURL().openConnection() as HttpURLConnection).apply {
+            instanceFollowRedirects = false
+            installation?.let { setRequestProperty("Authorization", "Bearer ${it.bearerToken}") }
             connectTimeout = 10_000
             readTimeout = 10_000
         }
@@ -120,11 +143,11 @@ class HttpBillingVerificationAdapter(
     companion object {
         private val json = Json { ignoreUnknownKeys = true }
 
-        fun fromBaseUrl(baseUrl: String): BillingVerificationPort =
+        fun fromBaseUrl(baseUrl: String, installationStore: BillingInstallationStore): BillingVerificationPort =
             if (baseUrl.isBlank()) {
                 DisabledBillingVerificationPort
             } else {
-                HttpBillingVerificationAdapter(baseUrl)
+                HttpBillingVerificationAdapter(baseUrl, installationStore = installationStore)
             }
     }
 }

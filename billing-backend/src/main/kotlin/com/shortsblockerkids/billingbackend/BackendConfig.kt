@@ -21,6 +21,7 @@ data class BackendConfig(
     val maxRequestBytes: Int = 32_768,
     val rateLimits: RateLimitConfig = RateLimitConfig(),
     val googleCredentialsFile: Path? = null,
+    val trustedProxyAddresses: Set<String> = emptySet(),
 ) {
     val storageBackend: StorageBackend
         get() = if (database == null) StorageBackend.FILE else StorageBackend.POSTGRES
@@ -47,6 +48,7 @@ data class BackendConfig(
                     maxRequestBytes = env.intValue("SBK_MAX_REQUEST_BYTES", 32_768, 1..262_144),
                     rateLimits = RateLimitConfig.fromEnvironment(env),
                     googleCredentialsFile = env.optionalPath("GOOGLE_APPLICATION_CREDENTIALS"),
+                    trustedProxyAddresses = env.trustedProxyAddresses(),
                 )
             config.validate()
             return config
@@ -130,6 +132,9 @@ private fun BackendConfig.validateProduction(errors: MutableList<String>) {
     if (!requireHttps) {
         errors += "SBK_REQUIRE_HTTPS must be true in production"
     }
+    if (trustedProxyAddresses.isEmpty()) {
+        errors += "SBK_TRUSTED_PROXY_IPS must explicitly identify the TLS proxy in production"
+    }
     if (rtdnPubSubAudience.isNullOrBlank() || rtdnPubSubServiceAccountEmail.isNullOrBlank()) {
         errors += "Authenticated Pub/Sub RTDN push config is required in production"
     }
@@ -152,6 +157,14 @@ private fun Map<String, String>.databaseConfig(): DatabaseConfig? {
 }
 
 private fun Map<String, String>.optionalPath(name: String): Path? = optionalString(name)?.let(Path::of)
+
+private fun Map<String, String>.trustedProxyAddresses(): Set<String> {
+    val configured = optionalString("SBK_TRUSTED_PROXY_IPS") ?: return emptySet()
+    return configured.split(',').mapTo(mutableSetOf()) { address ->
+        numericIpAddress(address.trim())
+            ?: throw ConfigurationException(listOf("SBK_TRUSTED_PROXY_IPS must contain only numeric IPv4 or IPv6 addresses"))
+    }
+}
 
 private fun Map<String, String>.optionalString(name: String): String? = this[name]?.trim()?.takeIf { it.isNotEmpty() }
 

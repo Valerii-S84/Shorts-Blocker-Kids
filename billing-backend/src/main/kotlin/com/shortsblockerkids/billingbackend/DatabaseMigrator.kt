@@ -107,6 +107,27 @@ class PostgresEntitlementStore(
     private val database: DatabaseConfig,
     private val nowMillis: () -> Long = System::currentTimeMillis,
 ) : EntitlementStorage {
+    override fun createInstallation(installId: String, bearerHash: String): Boolean =
+        openDatabaseConnection(database).use { connection ->
+            connection.prepareStatement(CREATE_INSTALLATION_SQL).use { statement ->
+                statement.setString(1, installId)
+                statement.setString(2, bearerHash)
+                statement.setString(3, installId)
+                statement.executeUpdate() == 1
+            }
+        }
+
+    override fun installationBearerHash(installId: String): String? =
+        openDatabaseConnection(database).use { connection ->
+            connection.prepareStatement("SELECT bearer_hash FROM installation_authorizations WHERE install_id = ?")
+                .use { statement ->
+                    statement.setString(1, installId)
+                    statement.executeQuery().use { rows ->
+                        if (rows.next()) rows.getString("bearer_hash") else null
+                    }
+                }
+        }
+
     override fun upsert(record: EntitlementRecord) {
         openDatabaseConnection(database).use { connection ->
             connection.prepareStatement(UPSERT_ENTITLEMENT_SQL).use { statement ->
@@ -185,6 +206,14 @@ class PostgresEntitlementStore(
         }
 
     private companion object {
+        const val CREATE_INSTALLATION_SQL =
+            """
+            INSERT INTO installation_authorizations(install_id, bearer_hash)
+            SELECT ?, ?
+            WHERE NOT EXISTS (SELECT 1 FROM entitlements WHERE install_id = ?)
+            ON CONFLICT (install_id) DO NOTHING
+            """
+
         const val UPSERT_ENTITLEMENT_SQL =
             """
             INSERT INTO entitlements(

@@ -40,6 +40,7 @@ class BackendConfigTest {
         assertTrue(exception.errors.contains("SBK_PUBLIC_BASE_URL must use https:// in production"))
         assertTrue(exception.errors.any { it.contains("GOOGLE_APPLICATION_CREDENTIALS") })
         assertTrue(exception.errors.any { it.contains("Authenticated Pub/Sub RTDN") })
+        assertTrue(exception.errors.any { it.contains("SBK_TRUSTED_PROXY_IPS") })
     }
 
     @Test
@@ -51,6 +52,7 @@ class BackendConfigTest {
                 mapOf(
                     "SBK_ENV" to "production",
                     "SBK_PUBLIC_BASE_URL" to "https://billing.shortsblockerkids.de",
+                    "SBK_TRUSTED_PROXY_IPS" to "192.0.2.10",
                     "SBK_DATABASE_URL" to "jdbc:postgresql://db:5432/shorts_blocker_kids",
                     "GOOGLE_APPLICATION_CREDENTIALS" to credentialsFile.absolutePath,
                     "SBK_RTDN_PUBSUB_AUDIENCE" to "https://billing.shortsblockerkids.de/billing/play/rtdn",
@@ -60,6 +62,7 @@ class BackendConfigTest {
 
         assertEquals(StorageBackend.POSTGRES, config.storageBackend)
         assertEquals(true, config.requireHttps)
+        assertEquals(setOf("192.0.2.10"), config.trustedProxyAddresses)
     }
 
     @Test
@@ -95,5 +98,23 @@ class BackendConfigTest {
             }.exceptionOrNull() as ConfigurationException
 
         assertEquals(listOf("SBK_BACKEND_PORT must be in range 1..65535"), exception.errors)
+    }
+
+    @Test
+    fun trustedProxyAddressesAcceptOnlyExplicitNumericAddresses() {
+        val config = BackendConfig.fromEnvironment(mapOf("SBK_TRUSTED_PROXY_IPS" to "192.0.2.10, 2001:db8::1"))
+
+        assertEquals(setOf("192.0.2.10", "2001:db8:0:0:0:0:0:1"), config.trustedProxyAddresses)
+    }
+
+    @Test
+    fun trustedProxyConfigRejectsNamesRangesAndEmptyEntries() {
+        for (addresses in listOf("proxy.example", "127.0.0.1/8", "192.0.2.10,", "127.1", "127.0.0.1:8080")) {
+            val exception = runCatching {
+                BackendConfig.fromEnvironment(mapOf("SBK_TRUSTED_PROXY_IPS" to addresses))
+            }.exceptionOrNull()
+
+            assertTrue("Configuration accepted $addresses", exception is ConfigurationException)
+        }
     }
 }

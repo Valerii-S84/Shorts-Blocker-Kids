@@ -2,6 +2,7 @@ package com.shortsblockerkids.billingbackend
 
 import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpServer
+import kotlinx.serialization.json.JsonObject
 import java.io.ByteArrayOutputStream
 import java.net.InetSocketAddress
 import java.net.URLDecoder
@@ -18,6 +19,8 @@ class BillingBackendServer(
     private val rtdnAuthenticator: RtdnAuthenticator = RtdnAuthenticator(config),
 ) {
     private val verifier: PlaySubscriptionVerifier by lazy(verifierProvider)
+    private val installationAuthorization = InstallationAuthorization(store)
+    private val proxyBoundary = ProxyRequestBoundary(config.trustedProxyAddresses)
 
     fun start() {
         server.start()
@@ -40,6 +43,17 @@ class BillingBackendServer(
             context,
         )
 
+    private fun registerInstallation(
+        exchange: HttpExchange,
+        context: RequestContext,
+    ): Int {
+        exchange.requireMethod("POST")
+        val body = JsonBodies.json.parseToJsonElement(exchange.readBody()) as? JsonObject
+            ?: throw IllegalArgumentException("Expected registration object")
+        require(body.isEmpty()) { "Registration does not accept an installation identity" }
+        return exchange.respond(200, installationAuthorization.register().toJson(), context)
+    }
+
     private fun verify(
         exchange: HttpExchange,
         context: RequestContext,
@@ -48,6 +62,7 @@ class BillingBackendServer(
         val request = JsonBodies.parseVerificationRequest(exchange.readBody())
         require(request.packageName == config.packageName) { "Unexpected package name" }
         require(request.productId == config.productId) { "Unexpected product ID" }
+        exchange.requireInstallationAuthorization(request.installId)
 
         val purchaseTokenHash = EntitlementStore.hashPurchaseToken(request.purchaseToken)
         val existingRecord = store.findByPurchaseTokenHash(purchaseTokenHash)
@@ -86,6 +101,7 @@ class BillingBackendServer(
                 .queryParam("install_id")
                 ?.takeIf { INSTALL_ID_REGEX.matches(it) }
                 ?: throw IllegalArgumentException("Missing install_id")
+        exchange.requireInstallationAuthorization(installId)
         return exchange.respond(200, JsonBodies.entitlementResponse(store.findByInstallId(installId)), context)
     }
 
@@ -139,9 +155,18 @@ class BillingBackendServer(
         var failureType: String? = null
         try {
             exchange.requireExactPath(endpoint.path)
-            exchange.requireHttpsIfNeeded(endpoint)
-            exchange.requireRateLimit(endpoint)
+            val origin =
+                if (endpoint == Endpoint.HEALTH) {
+                    RequestOrigin(exchange.remoteAddress.address.hostAddress, secure = false)
+                } else {
+                    proxyBoundary.resolve(exchange.remoteAddress.address.hostAddress, exchange.requestHeaders)
+                }
+            exchange.requireHttpsIfNeeded(endpoint, origin)
+            exchange.requireRateLimit(endpoint, origin)
             statusCode = block(exchange, context)
+        } catch (exception: InstallationUnauthorizedException) {
+            failureType = exception.failureType()
+            statusCode = exchange.respond(401, JsonBodies.errorResponse("Installation authorization required"), context)
         } catch (exception: TooManyRequestsException) {
             failureType = exception.failureType()
             statusCode = exchange.respond(429, JsonBodies.errorResponse("Rate limit exceeded"), context)
@@ -207,17 +232,24 @@ class BillingBackendServer(
         require(requestURI.path == path) { "Unknown endpoint" }
     }
 
-    private fun HttpExchange.requireHttpsIfNeeded(endpoint: Endpoint) {
+    private fun HttpExchange.requireInstallationAuthorization(installId: String) {
+        val authorization = requestHeaders["Authorization"]?.singleOrNull()
+        if (!installationAuthorization.authenticate(installId, authorization)) {
+            throw InstallationUnauthorizedException()
+        }
+    }
+
+    private fun HttpExchange.requireHttpsIfNeeded(endpoint: Endpoint, origin: RequestOrigin) {
         if (!config.requireHttps || endpoint == Endpoint.HEALTH) {
             return
         }
-        require(requestHeaders.getFirst("X-Forwarded-Proto") == "https") {
+        require(origin.secure) {
             "HTTPS is required"
         }
     }
 
-    private fun HttpExchange.requireRateLimit(endpoint: Endpoint) {
-        val key = "${endpoint.path}:${remoteAddress.address.hostAddress}"
+    private fun HttpExchange.requireRateLimit(endpoint: Endpoint, origin: RequestOrigin) {
+        val key = "${endpoint.path}:${origin.clientAddress}"
         if (!rateLimiter.allow(key, endpoint.limit(config.rateLimits))) {
             throw TooManyRequestsException()
         }
@@ -246,6 +278,7 @@ class BillingBackendServer(
     ): Int {
         val bytes = body.toByteArray()
         responseHeaders.set("Content-Type", "application/json")
+        responseHeaders.set("Cache-Control", "no-store")
         responseHeaders.set("X-Request-Id", context.requestId)
         sendResponseHeaders(statusCode, bytes.size.toLong())
         responseBody.use { it.write(bytes) }
@@ -323,6 +356,7 @@ class BillingBackendServer(
                     rateLimiter = rateLimiter,
                 )
             server.createContext(Endpoint.HEALTH.path) { backend.handle(it, Endpoint.HEALTH, backend::health) }
+            server.createContext(Endpoint.INSTALLATION.path) { backend.handle(it, Endpoint.INSTALLATION, backend::registerInstallation) }
             server.createContext(Endpoint.VERIFY.path) { backend.handle(it, Endpoint.VERIFY, backend::verify) }
             server.createContext(Endpoint.RTDN.path) { backend.handle(it, Endpoint.RTDN, backend::rtdn) }
             server.createContext(Endpoint.STATUS.path) { backend.handle(it, Endpoint.STATUS, backend::entitlementStatus) }
@@ -340,6 +374,7 @@ private enum class Endpoint(
     val path: String,
 ) {
     HEALTH("/health"),
+    INSTALLATION("/billing/installations"),
     VERIFY("/billing/play/verify"),
     RTDN("/billing/play/rtdn"),
     STATUS("/entitlement/status"),
@@ -348,7 +383,7 @@ private enum class Endpoint(
     fun limit(config: RateLimitConfig): Int =
         when (this) {
             HEALTH -> Int.MAX_VALUE
-            VERIFY -> config.verifyPerMinute
+            INSTALLATION, VERIFY -> config.verifyPerMinute
             RTDN -> config.rtdnPerMinute
             STATUS -> config.statusPerMinute
         }
@@ -357,5 +392,7 @@ private enum class Endpoint(
 private class RequestTooLargeException : RuntimeException()
 
 private class TooManyRequestsException : RuntimeException()
+
+private class InstallationUnauthorizedException : RuntimeException()
 
 private val INSTALL_ID_REGEX = Regex("[A-Za-z0-9_.:-]{1,128}")

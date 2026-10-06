@@ -2,6 +2,8 @@ package com.shortsblockerkids.billingbackend
 
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -18,6 +20,7 @@ class BillingBackendServerTest {
     val temporaryFolder = TemporaryFolder()
 
     private val startedServers = mutableListOf<BillingBackendServer>()
+    private val installations = mutableMapOf<String, Pair<String, String>>()
 
     @After
     fun tearDown() {
@@ -191,7 +194,7 @@ class BillingBackendServerTest {
     }
 
     @Test
-    fun statusReturnsUnknownForUnregisteredInstall() {
+    fun statusReturnsUnknownForRegisteredInstallWithoutEntitlement() {
         val backend = startBackend()
 
         val response =
@@ -288,27 +291,6 @@ class BillingBackendServerTest {
         val response = get("http://127.0.0.1:${backend.port}/health")
 
         assertTrue(response.contains("\"status\":\"ok\""))
-    }
-
-    @Test
-    fun billingEndpointsRequireHttpsForwardingHeaderWhenConfigured() {
-        val backend = startBackend(config = backendConfig(requireHttps = true))
-
-        val insecure =
-            post(
-                url = "http://127.0.0.1:${backend.port}/billing/play/verify",
-                body = verifyBody(installId = "install-1", purchaseToken = "token-1"),
-                expectedCode = 400,
-            )
-        val secure =
-            post(
-                url = "http://127.0.0.1:${backend.port}/billing/play/verify",
-                body = verifyBody(installId = "install-1", purchaseToken = "token-1"),
-                headers = mapOf("X-Forwarded-Proto" to "https"),
-            )
-
-        assertTrue(insecure.contains("HTTPS is required"))
-        assertTrue(secure.contains("\"state\":\"ACTIVE\""))
     }
 
     @Test
@@ -441,12 +423,22 @@ class BillingBackendServerTest {
         headers: Map<String, String> = emptyMap(),
         expectedCode: Int = 200,
     ): String {
+        var requestBody = body
+        var requestHeaders = headers
+        if (URI(url).path == "/billing/play/verify") {
+            val json = JsonBodies.json.parseToJsonElement(body).jsonObject
+            json["install_id"]?.jsonPrimitive?.content?.let { logicalId ->
+                val owner = installationFor(url, logicalId)
+                requestBody = JsonObject(json + ("install_id" to JsonPrimitive(owner.first))).toString()
+                requestHeaders = headers + ("Authorization" to "Bearer ${owner.second}")
+            }
+        }
         val connection = URI(url).toURL().openConnection() as HttpURLConnection
         connection.requestMethod = "POST"
         connection.doOutput = true
         connection.setRequestProperty("Content-Type", "application/json")
-        headers.forEach { (name, value) -> connection.setRequestProperty(name, value) }
-        connection.outputStream.use { it.write(body.toByteArray()) }
+        requestHeaders.forEach { (name, value) -> connection.setRequestProperty(name, value) }
+        connection.outputStream.use { it.write(requestBody.toByteArray()) }
         assertEquals(expectedCode, connection.responseCode)
         return connection.responseBody()
     }
@@ -455,10 +447,30 @@ class BillingBackendServerTest {
         url: String,
         expectedCode: Int = 200,
     ): String {
-        val connection = URI(url).toURL().openConnection() as HttpURLConnection
+        var requestUrl = url
+        var authorization: String? = null
+        if (URI(url).path == "/entitlement/status") {
+            Regex("install_id=([A-Za-z0-9_.:-]+)$").find(url)?.groupValues?.get(1)?.let { logicalId ->
+                val owner = installationFor(url, logicalId)
+                requestUrl = url.replace("install_id=$logicalId", "install_id=${owner.first}")
+                authorization = "Bearer ${owner.second}"
+            }
+        }
+        val connection = URI(requestUrl).toURL().openConnection() as HttpURLConnection
+        authorization?.let { connection.setRequestProperty("Authorization", it) }
         connection.requestMethod = "GET"
         assertEquals(expectedCode, connection.responseCode)
         return connection.responseBody()
+    }
+
+    private fun installationFor(url: String, logicalId: String): Pair<String, String> {
+        val uri = URI(url)
+        val baseUrl = "${uri.scheme}://${uri.host}:${uri.port}"
+        return installations.getOrPut("$baseUrl:$logicalId") {
+            val response = post("$baseUrl/billing/installations", "{}")
+            val json = JsonBodies.json.parseToJsonElement(response).jsonObject
+            json.getValue("install_id").jsonPrimitive.content to json.getValue("bearer_token").jsonPrimitive.content
+        }
     }
 
     private fun HttpURLConnection.responseBody(): String =

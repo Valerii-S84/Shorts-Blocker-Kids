@@ -5,12 +5,10 @@ import com.shortsblockerkids.application.billing.DisabledBillingVerificationPort
 import com.shortsblockerkids.domain.entitlement.BillingEntitlementState
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -23,383 +21,218 @@ import kotlin.concurrent.thread
 
 class HttpBillingVerificationAdapterTest {
     @Test
-    fun blankBackendUrlKeepsClientOnlyBillingPathDisabled() {
-        runBlocking {
-            val client = HttpBillingVerificationAdapter.fromBaseUrl("")
+    fun blankBackendKeepsBillingDisabled() = runBlocking {
+        for (url in listOf("", "   ")) {
+            val client = HttpBillingVerificationAdapter.fromBaseUrl(url, MemoryBillingInstallationStore())
 
             assertSame(DisabledBillingVerificationPort, client)
             assertFalse(client.isConfigured)
-            assertTrue(client.refreshEntitlement("install-id") == null)
+            assertEquals(null, client.refreshEntitlement("legacy-install"))
         }
     }
 
     @Test(expected = UnsupportedOperationException::class)
-    fun disabledBackendDoesNotVerifyPurchases() {
-        runBlocking {
-            DisabledBillingVerificationPort.verifyPurchase(
-                BillingVerificationRequest(
-                    installId = "install-id",
-                    packageName = "com.shortsblockerkids",
-                    productId = "shorts_blocker_kids_monthly",
-                    purchaseToken = "token",
-                    appVersion = "0.1.0",
-                ),
-            )
+    fun disabledBackendDoesNotVerifyPurchases() = runBlocking {
+        DisabledBillingVerificationPort.verifyPurchase(purchaseRequest())
+        Unit
+    }
+
+    @Test
+    fun registrationSuppliesNoLegacyIdAndVerifyUsesServerIdentityAndBearer() = runBlocking {
+        HttpFixture(
+            Response(201, REGISTRATION),
+            Response(200, ENTITLEMENT),
+        ).use { server ->
+            val store = MemoryBillingInstallationStore()
+            val client = HttpBillingVerificationAdapter.fromBaseUrl(server.baseUrl, store)
+            val snapshot = client.verifyPurchase(purchaseRequest())
+            val requests = server.awaitRequests()
+            val body = Json.parseToJsonElement(requests[1].body).jsonObject
+
+            assertEquals("POST", requests[0].method)
+            assertEquals("/billing/installations", requests[0].target)
+            assertEquals("{}", requests[0].body)
+            assertEquals(null, requests[0].headers["authorization"])
+            assertEquals(INSTALL_ID, body["install_id"]?.jsonPrimitive?.content)
+            assertEquals("Bearer $BEARER", requests[1].headers["authorization"])
+            assertEquals("/billing/play/verify", requests[1].target)
+            assertEquals("token", body["purchase_token"]?.jsonPrimitive?.content)
+            assertEquals("com.shortsblockerkids", body["package_name"]?.jsonPrimitive?.content)
+            assertEquals(PlayBillingConfig.MONTHLY_SUBSCRIPTION_PRODUCT_ID, body["product_id"]?.jsonPrimitive?.content)
+            assertEquals("0.1.0", body["app_version"]?.jsonPrimitive?.content)
+            assertEquals(BillingInstallation(INSTALL_ID, BEARER), store.read())
+            assertEquals(BillingEntitlementState.ACTIVE, snapshot.state)
+            assertEquals(1234L, snapshot.checkedAtMillis)
+            assertEquals(5678L, snapshot.activeUntilMillis)
         }
     }
 
     @Test
-    fun whitespaceBackendUrlKeepsClientOnlyBillingPathDisabled() {
-        val client = HttpBillingVerificationAdapter.fromBaseUrl("   ")
+    fun statusUsesStoredOwnerInsteadOfCallerSuppliedVictimUuid() = runBlocking {
+        HttpFixture(Response(200, ENTITLEMENT)).use { server ->
+            val client = HttpBillingVerificationAdapter.fromBaseUrl(server.baseUrl, ownedStore())
+            val snapshot = client.refreshEntitlement("victim-install")
+            val request = server.awaitRequests().single()
 
-        assertSame(DisabledBillingVerificationPort, client)
-        assertFalse(client.isConfigured)
-    }
-
-    @Test
-    fun configuredBackendUrlEnablesHttpBillingClient() {
-        val client = HttpBillingVerificationAdapter.fromBaseUrl("http://127.0.0.1:8080")
-
-        assertTrue(client is HttpBillingVerificationAdapter)
-        assertTrue(client.isConfigured)
-    }
-
-    @Test
-    fun configuredBackendVerifiesPurchaseViaPostAndParsesEntitlement() {
-        runBlocking {
-            SingleResponseHttpServer(
-                statusCode = 200,
-                responseBody =
-                    """
-                    {
-                      "state": "ACTIVE",
-                      "checked_at_millis": 1234,
-                      "active_until_millis": 5678
-                    }
-                    """.trimIndent(),
-            ).use { server ->
-                val client = HttpBillingVerificationAdapter.fromBaseUrl(server.baseUrl)
-
-                val snapshot =
-                    client.verifyPurchase(
-                        BillingVerificationRequest(
-                            installId = "install-id",
-                            packageName = "com.shortsblockerkids",
-                            productId = PlayBillingConfig.MONTHLY_SUBSCRIPTION_PRODUCT_ID,
-                            purchaseToken = "token",
-                            appVersion = "0.1.0",
-                        ),
-                    )
-                val request = server.awaitRequest()
-                val body = Json.parseToJsonElement(request.body).jsonObject
-
-                assertTrue(client.isConfigured)
-                assertEquals("POST", request.method)
-                assertEquals("/billing/play/verify", request.target)
-                assertEquals("install-id", body["install_id"]?.jsonPrimitive?.contentOrNull)
-                assertEquals("com.shortsblockerkids", body["package_name"]?.jsonPrimitive?.contentOrNull)
-                assertEquals(
-                    PlayBillingConfig.MONTHLY_SUBSCRIPTION_PRODUCT_ID,
-                    body["product_id"]?.jsonPrimitive?.contentOrNull,
-                )
-                assertEquals("token", body["purchase_token"]?.jsonPrimitive?.contentOrNull)
-                assertEquals("0.1.0", body["app_version"]?.jsonPrimitive?.contentOrNull)
-                assertEquals(BillingEntitlementState.ACTIVE, snapshot.state)
-                assertEquals(1234L, snapshot.checkedAtMillis)
-                assertEquals(5678L, snapshot.activeUntilMillis)
-            }
+            assertEquals("GET", request.method)
+            assertEquals("/entitlement/status?install_id=$INSTALL_ID", request.target)
+            assertEquals("Bearer $BEARER", request.headers["authorization"])
+            assertEquals(BillingEntitlementState.ACTIVE, snapshot?.state)
         }
     }
 
     @Test
-    fun refreshEntitlementEncodesInstallIdAndUsesClockFallbackForMissingFields() {
-        runBlocking {
-            SingleResponseHttpServer(
-                statusCode = 200,
-                responseBody = """{"state":"IN_GRACE"}""",
-            ).use { server ->
-                val client = HttpBillingVerificationAdapter("${server.baseUrl}/", nowMillis = { 42L })
+    fun newAdapterReusesPersistedRegistrationForVerifyAndStatus() = runBlocking {
+        val store = ownedStore()
+        HttpFixture(Response(200, ENTITLEMENT), Response(200, ENTITLEMENT)).use { server ->
+            HttpBillingVerificationAdapter.fromBaseUrl(server.baseUrl, store).verifyPurchase(purchaseRequest())
+            HttpBillingVerificationAdapter.fromBaseUrl(server.baseUrl, store).refreshEntitlement("legacy-install")
+            val requests = server.awaitRequests()
 
-                val snapshot = client.refreshEntitlement("install id/child")
-                val request = server.awaitRequest()
-
-                assertNotNull(snapshot)
-                assertEquals("GET", request.method)
-                assertEquals("/entitlement/status?install_id=install+id%2Fchild", request.target)
-                assertEquals(BillingEntitlementState.IN_GRACE, snapshot?.state)
-                assertEquals(42L, snapshot?.checkedAtMillis)
-                assertEquals(null, snapshot?.activeUntilMillis)
-            }
+            assertEquals(listOf("POST", "GET"), requests.map { it.method })
+            assertTrue(requests.all { it.headers["authorization"] == "Bearer $BEARER" })
         }
     }
 
     @Test
-    fun unknownBackendStateFallsBackToUnknownAndNullTimestampsUseDefaults() {
-        runBlocking {
-            SingleResponseHttpServer(
-                statusCode = 200,
-                responseBody =
-                    """
-                    {
-                      "state": "SUSPENDED_BY_MOONLIGHT",
-                      "checked_at_millis": null,
-                      "active_until_millis": null
-                    }
-                    """.trimIndent(),
-            ).use { server ->
-                val client = HttpBillingVerificationAdapter(server.baseUrl, nowMillis = { 900L })
+    fun statusRegistersFreshOwnershipAndRetainsClockFallback() = runBlocking {
+        HttpFixture(Response(201, REGISTRATION), Response(200, "{}")).use { server ->
+            val client = HttpBillingVerificationAdapter(server.baseUrl, { 42L }, MemoryBillingInstallationStore())
+            val snapshot = client.refreshEntitlement("legacy-install")
+            val request = server.awaitRequests().last()
 
-                val snapshot = client.refreshEntitlement("install-id")
-
-                assertEquals(BillingEntitlementState.UNKNOWN, snapshot?.state)
-                assertEquals(900L, snapshot?.checkedAtMillis)
-                assertEquals(null, snapshot?.activeUntilMillis)
-            }
+            assertEquals("/entitlement/status?install_id=$INSTALL_ID", request.target)
+            assertEquals("Bearer $BEARER", request.headers["authorization"])
+            assertEquals(BillingEntitlementState.UNKNOWN, snapshot?.state)
+            assertEquals(42L, snapshot?.checkedAtMillis)
+            assertEquals(null, snapshot?.activeUntilMillis)
         }
     }
 
     @Test
-    fun nullBackendStateAndMissingActiveUntilUseSafeDefaults() {
-        runBlocking {
-            SingleResponseHttpServer(
-                statusCode = 200,
-                responseBody =
-                    """
-                    {
-                      "state": null,
-                      "checked_at_millis": 902
-                    }
-                    """.trimIndent(),
-            ).use { server ->
-                val client = HttpBillingVerificationAdapter(server.baseUrl, nowMillis = { 999L })
+    fun malformedRegistrationIsNotSavedOrUsedToSendAPurchase() = runBlocking {
+        HttpFixture(Response(201, "{\"install_id\":\"$INSTALL_ID\",\"bearer_token\":\"\"}")).use { server ->
+            val store = MemoryBillingInstallationStore()
+            val error = runCatching {
+                HttpBillingVerificationAdapter.fromBaseUrl(server.baseUrl, store).verifyPurchase(purchaseRequest())
+            }.exceptionOrNull()
 
-                val snapshot = client.refreshEntitlement("install-id")
-
-                assertEquals(BillingEntitlementState.UNKNOWN, snapshot?.state)
-                assertEquals(902L, snapshot?.checkedAtMillis)
-                assertEquals(null, snapshot?.activeUntilMillis)
-            }
+            assertTrue(error is IllegalArgumentException)
+            assertEquals(null, store.read())
+            assertEquals("/billing/installations", server.awaitRequests().single().target)
         }
     }
 
     @Test
-    fun missingStateAndInvalidTimestampsUseSafeDefaults() {
-        runBlocking {
-            SingleResponseHttpServer(
-                statusCode = 200,
-                responseBody =
-                    """
-                    {
-                      "checked_at_millis": "not-a-time",
-                      "active_until_millis": "not-a-time"
-                    }
-                    """.trimIndent(),
-            ).use { server ->
-                val client = HttpBillingVerificationAdapter(server.baseUrl, nowMillis = { 901L })
+    fun backendRejectionFailsClosed() = runBlocking {
+        HttpFixture(Response(401, "{}")).use { server ->
+            val error = runCatching {
+                HttpBillingVerificationAdapter.fromBaseUrl(server.baseUrl, ownedStore()).verifyPurchase(purchaseRequest())
+            }.exceptionOrNull()
 
-                val snapshot = client.refreshEntitlement("install-id")
-
-                assertEquals(BillingEntitlementState.UNKNOWN, snapshot?.state)
-                assertEquals(901L, snapshot?.checkedAtMillis)
-                assertEquals(null, snapshot?.activeUntilMillis)
-            }
+            assertEquals("Billing backend returned HTTP 401.", error?.message)
+            server.awaitRequests()
+            Unit
         }
     }
 
     @Test
-    fun purchaseVerificationHttpErrorsSurfaceStatusWithoutResponseBodyDetails() {
-        runBlocking {
-            SingleResponseHttpServer(
-                statusCode = 503,
-                responseBody = """{"error":"purchase token stays private"}""",
-            ).use { server ->
-                val client = HttpBillingVerificationAdapter(server.baseUrl)
+    fun redirectDoesNotForwardCredentialsToAnotherOrigin() = runBlocking {
+        HttpFixture(Response(302, "{}", "Location: http://127.0.0.1:1/capture\r\n")).use { server ->
+            val error = runCatching {
+                HttpBillingVerificationAdapter.fromBaseUrl(server.baseUrl, ownedStore()).refreshEntitlement("legacy-install")
+            }.exceptionOrNull()
 
-                val error =
-                    runCatching {
-                        client.verifyPurchase(
-                            BillingVerificationRequest(
-                                installId = "install-id",
-                                packageName = "com.shortsblockerkids",
-                                productId = PlayBillingConfig.MONTHLY_SUBSCRIPTION_PRODUCT_ID,
-                                purchaseToken = "private-token",
-                                appVersion = "0.1.0",
-                            ),
-                        )
-                    }.exceptionOrNull()
-
-                assertTrue(error is IllegalStateException)
-                assertEquals("Billing backend returned HTTP 503.", error?.message)
-            }
+            assertEquals("Billing backend returned HTTP 302.", error?.message)
+            server.awaitRequests()
+            Unit
         }
     }
 
-    @Test
-    fun backendHttpErrorsSurfaceStatusWithoutResponseBodyDetails() {
-        runBlocking {
-            SingleResponseHttpServer(
-                statusCode = 409,
-                responseBody = """{"error":"token details stay server-side"}""",
-            ).use { server ->
-                val client = HttpBillingVerificationAdapter(server.baseUrl)
+    private fun ownedStore() = MemoryBillingInstallationStore(BillingInstallation(INSTALL_ID, BEARER))
 
-                val error =
-                    runCatching { client.refreshEntitlement("install-id") }
-                        .exceptionOrNull()
+    private fun purchaseRequest() =
+        BillingVerificationRequest(
+            installId = "legacy-install",
+            packageName = "com.shortsblockerkids",
+            productId = PlayBillingConfig.MONTHLY_SUBSCRIPTION_PRODUCT_ID,
+            purchaseToken = "token",
+            appVersion = "0.1.0",
+        )
 
-                assertTrue(error is IllegalStateException)
-                assertEquals("Billing backend returned HTTP 409.", error?.message)
-            }
-        }
-    }
-
-    @Test
-    fun backendHttpErrorsWithoutBodyStillSurfaceOnlyStatus() {
-        runBlocking {
-            SingleResponseHttpServer(
-                statusCode = 500,
-                responseBody = "",
-            ).use { server ->
-                val client = HttpBillingVerificationAdapter(server.baseUrl)
-
-                val error =
-                    runCatching { client.refreshEntitlement("install-id") }
-                        .exceptionOrNull()
-
-                assertTrue(error is IllegalStateException)
-                assertEquals("Billing backend returned HTTP 500.", error?.message)
-            }
-        }
-    }
-
-    @Test
-    fun unavailableBackendSurfacesAsFailureWithoutEntitlementSnapshot() {
-        runBlocking {
-            val unavailablePort =
-                ServerSocket(0, 1, InetAddress.getByName("127.0.0.1")).use {
-                    it.localPort
-                }
-            val client = HttpBillingVerificationAdapter("http://127.0.0.1:$unavailablePort")
-
-            val error =
-                runCatching { client.refreshEntitlement("install-id") }
-                    .exceptionOrNull()
-
-            assertNotNull(error)
-        }
-    }
-
-    @Test
-    fun directBlankHttpClientRejectsNetworkOperationsConservatively() {
-        runBlocking {
-            val client = HttpBillingVerificationAdapter(" ")
-
-            val verifyError =
-                runCatching {
-                    client.verifyPurchase(
-                        BillingVerificationRequest(
-                            installId = "install-id",
-                            packageName = "com.shortsblockerkids",
-                            productId = PlayBillingConfig.MONTHLY_SUBSCRIPTION_PRODUCT_ID,
-                            purchaseToken = "token",
-                            appVersion = "0.1.0",
-                        ),
-                    )
-                }.exceptionOrNull()
-
-            assertFalse(client.isConfigured)
-            assertTrue(verifyError is IllegalStateException)
-            assertEquals("Billing backend is not configured.", verifyError?.message)
-            assertEquals(null, client.refreshEntitlement("install-id"))
-        }
-    }
-
-    private class SingleResponseHttpServer(
-        private val statusCode: Int,
-        private val responseBody: String,
+    private class HttpFixture(
+        vararg responses: Response,
     ) : AutoCloseable {
-        private val serverSocket =
-            ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"))
-        private val served = CountDownLatch(1)
+        private val socket = ServerSocket(0, responses.size, InetAddress.getByName("127.0.0.1"))
+        private val served = CountDownLatch(responses.size)
         private val failure = AtomicReference<Throwable?>()
-        private var recordedRequest: RecordedRequest? = null
-        private val serverThread =
-            thread(start = true, name = "billing-backend-client-test") {
-                try {
-                    serverSocket.accept().use { socket ->
-                        val reader = socket.getInputStream().bufferedReader(Charsets.UTF_8)
-                        val requestLine = reader.readLine()
-                        val headers = mutableMapOf<String, String>()
-                        while (true) {
-                            val line = reader.readLine()
-                            if (line.isNullOrEmpty()) {
-                                break
-                            }
-                            val separatorIndex = line.indexOf(':')
-                            if (separatorIndex > 0) {
-                                headers[line.substring(0, separatorIndex).lowercase()] =
-                                    line.substring(separatorIndex + 1).trim()
-                            }
-                        }
-                        val contentLength = headers["content-length"]?.toIntOrNull() ?: 0
-                        val bodyChars = CharArray(contentLength)
-                        var read = 0
-                        while (read < contentLength) {
-                            val next = reader.read(bodyChars, read, contentLength - read)
-                            if (next == -1) {
-                                break
-                            }
-                            read += next
-                        }
-                        val parts = requestLine.split(" ", limit = 3)
-                        recordedRequest =
-                            RecordedRequest(
-                                method = parts[0],
-                                target = parts[1],
-                                body = String(bodyChars, 0, read),
-                            )
-
-                        val bytes = responseBody.toByteArray(Charsets.UTF_8)
-                        socket.getOutputStream().use { output ->
-                            output.write(
-                                (
-                                    "HTTP/1.1 $statusCode Test\r\n" +
-                                        "Content-Type: application/json\r\n" +
-                                        "Content-Length: ${bytes.size}\r\n" +
-                                        "Connection: close\r\n" +
-                                        "\r\n"
-                                ).toByteArray(Charsets.UTF_8),
-                            )
-                            output.write(bytes)
-                            output.flush()
-                        }
-                    }
-                } catch (throwable: Throwable) {
-                    if (!serverSocket.isClosed) {
-                        failure.set(throwable)
-                    }
-                } finally {
+        private val requests = mutableListOf<RecordedRequest>()
+        private val worker = thread(start = true, name = "billing-client-test") {
+            try {
+                responses.forEach { response ->
+                    serve(response)
                     served.countDown()
                 }
+            } catch (throwable: Throwable) {
+                if (!socket.isClosed) failure.set(throwable)
+                while (served.count > 0) served.countDown()
             }
+        }
+        val baseUrl = "http://127.0.0.1:${socket.localPort}"
 
-        val baseUrl: String = "http://127.0.0.1:${serverSocket.localPort}"
+        private fun serve(response: Response) {
+            socket.accept().use { client ->
+                val reader = client.getInputStream().bufferedReader(Charsets.UTF_8)
+                val requestLine = reader.readLine().split(" ", limit = 3)
+                val headers = linkedMapOf<String, String>()
+                var line = reader.readLine()
+                while (!line.isNullOrEmpty()) {
+                    val separator = line.indexOf(':')
+                    headers[line.substring(0, separator).lowercase()] = line.substring(separator + 1).trim()
+                    line = reader.readLine()
+                }
+                val body = CharArray(headers["content-length"]?.toIntOrNull() ?: 0)
+                var read = 0
+                while (read < body.size) {
+                    val count = reader.read(body, read, body.size - read)
+                    if (count < 0) break
+                    read += count
+                }
+                requests.add(RecordedRequest(requestLine[0], requestLine[1], headers, String(body, 0, read)))
+                val bytes = response.body.toByteArray(Charsets.UTF_8)
+                val head = "HTTP/1.1 ${response.code} Test\r\nContent-Type: application/json\r\n" +
+                    "Content-Length: ${bytes.size}\r\n${response.headers}Connection: close\r\n\r\n"
+                client.getOutputStream().write(head.toByteArray(Charsets.UTF_8))
+                client.getOutputStream().write(bytes)
+                client.getOutputStream().flush()
+            }
+        }
 
-        fun awaitRequest(): RecordedRequest {
-            assertTrue("test HTTP server did not receive a request", served.await(3, TimeUnit.SECONDS))
+        fun awaitRequests(): List<RecordedRequest> {
+            assertTrue("test server did not receive expected requests", served.await(3, TimeUnit.SECONDS))
             failure.get()?.let { throw AssertionError("test HTTP server failed", it) }
-            return requireNotNull(recordedRequest) { "test HTTP server did not record a request" }
+            return requests.toList()
         }
 
         override fun close() {
-            serverSocket.close()
-            serverThread.join(1_000L)
+            socket.close()
+            worker.join(1_000L)
         }
     }
+
+    private data class Response(val code: Int, val body: String, val headers: String = "")
 
     private data class RecordedRequest(
         val method: String,
         val target: String,
+        val headers: Map<String, String>,
         val body: String,
     )
+
+    private companion object {
+        const val INSTALL_ID = "fa3999d4-c2ce-4664-aec6-4d7190c0dc16"
+        val BEARER = "a".repeat(43)
+        val REGISTRATION = "{\"install_id\":\"$INSTALL_ID\",\"bearer_token\":\"$BEARER\"}"
+        const val ENTITLEMENT = "{\"state\":\"ACTIVE\",\"checked_at_millis\":1234,\"active_until_millis\":5678}"
+    }
 }

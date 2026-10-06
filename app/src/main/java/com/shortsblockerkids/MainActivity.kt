@@ -23,6 +23,7 @@ import com.shortsblockerkids.application.protection.RecordSuccessfulProtectionAc
 import com.shortsblockerkids.application.protection.SetTemporaryAllowUseCase
 import com.shortsblockerkids.composition.dashboard.DashboardUiStateAssembler
 import com.shortsblockerkids.infrastructure.billing.GooglePlayBillingGateway
+import com.shortsblockerkids.infrastructure.billing.AndroidBillingInstallationStore
 import com.shortsblockerkids.infrastructure.billing.HttpBillingVerificationAdapter
 import com.shortsblockerkids.infrastructure.billing.PlayBillingConfig
 import com.shortsblockerkids.infrastructure.security.Pbkdf2PinHasher
@@ -100,6 +101,7 @@ class MainActivity : ComponentActivity() {
                 billingVerificationPort =
                     HttpBillingVerificationAdapter.fromBaseUrl(
                         BuildConfig.BILLING_BACKEND_BASE_URL,
+                        AndroidBillingInstallationStore(applicationContext.noBackupFilesDir),
                     ),
                 timeProvider = timeProvider,
                 configuration =

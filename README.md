@@ -157,7 +157,7 @@ After installing, enable the Accessibility Service manually in Android settings.
 
 ## Billing Backend
 
-Runtime configuration:
+Development runtime configuration:
 
 ```bash
 GOOGLE_APPLICATION_CREDENTIALS=/secure/path/service-account.json
@@ -167,6 +167,54 @@ SBK_PLAY_SUBSCRIPTION_PRODUCT_ID=shorts_blocker_kids_monthly
 SBK_BACKEND_STORE_FILE=/secure/path/billing-backend-data.json
 SBK_RTDN_SHARED_SECRET=...
 ```
+
+Production requires `SBK_ENV=production`, PostgreSQL (`SBK_DATABASE_URL`),
+`SBK_PUBLIC_BASE_URL` with HTTPS, runtime Google credentials, and authenticated
+Pub/Sub push (`SBK_RTDN_PUBSUB_AUDIENCE` and
+`SBK_RTDN_PUBSUB_SERVICE_ACCOUNT_EMAIL`). The shared RTDN secret above is a
+development option; production RTDN still requires Google OIDC authentication.
+
+The supported production topology is one trusted TLS reverse proxy on the
+Docker host, forwarding to the loopback origin port. Compose publishes the
+origin as `127.0.0.1:${SBK_BACKEND_PORT:-8080}:8080`; expose the proxy's HTTPS
+listener to clients, and keep the origin inaccessible to untrusted callers.
+Configure the required `SBK_TRUSTED_PROXY_IPS` with the exact numeric socket
+peer addresses observed by the backend for that proxy. Docker forwarding can
+change that address; do not assume loopback or a bridge gateway is trusted.
+Hostnames, CIDRs, address ranges, and implicit proxy trust are unsupported.
+Each configured peer must belong exclusively to the trusted proxy or protected
+local host. Shared NAT ingress reachable by untrusted callers is unsupported.
+
+The proxy must overwrite `X-Forwarded-For` with its actual client socket IP
+(exactly one IPv4 or IPv6 address) and overwrite `X-Forwarded-Proto` with the
+actual ingress scheme. It must remove `Forwarded` and other `X-Forwarded-*`
+headers. For example, the relevant Nginx location directives are:
+
+```nginx
+proxy_pass http://127.0.0.1:8080;
+proxy_set_header X-Forwarded-For $remote_addr;
+proxy_set_header X-Forwarded-Proto $scheme;
+proxy_set_header Forwarded "";
+```
+
+Configure stripping of other forwarded headers as well. The backend rejects
+unsupported, duplicate, malformed, or chained forwarded headers; it accepts
+these headers only from explicitly trusted peers. Direct HTTP from an
+untrusted peer cannot satisfy the production HTTPS gate by adding a header.
+Client rate limits use the validated proxy client address before Google or
+database work. Clients sharing a public IP still share that IP's quota.
+The local `/health` probe is exempt from the forwarding/HTTPS gate.
+
+Installation authorization begins with `POST /billing/installations` and an
+empty JSON object (`{}`). The server creates a fresh installation ID and a
+256-bit random bearer credential; clients persist both and send
+`Authorization: Bearer <credential>` on verify and status requests for that
+installation. A UUID or an APK-wide secret does not establish ownership.
+Unauthenticated callers cannot enroll a chosen or pre-existing installation
+ID. Legacy installations without a credential fail closed; restoring their
+ownership requires a separate trusted recovery process, which is not
+implemented here. Creating a fresh installation never grants access to a
+legacy installation or its existing purchase-token binding.
 
 Android release builds can opt into backend verification with:
 
