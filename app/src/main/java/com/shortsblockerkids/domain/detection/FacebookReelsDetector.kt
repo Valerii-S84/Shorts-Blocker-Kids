@@ -52,8 +52,9 @@ class FacebookReelsDetector(
     private fun AccessibilityTreeSnapshot.hasReelsIdentifier(matchedSignals: MutableSet<DetectorSignal>): Boolean {
         val matched =
             nodes.any { node ->
-                node.contentDescriptionSignals.any { it in ShortVideoTextSignals.reelsIdentifiers } ||
-                    node.viewIdResourceName.containsAnyIgnoringCase("reel", "reels")
+                node.isVisibleToUser &&
+                    (node.contentDescriptionSignals.any { it in ShortVideoTextSignals.reelsIdentifiers } ||
+                        node.viewIdResourceName.containsAnyIgnoringCase("reel", "reels"))
             }
 
         if (matched) {
@@ -66,14 +67,14 @@ class FacebookReelsDetector(
     private fun AccessibilityTreeSnapshot.hasReelContainer(matchedSignals: MutableSet<DetectorSignal>): Boolean {
         val matched =
             nodes.any { node ->
-                node.viewIdResourceName.containsAnyIgnoringCase(
-                    "reel",
-                    "reels",
-                    "reel_viewer",
-                    "video",
-                    "player",
-                ) ||
-                    node.className.containsAnyIgnoringCase("viewpager")
+                node.isVisibleToUser &&
+                    (node.viewIdResourceName.containsAnyIgnoringCase(
+                        "reel",
+                        "reels",
+                        "reel_viewer",
+                        "video",
+                        "player",
+                    ) || node.className.containsAnyIgnoringCase("viewpager"))
             }
 
         if (matched) {

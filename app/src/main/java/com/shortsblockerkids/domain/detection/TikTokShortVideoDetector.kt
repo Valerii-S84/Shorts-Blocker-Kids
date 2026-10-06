@@ -54,8 +54,9 @@ class TikTokShortVideoDetector(
     private fun AccessibilityTreeSnapshot.hasFeedIdentifier(matchedSignals: MutableSet<DetectorSignal>): Boolean {
         val matched =
             nodes.any { node ->
-                node.contentDescriptionSignals.any { it in ShortVideoTextSignals.tiktokFeed } ||
-                    node.viewIdResourceName.containsAnyIgnoringCase("for_you", "foryou", "aweme", "feed")
+                node.isVisibleToUser &&
+                    (node.contentDescriptionSignals.any { it in ShortVideoTextSignals.tiktokFeed } ||
+                        node.viewIdResourceName.containsAnyIgnoringCase("for_you", "foryou", "aweme", "feed"))
             }
 
         if (matched) {
@@ -68,14 +69,14 @@ class TikTokShortVideoDetector(
     private fun AccessibilityTreeSnapshot.hasShortVideoContainer(matchedSignals: MutableSet<DetectorSignal>): Boolean {
         val matched =
             nodes.any { node ->
-                node.viewIdResourceName.containsAnyIgnoringCase(
-                    "aweme",
-                    "feed",
-                    "player",
-                    "video",
-                    "viewpager",
-                ) ||
-                    node.className.containsAnyIgnoringCase("viewpager")
+                node.isVisibleToUser &&
+                    (node.viewIdResourceName.containsAnyIgnoringCase(
+                        "aweme",
+                        "feed",
+                        "player",
+                        "video",
+                        "viewpager",
+                    ) || node.className.containsAnyIgnoringCase("viewpager"))
             }
 
         if (matched) {
@@ -100,6 +101,7 @@ class TikTokShortVideoDetector(
     private fun AccessibilityTreeSnapshot.hasNavigationContext(matchedSignals: MutableSet<DetectorSignal>): Boolean {
         val signalCount =
             nodes
+                .filter { it.isVisibleToUser }
                 .flatMap { it.contentDescriptionSignals }
                 .filter { it in ShortVideoTextSignals.tiktokNavigation }
                 .distinct()

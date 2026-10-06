@@ -4,6 +4,7 @@ import com.shortsblockerkids.domain.detection.AccessibilityNodeSignal
 import com.shortsblockerkids.domain.detection.AccessibilityTreeSnapshot
 import com.shortsblockerkids.domain.detection.Confidence
 import com.shortsblockerkids.domain.detection.DetectionResult
+import com.shortsblockerkids.domain.detection.DetectorSignal
 import com.shortsblockerkids.domain.detection.FacebookReelsDetector
 import com.shortsblockerkids.domain.detection.InstagramReelsDetector
 import com.shortsblockerkids.domain.detection.ShortVideoDetector
@@ -340,6 +341,150 @@ class DetectorBranchHardeningTest {
         assertFalse(instagramWithoutIdentifierOrRepeatedFeed.shouldBlock)
         assertFalse(facebookWithoutReelContainerOrIdentifier.shouldBlock)
         assertFalse(tiktokWithoutContainer.shouldBlock)
+    }
+
+    @Test
+    fun hiddenIdentifiersCannotPromoteVisibleVideoAndActionsToHighConfidence() {
+        listOf(tiktokCase, instagramCase, facebookCase).forEach { detectorCase ->
+            val base =
+                highConfidenceSnapshot(
+                    detectorCase,
+                    includeIdentifier = false,
+                    includeRepeatedFeed = false,
+                    navigationSignals = emptyList(),
+                    surfaceViewId = if (detectorCase == instagramCase) "viewer" else "player",
+                )
+            val markers =
+                listOf(
+                    node(contentDescriptionSignals = setOf(detectorCase.explicitSignal)),
+                    node(viewIdResourceName = if (detectorCase == tiktokCase) "for_you" else "reels"),
+                )
+            markers.forEach { marker ->
+                val hidden = detectorCase.detector.detect(
+                    detectorCase.packageName,
+                    AccessibilityTreeSnapshot(base.nodes + marker.copy(isVisibleToUser = false)),
+                )
+                val visible = detectorCase.detector.detect(
+                    detectorCase.packageName,
+                    AccessibilityTreeSnapshot(base.nodes + marker),
+                )
+
+                assertFalse(detectorCase.name, hidden.shouldBlock)
+                assertFalse(detectorCase.name, DetectorSignal.SHORT_VIDEO_IDENTIFIER.id in hidden.matchedSignals)
+                assertTrue(detectorCase.name, visible.shouldBlock)
+            }
+        }
+    }
+
+    @Test
+    fun hiddenContainerIdsAndClassesDoNotContributeReelEvidence() {
+        listOf(tiktokCase, instagramCase, facebookCase).forEach { detectorCase ->
+            val base =
+                highConfidenceSnapshot(
+                    detectorCase,
+                    includeIdentifier = false,
+                    includeReelContainer = false,
+                    includeRepeatedFeed = false,
+                    navigationSignals = emptyList(),
+                )
+            listOf(
+                node(viewIdResourceName = detectorCase.containerViewId),
+                node(className = VIEW_PAGER_CLASS),
+            ).forEach { marker ->
+                val hidden = detectorCase.detector.detect(
+                    detectorCase.packageName,
+                    AccessibilityTreeSnapshot(base.nodes + marker.copy(isVisibleToUser = false)),
+                )
+                val visible = detectorCase.detector.detect(
+                    detectorCase.packageName,
+                    AccessibilityTreeSnapshot(base.nodes + marker),
+                )
+
+                assertFalse(detectorCase.name, hidden.shouldBlock)
+                assertFalse(detectorCase.name, DetectorSignal.REEL_CONTAINER.id in hidden.matchedSignals)
+                assertTrue(detectorCase.name, DetectorSignal.REEL_CONTAINER.id in visible.matchedSignals)
+            }
+        }
+    }
+
+    @Test
+    fun hiddenTikTokNavigationCannotEnableStructuralFeedFallback() {
+        val visible = highConfidenceSnapshot(tiktokCase, includeIdentifier = false, surfaceViewId = "player")
+        val hidden =
+            AccessibilityTreeSnapshot(
+                visible.nodes.map { node ->
+                    if (node.contentDescriptionSignals.any { it in tiktokCase.navigationSignals }) {
+                        node.copy(isVisibleToUser = false)
+                    } else {
+                        node
+                    }
+                },
+            )
+        val visibleResult = tiktokCase.detector.detect(tiktokCase.packageName, visible)
+        val hiddenResult = tiktokCase.detector.detect(tiktokCase.packageName, hidden)
+
+        assertTrue(visibleResult.shouldBlock)
+        assertFalse(hiddenResult.shouldBlock)
+        assertFalse(DetectorSignal.SHORT_VIDEO_IDENTIFIER.id in hiddenResult.matchedSignals)
+        assertFalse(DetectorSignal.PLATFORM_NAVIGATION.id in hiddenResult.matchedSignals)
+    }
+
+    @Test
+    fun translatedWindowsPreservePositiveAndNegativeGeometryDecisions() {
+        detectorCases.forEach { detectorCase ->
+            listOf(
+                highConfidenceSnapshot(detectorCase),
+                highConfidenceSnapshot(detectorCase, actionLeft = 40),
+                highConfidenceSnapshot(detectorCase, actionTopSpacing = 40),
+            ).forEach { snapshot ->
+                val expected = detectorCase.detector.detect(detectorCase.packageName, snapshot)
+                listOf(2_000 to 0, 0 to 3_000, -2_000 to -3_000).forEach { (dx, dy) ->
+                    val translated =
+                        AccessibilityTreeSnapshot(
+                            snapshot.nodes.map { node ->
+                                node.copy(
+                                    left = node.left + dx,
+                                    right = node.right + dx,
+                                    top = node.top + dy,
+                                    bottom = node.bottom + dy,
+                                )
+                            },
+                        )
+                    assertEquals(
+                        "${detectorCase.name} offset=($dx,$dy)",
+                        expected,
+                        detectorCase.detector.detect(detectorCase.packageName, translated),
+                    )
+                }
+            }
+        }
+    }
+
+    @Test
+    fun hiddenOversizedBoundsDoNotChangeDetectorDecisions() {
+        detectorCases.forEach { detectorCase ->
+            listOf(
+                highConfidenceSnapshot(detectorCase),
+                highConfidenceSnapshot(detectorCase, actionLeft = 40),
+                highConfidenceSnapshot(detectorCase, actionTopSpacing = 40),
+            ).forEach { snapshot ->
+                val withHiddenBounds =
+                    AccessibilityTreeSnapshot(
+                        snapshot.nodes + node(
+                            isVisibleToUser = false,
+                            left = -10_000,
+                            top = -10_000,
+                            right = 20_000,
+                            bottom = 20_000,
+                        ),
+                    )
+                assertEquals(
+                    detectorCase.name,
+                    detectorCase.detector.detect(detectorCase.packageName, snapshot),
+                    detectorCase.detector.detect(detectorCase.packageName, withHiddenBounds),
+                )
+            }
+        }
     }
 
     private fun highConfidenceSnapshot(

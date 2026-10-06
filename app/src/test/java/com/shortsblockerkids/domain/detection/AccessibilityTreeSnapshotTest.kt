@@ -96,6 +96,71 @@ class AccessibilityTreeSnapshotTest {
         assertTrue("Reel_Watch_Sequence".containsAnyIgnoringCase("reel"))
     }
 
+    @Test
+    fun visibleBoundsUseWindowOriginAndExcludeHiddenAndEmptyOutliers() {
+        val snapshot =
+            AccessibilityTreeSnapshot(
+                listOf(
+                    node(left = 300, top = 500, right = 1_300, bottom = 2_500),
+                    node(isVisibleToUser = false, left = -5_000, top = -5_000, right = 10_000, bottom = 10_000),
+                    node(left = -9_000, top = -9_000, right = -9_000, bottom = 20_000),
+                ),
+            )
+
+        assertEquals(300, snapshot.screenLeft)
+        assertEquals(500, snapshot.screenTop)
+        assertEquals(1_300, snapshot.screenRight)
+        assertEquals(2_500, snapshot.screenBottom)
+        assertEquals(1_000, snapshot.screenWidth)
+        assertEquals(2_000, snapshot.screenHeight)
+        assertEquals(1_000, snapshot.maxWidth)
+        assertEquals(2_000, snapshot.maxHeight)
+    }
+
+    @Test
+    fun fullyHiddenSnapshotHasNoGeometryOrStructuralSignals() {
+        val snapshot =
+            AccessibilityTreeSnapshot(
+                listOf(node(isVisibleToUser = false, isScrollable = true, right = 1_080, bottom = 2_200)),
+            )
+        val matchedSignals = linkedSetOf<DetectorSignal>()
+
+        assertEquals(0, snapshot.screenLeft)
+        assertEquals(0, snapshot.screenTop)
+        assertEquals(0, snapshot.screenWidth)
+        assertEquals(0, snapshot.screenHeight)
+        assertFalse(snapshot.hasActionRailSignal(setOf("like", "comments", "share"), matchedSignals))
+        assertFalse(snapshot.hasVerticalFullscreenSignal(matchedSignals) { true })
+        assertFalse(snapshot.hasRepeatedVerticalFeedSignal(matchedSignals) { true })
+        assertTrue(matchedSignals.isEmpty())
+    }
+
+    @Test
+    fun zeroAreaCandidatesCannotSupplySignalsInsideVisibleWindow() {
+        val actions = listOf("like", "comments", "share")
+        val snapshot =
+            AccessibilityTreeSnapshot(
+                listOf(node(right = 1_080, bottom = 2_200, depth = 0)) +
+                    actions.mapIndexed { index, action ->
+                        node(
+                            contentDescriptionSignals = setOf(action),
+                            isScrollable = true,
+                            left = 930,
+                            top = 700 + index * 400,
+                            right = 930,
+                            width = 1_080,
+                            height = 2_200,
+                        )
+                    },
+            )
+        val matchedSignals = linkedSetOf<DetectorSignal>()
+
+        assertFalse(snapshot.hasActionRailSignal(actions.toSet(), matchedSignals))
+        assertFalse(snapshot.hasVerticalFullscreenSignal(matchedSignals) { true })
+        assertFalse(snapshot.hasRepeatedVerticalFeedSignal(matchedSignals) { true })
+        assertTrue(matchedSignals.isEmpty())
+    }
+
     private fun node(
         className: String = "android.view.View",
         viewIdResourceName: String? = null,

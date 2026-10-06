@@ -53,8 +53,9 @@ class InstagramReelsDetector(
     private fun AccessibilityTreeSnapshot.hasReelsIdentifier(matchedSignals: MutableSet<DetectorSignal>): Boolean {
         val matched =
             nodes.any { node ->
-                node.contentDescriptionSignals.any { it in ShortVideoTextSignals.reelsIdentifiers } ||
-                    node.viewIdResourceName.containsAnyIgnoringCase("reel", "reels", "clips")
+                node.isVisibleToUser &&
+                    (node.contentDescriptionSignals.any { it in ShortVideoTextSignals.reelsIdentifiers } ||
+                        node.viewIdResourceName.containsAnyIgnoringCase("reel", "reels", "clips"))
             }
 
         if (matched) {
@@ -67,15 +68,15 @@ class InstagramReelsDetector(
     private fun AccessibilityTreeSnapshot.hasReelContainer(matchedSignals: MutableSet<DetectorSignal>): Boolean {
         val matched =
             nodes.any { node ->
-                node.viewIdResourceName.containsAnyIgnoringCase(
-                    "clips",
-                    "clips_viewer",
-                    "reel",
-                    "reels",
-                    "reel_viewer",
-                    "viewer",
-                ) ||
-                    node.className.containsAnyIgnoringCase("viewpager")
+                node.isVisibleToUser &&
+                    (node.viewIdResourceName.containsAnyIgnoringCase(
+                        "clips",
+                        "clips_viewer",
+                        "reel",
+                        "reels",
+                        "reel_viewer",
+                        "viewer",
+                    ) || node.className.containsAnyIgnoringCase("viewpager"))
             }
 
         if (matched) {

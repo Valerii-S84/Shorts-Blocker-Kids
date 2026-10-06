@@ -45,7 +45,11 @@ class AccessibilityServiceRuntime(
     private var latestSettings: AppSettingsSnapshot? = null
     private var settingsJob: Job? = null
     private var pinEntryRecheckJob: Job? = null
-    private var scanRecheckJob: Job? = null
+    private val currentWindowRecheckScheduler =
+        CurrentWindowRecheckScheduler(
+            scope = serviceScope,
+            tryRoute = ::tryRouteCurrentWindow,
+        )
     private val temporaryAllowDeadlineScheduler =
         TemporaryAllowDeadlineScheduler(
             scope = serviceScope,
@@ -120,6 +124,7 @@ class AccessibilityServiceRuntime(
                             state.snapshot.protectionConfiguration.temporaryAllowUntilMillis,
                         )
                         if (!state.snapshot.canProtect(timeProvider.currentTimeMillis())) {
+                            currentWindowRecheckScheduler.cancel()
                             eventRouter.dismissBlockingState()
                         } else {
                             routeCurrentWindow()
@@ -152,7 +157,7 @@ class AccessibilityServiceRuntime(
             eventRouter.shutdown()
         }
         pinEntryRecheckJob?.cancel()
-        scanRecheckJob?.cancel()
+        currentWindowRecheckScheduler.cancel()
         temporaryAllowDeadlineScheduler.cancel()
     }
 
@@ -161,7 +166,7 @@ class AccessibilityServiceRuntime(
             eventRouter.shutdown()
         }
         pinEntryRecheckJob?.cancel()
-        scanRecheckJob?.cancel()
+        currentWindowRecheckScheduler.cancel()
         temporaryAllowDeadlineScheduler.cancel()
         serviceScope.cancel()
     }
@@ -177,12 +182,7 @@ class AccessibilityServiceRuntime(
         )
 
     private fun scheduleScanRecheck(delayMillis: Long) {
-        scanRecheckJob?.cancel()
-        scanRecheckJob =
-            serviceScope.launch {
-                delay(delayMillis)
-                routeCurrentWindow()
-            }
+        currentWindowRecheckScheduler.schedule(delayMillis)
     }
 
     private fun schedulePinEntryRecheck() {
@@ -194,21 +194,32 @@ class AccessibilityServiceRuntime(
             }
     }
 
-    @Suppress("DEPRECATION")
     private fun routeCurrentWindow() {
+        currentWindowRecheckScheduler.recheckNow()
+    }
+
+    @Suppress("DEPRECATION")
+    private fun tryRouteCurrentWindow(): Boolean {
         if (!::eventRouter.isInitialized || latestSettings == null) {
-            return
+            return true
         }
-        val packageName = service.rootInActiveWindow?.packageName ?: return
+        val settings = latestSettings ?: return true
+        val root = service.rootInActiveWindow
+        val packageName = root?.packageName
+        if (root == null || packageName == null) {
+            // Keep an active protection scan alive without polling while protection is inactive.
+            return !settings.canProtect(timeProvider.currentTimeMillis())
+        }
         val event =
             AccessibilityEvent.obtain(AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED).apply {
                 this.packageName = packageName
             }
         try {
-            eventRouter.route(event) { service.rootInActiveWindow }
+            eventRouter.route(event) { root }
         } finally {
             event.recycle()
         }
+        return true
     }
 
     private companion object {

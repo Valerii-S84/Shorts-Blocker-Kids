@@ -32,15 +32,15 @@ internal fun AccessibilityTreeSnapshot.hasActionRailSignal(
     matchedSignals: MutableSet<DetectorSignal>,
     minVerticalSpreadRatio: Float = DEFAULT_ACTION_RAIL_MIN_VERTICAL_SPREAD_RATIO,
 ): Boolean {
-    val screenWidth = screenRight
-    val screenHeight = screenBottom
+    val screenWidth = this.screenWidth
+    val screenHeight = this.screenHeight
     if (screenWidth <= 0 || screenHeight <= 0) {
         return false
     }
 
     val actionNodes =
         nodes.filter { node ->
-            node.isVisibleToUser &&
+            node.isVisibleWithArea &&
                 node.contentDescriptionSignals.any { it in actionSignals }
         }
     val distinctActionSignals =
@@ -50,7 +50,7 @@ internal fun AccessibilityTreeSnapshot.hasActionRailSignal(
             .distinct()
     val rightSideActionCount =
         actionNodes.count { node ->
-            node.centerX >= screenWidth * ACTION_RAIL_RIGHT_SIDE_MIN_X_RATIO
+            node.centerX - screenLeft >= screenWidth * ACTION_RAIL_RIGHT_SIDE_MIN_X_RATIO
         }
     val verticalSpread =
         actionNodes
@@ -76,15 +76,15 @@ internal fun AccessibilityTreeSnapshot.hasVerticalFullscreenSignal(
     matchedSignals: MutableSet<DetectorSignal>,
     isSurfaceCandidate: (AccessibilityNodeSignal) -> Boolean,
 ): Boolean {
-    val screenWidth = maxWidth
-    val screenHeight = maxHeight
+    val screenWidth = this.screenWidth
+    val screenHeight = this.screenHeight
     if (screenWidth <= 0 || screenHeight <= 0) {
         return false
     }
 
     val matched =
         nodes.any { node ->
-            node.isVisibleToUser &&
+            node.isVisibleWithArea &&
                 node.depth > 0 &&
                 isSurfaceCandidate(node) &&
                 node.width >= screenWidth * FULLSCREEN_MIN_WIDTH_RATIO &&
@@ -102,15 +102,15 @@ internal fun AccessibilityTreeSnapshot.hasRepeatedVerticalFeedSignal(
     matchedSignals: MutableSet<DetectorSignal>,
     isFeedCandidate: (AccessibilityNodeSignal) -> Boolean = { true },
 ): Boolean {
-    val screenWidth = maxWidth
-    val screenHeight = maxHeight
+    val screenWidth = this.screenWidth
+    val screenHeight = this.screenHeight
     if (screenWidth <= 0 || screenHeight <= 0) {
         return false
     }
 
     val matched =
         nodes.any { node ->
-            node.isVisibleToUser &&
+            node.isVisibleWithArea &&
                 node.isScrollable &&
                 isFeedCandidate(node) &&
                 node.width >= screenWidth * REPEATED_FEED_MIN_WIDTH_RATIO &&

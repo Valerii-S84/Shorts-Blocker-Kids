@@ -7,16 +7,31 @@ data class AccessibilityTreeSnapshot(
         get() = nodes.count { it.isVisibleToUser }
 
     val maxWidth: Int
-        get() = nodes.maxOfOrNull { it.width } ?: 0
+        get() = visibleGeometryNodes.maxOfOrNull { it.width } ?: 0
 
     val maxHeight: Int
-        get() = nodes.maxOfOrNull { it.height } ?: 0
+        get() = visibleGeometryNodes.maxOfOrNull { it.height } ?: 0
+
+    private val visibleGeometryNodes: Sequence<AccessibilityNodeSignal>
+        get() = nodes.asSequence().filter { it.isVisibleWithArea }
+
+    val screenLeft: Int
+        get() = visibleGeometryNodes.minOfOrNull { it.left } ?: 0
+
+    val screenTop: Int
+        get() = visibleGeometryNodes.minOfOrNull { it.top } ?: 0
 
     val screenRight: Int
-        get() = nodes.maxOfOrNull { it.right } ?: 0
+        get() = visibleGeometryNodes.maxOfOrNull { it.right } ?: 0
 
     val screenBottom: Int
-        get() = nodes.maxOfOrNull { it.bottom } ?: 0
+        get() = visibleGeometryNodes.maxOfOrNull { it.bottom } ?: 0
+
+    val screenWidth: Int
+        get() = screenRight - screenLeft
+
+    val screenHeight: Int
+        get() = screenBottom - screenTop
 
     fun toDebugSummary(): String {
         val classNames =
@@ -66,6 +81,9 @@ data class AccessibilityNodeSignal(
     val height: Int,
     val depth: Int,
 ) {
+    internal val isVisibleWithArea: Boolean
+        get() = isVisibleToUser && right > left && bottom > top && width > 0 && height > 0
+
     val centerX: Int
         get() = left + width / 2
 
