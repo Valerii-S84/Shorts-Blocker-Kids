@@ -5,6 +5,7 @@ object ProtectionEligibilityPolicy {
         configuration: ProtectionConfiguration,
         hasProtectionEntitlement: Boolean,
         nowMillis: Long,
+        elapsedRealtimeMillis: Long? = null,
     ): Boolean =
         configuration.isEnabled &&
             configuration.isAccessibilityDisclosureAccepted &&
@@ -12,5 +13,5 @@ object ProtectionEligibilityPolicy {
             configuration.hasEnabledPlatforms &&
             hasProtectionEntitlement &&
             configuration.isPinConfigured &&
-            !TemporaryAllowPolicy.isActive(configuration.temporaryAllowUntilMillis, nowMillis)
+            !TemporaryAllowPolicy.isActive(configuration, nowMillis, elapsedRealtimeMillis)
 }

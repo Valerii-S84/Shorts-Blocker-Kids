@@ -45,6 +45,7 @@ fun billingSubscriptionTermsText(productPrice: String?): String =
 @StringRes
 private fun BillingMessageCode.stringRes(): Int =
     when (this) {
+        BillingMessageCode.ENTITLEMENT_SAVE_FAILED -> R.string.settings_operation_failed
         BillingMessageCode.CONNECTING -> R.string.billing_status_connecting
         BillingMessageCode.CONNECTED -> R.string.billing_status_connected
         BillingMessageCode.BILLING_UNAVAILABLE -> R.string.billing_error_unavailable

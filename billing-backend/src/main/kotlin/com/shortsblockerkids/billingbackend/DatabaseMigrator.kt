@@ -106,8 +106,62 @@ class DatabaseMigrator(
 class PostgresEntitlementStore(
     private val database: DatabaseConfig,
     private val nowMillis: () -> Long = System::currentTimeMillis,
+    private val connectionFactory: () -> Connection = { openDatabaseConnection(database) },
 ) : EntitlementStorage {
-    override fun createInstallation(installId: String, bearerHash: String): Boolean =
+    override fun applyRtdn(
+        messageId: String,
+        purchaseToken: String,
+        verified: VerifiedSubscription,
+    ): RtdnApplyResult = processRtdn(messageId, purchaseToken) { verified }
+
+    override fun processRtdn(
+        messageId: String,
+        purchaseToken: String,
+        verify: () -> VerifiedSubscription,
+    ): RtdnApplyResult =
+        connectionFactory().use { connection ->
+            connection.autoCommit = false
+            try {
+                val claimed =
+                    connection.prepareStatement(CLAIM_RTDN_SQL).use { statement ->
+                        statement.queryTimeout = 15
+                        statement.setString(1, messageId)
+                        statement.setLong(2, nowMillis())
+                        statement.executeUpdate() == 1
+                    }
+                val result =
+                    if (!claimed) {
+                        RtdnApplyResult.DUPLICATE
+                    } else {
+                        // The unique insert is held until commit. A competing delivery waits
+                        // for this transaction and skips successful external verification.
+                        val verified = verify()
+                        val updated =
+                            connection.prepareStatement(UPDATE_BY_TOKEN_SQL).use { statement ->
+                                statement.queryTimeout = 15
+                                statement.setString(1, verified.state.name)
+                                statement.setNullableLong(2, verified.activeUntilMillis)
+                                statement.setBoolean(3, verified.acknowledged)
+                                statement.setLong(4, verified.verifiedAtMillis)
+                                statement.setLong(5, nowMillis())
+                                statement.setString(6, EntitlementStore.hashPurchaseToken(purchaseToken))
+                                statement.setLong(7, verified.verifiedAtMillis)
+                                statement.executeUpdate() > 0
+                            }
+                        if (updated) RtdnApplyResult.UPDATED else RtdnApplyResult.NO_INSTALL_RECORD
+                    }
+                connection.commit()
+                result
+            } catch (exception: Exception) {
+                connection.rollback()
+                throw exception
+            }
+        }
+
+    override fun createInstallation(
+        installId: String,
+        bearerHash: String,
+    ): Boolean =
         openDatabaseConnection(database).use { connection ->
             connection.prepareStatement(CREATE_INSTALLATION_SQL).use { statement ->
                 statement.setString(1, installId)
@@ -119,7 +173,8 @@ class PostgresEntitlementStore(
 
     override fun installationBearerHash(installId: String): String? =
         openDatabaseConnection(database).use { connection ->
-            connection.prepareStatement("SELECT bearer_hash FROM installation_authorizations WHERE install_id = ?")
+            connection
+                .prepareStatement("SELECT bearer_hash FROM installation_authorizations WHERE install_id = ?")
                 .use { statement ->
                     statement.setString(1, installId)
                     statement.executeQuery().use { rows ->
@@ -180,6 +235,7 @@ class PostgresEntitlementStore(
                 statement.setLong(4, verified.verifiedAtMillis)
                 statement.setLong(5, nowMillis())
                 statement.setString(6, EntitlementStore.hashPurchaseToken(purchaseToken))
+                statement.setLong(7, verified.verifiedAtMillis)
                 statement.executeUpdate() > 0
             }
         }
@@ -206,6 +262,13 @@ class PostgresEntitlementStore(
         }
 
     private companion object {
+        const val CLAIM_RTDN_SQL =
+            """
+            INSERT INTO processed_rtdn_messages(message_id, processed_at_millis)
+            VALUES (?, ?)
+            ON CONFLICT (message_id) DO NOTHING
+            """
+
         const val CREATE_INSTALLATION_SQL =
             """
             INSERT INTO installation_authorizations(install_id, bearer_hash)
@@ -231,6 +294,7 @@ class PostgresEntitlementStore(
                 last_verified_at_millis = EXCLUDED.last_verified_at_millis,
                 app_version = EXCLUDED.app_version,
                 updated_at_millis = EXCLUDED.updated_at_millis
+            WHERE entitlements.last_verified_at_millis <= EXCLUDED.last_verified_at_millis
             """
 
         const val UPDATE_BY_TOKEN_SQL =
@@ -242,6 +306,7 @@ class PostgresEntitlementStore(
                 last_verified_at_millis = ?,
                 updated_at_millis = ?
             WHERE purchase_token_hash = ?
+              AND last_verified_at_millis <= ?
             """
     }
 }

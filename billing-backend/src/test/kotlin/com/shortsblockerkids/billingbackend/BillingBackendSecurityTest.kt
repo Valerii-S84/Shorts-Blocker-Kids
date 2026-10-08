@@ -103,8 +103,14 @@ class BillingBackendSecurityTest {
 
     @Test fun productionRtdnCannotFallBackToSharedSecret() {
         val fixture = startBackend(requireHttps = true, trusted = setOf("127.0.0.1"), productionRtdn = true)
-        val response = request(fixture, "/billing/play/rtdn", "{}",
-            forwarded("192.0.2.20") + mapOf(BillingBackendServer.RTDN_SECRET_HEADER to "secret"), 400)
+        val response =
+            request(
+                fixture,
+                "/billing/play/rtdn",
+                "{}",
+                forwarded("192.0.2.20") + mapOf(BillingBackendServer.RTDN_SECRET_HEADER to "secret"),
+                400,
+            )
         assertTrue(response.contains("Missing RTDN authorization"))
         assertEquals(0, fixture.verifier.calls)
     }
@@ -113,8 +119,13 @@ class BillingBackendSecurityTest {
         val fixture = startBackend(state = state)
         val original = victimRecord()
         fixture.store.upsert(original)
-        request(fixture, "/billing/play/verify", verifyBody(VICTIM_ID, "attacker-token"),
-            mapOf("Authorization" to "Bearer ${"A".repeat(43)}"), 401)
+        request(
+            fixture,
+            "/billing/play/verify",
+            verifyBody(VICTIM_ID, "attacker-token"),
+            mapOf("Authorization" to "Bearer ${"A".repeat(43)}"),
+            401,
+        )
         assertEquals(original, fixture.store.findByInstallId(VICTIM_ID))
         assertEquals(0, fixture.verifier.calls)
     }
@@ -126,13 +137,20 @@ class BillingBackendSecurityTest {
         verifyLimit: Int = 30,
         productionRtdn: Boolean = false,
     ): Fixture {
-        val config = BackendConfig(port = 0, packageName = "com.shortsblockerkids",
-            productId = "shorts_blocker_kids_monthly", storeFile = temporaryFolder.newFile().toPath(),
-            rtdnSharedSecret = "secret", requireHttps = requireHttps, trustedProxyAddresses = trusted,
-            environment = if (productionRtdn) BackendEnvironment.PRODUCTION else BackendEnvironment.DEVELOPMENT,
-            rtdnPubSubAudience = if (productionRtdn) "https://billing.example/billing/play/rtdn" else null,
-            rtdnPubSubServiceAccountEmail = if (productionRtdn) "pubsub@example.iam.gserviceaccount.com" else null,
-            rateLimits = RateLimitConfig(verifyPerMinute = verifyLimit))
+        val config =
+            BackendConfig(
+                port = 0,
+                packageName = "com.shortsblockerkids",
+                productId = "shorts_blocker_kids_monthly",
+                storeFile = temporaryFolder.newFile().toPath(),
+                rtdnSharedSecret = "secret",
+                requireHttps = requireHttps,
+                trustedProxyAddresses = trusted,
+                environment = if (productionRtdn) BackendEnvironment.PRODUCTION else BackendEnvironment.DEVELOPMENT,
+                rtdnPubSubAudience = if (productionRtdn) "https://billing.example/billing/play/rtdn" else null,
+                rtdnPubSubServiceAccountEmail = if (productionRtdn) "pubsub@example.iam.gserviceaccount.com" else null,
+                rateLimits = RateLimitConfig(verifyPerMinute = verifyLimit),
+            )
         val store = EntitlementStore(requireNotNull(config.storeFile))
         val verifier = SecurityVerifier(state)
         val backend = BillingBackendServer.create(config, store, verifier, RateLimiter(nowMillis = { 1_000L }))
@@ -141,15 +159,23 @@ class BillingBackendSecurityTest {
         return Fixture(backend, store, verifier)
     }
 
-    private fun register(fixture: Fixture, headers: Map<String, String> = emptyMap()): Owner {
+    private fun register(
+        fixture: Fixture,
+        headers: Map<String, String> = emptyMap(),
+    ): Owner {
         val response = JsonBodies.json.parseToJsonElement(request(fixture, "/billing/installations", "{}", headers)).jsonObject
-        return Owner(response.getValue("install_id").jsonPrimitive.content,
-            mapOf("Authorization" to "Bearer ${response.getValue("bearer_token").jsonPrimitive.content}"))
+        return Owner(
+            response.getValue("install_id").jsonPrimitive.content,
+            mapOf("Authorization" to "Bearer ${response.getValue("bearer_token").jsonPrimitive.content}"),
+        )
     }
 
     private fun request(
-        fixture: Fixture, path: String, body: String? = null,
-        headers: Map<String, String> = emptyMap(), expected: Int = 200,
+        fixture: Fixture,
+        path: String,
+        body: String? = null,
+        headers: Map<String, String> = emptyMap(),
+        expected: Int = 200,
     ): String {
         val connection = connection(fixture, path)
         headers.forEach { (name, value) -> connection.setRequestProperty(name, value) }
@@ -160,40 +186,79 @@ class BillingBackendSecurityTest {
             connection.outputStream.use { it.write(body.toByteArray()) }
         }
         val code = connection.responseCode
-        val response = (if (code < 400) connection.inputStream else connection.errorStream)
-            .bufferedReader().use { it.readText() }
+        val response =
+            (if (code < 400) connection.inputStream else connection.errorStream)
+                .bufferedReader()
+                .use { it.readText() }
         connection.disconnect()
         assertEquals(response, expected, code)
         return response
     }
 
-    private fun connection(fixture: Fixture, path: String): HttpURLConnection =
+    private fun connection(
+        fixture: Fixture,
+        path: String,
+    ): HttpURLConnection =
         (URI("http://127.0.0.1:${fixture.backend.port}$path").toURL().openConnection() as HttpURLConnection).apply {
             connectTimeout = 5_000
             readTimeout = 5_000
         }
 
-    private fun verifyBody(id: String, token: String = "victim-token") =
+    private fun verifyBody(
+        id: String,
+        token: String = "victim-token",
+    ) =
         """{"install_id":"$id","package_name":"com.shortsblockerkids","product_id":"shorts_blocker_kids_monthly","purchase_token":"$token"}"""
 
     private fun forwarded(client: String) = mapOf("X-Forwarded-For" to client, "X-Forwarded-Proto" to "https")
 
-    private fun victimRecord() = EntitlementRecord(installId = VICTIM_ID, packageName = "com.shortsblockerkids",
-        productId = "shorts_blocker_kids_monthly", purchaseTokenHash = EntitlementStore.hashPurchaseToken("victim-token"),
-        state = SubscriptionEntitlementState.ACTIVE, activeUntilMillis = 10_000L, acknowledged = true,
-        lastVerifiedAtMillis = 5_000L, appVersion = "0.1.0")
+    private fun victimRecord() =
+        EntitlementRecord(
+            installId = VICTIM_ID,
+            packageName = "com.shortsblockerkids",
+            productId = "shorts_blocker_kids_monthly",
+            purchaseTokenHash = EntitlementStore.hashPurchaseToken("victim-token"),
+            state = SubscriptionEntitlementState.ACTIVE,
+            activeUntilMillis = 10_000L,
+            acknowledged = true,
+            lastVerifiedAtMillis = 5_000L,
+            appVersion = "0.1.0",
+        )
 
-    private data class Fixture(val backend: BillingBackendServer, val store: EntitlementStorage, val verifier: SecurityVerifier)
-    private data class Owner(val id: String, val headers: Map<String, String>)
+    private data class Fixture(
+        val backend: BillingBackendServer,
+        val store: EntitlementStorage,
+        val verifier: SecurityVerifier,
+    )
 
-    private class SecurityVerifier(private val state: SubscriptionEntitlementState) : PlaySubscriptionVerifier {
+    private data class Owner(
+        val id: String,
+        val headers: Map<String, String>,
+    )
+
+    private class SecurityVerifier(
+        private val state: SubscriptionEntitlementState,
+    ) : PlaySubscriptionVerifier {
         var calls = 0
-        override fun verify(packageName: String, productId: String, purchaseToken: String): VerifiedSubscription {
+
+        override fun verify(
+            packageName: String,
+            productId: String,
+            purchaseToken: String,
+        ): VerifiedSubscription {
             calls++
-            return VerifiedSubscription(productId = productId, purchaseToken = purchaseToken, state = state,
-                activeUntilMillis = 10_000L, acknowledged = true, verifiedAtMillis = 5_000L)
+            return VerifiedSubscription(
+                productId = productId,
+                purchaseToken = purchaseToken,
+                state = state,
+                activeUntilMillis = 10_000L,
+                acknowledged = true,
+                verifiedAtMillis = 5_000L,
+            )
         }
     }
 
-    companion object { private const val VICTIM_ID = "00000000-0000-4000-8000-000000000001" }
+    companion object {
+        private const val VICTIM_ID = "00000000-0000-4000-8000-000000000001"
+    }
 }

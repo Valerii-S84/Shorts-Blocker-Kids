@@ -184,7 +184,7 @@ class GermanResourceCatalogTest {
     private companion object {
         const val DEFAULT_CATALOG = "app/src/main/res/values/strings.xml"
         const val GERMAN_CATALOG = "app/src/main/res/values-de/strings.xml"
-        const val EXPECTED_STRING_COUNT = 200
+        const val EXPECTED_STRING_COUNT = 201
         const val EXPECTED_PLURAL_COUNT = 4
 
         val REQUIRED_GERMAN_QUANTITIES = setOf("one", "other")

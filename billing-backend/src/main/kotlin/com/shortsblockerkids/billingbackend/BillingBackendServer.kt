@@ -48,8 +48,9 @@ class BillingBackendServer(
         context: RequestContext,
     ): Int {
         exchange.requireMethod("POST")
-        val body = JsonBodies.json.parseToJsonElement(exchange.readBody()) as? JsonObject
-            ?: throw IllegalArgumentException("Expected registration object")
+        val body =
+            JsonBodies.json.parseToJsonElement(exchange.readBody()) as? JsonObject
+                ?: throw IllegalArgumentException("Expected registration object")
         require(body.isEmpty()) { "Registration does not accept an installation identity" }
         return exchange.respond(200, installationAuthorization.register().toJson(), context)
     }
@@ -119,26 +120,30 @@ class BillingBackendServer(
             return exchange.respond(200, JsonBodies.statusResponse("duplicate"), context)
         }
 
-        val verified =
+        var verified: VerifiedSubscription? = null
+        val applied = store.processRtdn(notification.messageId, notification.purchaseToken) {
             verifier.verify(
                 packageName = config.packageName,
                 productId = notification.productId,
                 purchaseToken = notification.purchaseToken,
-            )
-        val status =
-            if (store.updateByPurchaseToken(notification.purchaseToken, verified)) {
-                "updated"
-            } else {
-                "verified_without_install_record"
-            }
-        store.markRtdnProcessed(notification.messageId)
+            ).also { verified = it }
+        }
+        if (applied == RtdnApplyResult.DUPLICATE) {
+            logger.audit("billing.rtdn.duplicate", context.rtdnAuditFields(notification))
+            return exchange.respond(200, JsonBodies.statusResponse("duplicate"), context)
+        }
+        val status = when (applied) {
+            RtdnApplyResult.UPDATED -> "updated"
+            RtdnApplyResult.STALE -> "stale"
+            else -> "verified_without_install_record"
+        }
         logger.audit(
             "billing.rtdn.processed",
             context.rtdnAuditFields(
                 notification,
                 "status" to status,
-                "state" to verified.state.name,
-                "acknowledged" to verified.acknowledged,
+                "state" to verified?.state?.name,
+                "acknowledged" to verified?.acknowledged,
             ),
         )
         return exchange.respond(200, JsonBodies.statusResponse(status), context)
@@ -239,7 +244,10 @@ class BillingBackendServer(
         }
     }
 
-    private fun HttpExchange.requireHttpsIfNeeded(endpoint: Endpoint, origin: RequestOrigin) {
+    private fun HttpExchange.requireHttpsIfNeeded(
+        endpoint: Endpoint,
+        origin: RequestOrigin,
+    ) {
         if (!config.requireHttps || endpoint == Endpoint.HEALTH) {
             return
         }
@@ -248,7 +256,10 @@ class BillingBackendServer(
         }
     }
 
-    private fun HttpExchange.requireRateLimit(endpoint: Endpoint, origin: RequestOrigin) {
+    private fun HttpExchange.requireRateLimit(
+        endpoint: Endpoint,
+        origin: RequestOrigin,
+    ) {
         val key = "${endpoint.path}:${origin.clientAddress}"
         if (!rateLimiter.allow(key, endpoint.limit(config.rateLimits))) {
             throw TooManyRequestsException()

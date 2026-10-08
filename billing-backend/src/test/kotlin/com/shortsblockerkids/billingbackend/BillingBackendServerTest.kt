@@ -136,6 +136,36 @@ class BillingBackendServerTest {
     }
 
     @Test
+    fun rtdnReturnsDuplicateWhenAnotherDeliveryWinsDuringVerification() {
+        val config = backendConfig()
+        val store = EntitlementStore(requireNotNull(config.storeFile))
+        val verifier =
+            object : PlaySubscriptionVerifier {
+                override fun verify(
+                    packageName: String,
+                    productId: String,
+                    purchaseToken: String,
+                ): VerifiedSubscription {
+                    assertTrue(store.markRtdnProcessed("racing-message"))
+                    return verifiedSubscription(SubscriptionEntitlementState.EXPIRED)
+                }
+            }
+        val backend = BillingBackendServer.create(config, store = store, verifier = verifier)
+        backend.start()
+        startedServers.add(backend)
+
+        val response =
+            post(
+                url = "http://127.0.0.1:${backend.port}/billing/play/rtdn",
+                body = pubSubBody("racing-message", "token-1"),
+                headers = mapOf(BillingBackendServer.RTDN_SECRET_HEADER to "secret"),
+            )
+
+        assertTrue(response.contains("\"status\":\"duplicate\""))
+        assertTrue(store.isRtdnProcessed("racing-message"))
+    }
+
+    @Test
     fun duplicatePurchaseTokenCannotGrantSecondInstall() {
         val backend = startBackend()
         post(
@@ -463,7 +493,10 @@ class BillingBackendServerTest {
         return connection.responseBody()
     }
 
-    private fun installationFor(url: String, logicalId: String): Pair<String, String> {
+    private fun installationFor(
+        url: String,
+        logicalId: String,
+    ): Pair<String, String> {
         val uri = URI(url)
         val baseUrl = "${uri.scheme}://${uri.host}:${uri.port}"
         return installations.getOrPut("$baseUrl:$logicalId") {

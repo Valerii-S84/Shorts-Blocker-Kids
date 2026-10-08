@@ -5,6 +5,7 @@ import com.shortsblockerkids.application.billing.PlayBillingEvent
 import com.shortsblockerkids.application.billing.PlayBillingGateway
 import com.shortsblockerkids.application.billing.SyncBillingEntitlementUseCase
 import com.shortsblockerkids.domain.entitlement.BillingEntitlementSnapshot
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,7 +15,7 @@ import kotlinx.coroutines.launch
 class BillingCoordinator(
     private val billingGateway: PlayBillingGateway,
     private val syncBillingEntitlementUseCase: SyncBillingEntitlementUseCase,
-    private val onEntitlementChanged: (BillingEntitlementSnapshot) -> Unit,
+    private val onEntitlementChanged: suspend (BillingEntitlementSnapshot) -> Unit,
     private val billingScope: CoroutineScope,
 ) {
     private val _uiState = MutableStateFlow(BillingUiState())
@@ -156,9 +157,9 @@ class BillingCoordinator(
         }
     }
 
-    private fun applyBillingSyncOutcome(outcome: BillingSyncOutcome) {
+    private suspend fun applyBillingSyncOutcome(outcome: BillingSyncOutcome) {
+        if (!persistEntitlement(outcome.entitlementSnapshot)) return
         outcome.purchaseTokensToAcknowledge.forEach(billingGateway::acknowledgePurchase)
-        onEntitlementChanged(outcome.entitlementSnapshot)
         _uiState.update { currentState ->
             currentState.copy(
                 isLoading = if (outcome.clearsLoading) false else currentState.isLoading,
@@ -166,4 +167,21 @@ class BillingCoordinator(
             )
         }
     }
+
+    private suspend fun persistEntitlement(snapshot: BillingEntitlementSnapshot): Boolean =
+        try {
+            onEntitlementChanged(snapshot)
+            true
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            _uiState.update {
+                it.copy(
+                    isLoading = false,
+                    isPurchaseInProgress = false,
+                    message = BillingUiMessage(BillingMessageCode.ENTITLEMENT_SAVE_FAILED),
+                )
+            }
+            false
+        }
 }

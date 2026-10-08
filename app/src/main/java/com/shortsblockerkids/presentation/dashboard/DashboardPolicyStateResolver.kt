@@ -31,12 +31,14 @@ internal object DashboardPolicyStateResolver {
                         isProtectionPermissionGranted =
                             input.runtime.isAccessibilityServiceEnabled,
                         nowMillis = input.runtime.nowMillis,
+                        elapsedRealtimeMillis = input.runtime.elapsedRealtimeMillis,
                     ),
                 ),
             isTemporarilyAllowed =
                 TemporaryAllowPolicy.isActive(
-                    input.protection.temporaryAllowUntilMillis,
+                    configuration,
                     input.runtime.nowMillis,
+                    input.runtime.elapsedRealtimeMillis,
                 ),
         )
     }
@@ -56,6 +58,7 @@ internal object DashboardPolicyStateResolver {
                     .filter(ProtectedPlatformItemUiModel::isSelected)
                     .mapTo(linkedSetOf(), ProtectedPlatformItemUiModel::platformId),
             temporaryAllowUntilMillis = input.protection.temporaryAllowUntilMillis,
+            temporaryAllowElapsedRealtimeDeadlineMillis = input.protection.temporaryAllowElapsedRealtimeDeadlineMillis,
             isPinConfigured = input.protection.isPinConfigured,
         )
     }

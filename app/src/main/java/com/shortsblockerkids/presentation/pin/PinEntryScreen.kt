@@ -39,6 +39,7 @@ fun PinEntryScreen(
     verifyPinUseCase: VerifyPinUseCase,
     onStateChanged: () -> Unit,
     onUnlocked: () -> Unit,
+    runSettingsOperation: suspend (suspend () -> Unit) -> Boolean,
     modifier: Modifier = Modifier,
 ) {
     var pin by remember { mutableStateOf("") }
@@ -53,22 +54,27 @@ fun PinEntryScreen(
         val submittedPin = pin
         isVerifying = true
         coroutineScope.launch {
-            val result = verifyPinUseCase(submittedPin)
-            if (result != PinVerificationResult.InvalidInput) {
-                onStateChanged()
-            }
-            when (result) {
-                PinVerificationResult.Success -> onUnlocked()
-                PinVerificationResult.InvalidInput -> message = PinEntryMessage.Incomplete
-                PinVerificationResult.NotConfigured -> message = PinEntryMessage.NotConfigured
-                is PinVerificationResult.Failure -> {
-                    message = PinEntryMessage.WrongPin(result.remainingAttempts)
+            try {
+                runSettingsOperation {
+                    val result = verifyPinUseCase(submittedPin)
+                    if (result != PinVerificationResult.InvalidInput) {
+                        onStateChanged()
+                    }
+                    when (result) {
+                        PinVerificationResult.Success -> onUnlocked()
+                        PinVerificationResult.InvalidInput -> message = PinEntryMessage.Incomplete
+                        PinVerificationResult.NotConfigured -> message = PinEntryMessage.NotConfigured
+                        is PinVerificationResult.Failure -> {
+                            message = PinEntryMessage.WrongPin(result.remainingAttempts)
+                        }
+                        is PinVerificationResult.Locked -> {
+                            message = PinEntryMessage.Locked(result.remainingMinutes())
+                        }
+                    }
                 }
-                is PinVerificationResult.Locked -> {
-                    message = PinEntryMessage.Locked(result.remainingMinutes())
-                }
+            } finally {
+                isVerifying = false
             }
-            isVerifying = false
         }
     }
 

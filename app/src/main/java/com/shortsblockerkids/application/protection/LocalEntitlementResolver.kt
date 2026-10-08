@@ -12,6 +12,7 @@ data class LocalEntitlementInput(
     val entitlement: EntitlementSnapshot,
     val isProtectionPermissionGranted: Boolean,
     val nowMillis: Long,
+    val elapsedRealtimeMillis: Long? = null,
 )
 
 object LocalEntitlementResolver {
@@ -36,6 +37,7 @@ object LocalEntitlementResolver {
                         input.nowMillis,
                     ),
                 nowMillis = input.nowMillis,
+                elapsedRealtimeMillis = input.elapsedRealtimeMillis,
             )
         ) {
             return EntitlementState.PROTECTION_ACTIVE

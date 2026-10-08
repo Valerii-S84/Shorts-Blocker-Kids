@@ -3,15 +3,20 @@ package com.shortsblockerkids.billingbackend
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
 
 interface EntitlementStorage {
-    fun createInstallation(installId: String, bearerHash: String): Boolean
+    fun createInstallation(
+        installId: String,
+        bearerHash: String,
+    ): Boolean
 
     fun installationBearerHash(installId: String): String?
 
@@ -25,30 +30,53 @@ interface EntitlementStorage {
 
     fun isRtdnProcessed(messageId: String): Boolean
 
+    fun applyRtdn(
+        messageId: String,
+        purchaseToken: String,
+        verified: VerifiedSubscription,
+    ): RtdnApplyResult
+
     fun updateByPurchaseToken(
         purchaseToken: String,
         verified: VerifiedSubscription,
     ): Boolean
+
+    fun processRtdn(messageId: String, purchaseToken: String, verify: () -> VerifiedSubscription): RtdnApplyResult
+}
+
+enum class RtdnApplyResult {
+    DUPLICATE,
+    UPDATED,
+    NO_INSTALL_RECORD,
+    STALE,
 }
 
 class EntitlementStore(
     private val path: Path,
+    private val replaceFile: (Path, Path) -> Unit = { source, target ->
+        Files.move(source, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
+        Unit
+    },
 ) : EntitlementStorage {
-    private val records = linkedMapOf<String, EntitlementRecord>()
-    private val processedRtdnIds = linkedSetOf<String>()
-    private val installationAuthorizations = linkedMapOf<String, String>()
+    private var records: Map<String, EntitlementRecord> = emptyMap()
+    private var processedRtdnIds: Set<String> = emptySet()
+    private var installationAuthorizations: Map<String, String> = emptyMap()
 
     init {
         load()
     }
 
     @Synchronized
-    override fun createInstallation(installId: String, bearerHash: String): Boolean {
+    override fun createInstallation(
+        installId: String,
+        bearerHash: String,
+    ): Boolean {
         if (installId in records || installId in installationAuthorizations) {
             return false
         }
-        installationAuthorizations[installId] = bearerHash
-        persist()
+        val nextAuthorizations = installationAuthorizations + (installId to bearerHash)
+        persist(authorizations = nextAuthorizations)
+        installationAuthorizations = nextAuthorizations
         return true
     }
 
@@ -57,8 +85,11 @@ class EntitlementStore(
 
     @Synchronized
     override fun upsert(record: EntitlementRecord) {
-        records[record.installId] = record
-        persist()
+        val previous = records[record.installId]
+        if (previous != null && record.lastVerifiedAtMillis < previous.lastVerifiedAtMillis) return
+        val nextRecords = records + (record.installId to record)
+        persist(entitlements = nextRecords)
+        records = nextRecords
     }
 
     @Synchronized
@@ -70,15 +101,49 @@ class EntitlementStore(
 
     @Synchronized
     override fun markRtdnProcessed(messageId: String): Boolean {
-        if (!processedRtdnIds.add(messageId)) {
+        if (messageId in processedRtdnIds) {
             return false
         }
-        persist()
+        val nextIds = processedRtdnIds + messageId
+        persist(messageIds = nextIds)
+        processedRtdnIds = nextIds
         return true
     }
 
     @Synchronized
     override fun isRtdnProcessed(messageId: String): Boolean = messageId in processedRtdnIds
+
+    @Synchronized
+    override fun applyRtdn(
+        messageId: String,
+        purchaseToken: String,
+        verified: VerifiedSubscription,
+    ): RtdnApplyResult {
+        if (messageId in processedRtdnIds) return RtdnApplyResult.DUPLICATE
+        val previous = findByPurchaseTokenHash(hashPurchaseToken(purchaseToken))
+        val stale = previous != null && verified.verifiedAtMillis < previous.lastVerifiedAtMillis
+        val nextRecords =
+            if (previous == null || stale) {
+                records
+            } else {
+                records + (previous.installId to previous.withVerification(verified))
+            }
+        val nextIds = processedRtdnIds + messageId
+        persist(entitlements = nextRecords, messageIds = nextIds)
+        records = nextRecords
+        processedRtdnIds = nextIds
+        return when {
+            previous == null -> RtdnApplyResult.NO_INSTALL_RECORD
+            stale -> RtdnApplyResult.STALE
+            else -> RtdnApplyResult.UPDATED
+        }
+    }
+
+    @Synchronized
+    override fun processRtdn(messageId: String, purchaseToken: String, verify: () -> VerifiedSubscription): RtdnApplyResult {
+        if (messageId in processedRtdnIds) return RtdnApplyResult.DUPLICATE
+        return applyRtdn(messageId, purchaseToken, verify())
+    }
 
     @Synchronized
     override fun updateByPurchaseToken(
@@ -87,16 +152,18 @@ class EntitlementStore(
     ): Boolean {
         val hash = hashPurchaseToken(purchaseToken)
         val previous = findByPurchaseTokenHash(hash) ?: return false
-        upsert(
-            previous.copy(
-                state = verified.state,
-                activeUntilMillis = verified.activeUntilMillis,
-                acknowledged = verified.acknowledged,
-                lastVerifiedAtMillis = verified.verifiedAtMillis,
-            ),
-        )
+        if (verified.verifiedAtMillis < previous.lastVerifiedAtMillis) return false
+        upsert(previous.withVerification(verified))
         return true
     }
+
+    private fun EntitlementRecord.withVerification(verified: VerifiedSubscription): EntitlementRecord =
+        copy(
+            state = verified.state,
+            activeUntilMillis = verified.activeUntilMillis,
+            acknowledged = verified.acknowledged,
+            lastVerifiedAtMillis = verified.verifiedAtMillis,
+        )
 
     private fun load() {
         if (!Files.isRegularFile(path)) {
@@ -106,18 +173,39 @@ class EntitlementStore(
         if (text.isBlank()) {
             return
         }
-        val root = JsonBodies.json.parseToJsonElement(text).jsonObject
-        (root["installation_authorizations"] as? JsonObject)?.forEach { (installId, value) ->
-            installationAuthorizations[installId] = value.jsonPrimitive.content
+        try {
+            val root = JsonBodies.json.parseToJsonElement(text).jsonObject
+            val loadedAuthorizations =
+                root["installation_authorizations"]
+                    ?.jsonObject
+                    ?.mapValues { (_, value) ->
+                        require(value.jsonPrimitive.isString) { "Invalid installation authorization" }
+                        value.jsonPrimitive.content
+                    }.orEmpty()
+            val loadedIds =
+                root["processed_rtdn_ids"]
+                    ?.jsonArray
+                    ?.map { value ->
+                        require(value.jsonPrimitive.isString) { "Invalid RTDN message ID" }
+                        value.jsonPrimitive.content
+                    }.orEmpty()
+                    .toSet()
+            val loadedRecords =
+                root["entitlements"]
+                    ?.jsonArray
+                    ?.map { element ->
+                        requireNotNull(recordFromJson(element)) { "Invalid entitlement record" }
+                    }.orEmpty()
+                    .associateBy { it.installId }
+            installationAuthorizations = loadedAuthorizations
+            processedRtdnIds = loadedIds
+            records = loadedRecords
+        } catch (exception: IllegalArgumentException) {
+            throw IllegalStateException(
+                "Cannot load entitlement store $path; original file preserved. Restore a valid store before starting.",
+                exception,
+            )
         }
-        processedRtdnIds.addAll(
-            (root["processed_rtdn_ids"] as? JsonArray)
-                ?.mapNotNull { it.jsonPrimitive.content }
-                .orEmpty(),
-        )
-        (root["entitlements"] as? JsonArray)
-            ?.mapNotNull(::recordFromJson)
-            ?.forEach { records[it.installId] = it }
     }
 
     private fun recordFromJson(element: kotlinx.serialization.json.JsonElement): EntitlementRecord? {
@@ -145,18 +233,29 @@ class EntitlementStore(
         )
     }
 
-    private fun persist() {
-        path.parent?.let(Files::createDirectories)
+    private fun persist(
+        entitlements: Map<String, EntitlementRecord> = records,
+        messageIds: Set<String> = processedRtdnIds,
+        authorizations: Map<String, String> = installationAuthorizations,
+    ) {
+        val target = path.toAbsolutePath()
+        Files.createDirectories(target.parent)
         val root =
             JsonObject(
                 mapOf(
                     "installation_authorizations" to
-                        JsonObject(installationAuthorizations.mapValues { JsonPrimitive(it.value) }),
-                    "processed_rtdn_ids" to JsonArray(processedRtdnIds.map(::JsonPrimitive)),
-                    "entitlements" to JsonArray(records.values.map(::recordToJson)),
+                        JsonObject(authorizations.mapValues { JsonPrimitive(it.value) }),
+                    "processed_rtdn_ids" to JsonArray(messageIds.map(::JsonPrimitive)),
+                    "entitlements" to JsonArray(entitlements.values.map(::recordToJson)),
                 ),
             )
-        Files.writeString(path, JsonBodies.json.encodeToString(JsonObject.serializer(), root))
+        val temporary = Files.createTempFile(target.parent, ".${target.fileName}.", ".tmp")
+        try {
+            Files.writeString(temporary, JsonBodies.json.encodeToString(JsonObject.serializer(), root))
+            replaceFile(temporary, target)
+        } finally {
+            Files.deleteIfExists(temporary)
+        }
     }
 
     private fun recordToJson(record: EntitlementRecord): JsonObject =

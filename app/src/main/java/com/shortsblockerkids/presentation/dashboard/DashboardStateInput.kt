@@ -18,6 +18,7 @@ data class DashboardProtectionInput(
     val enabledPlatformIds: Set<String>,
     val temporaryAllowUntilMillis: Long?,
     val isPinConfigured: Boolean,
+    val temporaryAllowElapsedRealtimeDeadlineMillis: Long? = null,
 )
 
 data class DashboardEntitlementInput(
@@ -44,4 +45,5 @@ data class DashboardRuntimeInput(
     val isAccessibilityServiceEnabled: Boolean,
     val isTamperProtectionEnabled: Boolean,
     val nowMillis: Long,
+    val elapsedRealtimeMillis: Long? = null,
 )

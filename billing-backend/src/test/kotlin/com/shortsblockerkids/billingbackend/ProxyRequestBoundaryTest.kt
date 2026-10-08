@@ -53,10 +53,17 @@ class ProxyRequestBoundaryTest {
 
     @Test
     fun forwardedChainsNamesPortsAndAmbiguousNumericAddressesAreRejected() {
-        val invalidAddresses = listOf(
-            "198.51.100.1, 198.51.100.2", "client.example", "127.1", "010.0.0.1",
-            "198.51.100.1:80", "256.0.0.1", "fe80::1%eth0", "1:::2",
-        )
+        val invalidAddresses =
+            listOf(
+                "198.51.100.1, 198.51.100.2",
+                "client.example",
+                "127.1",
+                "010.0.0.1",
+                "198.51.100.1:80",
+                "256.0.0.1",
+                "fe80::1%eth0",
+                "1:::2",
+            )
         for (clientAddress in invalidAddresses) {
             assertRejected("192.0.2.10", forwarded(clientAddress))
         }

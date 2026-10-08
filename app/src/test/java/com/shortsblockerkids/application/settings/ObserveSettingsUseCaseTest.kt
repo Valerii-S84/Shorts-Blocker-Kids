@@ -7,6 +7,7 @@ import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -56,7 +57,7 @@ class ObserveSettingsUseCaseTest {
         val states = observer {
             reads++
             throw IOException("read failed")
-        }().toList()
+        }().take(4).toList()
 
         assertEquals(3, reads)
         assertEquals(SettingsReadState.Unavailable(null, false), states.last())
@@ -75,7 +76,7 @@ class ObserveSettingsUseCaseTest {
                 } finally {
                     cancellations++
                 }
-            }().toList()
+            }().take(4).toList()
         }
 
         assertEquals(3, reads)
@@ -140,10 +141,65 @@ class ObserveSettingsUseCaseTest {
         assertEquals(SettingsReadState.Ready(second), states.last())
     }
 
+    @Test
+    fun exhaustedRetriesRecoverWithoutRestartingObserver() = runBlocking {
+        var reads = 0
+        val recovered = AppSettingsSnapshot(billingEntitlementStateName = "ACTIVE")
+        val states = observer {
+            if (reads++ < 3) throw IOException("storage temporarily unavailable")
+            emit(recovered)
+        }().toList()
+
+        assertEquals(4, reads)
+        assertTrue(states.contains(SettingsReadState.Unavailable(null, false)))
+        assertEquals(SettingsReadState.Ready(recovered), states.last())
+        assertEquals(1, states.filterIsInstance<SettingsReadState.Ready>().size)
+    }
+
+    @Test
+    fun recoveryAfterExhaustionKeepsOnlySessionSuccessfulSnapshot() = runBlocking {
+        var reads = 0
+        val prior = AppSettingsSnapshot(billingEntitlementStateName = "ACTIVE")
+        val recovered = prior.copy(billingEntitlementStateName = "EXPIRED")
+        val states = observer {
+            when (reads++) {
+                0 -> { emit(prior); throw IOException("lost storage") }
+                1, 2 -> throw IOException("still unavailable")
+                else -> emit(recovered)
+            }
+        }().toList()
+
+        assertEquals(SettingsReadState.Unavailable(prior, false), states[4])
+        assertEquals(SettingsReadState.Ready(recovered), states.last())
+        assertTrue(states.filterIsInstance<SettingsReadState.Unavailable>()
+            .all { it.lastSuccessfulSnapshot == prior })
+    }
+
+    @Test
+    fun lifecycleCancellationDuringExhaustedCooldownPreventsAnotherRead() = runBlocking {
+        var reads = 0
+        val exhausted = CompletableDeferred<Unit>()
+        val observer = ObserveSettingsUseCase(
+            SettingsStatePort { flow { reads++; throw IOException("read failed") } },
+            retryDelaysMillis = emptyList(),
+            recoveryDelayMillis = 60_000L,
+        )
+        val job = launch {
+            observer().collect {
+                if (it == SettingsReadState.Unavailable(null, false)) exhausted.complete(Unit)
+            }
+        }
+        withTimeout(2_000L) { exhausted.await() }
+        job.cancelAndJoin()
+
+        assertEquals(1, reads)
+    }
+
     private fun observer(block: suspend kotlinx.coroutines.flow.FlowCollector<AppSettingsSnapshot>.() -> Unit) =
         ObserveSettingsUseCase(
             SettingsStatePort { flow(block) },
             initialReadTimeoutMillis = 30L,
             retryDelaysMillis = listOf(1L, 2L),
+            recoveryDelayMillis = 1L,
         )
 }

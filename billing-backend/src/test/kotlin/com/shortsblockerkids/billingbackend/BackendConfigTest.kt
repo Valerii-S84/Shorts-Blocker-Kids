@@ -110,9 +110,10 @@ class BackendConfigTest {
     @Test
     fun trustedProxyConfigRejectsNamesRangesAndEmptyEntries() {
         for (addresses in listOf("proxy.example", "127.0.0.1/8", "192.0.2.10,", "127.1", "127.0.0.1:8080")) {
-            val exception = runCatching {
-                BackendConfig.fromEnvironment(mapOf("SBK_TRUSTED_PROXY_IPS" to addresses))
-            }.exceptionOrNull()
+            val exception =
+                runCatching {
+                    BackendConfig.fromEnvironment(mapOf("SBK_TRUSTED_PROXY_IPS" to addresses))
+                }.exceptionOrNull()
 
             assertTrue("Configuration accepted $addresses", exception is ConfigurationException)
         }

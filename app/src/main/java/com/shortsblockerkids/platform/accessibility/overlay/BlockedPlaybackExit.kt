@@ -16,14 +16,17 @@ class BlockedPlaybackExit(
     private var blockedPackage: String? = null
 
     @Suppress("DEPRECATION")
-    fun captureBlockedPackage() {
+    fun captureBlockedPackage(expectedPackage: String): Boolean {
         val root = service.rootInActiveWindow
-        blockedPackage = root?.packageName?.toString()
+        val matches = root?.packageName?.toString() == expectedPackage
         root?.recycle()
+        if (matches) blockedPackage = expectedPackage
+        return matches
     }
 
     @Suppress("DEPRECATION")
     fun exitIfStillDetected(expectedPackage: String): Boolean {
+        if (dismissBlockedPip(expectedPackage)) return true
         val root = service.rootInActiveWindow ?: return false
         val shouldExit = try {
             val currentPackage = root.packageName?.toString()
@@ -41,60 +44,67 @@ class BlockedPlaybackExit(
     }
 
     @Suppress("DEPRECATION")
-    fun exitPlayer(): Boolean {
-        val packageName = blockedPackage ?: return false
-        val windows = currentWindows()
-        for (window in windows) {
+    fun isBlockedPackageStillDetected(expectedPackage: String): Boolean {
+        for (window in currentWindows()) {
             if (!window.isInPictureInPictureMode) continue
-            val root = window.root ?: return false
+            val root = window.root ?: continue
             try {
-                if (root.packageName?.toString() == packageName) {
-                    return root.performAction(AccessibilityNodeInfo.ACTION_DISMISS)
-                }
+                if (canDismissBlockedPictureInPicture(expectedPackage, blockedPackage, root.packageName?.toString(), true)) return true
             } finally {
                 root.recycle()
             }
         }
         val root = service.rootInActiveWindow ?: return false
-        val isBlockedApp = root.packageName?.toString() == packageName
-        root.recycle()
-        return if (isBlockedApp) {
+        return try {
+            canExitAfterOverlayFailure(
+                expectedPackage, root.packageName?.toString(), detector.detect(expectedPackage, scanner.scan(root)),
+            )
+        } finally {
+            root.recycle()
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    fun exitPlayer(): Boolean {
+        val packageName = blockedPackage ?: return false
+        if (dismissBlockedPip(packageName)) return true
+        val root = service.rootInActiveWindow ?: return false
+        val shouldExit = try {
+            canExitAfterOverlayFailure(
+                packageName, root.packageName?.toString(), detector.detect(packageName, scanner.scan(root)),
+            )
+        } finally {
+            root.recycle()
+        }
+        return if (shouldExit) {
             service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)
         } else {
             isPlaybackClosed()
         }
     }
 
-    @Suppress("DEPRECATION")
     fun isPlaybackClosed(): Boolean {
-        val packageName = blockedPackage ?: return false
-        val windows = currentWindows().filter { it.type == AccessibilityWindowInfo.TYPE_APPLICATION }
-        if (windows.isEmpty()) return false
-        for (window in windows) {
-            val root = window.root ?: return false
+        // Accessibility reports UI/action acceptance, not third-party audio/video state.
+        // No playback acknowledgement API is available here; vanished markers, windows,
+        // accepted BACK or PiP dismiss must therefore never release the barrier.
+        return false
+    }
+
+    @Suppress("DEPRECATION")
+    private fun dismissBlockedPip(expectedPackage: String): Boolean {
+        if (blockedPackage != expectedPackage) return false
+        for (window in currentWindows()) {
+            if (!window.isInPictureInPictureMode) continue
+            val root = window.root ?: continue
             try {
-                if (root.packageName?.toString() != packageName) continue
-                if (window.isInPictureInPictureMode) return false
-                val snapshot = scanner.scan(root)
-                if (snapshot.visibleNodeCount == 0) return false
-                if (detector.detect(packageName, snapshot).shouldBlock) return false
-                if (snapshot.nodes.any { node ->
-                        val id = node.viewIdResourceName?.substringAfterLast('/').orEmpty()
-                        node.isVisibleToUser &&
-                            (
-                                id.contains("mini_player") ||
-                                    id.contains("miniplayer") ||
-                                    id in PLAYBACK_IDS
-                            )
-                    }
-                ) {
-                    return false
+                if (canDismissBlockedPictureInPicture(expectedPackage, blockedPackage, root.packageName?.toString(), true)) {
+                    return root.performAction(AccessibilityNodeInfo.ACTION_DISMISS)
                 }
             } finally {
                 root.recycle()
             }
         }
-        return true
+        return false
     }
 
     private fun currentWindows(): List<AccessibilityWindowInfo> {
@@ -108,17 +118,6 @@ class BlockedPlaybackExit(
         return service.windows
     }
 
-    private companion object {
-        val PLAYBACK_IDS =
-            setOf(
-                "reel_watch_sequence",
-                "reel_player_page",
-                "reel_player_view",
-                "shorts_player",
-                "shorts_watch",
-                "shorts_video",
-            )
-    }
 }
 
 internal fun canExitAfterOverlayFailure(
@@ -126,3 +125,10 @@ internal fun canExitAfterOverlayFailure(
     currentPackage: String?,
     currentDetection: DetectionResult,
 ): Boolean = currentPackage == expectedPackage && currentDetection.shouldBlock
+
+internal fun canDismissBlockedPictureInPicture(
+    expectedPackage: String,
+    capturedBlockedPackage: String?,
+    currentPackage: String?,
+    isPictureInPicture: Boolean,
+): Boolean = isPictureInPicture && capturedBlockedPackage == expectedPackage && currentPackage == expectedPackage

@@ -1,6 +1,6 @@
 package com.shortsblockerkids.accessibility
 
-import com.shortsblockerkids.application.port.TimeProvider
+import com.shortsblockerkids.application.port.MonotonicTimeProvider
 import com.shortsblockerkids.platform.accessibility.TemporaryAllowDeadlineScheduler
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -124,7 +124,7 @@ class TemporaryAllowDeadlineSchedulerTest {
         val scheduler =
             TemporaryAllowDeadlineScheduler(
                 scope = scope,
-                timeProvider = TimeProvider { nowMillis },
+                monotonicTimeProvider = MonotonicTimeProvider { nowMillis },
                 onDeadline = { rechecks++ },
                 awaitDelay = { millis ->
                     delays += millis

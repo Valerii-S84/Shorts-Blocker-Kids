@@ -1,874 +1,516 @@
-АУДИТ КОДУ SHORTS BLOCKER KIDS
-Дата: 6 жовтня 2026, Europe/Berlin
-Режим: AUDIT. Авторські виправлення не виконувалися.
-Статус: Partial щодо підтвердження працездатності та production readiness;
-статичний аудит перелічених ділянок завершено.
+АУДИТ КОДУ SHORTS BLOCKER KIDS — АКТУАЛІЗОВАНО
+Первинний аудит: 6 жовтня 2026, Europe/Berlin.
+Повторна перевірка коду: 7 жовтня 2026, Europe/Berlin.
+Первинну назву файла збережено.
+Режим: AUDIT. Статичну звірку завершено; runtime/production readiness — Partial.
 
-1. МЕТА, МЕТОД І МЕЖІ ДОКАЗОВОСТІ
+1. МЕТОД, SCOPE І ЗНАЧЕННЯ СТАТУСІВ
 
-Один предмет аудиту: оцінка поточного коду Android-застосунку, billing backend
-та пов'язаного статичного сайту за шістьма критеріями:
-технічний борг; Clean Architecture; безпека; надійність; навантаження і межі;
-готовність до production. Окремо перевірені кандидати на мертвий код,
-дублювання, ускладнення та підтримуваність.
+Перевірено поточне робоче дерево Android, billing backend і пов'язаного
+статичного сайту, включно з незакоміченими та неігнорованими untracked файлами.
+Назви комітів, попередній звіт і тестові очікування не є доказом закриття.
+Докази нижче — source/config і конкретні execution/failure paths.
 
-Працювали головний агент і рівно три субагенти:
-— архітектура, залежності, залишкові API та дублювання;
-— безпека Android і billing backend;
-— Android-надійність, accessibility та ресурси пристрою.
-Головний агент перевірив серверні обмеження, storage, release/deploy wiring,
-сайт, зіставив висновки та створив цей єдиний документ.
+Головному агенту допомагали рівно два субагенти:
+— Android: lifecycle, settings, overlay/playback, detectors, PIN/UI state;
+— backend: installation auth, proxy, RTDN/storage, capacity та operations.
+Головний агент перевірив import graph, release/website wiring, дочитав
+недоступні у скорочених виводах ділянки та звірив підсумкові висновки.
+Зокрема, самостійно перевірені Instagram predicates, SQL transaction body
+та Android registration/store wiring, яких бракувало у виводах субагентів.
 
-Факт: проаналізовано поточне робоче дерево, включно з незакоміченими змінами,
-які вже існували до аудиту. На старті було 11 записів git status, з яких
-сім modified і чотири untracked. Аудит не обмежувався останнім комітом.
+ЗАКРИТО — первісний конкретний дефект усунуто у перевіреному кодовому шляху.
+Це не гарантія всіх сценаріїв, binary чи сторонніх Android/OEM.
+ЧАСТКОВО — потрібний механізм додано, але істотний failure path залишився.
+ВІДКРИТО — дефект, борг або непідтверджений acceptance gate досі актуальний.
+Факт — прямо видно у source/config.
+Висновок — наслідок фактів за наведених передумов.
+Недоведено — потрібна відсутня runtime/deployment перевірка.
+Рівні впливу не є CVSS, частотою збоїв або результатом benchmark.
 
-Факт: для всього app/src/main/java виконано статичний аналіз imports,
-декларацій і текстових посилань: 118 Kotlin-файлів, 8 029 рядків.
-Додатково перевірені посилання шести залишкових API у main/debug/release.
-Backend має 12 Kotlin-файлів; перевірені HTTP handlers, auth boundaries,
-Google verification, обидва storage adapters, migrations та config.
-Детально прочитані цільові execution paths, а не кожна гілка всіх файлів.
-Для контролю незмінності зафіксовані SHA-256 185 source/config/public файлів.
-
-Факт: тести та продуктова документація не приймалися за підтвердження
-правильної поведінки. Тести не запускалися; тестові джерела використовувалися
-лише як місця посилань на залишкові API. Правила .agent прочитані як
-керівні інструкції, а не як доказ фактичної архітектури чи працездатності.
-
-Факт: для уточнення default executor і backlog використано офіційний API
-контракт JDK 17, відповідного runtime у Dockerfile. Це допоміжне пояснення
-семантики бібліотеки; конфігурацію застосунку встановлено з його коду.
-Джерело: [Oracle JDK 17 HttpServer](https://docs.oracle.com/en/java/javase/17/docs/api/jdk.httpserver/com/sun/net/httpserver/HttpServer.html#setExecutor(java.util.concurrent.Executor)).
-
-Не виконувалися: build, lint, unit/instrumentation tests, інсталяція APK,
-реальна експлуатація вразливостей, звернення до production або Google Play,
-навантажувальний прогін, профілювання CPU/RAM/battery, deploy, commit/push.
-Ці операції могли б створити додаткові артефакти або змінити середовище.
-Секретні файли та фактичні credentials не відкривалися.
-
-Позначення доказів:
-Факт — прямо встановлено за source/config.
-Висновок — наслідок наведених фактів із зазначеними передумовами.
-Недоведено — потрібні runtime, deployment або інші відсутні дані.
-Високий — істотний вплив на оплату, основний захист або доступність.
-Середній — умовний збій, неповне покриття чи суттєвий борг підтримки.
-Низький — локальний залишковий API або обмежене дублювання.
-Рівні є оцінкою впливу; це не CVSS і не виміряна частота збоїв.
-
-Скорочення шляхів нижче:
+Скорочення:
 K/ = app/src/main/java/com/shortsblockerkids/
 B/ = billing-backend/src/main/kotlin/com/shortsblockerkids/billingbackend/
-Шляхи без цих префіксів наведені від кореня репозиторію.
 
-2. ЗАГАЛЬНА ОЦІНКА
+Не виконувалися builds, lint, unit/instrumentation tests, APK install,
+експлуатація, load/profiling, production/Google requests, deploy або Git writes.
+Ці операції не входили до однофайлового audit scope і могли б записати артефакти.
+Секретні файли та фактичні credentials не відкривалися.
+Код, конфігурації та тести не змінювалися.
 
-Висновок: у коді є змістовна реалізація продукту та придатна основа внутрішніх
-архітектурних меж. Водночас готовність до масового production не підтверджена
-і за виявленими дефектами не може бути прийнята як завершена.
+2. АКТУАЛЬНИЙ ПІДСУМОК
 
-Критерій                 Оцінка за кодом
-Технічний борг           Помірний у Android; суттєвий у серверній обробці
-                        запитів, відмов і операційних гарантіях.
-Clean Architecture      Внутрішні Android-шари мають правильні залежності.
-                        Одні назви папок не були прийняті за доказ.
-Безпека                 Незавершена: підтверджено відсутність авторизації
-                        запису entitlement за відомим install_id.
-Надійність              Часткова: є fail-open, чутливість до wall clock,
-                        непрокриті storage failure та event/lifecycle gaps.
-Навантаження            Точна місткість невідома. Виявлені послідовна
-                        серверна обробка і спільні proxy rate-limit buckets.
-Production              Публічний масовий реліз за цим аудитом не готовий
-                        до прийняття; працездатність binary не перевірена.
+Первинні 30 пунктів:
+— ЗАКРИТО: 10 — SEC-01..03; REL-01,06..10,12.
+— ЧАСТКОВО: 5 — REL-02..05,11.
+— ВІДКРИТО: 15 — DEBT-01..06; SEC-04; CAP-01..04; PROD-01..04.
+Додано REL-13 і REL-14: два пов'язані умовні дефекти, обидва ВІДКРИТО.
+Разом: 32 пункти, 10 закритих, 5 часткових, 17 відкритих.
+REL-09 закрито для первісного normal-lifecycle retry gap; REL-14 окремо
+фіксує interrupt limitation. REL-12 закрито для неатомарного запису,
+без заяви про automatic recovery або power-loss durability.
 
-Найсуттєвіші причини оцінки:
-— SEC-01: сторонній запит може змінити entitlement відомої інсталяції.
-— CAP-01 і SEC-02: один повільний запит або спільна proxy-квота впливають
-  на доступність інших користувачів.
-— REL-01..03: відкат часу, storage failure і overlay failure порушують
-  основний шлях захисту.
-— Немає виміряного доказу коректності на живих сторонніх застосунках,
-  підтримуваних Android/OEM або під навантаженням.
+Висновок: installation authorization, runtime interval clock, root/package
+guards, detector visibility/geometry і reconnect cleanup виправлено.
+Fail-open не усунуто повністю; media stop не підтверджено; storage recovery,
+deadline lifecycle і RTDN ordering неповні.
+Попередня узагальнена оцінка повного закриття REL-03 була надто широкою.
+Масовий production не підтверджений. Відсутність нових дефектів не заявляється.
 
-Недоведено: ні гарантована непрацездатність у кожному звичайному сценарії,
-ні гарантована працездатність на всіх пристроях. Статичний аудит встановлює
-конкретні дефекти і межі, але не замінює перевірку виконуваного продукту.
+3. ТЕХНІЧНИЙ БОРГ І ПІДТРИМУВАНІСТЬ
 
-3. ТЕХНІЧНИЙ БОРГ, МЕРТВИЙ КОД, ДУБЛЮВАННЯ, ПІДТРИМУВАНІСТЬ
+DEBT-01. ВІДКРИТО. Низький. Залишкові production API.
+Факт: ті самі шість декларацій без видимих production call sites:
+K/application/protection/AppSettingsSnapshotQueries.kt:10;
+K/domain/detection/ShortVideoDetectionEngine.kt:26;
+K/domain/detection/ShortVideoDetectionEngine.kt:44;
+K/domain/protection/TemporaryAllowPolicy.kt:14;
+K/infrastructure/storage/DataStoreSettingsStore.kt:127;
+K/platform/accessibility/diagnostics/DetectorDebugSnapshotStore.kt:31.
+Висновок: кандидати на залишкові API збереглися.
+Недоведено: compiler-level недосяжність і безпечність видалення; text search
+не виключає reflection/generated consumers.
 
-DEBT-01. Низький. Шість production API без статично видимих викликів.
-
-Факт: пошук імен у app/src/main, app/src/debug і app/src/release знаходить
-лише такі декларації:
-— K/application/protection/AppSettingsSnapshotQueries.kt:10 —
-  AppSettingsSnapshot.toLocalEntitlementInput.
-— K/domain/detection/ShortVideoDetectionEngine.kt:26 — supportsPackage.
-— K/domain/detection/ShortVideoDetectionEngine.kt:44 — youtubeOnly.
-— K/domain/protection/TemporaryAllowPolicy.kt:14 — hasExpired.
-— K/infrastructure/storage/DataStoreSettingsStore.kt:127 — setSelectedMode.
-— K/platform/accessibility/diagnostics/DetectorDebugSnapshotStore.kt:31 —
-  listSnapshots.
-
-Архітектурний агент знайшов їх використання у тестових джерелах
-(відповідно 1, 13, 2, 5, 5 та 4 згадки). Це не доказ їх участі в реальній
-роботі застосунку і не результат запуску тестів.
-
-Висновок: це підтверджені кандидати на залишковий API: підтримуються
-декларації та тестові контракти, які не видно у production execution path.
-Недоведено: абсолютна недосяжність і безпечність видалення. Text search
-не виключає reflection, generated code, method references іншої форми
-або зовнішніх споживачів. Доведеного compiler-level списку мертвого коду немає.
-
-DEBT-02. Низький. Повторення detector orchestration.
-
-Факт: Instagram і Facebook повторюють щонайменше вісім непорожніх рядків
-верхньорівневої послідовності перевірок:
+DEBT-02. ВІДКРИТО. Низький. Повторення detector orchestration.
+Факт: identifier/container/action-rail/fullscreen/signals sequence повторюється:
 K/domain/detection/InstagramReelsDetector.kt:15;
-K/domain/detection/FacebookReelsDetector.kt:15.
-Обчислюються identifier, container, action rail, fullscreen та signals.
-TikTok має подібну структуру, але інші умови confidence і navigation.
+K/domain/detection/FacebookReelsDetector.kt:15;
+K/domain/detection/TikTokShortVideoDetector.kt:15.
+Висновок: місця синхронізації однакових змін залишилися. Platform differences
+реальні; некоректність саме через clone не встановлена.
 
-Факт: загальні helpers уже винесені у ShortVideoDetectionHeuristics.
-Facebook використовує їх у K/domain/detection/FacebookReelsDetector.kt:86;
-TikTok — K/domain/detection/TikTokShortVideoDetector.kt:88.
-Платформні відмінності залишаються реальними:
-K/domain/detection/FacebookReelsDetector.kt:111;
-K/domain/detection/TikTokShortVideoDetector.kt:100.
-
-Висновок: локальне дублювання збільшує кількість місць для синхронізації
-однакових змін, але не доводить потребу в універсальному detector.
-Некоректність саме через цей clone не встановлена.
-Стандартне повторення Compose layout не включено як окремий дефект.
-
-DEBT-03. Середній. Flow-state розкладено на незалежні прапорці.
-
-Факт: currentScreen, isUnlocked, pendingTemporaryAllow,
-pendingProtectionDisable зберігаються окремо:
+DEBT-03. ВІДКРИТО. Середній. Незалежні UI flags і позиційний saver.
+Факт: screen/unlock/pending flows зберігаються окремо:
 K/presentation/app/ShortsBlockerKidsCoordinator.kt:28.
-Handlers вручну підтримують їх узгодженість:
-K/presentation/app/ShortsBlockerKidsCoordinator.kt:105;
-K/presentation/app/ShortsBlockerKidsCoordinator.kt:117.
-Saver використовує позиційний list, прямі casts і AppScreen.valueOf:
-K/presentation/app/ShortsBlockerKidsApp.kt:79;
-K/presentation/app/ShortsBlockerKidsApp.kt:87.
+Saver відновлює позиційні значення та enum:
+K/presentation/app/ShortsBlockerKidsApp.kt:77.
+Висновок: допустимі комбінації не обмежені типом; несумісні restored
+типи/enum можуть спричинити exception. Нормальний device crash не відтворено.
 
-Висновок: допустимі комбінації не обмежені самим типом стану. Зміна flow
-залежить від синхронності transitions і saver positions. Несумісний
-restored enum/type може викликати exception.
-Недоведено: конкретний crash у нормальному restore поточної версії.
+DEBT-04. ВІДКРИТО. Середній. Назва signal ширша за predicate.
+Факт: hasRepeatedVerticalFeedSignal перевіряє один великий visible
+scrollable node, а не повторення відео чи напрям руху:
+K/domain/detection/ShortVideoDetectionHeuristics.kt:101.
+Висновок: signal не доводить повторювану вертикальну відеострічку.
 
-DEBT-04. Середній. Назви detector signals обіцяють більше за predicates.
-
-Факт: hasRepeatedVerticalFeedSignal перевіряє один великий scrollable node,
-без перевірки послідовності, повторення чи фактичного напрямку руху:
-K/domain/detection/ShortVideoDetectionHeuristics.kt:111.
-Висновок: семантика назви ускладнює підтримку і оцінку confidence.
-Наявність цього signal не доводить повторювану відеострічку.
-
-DEBT-05. Середній. Серверні transport/storage/операційні рішення спрощені.
-
-Факт: handlers, transport gates, response mapping та entitlement transitions
-зосереджені у B/BillingBackendServer.kt:43 і B/BillingBackendServer.kt:131.
-Storage API синхронний; кожна PostgreSQL-операція відкриває connection:
-B/DatabaseMigrator.kt:110; B/DatabaseMigrator.kt:220.
-Migration parser просто split за крапкою з комою:
+DEBT-05. ВІДКРИТО. Середній. Спрощені backend responsibilities.
+Факт: transport/transitions/synchronous I/O поєднано у server:
+B/BillingBackendServer.kt:58; B/BillingBackendServer.kt:109.
+SQL parser досі split за крапкою з комою:
 B/DatabaseMigrator.kt:87.
+Висновок: борг підтримки/розширення залишився. Несумісність трьох наявних
+простих migrations із parser не встановлена. Див. CAP/REL/PROD.
 
-Висновок: поточні прості SQL-файли сумісні з parser, але він не є загальним
-SQL parser для майбутніх quoted strings або процедур. Це борг розширення,
-а не доведений збій двох наявних migrations. Серверне I/O та error handling
-мають важливі операційні обмеження, деталізовані в CAP/REL/PROD.
+DEBT-06. ВІДКРИТО. Середній. Немає internal retention.
+Факт: processed RTDN IDs та authorizations накопичуються без runtime prune:
+B/EntitlementStore.kt:125; B/DatabaseMigrator.kt:252;
+B/EntitlementStore.kt:74; B/DatabaseMigrator.kt:259.
+Висновок: storage росте з накопиченими подіями/registrations.
+Недоведено: external housekeeping, реальний обсяг і строк до вичерпання.
 
-DEBT-06. Середній. Збереження processed RTDN IDs не має retention.
-
-Факт: кожний новий message_id зберігається:
-B/EntitlementStore.kt:54;
-B/DatabaseMigrator.kt:124;
-billing-backend/migrations/002_create_processed_rtdn_messages.sql:1.
-У перевірених runtime paths немає expiry, prune або bounded retention.
-
-Висновок: кількість збережених IDs зростає з накопиченою кількістю подій.
-У file mode це також збільшує кожний serialized write; у PostgreSQL —
-таблицю й індекс. Це не доказ негайного переповнення.
-Недоведено: фактичний розмір, зовнішня housekeeping policy та строк до
-ресурсної проблеми.
-
-Розмір і ускладнення: найбільший main Kotlin-файл —
-K/presentation/dashboard/DashboardScreen.kt:1, 456 рядків;
-ShortsBlockerKidsApp — 308; BlockOverlayController — 294;
-GooglePlayBillingGateway — 277; MainActivity — 266;
-AccessibilityServiceRuntime — 221; RuntimeProtectionState — 198;
-DataStoreSettingsStore — 191.
-Факт: жоден main Kotlin-файл не перевищує soft/hard file bounds 500/600.
-Dashboard перевищує ціль 400, але є переважно декларативним UI.
-Висновок: грубого моноліту за розміром файлів не встановлено.
-Недоведено: формальні межі кожної функції, класу, nesting і cyclomatic
-complexity; цей аудит не виконав compiler/AST-перевірку всіх таких метрик.
+Факт: main Android має 126 Kotlin-файлів і 8 534 рядки.
+Найбільші: DashboardScreen 456, BlockOverlayController 345,
+ShortsBlockerKidsApp 308, MainActivity 291.
+Висновок: file-size моноліту понад 500 рядків у цьому зрізі немає.
+AST complexity/nesting усіх функцій не перевірялися.
 
 4. CLEAN ARCHITECTURE
 
-Факт: повний import scan main Kotlin не знайшов у domain/application
-імпортів Android/AndroidX або infrastructure/platform/presentation/
-accessibility/core. Application залежить від domain.
+Факт: повторний import scan domain/application не знайшов Android/AndroidX
+або infrastructure/platform/presentation/accessibility/core imports.
+Application -> domain: 24 imports.
+Infrastructure -> application: 26; -> domain: 16.
+Presentation -> application: 24; -> domain: 17.
+Platform -> application: 16; -> domain: 19.
+Це source import edges, не кількість runtime викликів.
 
-Кількість import edges у перевіреному зрізі:
-application → domain: 24;
-infrastructure → application: 25; infrastructure → domain: 16;
-presentation → application: 24; presentation → domain: 17;
-platform → application: 12; platform → domain: 18.
-Це кількість imports, а не кількість runtime викликів.
-
-Приклади реальних меж:
+Приклади внутрішніх контрактів і adapter boundaries:
 K/application/port/SettingsStatePort.kt:1;
 K/application/port/PinStateStore.kt:1;
 K/application/billing/BillingVerificationPort.kt:1;
 K/domain/protection/ProtectionEligibilityPolicy.kt:1;
 K/infrastructure/storage/DataStoreSettingsStore.kt:1.
-
-Висновок: Android має справжні внутрішні бізнес-шари і зовнішні adapters.
-Прямі infrastructure imports у MainActivity відповідають можливій ролі
-composition root і самі по собі не доводять порушення залежностей.
-
-Факт: presentation також імпортує domain. Це не зворотна залежність
-внутрішнього шару і не автоматичний дефект Clean Architecture.
-Висновок: найбільш очевидний борг тут — ручна складність UI state,
-а не відсутність усіх архітектурних меж.
-
-Backend не має аналогічної багатошарової структури: невеликий server,
-storage interface та зовнішній verifier. Висновок: така компактність сама
-по собі не є порушенням. Однак transport, entitlement decisions і I/O
-у handlers посилюють наслідки CAP-01 та SEC-01.
-
-Недоведено: повний runtime dependency graph, constructor/service-locator
-залежності без imports, всі branch-level контракти й коректність кожного
-use case. Хороший import graph не підтверджує працездатність продукту.
+Висновок: внутрішні Android-шари фактично існують. Infrastructure wiring
+composition root саме по собі не порушує напрям залежностей.
+Компактність backend не є автоматичним порушенням, але synchronous handlers
+посилюють CAP/operational defects.
+Недоведено: повний runtime graph і branch-level коректність усіх use cases.
 
 5. БЕЗПЕКА
 
-SEC-01. Високий. Заміна entitlement іншої інсталяції за відомим install_id.
+SEC-01. ЗАКРИТО для первісного дефекту. Високий первісний вплив.
+Факт: verify/status вимагають installation bearer до entitlement access:
+B/BillingBackendServer.kt:66; B/BillingBackendServer.kt:105;
+B/BillingBackendServer.kt:235.
+Registration не приймає identity клієнта:
+B/BillingBackendServer.kt:54.
+Сервер генерує UUID і 32 random bytes, зберігає hash та порівнює hashes:
+B/InstallationAuthorization.kt:19; B/InstallationAuthorization.kt:20;
+B/InstallationAuthorization.kt:22; B/InstallationAuthorization.kt:34.
+Android передає bearer:
+K/infrastructure/billing/HttpBillingVerificationAdapter.kt:98.
+Висновок: UUID жертви й власного token недостатньо для первісного overwrite/read.
+Недоведено: deployed config, компрометація bearer чи real attack.
+Нова несумісність legacy identities описана у REL-13.
 
-Факт: POST verify не автентифікує власника інсталяції:
-B/BillingBackendServer.kt:47.
-Перевіряються package/product і прив'язка вхідного purchase token:
-B/BillingBackendServer.kt:49;
-B/BillingBackendServer.kt:52.
-Права змінювати вхідний install_id не перевіряються.
-Після Google verification record записується:
-B/BillingBackendServer.kt:64.
+SEC-02. ЗАКРИТО для спільної proxy-квоти за належної конфігурації.
+Факт: bucket = endpoint + resolved client address:
+B/BillingBackendServer.kt:258.
+Exact trusted peer та одиничний numeric X-Forwarded-For:
+B/ProxyRequestBoundary.kt:21; B/ProxyRequestBoundary.kt:29.
+Висновок: належний proxy не зводить усі різні client IP в один bucket.
+Залишаються NAT sharing, fixed windows, unauthenticated quota consumption
+для відповідного client IP та per-replica buckets.
+Недоведено: реальний proxy overwrite headers/topology/runtime config.
 
-Факт: production PostgreSQL ON CONFLICT(install_id) замінює token hash,
-state, activeUntil і verification time:
-B/DatabaseMigrator.kt:195.
-Verifier повертає EXPIRED для валідної завершеної підписки:
-B/GooglePlayDeveloperApiClient.kt:185.
-
-Умова: нападник знає UUID інсталяції жертви та має власний token того самого
-package/product, який ще не прив'язаний до іншого запису.
-Висновок: UUID жертви + власний завершений token можуть перезаписати
-платний entitlement жертви на EXPIRED. Google підтверджує покупку, але
-не авторизує зміну саме цього installation record.
-Недоведено: спосіб отримання UUID, просте його перебира́ння або фактична
-експлуатація. Purchase token жертви і її PIN для описаного шляху не потрібні.
-
-Пов'язане розкриття: GET status повертає entitlement за відомим ID без auth:
-B/BillingBackendServer.kt:83;
-B/JsonBodies.kt:55.
-Android передає ID у query string:
-K/infrastructure/billing/HttpBillingVerificationAdapter.kt:51.
-Розкриваються стан/строки підписки; purchase token і Google account тут
-не повертаються. Потрапляння URL до реальних proxy logs не перевірено.
-
-SEC-02. Високий за спільного reverse proxy. Один peer має квоту всіх клієнтів.
-
-Факт: rate-limit key = endpoint + socket remoteAddress:
-B/BillingBackendServer.kt:220.
-Gate виконується до handler, а RTDN authentication — всередині handler:
-B/BillingBackendServer.kt:143;
-B/BillingBackendServer.kt:97.
-Невалідні або unauthenticated запити теж збільшують лічильник:
-B/RateLimiter.kt:17.
-
-Умова: backend бачить спільну адресу proxy.
-Висновок: 30 допущених, навіть некоректних verify-запитів у вікні можуть
-зробити наступні легітимні запити 429 до зміни вікна. Аналогічно працюють
-status і RTDN; для вичерпання RTDN-квоти JWT пройти не потрібно.
-Недоведено: реальна topology. За різних direct IP вплив локалізований
-на IP/NAT, а не гарантовано на всіх користувачів.
-
-SEC-03. Високий за доступного origin. Header-based HTTPS gate не є TLS.
-
-Факт: listener — звичайний HttpServer:
-B/BillingBackendServer.kt:316.
-Програмний HTTPS gate приймає X-Forwarded-Proto=https без перевірки
-trusted proxy:
-B/BillingBackendServer.kt:210.
-Compose публікує port без loopback host restriction:
+SEC-03. ЗАКРИТО для прямого forged-header bypass.
+Факт: forwarded headers від untrusted peer відхиляються:
+B/ProxyRequestBoundary.kt:21.
+Production вимагає trusted proxy addresses:
+B/BackendConfig.kt:135.
+Compose published port обмежений loopback:
 docker-compose.yml:28.
-TLS proxy service або firewall rules цей compose-файл не визначає.
+Висновок: довільний peer не проходить gate лише власним
+X-Forwarded-Proto=https у перевіреній boundary.
+Недоведено: фактичний TLS, firewall/routing і proxy sanitation.
+Backend listener залишається plain HTTP за TLS termination boundary.
 
-Умова: origin port доступний нападнику або proxy пропускає його header.
-Висновок: plaintext HTTP з самостійно заданим header проходить gate.
-Production config requireHttps=true не доводить шифрування каналу.
-Недоведено: зовнішній firewall/proxy/TLS deployment. Код не доводить,
-що origin уже публічно доступний у production.
-
-SEC-04. Середній. Батьківська unlock-сесія зберігається у UI state.
-
-Факт: isUnlocked зберігається/відновлюється rememberSaveable:
-K/presentation/app/ShortsBlockerKidsApp.kt:74;
-K/presentation/app/ShortsBlockerKidsApp.kt:87.
-Coordinator встановлює unlock після PIN та скидає його для explicit disable
-і temporary allow:
-K/presentation/app/ShortsBlockerKidsCoordinator.kt:92;
-K/presentation/app/ShortsBlockerKidsCoordinator.kt:108;
-K/presentation/app/ShortsBlockerKidsCoordinator.kt:124.
-Callback зміни protected platforms не запускає повторний PIN:
+SEC-04. ВІДКРИТО. Середній. Saved unlocked parental session.
+Факт: saver зберігає/відновлює isUnlocked:
+K/presentation/app/ShortsBlockerKidsApp.kt:77.
+Platform toggles запускаються без нового PIN:
 K/presentation/app/ShortsBlockerKidsApp.kt:215.
-Перевірений MainActivity.onResume лише refresh-ить state і start-ить billing:
-K/MainActivity.kt:199; lifecycle relock у цьому callback відсутній.
+Unlock скидається лише в окремих explicit flows:
+K/presentation/app/ShortsBlockerKidsCoordinator.kt:105;
+K/presentation/app/ShortsBlockerKidsCoordinator.kt:117.
+Висновок: телефон із unlocked Dashboard дозволяє дитині змінити protected
+platforms; saved UI session не є новою PIN-перевіркою.
+Недоведено: повний restore/lifecycle outcome на пристрої.
 
-Умова: батько передає дитині телефон зі збереженою unlocked Dashboard-сесією.
-Висновок: головний disable switch має окремий PIN-flow, але зміна списку
-захищених платформ доступна у відкритій сесії. Saved unlock переживає
-відновлення UI state. Це локальний ризик сесії, не віддалений bypass.
-Недоведено: повна поведінка всіх Compose lifecycle observers і фактичний
-restore на пристрої. Сам onResume не доводить відсутність будь-якого іншого
-механізму relock поза перевіреним шляхом.
+6. НАДІЙНІСТЬ І ПЕРЕВІРКА ВИПРАВЛЕНЬ
 
-Реальні позитивні security controls:
+REL-01. ЗАКРИТО у перевіреному runtime path.
+Факт: service ін'єктує ElapsedRealtimeProvider:
+K/accessibility/ShortsBlockerAccessibilityService.kt:13.
+Provider викликає SystemClock.elapsedRealtime:
+K/infrastructure/time/ElapsedRealtimeProvider.kt:7.
+Runtime передає цей clock policy/controller:
+K/platform/accessibility/AccessibilityServiceRuntime.kt:91.
+Debounce/cooldown/PIN grace використовують monotonic values:
+K/platform/accessibility/routing/AccessibilityEventPolicy.kt:24;
+K/accessibility/BlockingDecisionController.kt:60.
+Висновок: wall-clock rollback не подовжує ці intervals.
+Бізнес-дедлайни за wall time залишаються окремим REL-05.
 
-— Покупка звіряється з Google на fixed HTTPS host, параметри URL-encoded,
-  відповідний product шукається у lineItems:
-  B/GooglePlayDeveloperApiClient.kt:37;
-  B/GooglePlayDeveloperApiClient.kt:132.
-  Активна unacknowledged покупка проходить acknowledge:
-  B/GooglePlayDeveloperApiClient.kt:49.
-— Production вимагає authenticated Pub/Sub configuration:
-  B/BackendConfig.kt:133.
-  RTDN використовує TokenVerifier, задані audience/issuer/email:
-  B/RtdnAuthenticator.kt:28; B/RtdnAuthenticator.kt:32;
-  B/RtdnAuthenticator.kt:54.
-— SQL значення bind-яться prepared statements. Динамічний whereSql
-  походить від внутрішніх констант:
-  B/DatabaseMigrator.kt:119; B/DatabaseMigrator.kt:172.
-— Request body обмежений bytes:
-  B/BillingBackendServer.kt:226; B/BackendConfig.kt:21.
-— PIN: PBKDF2-HMAC-SHA256, 120 000 iterations, 256-bit output,
-  random salt 16 bytes, MessageDigest.isEqual:
-  K/infrastructure/security/Pbkdf2PinHasher.kt:43;
-  K/infrastructure/security/Pbkdf2PinHasher.kt:47.
-— PIN attempt update атомарний у DataStore.edit; lockout враховує
-  monotonic time і reboot:
-  K/infrastructure/storage/DataStorePinStateStore.kt:36;
-  K/application/pin/VerifyPinUseCase.kt:76.
-  Після 5/6/7+ невдалих спроб: 30 s / 60 s / 5 min:
-  K/domain/pin/PinRateLimiter.kt:19.
-— Manifest: allowBackup=false; accessibility і admin components мають
-  BIND_ACCESSIBILITY_SERVICE/BIND_DEVICE_ADMIN:
-  app/src/main/AndroidManifest.xml:5;
-  app/src/main/AndroidManifest.xml:25;
-  app/src/main/AndroidManifest.xml:39.
-— Backend container non-root; read_only і tmpfs:
-  billing-backend/Dockerfile:18; docker-compose.yml:53.
+REL-02. ЧАСТКОВО. Високий. Settings failure recovery.
+Уточнення 8 жовтня 2026: вузький scope — billing entitlement write.
+Факт: observer має Loading/Ready/Unavailable, bounded startup retries
+і подальше відновлення; failed read не видається за successful default:
+K/application/settings/ObserveSettingsUseCase.kt:39.
+Runtime тримає лише успішний snapshot поточної сесії:
+K/platform/accessibility/AccessibilityServiceRuntime.kt:125.
+UI settings writes мають контрольований failure boundary:
+K/presentation/app/SettingsWriteUiCoordinator.kt:12.
+MainActivity більше не запускає окрему coroutine для entitlement write:
+K/MainActivity.kt:261. Suspend callback чекає завершення DataStore edit.
+K/presentation/billing/BillingCoordinator.kt:18.
+Збереження передує success UI та client-only acknowledgement;
+Exception дає ENTITLEMENT_SAVE_FAILED, скидає loading/purchase flags
+і зупиняє success path; CancellationException передається далі:
+K/presentation/billing/BillingCoordinator.kt:160.
+K/presentation/billing/BillingCoordinator.kt:172.
+Збережений snapshot не підміняється результатом невдалого запису;
+наступне purchase/refresh event може повторно виконати збереження.
+Тести: presentation/billing/BillingCoordinatorTest.kt — awaited write,
+write failure + refresh recovery, failed client-only write без acknowledgement,
+activity scope cancellation без success або storage-failure повідомлення.
+Перевірка: Gradle 9.4.1, ANDROID_HOME/ANDROID_SDK_ROOT налаштовано;
+:app:assembleDebug :app:testDebugUnitTest :app:lintDebug --offline --console=plain.
+Фінальний gate: PASS — :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
+--offline --console=plain, Gradle 9.4.1; BUILD SUCCESSFUL (exit 0).
+Android unit tests: 575, failures 0, errors 0, skipped 0.
+BillingCoordinatorTest: 16/16, включно з усіма 4 новими regression scenarios.
+Перед цим gate виправлено дві fixture/API несумісності та 5 відомих
+падінь перевірок сумісності; сторонню продуктову поведінку не змінено.
+Перший wrapper запуск був заблокований мережевим Permission denied;
+повтор використав вже встановлений Gradle без завантаження інструментів.
+Висновок: billing-write tail виправлено у коді; загальний REL-02 лишається
+ЧАСТКОВО. Недоведено: реальні DataStore I/O/device failure та ANR/crash;
+повна перевірка решти REL-02 не входила до цього вузького виправлення.
 
-Не встановлено доказів довільного SSRF чи SQL injection у прочитаних paths.
-Відсутність certificate pinning не оголошена дефектом.
-Root/offline редагування app-private storage не оголошене remote exploit.
-Короткий PIN має обмежену ентропію, але offline guessing rate не виміряний.
-INTERNET відсутній у main manifest, однак merged manifest не перевірений:
-dependency може додати permission. Це не доведений release blocker.
-Actual IAM, credentials, JWT library internals, firewall і TLS не перевірені.
+REL-03. ЧАСТКОВО. Високий. Overlay failure може лишатися fail-open.
+Факт: router підключає fallback:
+K/platform/accessibility/routing/AccessibilityEventRouter.kt:27.
+Failed overlay запускає exit fallback; його невдача записує ProtectionFailed:
+K/platform/accessibility/routing/BlockingProtectionExecutor.kt:30.
+Повторний fallback того самого package пригнічується до reset:
+K/platform/accessibility/routing/BlockingProtectionExecutor.kt:35;
+K/platform/accessibility/routing/BlockingProtectionExecutor.kt:48.
+Висновок: додано спробу fallback, але unsuccessful show + exit лишають
+шлях без barrier. Повне закриття fail-open заявляти некоректно.
+Недоведено: частота WindowManager/global-action failures.
 
-6. НАДІЙНІСТЬ І ПРАЦЕЗДАТНІСТЬ
+REL-04. ЧАСТКОВО. Середній; високий за гарантії media stop.
+Факт: successful overlay запускає automatic playback exit:
+K/platform/accessibility/routing/BlockingProtectionExecutor.kt:17;
+K/platform/accessibility/overlay/BlockOverlayController.kt:94.
+BACK/PiP exit перевіряє package/detection; unconfirmed exit лишає overlay:
+K/platform/accessibility/overlay/BlockedPlaybackExit.kt:26;
+K/platform/accessibility/overlay/BlockedPlaybackExit.kt:44;
+K/platform/accessibility/routing/BlockingProtectionExecutor.kt:25.
+Closure перевіряється за accessibility windows/tree:
+K/platform/accessibility/overlay/BlockedPlaybackExit.kt:69.
+Висновок: automatic exit додано, але acknowledgement pause/stop плеєра немає.
+Недоведено: playback/audio/PiP outcome сторонніх версій/OEM.
 
-REL-01. Високий. Відкат системного часу пригнічує скани і блокування.
+REL-05. ЧАСТКОВО. Середній. Deadline timer має clock/lifecycle межі.
+Факт: Ready планує deadline:
+K/platform/accessibility/AccessibilityServiceRuntime.kt:127.
+Scheduler чекає wall-clock різницю та перевіряє її після пробудження:
+K/platform/accessibility/TemporaryAllowDeadlineScheduler.kt:18;
+K/platform/accessibility/TemporaryAllowDeadlineScheduler.kt:23;
+K/platform/accessibility/TemporaryAllowDeadlineScheduler.kt:30.
+Висновок: при незмінному clock trigger не потребує нового event.
+Відкат може подовжити реальний дозвіл; переведення вперед не будить уже
+запущений delay. Interrupt cancellation описано в REL-14.
+Недоведено: фактична максимальна expiry latency/OEM scheduling.
 
-Факт: загальний TimeProvider використовує System.currentTimeMillis:
-K/infrastructure/time/SystemTimeProvider.kt:6.
-Event debounce перевіряє віднімання timestamp і планує
-500 - (now - lastScan):
-K/platform/accessibility/routing/AccessibilityEventPolicy.kt:22.
-Cooldown/detection debounce/PIN launch grace мають такі самі wall-clock
-інтервали:
-K/accessibility/BlockingDecisionController.kt:69;
-K/accessibility/BlockingDecisionController.kt:74;
-K/accessibility/BlockingDecisionController.kt:79.
+REL-06. ЗАКРИТО. Event/root package consistency.
+Факт: mismatch відхиляється до detection:
+K/platform/accessibility/routing/AccessibilityEventRouter.kt:83.
+Synthetic event використовує package root:
+K/platform/accessibility/AccessibilityServiceRuntime.kt:213.
+Висновок: первісне застосування чужого detector/gate до дерева усунено.
 
-Висновок: після відкату на Δ повторний scan може відкластися приблизно
-на Δ + 500 ms; короткий grace може подовжитися до відновлення попереднього
-часу або reset. Арифметичний шлях доведений.
-Недоведено: можливість і частота конкретної зміни часу на кожному пристрої.
-PIN brute-force lockout має окремий monotonic механізм і не змішується
-з цією знахідкою.
+REL-07. ЗАКРИТО для перевірених identifier/container predicates.
+Факт: markers вимагають visibility:
+K/domain/detection/InstagramReelsDetector.kt:56;
+K/domain/detection/InstagramReelsDetector.kt:71;
+K/domain/detection/FacebookReelsDetector.kt:55;
+K/domain/detection/FacebookReelsDetector.kt:70;
+K/domain/detection/TikTokShortVideoDetector.kt:57;
+K/domain/detection/TikTokShortVideoDetector.kt:72.
+Висновок: hidden markers більше не виконують ці affirmative predicates.
+Недоведено: live trees і загальний false-positive/negative rate.
 
-REL-02. Високий. Storage failure не має контрольованого відновлення.
-
-Факт: service initialization блокує callback через runBlocking(IO).first()
-без timeout/catch:
-K/platform/accessibility/AccessibilityServiceRuntime.kt:54.
-Settings collector не має recovery/restart:
-K/platform/accessibility/AccessibilityServiceRuntime.kt:113.
-DataStore.data/edit передають помилки:
-K/infrastructure/storage/DataStoreSettingsStore.kt:40;
-K/infrastructure/storage/DataStoreSettingsStore.kt:177.
-Activity теж має синхронне initial first():
-K/MainActivity.kt:236.
-
-Висновок: помилка читання проходить за межі initialization або collector;
-зависле читання блокує callback. Контрольований режим відмови цього шляху
-не реалізований.
-Недоведено: фактичний ANR/crash і частота storage failures на пристроях.
-
-REL-03. Високий. Overlay failure є fail-open.
-
-Факт: addView у runCatching повертає false за помилки:
-K/platform/accessibility/overlay/BlockOverlayController.kt:77.
-Router лише скидає visibility state:
-K/platform/accessibility/routing/AccessibilityEventRouter.kt:153.
-Діагностична дія ShowOverlay записується ще до результату:
-K/platform/accessibility/routing/AccessibilityEventRouter.kt:150.
-
-Висновок: HIGH detection може завершитися без barrier і без іншої
-блокувальної дії. Запис рішення не доводить успішного показу.
-Недоведено: частота WindowManager failures.
-
-REL-04. Середній; високий за гарантії зупинки медіа. Overlay не виконує stop.
-
-Факт: automatic path створює і додає fullscreen View:
-K/platform/accessibility/overlay/BlockOverlayController.kt:62;
-K/platform/accessibility/overlay/BlockOverlayController.kt:77.
-Exit запускається з кнопки:
-K/platform/accessibility/overlay/BlockOverlayController.kt:219.
-BACK/PiP exit належать цьому окремому сценарію:
-K/platform/accessibility/overlay/BlockedPlaybackExit.kt:25.
-
-Висновок: код реалізує візуальний бар'єр; автоматичної pause/stop/exit
-команди при самому detection немає. Відтворення може продовжуватися.
-Недоведено: звук/плеєр кожної production-версії стороннього застосунку.
-
-REL-05. Середній. Дозвіл завершується за подіями, без deadline timer.
-
-Факт: зберігається абсолютний temporaryAllowUntilMillis:
-K/application/protection/SetTemporaryAllowUseCase.kt:11.
-Eligibility звіряє поточний час:
-K/domain/protection/ProtectionEligibilityPolicy.kt:15.
-Runtime має events/settings emissions/rechecks, але не планує job
-на сам deadline:
-K/platform/accessibility/AccessibilityServiceRuntime.kt:113;
-K/platform/accessibility/AccessibilityServiceRuntime.kt:168;
-K/platform/accessibility/AccessibilityServiceRuntime.kt:183.
-
-Висновок: поновлення захисту залежить від наступного trigger.
-Для екрана без нових events негайне блокування при expiry не гарантоване.
-Wall-clock зміни також змінюють фактичну тривалість дозволу.
-Недоведено: максимальна реальна затримка.
-
-REL-06. Середній. Package події не звіряється з package активного root.
-
-Факт: platform/settings gate визначаються за event.packageName, а detector
-отримує поточне active window:
-K/platform/accessibility/routing/AccessibilityEventRouter.kt:31;
-K/platform/accessibility/routing/AccessibilityEventRouter.kt:50;
-K/platform/accessibility/routing/AccessibilityEventRouter.kt:108.
-Перед detection немає звірки root.packageName:
-K/platform/accessibility/routing/AccessibilityEventRouter.kt:120.
-
-Висновок: за зміни вікна між event і scan можливе застосування чужого
-detector/enabled gate до іншого дерева, включно з вимкненою платформою.
-Недоведено: частота розходжень і реальні false blocks.
-
-REL-07. Середній. Приховані markers беруть участь у HIGH confidence.
-
-Факт: identifier/container predicates не перевіряють isVisibleToUser:
-K/domain/detection/TikTokShortVideoDetector.kt:54;
-K/domain/detection/TikTokShortVideoDetector.kt:68;
-K/domain/detection/InstagramReelsDetector.kt:53;
-K/domain/detection/InstagramReelsDetector.kt:67;
-K/domain/detection/FacebookReelsDetector.kt:52;
-K/domain/detection/FacebookReelsDetector.kt:66.
-Action rail/fullscreen перевіряють видимість:
-K/domain/detection/ShortVideoDetectionHeuristics.kt:43;
-K/domain/detection/ShortVideoDetectionHeuristics.kt:87.
-
-Висновок: прихований reel marker може комбінуватися з іншою видимою
-video surface і buttons та задовольнити HIGH predicate.
-Недоведено: чи містять живі platform trees такі комбінації.
-
-REL-08. Середній. Геометричні пороги залежать від абсолютних coordinates.
-
-Факт: screenRight/screenBottom отримуються з усіх вузлів, а vertical spread
-зіставляється з абсолютною нижньою координатою:
+REL-08. ЗАКРИТО для absolute-coordinate/hidden-bounds defect.
+Факт: bounds рахуються з visible nodes ненульової площі:
 K/domain/detection/AccessibilityTreeSnapshot.kt:15;
+K/domain/detection/AccessibilityTreeSnapshot.kt:84.
+Rail center відносний до screenLeft; spread використовує screenHeight:
 K/domain/detection/ShortVideoDetectionHeuristics.kt:35;
 K/domain/detection/ShortVideoDetectionHeuristics.kt:67.
+Висновок: translation не змінює ці ratios; hidden bounds виключено.
+Недоведено: split-screen/tablets/OEM layouts/font scaling/locales.
 
-Висновок: shifted window або hidden bounds можуть змінити detector
-thresholds, не змінюючи змісту відео.
-Недоведено: коректність split-screen, tablets, font scaling, локалей
-і змінених platform layouts.
-
-REL-09. Середній. Повторний null root не має безперервного retry.
-
-Факт: перший null root планує recheck у router:
-K/platform/accessibility/routing/AccessibilityEventRouter.kt:108.
-Запланований routeCurrentWindow при другому null повертається:
-K/platform/accessibility/AccessibilityServiceRuntime.kt:206.
-Initialization не має unconditional initial scan; first emission при вже
-активному protection не задовольняє !wasProtectionActive:
+REL-09. ЗАКРИТО для первісного retry gap у normal active lifecycle.
+Факт: active Ready запускає current-window route:
 K/platform/accessibility/AccessibilityServiceRuntime.kt:125.
+Null root повертає unsuccessful attempt, поки protection active:
+K/platform/accessibility/AccessibilityServiceRuntime.kt:208.
+Scheduler повторює невдачу без нового accessibility event:
+K/platform/accessibility/CurrentWindowRecheckScheduler.kt:17;
+K/platform/accessibility/CurrentWindowRecheckScheduler.kt:24.
+Висновок: repeated null root не обриває normal retry.
+Interrupt/rearming лишається REL-14; event-flood/battery/OEM не перевірено.
 
-Висновок: старт/відновлення блокування може залежати від нової події,
-а не від гарантованого внутрішнього scan.
-Недоведено: практичний строк очікування в живому event stream.
+REL-10. ЗАКРИТО для повторного connect.
+Факт: replace закриває попередню connection; callback очищається до cleanup:
+K/platform/accessibility/ServiceConnectionLifecycle.kt:7;
+K/platform/accessibility/ServiceConnectionLifecycle.kt:12.
+Cleanup скасовує collector/jobs/schedulers та закриває captured connectedRouter:
+K/platform/accessibility/AccessibilityServiceRuntime.kt:148.
+Destroy закриває connection і scope:
+K/platform/accessibility/AccessibilityServiceRuntime.kt:175.
+Висновок: первісні duplicate collectors/старий overlay усунуто у цій
+replace/close послідовності. Device lifecycle не відтворювався.
 
-REL-10. Середній, умовний. Повторний connect не ідемпотентний.
+REL-11. ЧАСТКОВО. Середній. RTDN transaction без повного ordering.
+Факт: same-message claim/update тепер в одній SQL transaction:
+B/DatabaseMigrator.kt:111; B/DatabaseMigrator.kt:117;
+B/DatabaseMigrator.kt:141; B/DatabaseMigrator.kt:252.
+File record і marker також persist-яться разом:
+B/EntitlementStore.kt:125.
+Google verification передує transactional claim:
+B/BillingBackendServer.kt:123; B/BillingBackendServer.kt:129.
+Updates безумовно замінюють state/time:
+B/DatabaseMigrator.kt:286; B/EntitlementStore.kt:143.
+Висновок: crash gap між durable update і marker усунуто; паралельні
+duplicates можуть повторити Google work. Для різних messages/replicas
+немає freshness guard: старіший snapshot, завершений пізніше, може
+перезаписати новіший. Same-message dedupe не впорядковує різні messages.
+Недоведено: реальний race і фактична регресія entitlement.
 
-Факт: onServiceConnected створює новий router і collector без попереднього
-закриття/скасування:
-K/platform/accessibility/AccessibilityServiceRuntime.kt:87;
-K/platform/accessibility/AccessibilityServiceRuntime.kt:113.
-Висновок: повторний callback на тому самому runtime може дублювати collectors
-і залишити старий overlay поза керуванням.
-Недоведено: occurrence саме такого lifecycle на підтримуваних Android/OEM.
-Доведений витік на реальному пристрої не заявляється.
+REL-12. ЗАКРИТО для неатомарного file/development persist.
+Факт: temp створюється поруч; replace використовує ATOMIC_MOVE:
+B/EntitlementStore.kt:53; B/EntitlementStore.kt:235.
+Memory змінюється після persist:
+B/EntitlementStore.kt:74; B/EntitlementStore.kt:85;
+B/EntitlementStore.kt:125.
+Malformed store fail-fast зі збереженням original:
+B/EntitlementStore.kt:159; B/EntitlementStore.kt:186.
+Висновок: direct partial overwrite і memory-before-failed-write усунуто.
+Недоведено: fsync/power-loss durability, atomic-move support цільової FS.
+Automatic recovery вже пошкодженого store немає. Production вимагає SQL;
+file-mode ризик не приписується стандартному production adapter.
 
-REL-11. Середній. RTDN flow не є однією atomic transaction.
+REL-13. НОВЕ / ВІДКРИТО. Високий за наявності старих paid entitlements.
+Немає переходу legacy installation identity до нової authorization.
+Факт: нові credentials незалежні від legacy settings UUID:
+K/infrastructure/billing/BillingInstallationStore.kt:13.
+Новий noBackup credential file при відсутності повертає null:
+K/infrastructure/billing/BillingInstallationStore.kt:51;
+K/infrastructure/billing/BillingInstallationStore.kt:54.
+Adapter реєструє нову identity та використовує її для verify/refresh:
+K/infrastructure/billing/HttpBillingVerificationAdapter.kt:62;
+K/infrastructure/billing/HttpBillingVerificationAdapter.kt:65;
+K/infrastructure/billing/HttpBillingVerificationAdapter.kt:40;
+K/infrastructure/billing/HttpBillingVerificationAdapter.kt:57.
+MainActivity реально підключає цей noBackup store:
+K/MainActivity.kt:242.
+Сервер відхиляє token, прив'язаний до іншої installation:
+B/BillingBackendServer.kt:69.
+Умова: у backend збережено entitlement/token старого UUID, а клієнт не має
+нового credential file після update або втратив його при reinstall/data clear.
+Висновок: новий status не знаходить старий record; verify/restore token
+відхиляється ownership guard. У перевіреному flow немає authenticated
+migration/rebinding. Просте прийняття чужого ID не було б безпечним рішенням.
+Недоведено: наявність таких paid records у deployment і device outcome.
+За їх відсутності цей migration impact не настає.
 
-Факт: processed check, Google verification, entitlement update і mark
-здійснюються послідовними окремими кроками:
-B/BillingBackendServer.kt:101;
-B/BillingBackendServer.kt:106;
-B/BillingBackendServer.kt:113;
-B/BillingBackendServer.kt:118.
-PostgreSQL check/update/mark відкривають окремі connections:
-B/DatabaseMigrator.kt:124;
-B/DatabaseMigrator.kt:140;
-B/DatabaseMigrator.kt:154.
+REL-14. НОВЕ / ВІДКРИТО. Середній. Немає rearm таймерів після onInterrupt.
+Факт: interrupt shutdown-ить router і скасовує deadline/current-window jobs:
+K/platform/accessibility/AccessibilityServiceRuntime.kt:166.
+Settings collector лишається активним; deadline планується при наступному Ready:
+K/platform/accessibility/AccessibilityServiceRuntime.kt:122;
+K/platform/accessibility/AccessibilityServiceRuntime.kt:127.
+Умова: interrupt під час temporary allow/null-root retry, без нового
+connect/Ready/event після нього.
+Висновок: internal expiry/retry trigger втрачено до зовнішнього поновлення.
+Наявність scheduler у source не закриває цей lifecycle path.
+Недоведено: occurrence і callback sequence на Android/OEM.
 
-Висновок: crash після update до mark спричиняє повторну роботу після retry.
-За кількох replicas можливе паралельне проходження processed check.
-Унікальний message_id запобігає повторному запису marker, але не всій роботі.
-Недоведено: реальні duplicate deliveries/races; це не unauthenticated
-підроблення Google subscription і не доказ шкідливого outcome кожного replay.
+7. НАВАНТАЖЕННЯ І МЕЖІ
 
-REL-12. Середній, лише file/development mode. Persist не atomic.
+CAP-01. ВІДКРИТО. Високий. Executor не налаштований; I/O синхронне.
+Факт: create не задає application executor/worker pool:
+B/BillingBackendServer.kt:349.
+Verify/RTDN роблять Google/storage у handler:
+B/BillingBackendServer.kt:74; B/BillingBackendServer.kt:123.
+Висновок: явної ізоляції повільних handlers і налаштованої parallel
+місткості немає. Defaults не є load gate; throughput не виміряно.
 
-Факт: memory record змінюється перед persist:
-B/EntitlementStore.kt:41.
-Увесь JSON записується Files.writeString у той самий файл:
-B/EntitlementStore.kt:127.
-Load не має recovery для malformed JSON:
-B/EntitlementStore.kt:83.
-
-Висновок: interrupted write може залишити incomplete state; failure запису
-може залишити memory і disk різними. Наступний malformed load може обірвати
-startup.
-Важлива межа: production config вимагає PostgreSQL:
-B/BackendConfig.kt:120. Цей file-mode ризик не видано за стандартний
-production storage defect.
-
-Позитивні властивості надійності:
-DataStore edits атомарні; permission/service checks відокремлені від
-detector policies; runtime onDestroy прибирає overlay/jobs/scope;
-основний стан обробляється на main thread; lookup engine має map і duplicate
-package guard. Це локальні властивості коду, не доказ повної відмовостійкості.
-
-7. НАВАНТАЖЕННЯ: СКІЛЬКИ КОРИСТУВАЧІВ І ЯКІ МЕЖІ
-
-Відповідь: достовірного числа користувачів немає.
-Встановлені source limits, алгоритмічні обмеження та bottlenecks наведені
-нижче. Число інсталяцій, одночасно активних користувачів і HTTP requests/s
-є різними величинами.
-
-7.1. Android на одному пристрої
-
-Факт: detection виконується локально. Мільйон інсталяцій сам по собі
-не створює мільйон серверних accessibility scans.
-Server load виникає окремо з billing/status/RTDN activity.
-
-Production scope: рівно 4 canonical package IDs:
-app/src/main/res/xml/shorts_blocker_accessibility_service.xml:9.
-Браузерні сайти, Lite і альтернативні packages не входять у цей event filter.
-Блокується лише Confidence.HIGH:
-K/domain/detection/DetectionResult.kt:9.
-MEDIUM/LOW, unsupported package і недостатні signals залишають перегляд
-доступним за логікою classifier.
-
-Snapshot limits: 180 збережених nodes; root depth = 0, max accepted depth = 12:
-K/platform/accessibility/scanning/AccessibilityTreeScanner.kt:27;
-K/platform/accessibility/scanning/AccessibilityTreeScanner.kt:80.
-DFS-prefix може не містити signals після 180-го вузла або нижче depth 12.
-
-Висновок: quota обмежує snapshot, але не задає точну межу Android IPC,
-RAM або elapsed time. На depth 12 scanner ще перебирає children, які
-відкидаються наступним call; null children не збільшують counter:
-K/platform/accessibility/scanning/AccessibilityTreeScanner.kt:33.
-Content descriptions не мають explicit string-length cap:
-K/platform/accessibility/scanning/AccessibilityTreeScanner.kt:67.
-Time budget/cancellation усередині scan не встановлені.
-
-Normal debounce: 500 ms — орієнтовно до двох scans/s між reset, а не
-абсолютна global rate quota:
-K/platform/accessibility/routing/AccessibilityEventPolicy.kt:22.
-Cooldown 1 200 ms; detection debounce 500 ms; PIN launch grace 5 000 ms:
-K/accessibility/BlockingDecisionController.kt:69.
-PIN recheck 5 100 ms — керування подіями, а не захист від REL-01.
-
-Scanner/detectors синхронні; runtime scope використовує Main.immediate:
-K/platform/accessibility/AccessibilityServiceRuntime.kt:43.
-Немає доказу окремого worker для scanning у перевіреному path.
-Map lookup і кілька лінійних проходів по bounded snapshot не показали
-all-pairs quadratic detector algorithm.
-Exit має до 4 attempts з observation delay 350 ms і підтвердженням:
-K/platform/accessibility/overlay/PhoneHomeExitController.kt:40;
-K/platform/accessibility/overlay/PhoneHomeExitController.kt:60.
-
-Недоведено: p95/p99 detection latency, peak RAM, CPU, battery drain,
-поведінка на low-end devices, event flood, OEM kill/restart і platform updates.
-Ці показники не виводяться з константи 180.
-
-7.2. Backend: визначальні bottlenecks
-
-CAP-01. Високий. Послідовний default executor + synchronous I/O.
-
-Факт: create не задає setExecutor; handlers синхронно виконують Google/DB:
-B/BillingBackendServer.kt:310.
-HttpServer default executor використовує thread, створений start(),
-за [Oracle JDK 17 HttpServer](https://docs.oracle.com/en/java/javase/17/docs/api/jdk.httpserver/com/sun/net/httpserver/HttpServer.html#setExecutor(java.util.concurrent.Executor)).
-Runtime образ — JRE 17:
-billing-backend/Dockerfile:1.
-
-Висновок: цей server instance не має налаштованого parallel worker pool.
-Повільна verification займає execution path інших запитів, включно з health.
-Орієнтир для serial processing: максимальний service rate приблизно 1/T,
-де T — середня тривалість handler. Це формула, не benchmark:
-T=0,1 s → близько 10 requests/s;
-T=1 s → близько 1 request/s;
-T=10 s → близько 0,1 request/s.
-Реальні T, quotas і запас до saturation невідомі.
-
-Backlog переданий як 0, тобто system default за API, а не доведена
-нульова черга і не налаштована місткість:
-B/BillingBackendServer.kt:316.
-
-CAP-02. Високий/середній. Немає end-to-end deadline і bounded work queue.
-
-Факт: Google connection має connectTimeout=10 s і readTimeout=10 s:
-B/GooglePlayDeveloperApiClient.kt:103.
-Credential refresh, DB connection/query та inbound readBody не мають
-explicit overall deadline у перевірених paths:
+CAP-02. ВІДКРИТО. Високий/середній. Немає overall deadline/bounded queue.
+Факт: Google connect/read socket timeouts по 10 s:
+B/GooglePlayDeveloperApiClient.kt:108.
+Credential refresh, inbound read і SQL не мають загального application deadline:
 B/GooglePlayDeveloperApiClient.kt:113;
-B/DatabaseMigrator.kt:220;
-B/BillingBackendServer.kt:226.
-Request body limit обмежує bytes, а не час очікування.
+B/BillingBackendServer.kt:264; B/DatabaseMigrator.kt:116.
+Висновок: bytes cap/socket timeout не обмежують весь verify/RTDN.
+Недоведено: proxy/JDBC/provider defaults; нескінченне зависання не заявлено.
 
-Висновок: 10 s socket timeout не є верхньою межею всього verify.
-Slow body/dependency може довго займати serial handler.
-Недоведено: JDK/provider/socket defaults, JDBC URL timeout settings і
-зовнішні proxy deadlines. Нескінченне зависання кожного запиту не заявлено.
+CAP-03. ВІДКРИТО. Середній. Connection-per-operation без application pool.
+Факт: DriverManager connection factory:
+B/DatabaseMigrator.kt:299.
+Auth/lookup/upsert — окремі storage calls:
+B/BillingBackendServer.kt:66; B/BillingBackendServer.kt:69;
+B/BillingBackendServer.kt:81.
+Висновок: verify потребує щонайменше трьох DB connections, status — двох;
+RTDN durable apply тепер використовує одну transaction connection.
+Реальний DB connection ceiling/query latency невідомі.
 
-CAP-03. Середній. Connection-per-operation без application pool.
+CAP-04. ВІДКРИТО. Середній. Full cleanup на кожний rate-limit attempt.
+Факт: allow викликає cleanup з windows.entries.removeIf:
+B/RateLimiter.kt:24; B/RateLimiter.kt:28.
+Висновок: вартість включає O(K) recent keys; hard key cap відсутній.
+SEC-02 не усуває цей CPU/memory борг.
 
-Факт: PostgreSQL adapter використовує DriverManager.getConnection
-для кожного методу:
-B/DatabaseMigrator.kt:110;
-B/DatabaseMigrator.kt:140;
-B/DatabaseMigrator.kt:220.
-Для verify потрібні щонайменше lookup та upsert; RTDN має check/update/mark.
-
-Висновок: DB connection setup додається до critical path.
-Application connection pool або explicit max active connections не видно.
-Scale-out збільшує connection churn; фактичний DB ceiling невідомий.
-
-CAP-04. Середній. Rate limiter має linear cleanup на кожному запиті.
-
-Факт: ConcurrentHashMap windows і full entries.removeIf:
-B/RateLimiter.kt:8;
-B/RateLimiter.kt:24;
-B/RateLimiter.kt:28.
-Expiration = now - 2×60 s. Прямої максимальної кількості keys немає.
-
-Висновок: lookup не є всією вартістю: cleanup має O(K) по recent keys.
-Багато endpoint/IP pairs збільшують CPU і memory; accepted і rejected
-запити запускають cleanup. Hard cap місткості не встановлений.
-
-7.3. Явні HTTP quotas
-
-За default config, на один endpoint + socket peer у fixed minute window:
-verify: 30/min = 0,5 requests/s середньої квоти;
-status: 120/min = 2 requests/s;
-RTDN: 300/min = 5 requests/s.
-B/BackendConfig.kt:63;
-B/BillingBackendServer.kt:219;
-B/RateLimiter.kt:14.
-
-Це admission quotas, а не виміряна server throughput.
-За єдиного proxy вони спільні для всіх його клієнтів. За припущення
-одного verify на нового користувача це максимум 30 таких requests/min
-за цим peer, а не максимум 30 зареєстрованих користувачів.
-Фактична доступність може бути нижчою через CAP-01/02.
-Fixed windows дозволяють burst біля межі двох хвилин; немає рівномірного
-sliding rate. Ліміти configurable; runtime overrides не читалися.
-
-Request body: default 32 768 bytes; configured range 1..262 144:
-B/BackendConfig.kt:21;
-B/BackendConfig.kt:47.
-Health має Int.MAX_VALUE admission limit:
-B/BillingBackendServer.kt:350. Це не окремий ізольований worker.
-
-7.4. Storage і replicas
-
-File mode:
-findByPurchaseTokenHash = O(N) linear scan:
-B/EntitlementStore.kt:50.
-Persist створює й переписує весь N entitlements + M message IDs:
-B/EntitlementStore.kt:127.
-Memory = O(N+M); synchronized methods serialізують роботу в process.
-Цей mode непридатний для висновку про горизонтальний shared storage,
-але production gate вимагає PostgreSQL.
-
-PostgreSQL:
-install_id PRIMARY KEY, purchase_token_hash UNIQUE, message_id PRIMARY KEY:
-billing-backend/migrations/001_create_entitlements.sql:1;
-billing-backend/migrations/002_create_processed_rtdn_messages.sql:1.
-Тому file-mode linear scan не приписується production SQL adapter.
-Реальні DB rows/disk/connections/IOPS, query latency і limits не визначені.
-Processed IDs ростуть без internal retention — DEBT-06.
-Rate limits in-memory per process: replicas не ділять global bucket.
-RTDN work не transactionally claimed — REL-11.
-Parallel startup migrations не мають явного coordination lock:
-B/DatabaseMigrator.kt:23. На одному instance це не concurrency defect,
-але scale-out гарантія не встановлена.
-
-7.5. Формула users і сайт
-
-Для стабільного трафіку потрібні щонайменше:
-λ = U × r, де U — активні users, r — requests/user/s;
-λ має бути нижчим за виміряну throughput із запасом і нижчим за quotas.
-U_max приблизно Q_safe/r — лише модель після вимірювання Q_safe і r.
-Тут не відомі ні Q_safe, ні r, ні bursts. DAU/MAU за source не обчислюються.
+Android CPU/RAM/battery, low-end/event-flood endurance не вимірювалися.
+File lookup/persist залежать від числа records/IDs; це не shared horizontal
+production store. Rate-limit quotas fixed-window/per-process/configurable:
+це admission limits, не server throughput або кількість користувачів.
+Migration concurrency coordination і DB/container capacity не доведені.
+Числового DAU/MAU/concurrent-user ceiling немає.
+Модель lambda = users x requests/user/s потребує виміряної service rate,
+traffic/bursts і запасу; source цих чисел не дає.
 
 Сайт генерує static pages:
-website/scripts/build.mjs:11;
 website/scripts/build.mjs:21.
-Application-side website API/database тут немає; deployment CDN/hosting
-bandwidth і concurrent visitor capacity не перевірені.
-Метрики вимкнені порожнім endpoint:
+Metrics endpoint порожній:
 website/src/config.mjs:11.
-Script приймає лише bounded integer counts і verified=true та пише
-через textContent:
-website/src/scripts/site.js:31;
-website/src/scripts/site.js:42.
-Недоведено: походження/свіжість майбутніх metrics. Boolean verified
-є перевіркою schema, а не криптографічним підтвердженням реальних подій.
-Число сімей/blocked events не прийняте за evidence місткості.
+Schema перевіряє verified=true/bounded integers; rendering через textContent:
+website/src/scripts/site.js:31; website/src/scripts/site.js:42.
+Висновок: немає увімкнених metrics, що доводять families/events/capacity.
+Boolean verified не доводить походження. CDN bandwidth/visitors не перевірено.
 
-8. ГОТОВНІСТЬ ДО PRODUCTION
+8. PRODUCTION READINESS
 
-PROD-01. Високий. Health не є readiness Google/DB.
+PROD-01. ВІДКРИТО. Високий. Health не є dependency readiness.
+Факт: health повертає ok без DB/Google probe; verifier lazy:
+B/BillingBackendServer.kt:36; B/BillingBackendServer.kt:21.
+Compose перевіряє лише health:
+docker-compose.yml:58.
+Висновок: healthy process не доводить operational billing readiness.
 
-Факт: health завжди відповідає status ok після transport gates:
-B/BillingBackendServer.kt:33.
-Verifier lazy:
-B/BillingBackendServer.kt:20.
-Compose healthcheck викликає лише /health:
-docker-compose.yml:56.
-
-Висновок: process може пройти healthcheck без перевіреної Google-покупки.
-Після startup DB outage цей endpoint не виконує DB readiness query.
-Також serial handler може затримати health під час verify.
-Недоведено: реальна readiness/monitoring policy зовнішньої інфраструктури.
-
-PROD-02. Середній. Deploy/rollback script success не доводить готовність.
-
-Факт: deploy build-ить, робить backup, викликає compose up і compose ps:
-scripts/backend_deploy_compose.sh:10;
-scripts/backend_deploy_compose.sh:15.
-Rollback теж завершується compose up/ps:
+PROD-02. ВІДКРИТО. Середній. Deploy/rollback без readiness gate.
+Факт: scripts завершуються compose up/ps:
+scripts/backend_deploy_compose.sh:15;
 scripts/backend_rollback_compose.sh:14.
-Код скриптів не чекає application health і не робить post-start billing check.
+Висновок: exit success не доводить billing path, backup restore або
+сумісність старого binary з новою schema. Outcomes не запускалися.
 
-Висновок: успішний exit цих scripts може означати лише запуск контейнера,
-а не operational readiness. Наявність backup позитивна, однак restore
-scripts і image rollback не доводять сумісність старого binary з новою schema.
-Restore outcome не виконувався і не перевірявся.
+PROD-03. ВІДКРИТО. Середній. Немає application graceful drain.
+Факт: server.stop(0); main без shutdown hook:
+B/BillingBackendServer.kt:29; B/BillingBackendMain.kt:3.
+Висновок: in-flight completion при restart не гарантований startup path.
 
-PROD-03. Середній. Shutdown не має підтвердженого graceful drain.
+PROD-04. ВІДКРИТО щодо release acceptance; config gates існують.
+Факт: release вимикає debug/client-only mode і вмикає minify/shrink:
+app/build.gradle.kts:108.
+Artifact tasks залежать від production billing URL validation:
+app/build.gradle.kts:152; app/build.gradle.kts:166.
+Main manifest не декларує INTERNET явно:
+app/src/main/AndroidManifest.xml:2.
+Висновок: URL guard не допускає тихий порожній production URL; власний
+manifest не встановлює merged INTERNET із dependency manifests.
+Недоведено: signed APK/AAB, merged permissions, R8, Play install/billing,
+valid IAM/RTDN/credentials, server reachability і real release outcome.
 
-Факт: stop використовує server.stop(0):
-B/BillingBackendServer.kt:26.
-main не встановлює shutdown hook:
-B/BillingBackendMain.kt:3.
+Сайт досі coming-soon, Play/beta URLs порожні:
+website/src/config.mjs:8; website/src/config.mjs:10;
+website/src/config.mjs:42.
+Це source state CTA, не доказ відсутності external publication.
 
-Висновок: repository startup path не задає drain для in-flight requests.
-До кінця завершені RTDN operations і клієнтські responses при restart
-не гарантовані цим кодом. Durable IDs не замінюють transaction REL-11.
-Недоведено: зовнішні orchestration termination settings і runtime shutdown.
-
-PROD-04. Release config має реальні gates, але результат binary невідомий.
-
-Факт: release вимикає debug tools/client-only billing mode, використовує
-minify/shrink та release lint:
-app/build.gradle.kts:108;
-app/build.gradle.kts:126.
-Production release task вимагає billing URL і production host:
-app/build.gradle.kts:154;
-app/build.gradle.kts:166.
-Signing застосовується лише якщо configuration available:
-app/build.gradle.kts:109. Фактичне signing material не читалося.
-
-Висновок: відсутність default URL не є тихим дозволом порожнього release
-у gated assemble/bundle/package tasks. Цей guard позитивний.
-Недоведено: успішний signed release build, merged permission INTERNET,
-R8 behavior, Play install/billing, server reachability та реальні credentials.
-
-Факт: production backend config вимагає PostgreSQL, credentials file,
-public base URL, HTTPS flag і authenticated RTDN config:
-B/BackendConfig.kt:120.
-Висновок: є fail-fast configuration validation; наявність полів/файла
-не доводить валідність IAM/Google account/network і всіх зовнішніх сервісів.
-
-Сайт у coming-soon state; Play/beta URLs порожні і CTA disabled:
-website/src/config.mjs:8;
-website/src/config.mjs:42;
-website/src/components.mjs:115.
-Це source evidence відсутності налаштованого install CTA, а не доказ
-відсутності будь-якої публікації поза репозиторієм.
-
-Оцінка працездатності за кодом:
-— Умовний основний шлях існує: supported event → bounded snapshot →
-  heuristics → HIGH decision → overlay.
-— Візуальний barrier не підтверджує автоматичної media stop.
-— Unsupported packages, LOW/MEDIUM, невидимі/недоступні signals,
-  відсутні events, clock rollback і I/O failures мають конкретні межі.
-— Paid flow має Google verification, але installation write authorization
-  не завершена.
-— Release flags/config guards існують, але виконуваний release не перевірений.
-
-9. НЕПІДТВЕРДЖЕНЕ ТА КОНТРОЛЬ РЕЗУЛЬТАТУ
+9. МЕЖІ РЕЗУЛЬТАТУ І КОНТРОЛЬ ЄДИНОГО ФАЙЛА
 
 Недоведено:
-— реальні Android/OEM/version coverage, false-positive/false-negative rates;
-— playback/audio/PiP, reboot/process death, saved-state restore на пристрої;
-— signed APK/AAB, manifest merger, permissions та R8 correctness;
-— production proxy/firewall/TLS/IAM/RTDN/Play Console state;
-— latency percentiles, throughput, concurrent users, DAU/MAU ceiling;
-— CPU/RAM/battery, low-end/event flood endurance;
-— migration concurrency, DB recovery, backup restore correctness;
-— compiler-level повний dead-code reachability і branch-level correctness
-  усіх production functions.
+— Android/OEM/version, live accessibility trees, false-positive/negative rates;
+— playback/audio/PiP, reboot/process death, saved-state/interrupt outcomes;
+— усі branch-level production contracts і compiler dead-code reachability;
+— storage write/device recovery та legacy paid-install migration;
+— real RTDN concurrency/freshness, DB recovery/backup restore;
+— latency/throughput, CPU/RAM/battery, максимальна production місткість;
+— signed release, manifest merger/R8, deployed TLS/proxy/IAM/Play state.
 
-Ці пропуски не приховані під «тести пройшли» або «документація гарантує».
-Числової production-місткості чи безумовної працездатності не заявлено.
+Статична звірка не є execution test. Тести не запускалися; "tests passed"
+і "все працює" не заявлено. Відсутність усіх нових дефектів не підтверджена.
 
-Єдиний створюваний артефакт: docs/CODE_AUDIT_2026-10-06.txt.
-Код/конфігурації/тести не виправлялися; patches, extra reports, scripts,
-коміти й deployment не створювалися.
+Єдиний файл авторського audit-патча: docs/CODE_AUDIT_2026-10-06.txt.
+Ця audit-задача не змінювала код, конфіги чи тести, не створювала додаткові
+reports/scripts, commits або deployment.
+Під час фінальної звірки виявлено паралельні додані/змінені файли app/src/test/.
+Їх залишено недоторканими; походження не встановлювалося. Вони не є доказом
+виконання тестів і не входять до авторського патча. Через ці незалежні зміни
+загальне робоче дерево не можна назвати незмінним, крім документа.
 
-Фінальна evidence gate:
-— SHA-256 зіставлення 185 початково зафіксованих source/config/public файлів;
-— git status delta має містити лише цей один новий документ;
-— кожна source location у документі має існуючий файл і допустимий номер рядка;
-— шість критеріїв, Факт/Висновок/Недоведено та межі місткості присутні.
-Gate перевіряє незмінність і цілісність звіту; він не є runtime test продукту.
-
+Підсумкова evidence gate:
+— початкова SHA-256 baseline містить 373 nonignored regular files;
+— 295 початкових файлів поза app/src/test/ і документом незмінні;
+— немає нових/видалених файлів поза паралельним app/src/test/ scope;
+— авторський патч обмежений цим документом; паралельні тести збережено;
+— усі source locations ведуть до існуючих файлів/допустимих рядків;
+— шість критеріїв, усі 30 первинних IDs, REL-13/14 та Факт/Висновок/Недоведено;
+— 10 ЗАКРИТО / 5 ЧАСТКОВО / 17 ВІДКРИТО узгоджені з пунктами.
+Gate перевіряє цілісність звіту та незмінність перевіреного source/config
+зрізу. Він не доводить runtime поведінку binary або відсутність паралельної
+роботи над тестами.

@@ -11,9 +11,12 @@ import com.shortsblockerkids.application.billing.SyncBillingEntitlementUseCase
 import com.shortsblockerkids.application.port.TimeProvider
 import com.shortsblockerkids.domain.entitlement.BillingEntitlementSnapshot
 import com.shortsblockerkids.domain.entitlement.BillingEntitlementState
+import java.io.IOException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertSame
@@ -343,13 +346,124 @@ class BillingCoordinatorTest {
         assertTrue(gateway.acknowledgedTokens.isEmpty())
     }
 
+    @Test
+    fun entitlementPersistenceIsAwaitedBeforePublishingSuccess() {
+        val gateway = RecordingPlayBillingGateway()
+        val persistence = CompletableDeferred<Unit>()
+        val storedSnapshots = mutableListOf<BillingEntitlementSnapshot>()
+        val coordinator =
+            createCoordinator(
+                gateway = gateway,
+                port = RecordingVerificationPort(isConfigured = true),
+                onEntitlementChanged = {
+                    persistence.await()
+                    storedSnapshots += it
+                },
+            )
+
+        gateway.emit(PlayBillingEvent.PurchasesObserved(BillingPurchaseSummary(purchasedSubscriptionToken = "token")))
+
+        assertTrue(coordinator.uiState.value.isLoading)
+        assertEquals(BillingMessageCode.VERIFYING_WITH_BACKEND, coordinator.uiState.value.message.code)
+        assertTrue(storedSnapshots.isEmpty())
+        persistence.complete(Unit)
+        assertSame(ACTIVE_SNAPSHOT, storedSnapshots.single())
+        assertFalse(coordinator.uiState.value.isLoading)
+        assertEquals(BillingMessageCode.SUBSCRIPTION_ACTIVE, coordinator.uiState.value.message.code)
+    }
+
+    @Test
+    fun entitlementWriteFailureShowsFailureAndLaterRefreshCanRecover() {
+        val gateway = RecordingPlayBillingGateway()
+        val storedSnapshots = mutableListOf<BillingEntitlementSnapshot>()
+        var failWrite = true
+        val coordinator =
+            createCoordinator(
+                gateway = gateway,
+                port = RecordingVerificationPort(isConfigured = true),
+                onEntitlementChanged = {
+                    if (failWrite) throw IOException("Injected entitlement write failure")
+                    storedSnapshots += it
+                },
+            )
+
+        gateway.emit(PlayBillingEvent.PurchasesObserved(BillingPurchaseSummary(purchasedSubscriptionToken = "token")))
+
+        assertFalse(coordinator.uiState.value.isLoading)
+        assertFalse(coordinator.uiState.value.isPurchaseInProgress)
+        assertEquals(BillingMessageCode.ENTITLEMENT_SAVE_FAILED, coordinator.uiState.value.message.code)
+        assertTrue(storedSnapshots.isEmpty())
+        failWrite = false
+        coordinator.refreshPurchases()
+        gateway.emit(PlayBillingEvent.PurchasesObserved(BillingPurchaseSummary(purchasedSubscriptionToken = null)))
+        assertSame(ACTIVE_SNAPSHOT, storedSnapshots.single())
+        assertEquals(BillingMessageCode.SUBSCRIPTION_ACTIVE, coordinator.uiState.value.message.code)
+    }
+
+    @Test
+    fun failedClientOnlyWriteDoesNotAcknowledgePurchaseOrPublishSuccess() {
+        val gateway = RecordingPlayBillingGateway()
+        val coordinator =
+            createCoordinator(
+                gateway = gateway,
+                clientOnlyModeRequested = true,
+                internalTestingBuild = true,
+                onEntitlementChanged = { throw IOException("Injected entitlement write failure") },
+            )
+
+        gateway.emit(
+            PlayBillingEvent.PurchasesObserved(
+                BillingPurchaseSummary(
+                    purchasedSubscriptionToken = "token",
+                    unacknowledgedPurchasedSubscriptionTokens = listOf("token"),
+                ),
+            ),
+        )
+
+        assertTrue(gateway.acknowledgedTokens.isEmpty())
+        assertFalse(coordinator.uiState.value.isLoading)
+        assertEquals(BillingMessageCode.ENTITLEMENT_SAVE_FAILED, coordinator.uiState.value.message.code)
+    }
+
+    @Test
+    fun activityScopeCancellationCancelsPendingWriteWithoutPublishingSuccessOrFailure() {
+        val gateway = RecordingPlayBillingGateway()
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        val persistence = CompletableDeferred<Unit>()
+        val storedSnapshots = mutableListOf<BillingEntitlementSnapshot>()
+        var writeFinished = false
+        val coordinator =
+            createCoordinator(
+                gateway = gateway,
+                port = RecordingVerificationPort(isConfigured = true),
+                billingScope = scope,
+                onEntitlementChanged = {
+                    try {
+                        persistence.await()
+                        storedSnapshots += it
+                    } finally {
+                        writeFinished = true
+                    }
+                },
+            )
+
+        gateway.emit(PlayBillingEvent.PurchasesObserved(BillingPurchaseSummary(purchasedSubscriptionToken = "token")))
+        scope.cancel()
+        persistence.complete(Unit)
+
+        assertTrue(writeFinished)
+        assertTrue(storedSnapshots.isEmpty())
+        assertEquals(BillingMessageCode.VERIFYING_WITH_BACKEND, coordinator.uiState.value.message.code)
+    }
+
     private fun createCoordinator(
         gateway: RecordingPlayBillingGateway,
         port: BillingVerificationPort = RecordingVerificationPort(isConfigured = false),
         installId: String? = INSTALL_ID,
         clientOnlyModeRequested: Boolean = false,
         internalTestingBuild: Boolean = false,
-        onEntitlementChanged: (BillingEntitlementSnapshot) -> Unit = {},
+        onEntitlementChanged: suspend (BillingEntitlementSnapshot) -> Unit = {},
+        billingScope: CoroutineScope = CoroutineScope(Dispatchers.Unconfined),
     ): BillingCoordinator =
         BillingCoordinator(
             billingGateway = gateway,
@@ -368,7 +482,7 @@ class BillingCoordinatorTest {
                         ),
                 ),
             onEntitlementChanged = onEntitlementChanged,
-            billingScope = CoroutineScope(Dispatchers.Unconfined),
+            billingScope = billingScope,
         )
 
     private class RecordingPlayBillingGateway : PlayBillingGateway {

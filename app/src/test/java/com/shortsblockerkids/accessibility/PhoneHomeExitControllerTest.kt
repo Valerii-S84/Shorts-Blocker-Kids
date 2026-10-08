@@ -117,9 +117,52 @@ class PhoneHomeExitControllerTest {
         assertEquals(1, scenario.actions)
     }
 
+    @Test
+    fun throwingPlatformActionsExhaustRetryAndRemainRecoverable() {
+        val scenario = ExitScenario()
+        scenario.actionThrows = true
+        scenario.controller.exitShorts()
+        repeat(PhoneHomeExitController.MAX_EXIT_ATTEMPTS) { scenario.tick() }
+        assertEquals(1, scenario.failed)
+        assertEquals(0, scenario.completed)
+        scenario.actionThrows = false
+        scenario.closed = true
+        scenario.controller.exitShorts()
+        repeat(2) { scenario.tick() }
+        assertEquals(1, scenario.completed)
+    }
+
+    @Test
+    fun throwingClosureObservationRetainsBarrierUntilRetryExhaustion() {
+        val scenario = ExitScenario()
+        scenario.closureThrows = true
+        scenario.controller.exitShorts()
+        repeat(PhoneHomeExitController.MAX_EXIT_ATTEMPTS) { scenario.tick() }
+        assertEquals(1, scenario.failed)
+        assertEquals(0, scenario.completed)
+    }
+
+    @Test
+    fun schedulerFailureIsReportedAndDoesNotPermanentlySuppressNewAttempt() {
+        var failures = 0
+        var actions = 0
+        val controller = PhoneHomeExitController(
+            exitAction = { actions++; true },
+            isPlaybackClosed = { false },
+            delayedActionScheduler = DelayedActionScheduler { _, _ -> throw IllegalStateException("Looper stopped") },
+            onExitCompleted = { error("Unconfirmed exit") },
+            onExitFailed = { failures++ },
+        )
+        repeat(2) { controller.exitShorts() }
+        assertEquals(2, actions)
+        assertEquals(2, failures)
+    }
+
     private class ExitScenario {
         var actionAccepted = true
         var closed = false
+        var actionThrows = false
+        var closureThrows = false
         var actions = 0
         var completed = 0
         var failed = 0
@@ -128,9 +171,13 @@ class PhoneHomeExitControllerTest {
             PhoneHomeExitController(
                 exitAction = {
                     actions += 1
+                    if (actionThrows) throw IllegalStateException("Window unavailable")
                     actionAccepted
                 },
-                isPlaybackClosed = { closed },
+                isPlaybackClosed = {
+                    if (closureThrows) throw IllegalStateException("Window unavailable")
+                    closed
+                },
                 delayedActionScheduler = DelayedActionScheduler { _, action -> scheduled.addLast(action) },
                 onExitCompleted = { completed += 1 },
                 onExitFailed = { failed += 1 },

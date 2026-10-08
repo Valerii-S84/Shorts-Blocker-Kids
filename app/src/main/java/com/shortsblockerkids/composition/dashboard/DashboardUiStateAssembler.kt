@@ -4,6 +4,7 @@ import com.shortsblockerkids.accessibility.PlatformSupportEntry
 import com.shortsblockerkids.accessibility.PlatformSupportMatrix
 import com.shortsblockerkids.application.model.AppSettingsSnapshot
 import com.shortsblockerkids.application.port.TimeProvider
+import com.shortsblockerkids.application.port.PinLockoutClock
 import com.shortsblockerkids.presentation.billing.BillingUiState
 import com.shortsblockerkids.presentation.dashboard.DashboardBillingInput
 import com.shortsblockerkids.presentation.dashboard.DashboardEntitlementInput
@@ -17,6 +18,7 @@ import com.shortsblockerkids.presentation.dashboard.DashboardUiState
 internal class DashboardUiStateAssembler(
     private val timeProvider: TimeProvider,
     private val platformEntries: List<PlatformSupportEntry> = PlatformSupportMatrix.entries,
+    private val deadlineClock: PinLockoutClock? = null,
 ) {
     fun create(
         settings: AppSettingsSnapshot,
@@ -38,6 +40,8 @@ internal class DashboardUiStateAssembler(
                         temporaryAllowUntilMillis =
                             settings.protectionConfiguration.temporaryAllowUntilMillis,
                         isPinConfigured = settings.protectionConfiguration.isPinConfigured,
+                        temporaryAllowElapsedRealtimeDeadlineMillis =
+                            settings.protectionConfiguration.temporaryAllowElapsedRealtimeDeadlineMillis,
                     ),
                 entitlement =
                     DashboardEntitlementInput(
@@ -58,6 +62,7 @@ internal class DashboardUiStateAssembler(
                         isAccessibilityServiceEnabled = isAccessibilityServiceEnabled,
                         isTamperProtectionEnabled = isTamperProtectionEnabled,
                         nowMillis = timeProvider.currentTimeMillis(),
+                        elapsedRealtimeMillis = deadlineClock?.read()?.elapsedRealtimeMillis,
                     ),
             ),
         )

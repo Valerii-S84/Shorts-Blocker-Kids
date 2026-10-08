@@ -11,6 +11,8 @@ internal data class StoredAppSettings(
     val selectedMode: ProtectionMode = ProtectionMode.BLOCK_SHORTS,
     val enabledPlatformIds: Set<String> = ProtectionConfiguration.DEFAULT_ENABLED_PLATFORM_IDS,
     val temporaryAllowUntil: Long? = null,
+    val temporaryAllowElapsedRealtimeDeadlineMillis: Long? = null,
+    val temporaryAllowBootCount: Int? = null,
     val freeTestStartedAt: Long? = null,
     val freeTestDurationDays: Int = FreeTestPolicy.DEFAULT_DURATION_DAYS,
     val billingInstallationId: String? = null,

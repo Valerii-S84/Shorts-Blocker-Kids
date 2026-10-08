@@ -35,6 +35,7 @@ import kotlinx.coroutines.launch
 fun PinSetupScreen(
     createPinUseCase: CreatePinUseCase,
     onPinCreated: () -> Unit,
+    runSettingsOperation: suspend (suspend () -> Unit) -> Boolean,
     modifier: Modifier = Modifier,
 ) {
     var pin by remember { mutableStateOf("") }
@@ -87,12 +88,14 @@ fun PinSetupScreen(
                 val submittedPin = pin
                 val submittedConfirmation = confirmation
                 coroutineScope.launch {
-                    when (val result = createPinUseCase(submittedPin, submittedConfirmation)) {
-                        PinValidationResult.Valid -> {
-                            onPinCreated()
-                        }
+                    runSettingsOperation {
+                        when (val result = createPinUseCase(submittedPin, submittedConfirmation)) {
+                            PinValidationResult.Valid -> {
+                                onPinCreated()
+                            }
 
-                        is PinValidationResult.Invalid -> error = result.reason
+                            is PinValidationResult.Invalid -> error = result.reason
+                        }
                     }
                 }
             },

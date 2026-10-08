@@ -38,7 +38,7 @@ class DashboardPresentationBoundaryTest {
     fun activityDelegatesDashboardStateAssembly() {
         val activity = source(MAIN_ACTIVITY)
 
-        assertTrue(activity.contains("DashboardUiStateAssembler(timeProvider)"))
+        assertTrue(activity.contains("DashboardUiStateAssembler(timeProvider, deadlineClock ="))
         assertTrue(activity.contains("dashboardUiStateProvider ="))
         assertFalse(activity.contains("DashboardStateFactory"))
         assertFalse(activity.contains("PlatformSupportMatrix.entries.map"))

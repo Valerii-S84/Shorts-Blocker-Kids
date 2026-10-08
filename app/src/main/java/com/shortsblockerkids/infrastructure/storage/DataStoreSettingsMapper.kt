@@ -22,6 +22,8 @@ internal object DataStoreSettingsMapper {
     val selectedModeKey = stringPreferencesKey("selectedMode")
     val enabledPlatformIdsKey = stringSetPreferencesKey("enabledPlatformIds")
     val temporaryAllowUntilKey = longPreferencesKey("temporaryAllowUntil")
+    val temporaryAllowElapsedRealtimeDeadlineKey = longPreferencesKey("temporaryAllowElapsedRealtimeDeadline")
+    val temporaryAllowBootCountKey = intPreferencesKey("temporaryAllowBootCount")
     val freeTestStartedAtKey = longPreferencesKey("free_test_started_at")
     val freeTestDurationDaysKey = intPreferencesKey("free_test_duration_days")
     val billingInstallationIdKey = stringPreferencesKey("billing_installation_id")
@@ -42,6 +44,8 @@ internal object DataStoreSettingsMapper {
                 ),
             enabledPlatformIds = enabledPlatformIds(preferences),
             temporaryAllowUntil = preferences[temporaryAllowUntilKey],
+            temporaryAllowElapsedRealtimeDeadlineMillis = preferences[temporaryAllowElapsedRealtimeDeadlineKey],
+            temporaryAllowBootCount = preferences[temporaryAllowBootCountKey],
             freeTestStartedAt = preferences[freeTestStartedAtKey],
             freeTestDurationDays =
                 preferences[freeTestDurationDaysKey] ?: FreeTestPolicy.DEFAULT_DURATION_DAYS,
@@ -62,7 +66,7 @@ internal object DataStoreSettingsMapper {
             pinLockoutUntil = preferences[PinPreferenceKeys.PIN_LOCKOUT_UNTIL],
         )
 
-    fun toSnapshot(settings: StoredAppSettings): AppSettingsSnapshot =
+    fun toSnapshot(settings: StoredAppSettings, currentBootCount: Int? = null): AppSettingsSnapshot =
         AppSettingsSnapshot(
             protectionConfiguration =
                 ProtectionConfiguration(
@@ -71,7 +75,14 @@ internal object DataStoreSettingsMapper {
                         settings.accessibilityDisclosureAccepted,
                     mode = settings.selectedMode,
                     enabledPlatformIds = settings.enabledPlatformIds,
-                    temporaryAllowUntilMillis = settings.temporaryAllowUntil,
+                    temporaryAllowUntilMillis = settings.temporaryAllowUntil.takeIf {
+                        currentBootCount == null || (settings.temporaryAllowBootCount == currentBootCount &&
+                            settings.temporaryAllowElapsedRealtimeDeadlineMillis != null)
+                    },
+                    temporaryAllowElapsedRealtimeDeadlineMillis = settings.temporaryAllowElapsedRealtimeDeadlineMillis.takeIf {
+                        currentBootCount == null || settings.temporaryAllowBootCount == currentBootCount
+                    },
+                    temporaryAllowBootCount = settings.temporaryAllowBootCount,
                     isPinConfigured = settings.isPinCreated,
                 ),
             entitlement =

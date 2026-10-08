@@ -147,6 +147,7 @@ class DataStoreSettingsStoreTest {
             val repository =
                 DataStoreSettingsStore(
                     FileBackedContext(temporaryFolder.newFolder("context-store")),
+                    deadlineClock = PinLockoutClock { PinLockoutTime(1_000L, 1) },
                 )
 
             repository.setProtectionEnabled(false)

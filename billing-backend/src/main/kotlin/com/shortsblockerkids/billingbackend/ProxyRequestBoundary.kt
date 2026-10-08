@@ -25,9 +25,10 @@ class ProxyRequestBoundary(
         require(forwardedHeaders.all { it.equals("X-Forwarded-For", true) || it.equals("X-Forwarded-Proto", true) }) {
             "Unsupported forwarded header"
         }
-        val clientAddress = requireNotNull(numericIpAddress(headers.singleHeader("X-Forwarded-For"))) {
-            "X-Forwarded-For must contain one numeric client address"
-        }
+        val clientAddress =
+            requireNotNull(numericIpAddress(headers.singleHeader("X-Forwarded-For"))) {
+                "X-Forwarded-For must contain one numeric client address"
+            }
         val protocol = headers.singleHeader("X-Forwarded-Proto")
         require(protocol == "http" || protocol == "https") { "Invalid X-Forwarded-Proto" }
         return RequestOrigin(clientAddress, secure = protocol == "https")
@@ -50,10 +51,11 @@ internal fun numericIpAddress(address: String): String? {
 private fun ipv4Bytes(address: String): ByteArray? {
     val components = address.split('.')
     if (components.size != 4) return null
-    val octets = components.map { component ->
-        if (!component.matches(Regex("0|[1-9][0-9]{0,2}"))) return null
-        component.toInt().takeIf { it <= 255 } ?: return null
-    }
+    val octets =
+        components.map { component ->
+            if (!component.matches(Regex("0|[1-9][0-9]{0,2}"))) return null
+            component.toInt().takeIf { it <= 255 } ?: return null
+        }
     return octets.map(Int::toByte).toByteArray()
 }
 

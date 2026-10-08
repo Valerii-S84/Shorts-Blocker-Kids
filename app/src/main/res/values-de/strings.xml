@@ -246,4 +246,5 @@
     <string name="settings_loading">Gespeicherte Einstellungen werden geladen...</string>
     <string name="settings_unavailable">Gespeicherte Einstellungen sind nicht verfügbar. Einstellungen und PIN-Zugriff bleiben bis zum erfolgreichen Lesen gesperrt.</string>
     <string name="settings_retry">Erneut versuchen</string>
+    <string name="settings_operation_failed">Gespeicherte Einstellungen konnten nicht gelesen oder geändert werden. Diese Aktion konnte nicht bestätigt werden. Bitte versuche es erneut.</string>
 </resources>

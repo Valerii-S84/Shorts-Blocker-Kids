@@ -9,6 +9,8 @@ data class ProtectionConfiguration(
     val enabledPlatformIds: Set<String> = DEFAULT_ENABLED_PLATFORM_IDS,
     val temporaryAllowUntilMillis: Long? = null,
     val isPinConfigured: Boolean = false,
+    val temporaryAllowElapsedRealtimeDeadlineMillis: Long? = null,
+    val temporaryAllowBootCount: Int? = null,
 ) {
     val hasEnabledPlatforms: Boolean
         get() = enabledPlatformIds.isNotEmpty()

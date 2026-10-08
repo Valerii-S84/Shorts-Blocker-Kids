@@ -12,6 +12,8 @@ import com.shortsblockerkids.application.port.ProtectionActivationOperation
 import com.shortsblockerkids.application.port.ProtectionActivationStore
 import com.shortsblockerkids.application.port.SettingsStatePort
 import com.shortsblockerkids.application.port.TemporaryAllowStore
+import com.shortsblockerkids.application.port.PinLockoutClock
+import com.shortsblockerkids.infrastructure.time.AndroidPinLockoutClock
 import com.shortsblockerkids.domain.entitlement.BillingEntitlementSnapshot
 import com.shortsblockerkids.domain.entitlement.FreeTestPolicy
 import com.shortsblockerkids.domain.protection.ProtectionConfiguration
@@ -29,15 +31,22 @@ private val Context.settingsDataStore: DataStore<Preferences> by preferencesData
 
 class DataStoreSettingsStore(
     private val dataStore: DataStore<Preferences>,
+    private val deadlineClock: PinLockoutClock? = null,
 ) : ProtectionActivationStore,
     TemporaryAllowStore,
     SettingsStatePort,
     PinStateStore by DataStorePinStateStore(dataStore) {
-    constructor(context: Context) : this(
+    constructor(
+        context: Context,
+        deadlineClock: PinLockoutClock = AndroidPinLockoutClock(context),
+    ) : this(
         dataStore = context.applicationContext.settingsDataStore,
+        deadlineClock = deadlineClock,
     )
 
-    override fun readSettings(): Flow<AppSettingsSnapshot> = readStoredSettings().map(DataStoreSettingsMapper::toSnapshot)
+    override fun readSettings(): Flow<AppSettingsSnapshot> = readStoredSettings().map {
+        DataStoreSettingsMapper.toSnapshot(it, deadlineClock?.read()?.bootCount)
+    }
 
     internal fun readStoredSettings(): Flow<StoredAppSettings> = dataStore.data.map(DataStoreSettingsMapper::toStoredAppSettings)
 
@@ -57,6 +66,7 @@ class DataStoreSettingsStore(
                 decision(
                     DataStoreSettingsMapper.toSnapshot(
                         DataStoreSettingsMapper.toStoredAppSettings(preferences),
+                        deadlineClock?.read()?.bootCount,
                     ),
                 )
             when (val currentOperation = operation) {
@@ -154,6 +164,8 @@ class DataStoreSettingsStore(
 
     override suspend fun setTemporaryAllowUntil(allowUntilMillis: Long?) {
         editSettings { preferences ->
+            preferences.remove(DataStoreSettingsMapper.temporaryAllowElapsedRealtimeDeadlineKey)
+            preferences.remove(DataStoreSettingsMapper.temporaryAllowBootCountKey)
             preferences.setNullableLong(
                 DataStoreSettingsMapper.temporaryAllowUntilKey,
                 allowUntilMillis,
@@ -162,12 +174,31 @@ class DataStoreSettingsStore(
     }
 
     override suspend fun removeTemporaryAllowIf(shouldRemove: (Long) -> Boolean): Boolean {
+        return removeTemporaryAllowDeadlineIf { wallUntil, _, _ -> wallUntil != null && shouldRemove(wallUntil) }
+    }
+
+    override suspend fun setTemporaryAllowDeadline(
+        allowUntilMillis: Long,
+        elapsedRealtimeDeadlineMillis: Long,
+        bootCount: Int,
+    ) {
+        editSettings { preferences ->
+            preferences[DataStoreSettingsMapper.temporaryAllowUntilKey] = allowUntilMillis
+            preferences[DataStoreSettingsMapper.temporaryAllowElapsedRealtimeDeadlineKey] = elapsedRealtimeDeadlineMillis
+            preferences[DataStoreSettingsMapper.temporaryAllowBootCountKey] = bootCount
+        }
+    }
+
+    override suspend fun removeTemporaryAllowDeadlineIf(shouldRemove: (Long?, Long?, Int?) -> Boolean): Boolean {
         var removed = false
         editSettings { preferences ->
-            val allowUntil =
-                preferences[DataStoreSettingsMapper.temporaryAllowUntilKey] ?: return@editSettings
-            if (shouldRemove(allowUntil)) {
+            val wallUntil = preferences[DataStoreSettingsMapper.temporaryAllowUntilKey]
+            val elapsedUntil = preferences[DataStoreSettingsMapper.temporaryAllowElapsedRealtimeDeadlineKey]
+            val bootCount = preferences[DataStoreSettingsMapper.temporaryAllowBootCountKey]
+            if ((wallUntil != null || elapsedUntil != null) && shouldRemove(wallUntil, elapsedUntil, bootCount)) {
                 preferences.remove(DataStoreSettingsMapper.temporaryAllowUntilKey)
+                preferences.remove(DataStoreSettingsMapper.temporaryAllowElapsedRealtimeDeadlineKey)
+                preferences.remove(DataStoreSettingsMapper.temporaryAllowBootCountKey)
                 removed = true
             }
         }

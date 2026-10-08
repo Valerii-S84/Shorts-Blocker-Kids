@@ -43,7 +43,7 @@ class AccessibilityServiceRuntime(
     private lateinit var eventRouter: AccessibilityEventRouter
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var latestSettings: AppSettingsSnapshot? = null
-    private var settingsJob: Job? = null
+    private val connectionLifecycle = ServiceConnectionLifecycle()
     private var pinEntryRecheckJob: Job? = null
     private val currentWindowRecheckScheduler =
         CurrentWindowRecheckScheduler(
@@ -53,15 +53,18 @@ class AccessibilityServiceRuntime(
     private val temporaryAllowDeadlineScheduler =
         TemporaryAllowDeadlineScheduler(
             scope = serviceScope,
-            timeProvider = timeProvider,
+            monotonicTimeProvider = intervalClock,
             onDeadline = ::routeCurrentWindow,
         )
 
     fun onServiceConnected() {
+        connectionLifecycle.replace(::startConnection)
+    }
+
+    private fun startConnection(): () -> Unit {
         val protectionSettingsPort =
             ProtectionSettingsPort { nowMillis ->
-                latestSettings?.toAccessibilityProtectionState(nowMillis)
-                    ?: AccessibilityProtectionState(false, emptySet())
+                resolveServiceProtectionState(latestSettings, nowMillis, intervalClock.elapsedRealtimeMillis())
             }
         val diagnostics =
             configureAccessibilityDiagnostics(
@@ -114,18 +117,18 @@ class AccessibilityServiceRuntime(
                     ),
                 diagnostics = diagnostics,
             )
-        settingsJob?.cancel()
-        settingsJob = serviceScope.launch {
+        val connectedRouter = eventRouter
+        val settingsJob = serviceScope.launch {
             ObserveSettingsUseCase(settingsStatePort)().collect { state ->
                 when (state) {
                     is SettingsReadState.Ready -> {
                         latestSettings = state.snapshot
                         temporaryAllowDeadlineScheduler.schedule(
-                            state.snapshot.protectionConfiguration.temporaryAllowUntilMillis,
+                            state.snapshot.protectionConfiguration.temporaryAllowElapsedRealtimeDeadlineMillis,
                         )
-                        if (!state.snapshot.canProtect(timeProvider.currentTimeMillis())) {
+                        if (!state.snapshot.canProtect(timeProvider.currentTimeMillis(), intervalClock.elapsedRealtimeMillis())) {
                             currentWindowRecheckScheduler.cancel()
-                            eventRouter.dismissBlockingState()
+                            connectedRouter.dismissBlockingState()
                         } else {
                             routeCurrentWindow()
                         }
@@ -136,16 +139,27 @@ class AccessibilityServiceRuntime(
                             if (latestSettings == null) "SettingsUnavailableProtectionDegraded"
                             else "SettingsUnavailableUsingLastSnapshot",
                         )
+                        routeCurrentWindow()
                     }
-                    SettingsReadState.Loading -> Unit
+                    SettingsReadState.Loading -> {
+                        diagnostics.recordBlockingDecision("SettingsLoadingProtectionConservative")
+                        routeCurrentWindow()
+                    }
                 }
             }
+        }
+        return {
+            settingsJob.cancel()
+            pinEntryRecheckJob?.cancel()
+            currentWindowRecheckScheduler.cancel()
+            temporaryAllowDeadlineScheduler.cancel()
+            connectedRouter.shutdown()
         }
     }
 
     fun onAccessibilityEvent(event: AccessibilityEvent?) {
         val safeEvent = event ?: return
-        if (!::eventRouter.isInitialized || latestSettings == null) {
+        if (!::eventRouter.isInitialized) {
             return
         }
 
@@ -158,28 +172,14 @@ class AccessibilityServiceRuntime(
         }
         pinEntryRecheckJob?.cancel()
         currentWindowRecheckScheduler.cancel()
-        temporaryAllowDeadlineScheduler.cancel()
+        // Interruption stops accessibility feedback, not the service connection.
+        // Keep expiry armed even if no further event or settings emission arrives.
     }
 
     fun onDestroy() {
-        if (::eventRouter.isInitialized) {
-            eventRouter.shutdown()
-        }
-        pinEntryRecheckJob?.cancel()
-        currentWindowRecheckScheduler.cancel()
-        temporaryAllowDeadlineScheduler.cancel()
+        connectionLifecycle.close()
         serviceScope.cancel()
     }
-
-    private fun AppSettingsSnapshot.toAccessibilityProtectionState(nowMillis: Long): AccessibilityProtectionState =
-        AccessibilityProtectionState(
-            isProtectionActive = canProtect(nowMillis),
-            enabledPlatformIds =
-                SupportedPlatform.PROTECTED_PLATFORMS
-                    .filter { platform ->
-                        protectionConfiguration.isPlatformEnabled(platform.id)
-                    }.mapTo(mutableSetOf()) { platform -> platform.id },
-        )
 
     private fun scheduleScanRecheck(delayMillis: Long) {
         currentWindowRecheckScheduler.schedule(delayMillis)
@@ -200,15 +200,15 @@ class AccessibilityServiceRuntime(
 
     @Suppress("DEPRECATION")
     private fun tryRouteCurrentWindow(): Boolean {
-        if (!::eventRouter.isInitialized || latestSettings == null) {
+        if (!::eventRouter.isInitialized) {
             return true
         }
-        val settings = latestSettings ?: return true
+        val settings = latestSettings
         val root = service.rootInActiveWindow
         val packageName = root?.packageName
         if (root == null || packageName == null) {
             // Keep an active protection scan alive without polling while protection is inactive.
-            return !settings.canProtect(timeProvider.currentTimeMillis())
+            return settings?.canProtect(timeProvider.currentTimeMillis(), intervalClock.elapsedRealtimeMillis()) == false
         }
         val event =
             AccessibilityEvent.obtain(AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED).apply {
@@ -225,4 +225,19 @@ class AccessibilityServiceRuntime(
     private companion object {
         const val PIN_ENTRY_RECHECK_DELAY_MS = 100L
     }
+}
+
+internal fun resolveServiceProtectionState(
+    snapshot: AppSettingsSnapshot?,
+    nowMillis: Long,
+    elapsedRealtimeMillis: Long,
+): AccessibilityProtectionState {
+    // Missing storage is a conservative protection policy, never a Ready/default snapshot.
+    val platforms = SupportedPlatform.PROTECTED_PLATFORMS
+    return AccessibilityProtectionState(
+        isProtectionActive = snapshot?.canProtect(nowMillis, elapsedRealtimeMillis) ?: true,
+        enabledPlatformIds = platforms
+            .filter { snapshot?.protectionConfiguration?.isPlatformEnabled(it.id) ?: true }
+            .mapTo(mutableSetOf()) { it.id },
+    )
 }

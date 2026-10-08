@@ -254,4 +254,5 @@
     <string name="settings_loading">Завантаження збережених налаштувань...</string>
     <string name="settings_unavailable">Збережені налаштування недоступні. Налаштування та введення PIN заблоковано до успішного читання.</string>
     <string name="settings_retry">Повторити</string>
+    <string name="settings_operation_failed">Не вдалося прочитати або змінити збережені налаштування. Дію не підтверджено. Спробуйте ще раз.</string>
 </resources>

@@ -85,7 +85,7 @@ class MainActivity : ComponentActivity() {
                 timeProvider = timeProvider,
                 lockoutClock = AndroidPinLockoutClock(this),
             )
-        val dashboardUiStateAssembler = DashboardUiStateAssembler(timeProvider)
+        val dashboardUiStateAssembler = DashboardUiStateAssembler(timeProvider, deadlineClock = AndroidPinLockoutClock(this))
         val protectionActivationUseCase =
             RecordSuccessfulProtectionActivationUseCase(
                 timeProvider = timeProvider,
@@ -99,6 +99,7 @@ class MainActivity : ComponentActivity() {
             SetTemporaryAllowUseCase(
                 timeProvider = timeProvider,
                 temporaryAllowStore = settingsStore,
+                deadlineClock = AndroidPinLockoutClock(this),
             )
         temporaryAllowRequestState.value = intent.isTemporaryAllowRequest()
         observeSettings()
@@ -258,9 +259,7 @@ class MainActivity : ComponentActivity() {
                 billingGateway = GooglePlayBillingGateway(this),
                 syncBillingEntitlementUseCase = syncBillingEntitlementUseCase,
                 onEntitlementChanged = { snapshot ->
-                    activityScope.launch {
-                        settingsStore.updateBillingEntitlement(snapshot)
-                    }
+                    settingsStore.updateBillingEntitlement(snapshot)
                 },
                 billingScope = activityScope,
             )

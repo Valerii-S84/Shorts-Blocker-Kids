@@ -28,6 +28,7 @@ class GooglePlayDeveloperApiClient(
         productId: String,
         purchaseToken: String,
     ): VerifiedSubscription {
+        val verificationStartedAtMillis = nowMillis()
         val accessToken =
             runCatching { accessToken() }
                 .getOrElse { throw BillingBackendUnavailableException("Google Play credentials unavailable") }
@@ -44,7 +45,7 @@ class GooglePlayDeveloperApiClient(
                 response = response,
                 productId = productId,
                 purchaseToken = purchaseToken,
-                nowMillis = nowMillis(),
+                nowMillis = verificationStartedAtMillis,
             )
         if (subscription.state.allowsProtection() && !subscription.acknowledged) {
             acknowledge(packageName, productId, purchaseToken, accessToken)

@@ -26,13 +26,13 @@ class PhoneHomeExitController(
         attempt: Int,
     ) {
         if (request != generation) return
-        if (!exitAction()) {
-            delayedActionScheduler.schedule(EXIT_CHECK_DELAY_MS) {
+        if (!platformResult(exitAction)) {
+            scheduleCheck {
                 if (request == generation) retry(request, attempt)
             }
             return
         }
-        delayedActionScheduler.schedule(EXIT_CHECK_DELAY_MS) {
+        scheduleCheck {
             if (request == generation) checkExit(request, attempt)
         }
     }
@@ -41,11 +41,11 @@ class PhoneHomeExitController(
         request: Int,
         attempt: Int,
     ) {
-        if (isPlaybackClosed()) {
+        if (platformResult(isPlaybackClosed)) {
             // A second observation avoids dismissing during a window transition to PiP.
-            delayedActionScheduler.schedule(EXIT_CHECK_DELAY_MS) {
+            scheduleCheck {
                 if (request == generation) {
-                    if (isPlaybackClosed()) finish(onExitCompleted) else retry(request, attempt)
+                    if (platformResult(isPlaybackClosed)) finish(onExitCompleted) else retry(request, attempt)
                 }
             }
         } else {
@@ -63,6 +63,18 @@ class PhoneHomeExitController(
     private fun finish(callback: () -> Unit) {
         exiting = false
         callback()
+    }
+
+    private fun platformResult(action: () -> Boolean): Boolean =
+        try { action() } catch (_: RuntimeException) { false }
+
+    private fun scheduleCheck(action: () -> Unit) {
+        try {
+            delayedActionScheduler.schedule(EXIT_CHECK_DELAY_MS, action)
+        } catch (_: RuntimeException) {
+            // A stopped looper/window is a controlled failure, with the barrier retained.
+            finish(onExitFailed)
+        }
     }
 
     companion object {

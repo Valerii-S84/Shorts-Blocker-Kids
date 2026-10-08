@@ -4,13 +4,21 @@ package com.shortsblockerkids.presentation.app
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.shortsblockerkids.R
 import com.shortsblockerkids.application.pin.CreatePinUseCase
 import com.shortsblockerkids.application.pin.VerifyPinUseCase
 import com.shortsblockerkids.application.port.AccessibilityDiagnosticsPort
@@ -61,6 +69,13 @@ internal fun ShortsBlockerKidsApp(
     languagePicker: @Composable () -> Unit = {},
 ) {
     val coroutineScope = rememberCoroutineScope()
+    var settingsOperationFailed by remember { mutableStateOf(false) }
+    val settingsWriteUiCoordinator = remember {
+        SettingsWriteUiCoordinator(onFailure = { settingsOperationFailed = true })
+    }
+    fun launchSettingsOperation(operation: suspend () -> Unit) {
+        coroutineScope.launch { settingsWriteUiCoordinator.run(operation) }
+    }
     val temporaryAllowFlowController =
         TemporaryAllowFlowController(setTemporaryAllowUseCase)
     val protectionActivationUiCoordinator =
@@ -114,8 +129,22 @@ internal fun ShortsBlockerKidsApp(
 
     LaunchedEffect(currentScreen, dashboardUiState) {
         if (currentScreen == AppScreen.Dashboard) {
-            protectionActivationUiCoordinator.completeCurrentConfiguration()
+            settingsWriteUiCoordinator.run {
+                protectionActivationUiCoordinator.completeCurrentConfiguration()
+            }
         }
+    }
+
+    if (settingsOperationFailed) {
+        AlertDialog(
+            onDismissRequest = { settingsOperationFailed = false },
+            text = { Text(stringResource(R.string.settings_operation_failed)) },
+            confirmButton = {
+                TextButton(onClick = { settingsOperationFailed = false }) {
+                    Text(stringResource(android.R.string.ok))
+                }
+            },
+        )
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -128,6 +157,7 @@ internal fun ShortsBlockerKidsApp(
             AppScreen.PinSetup ->
                 PinSetupScreen(
                     createPinUseCase = createPinUseCase,
+                    runSettingsOperation = settingsWriteUiCoordinator::run,
                     onPinCreated = {
                         onStateChanged()
                         coordinator.onPinCreated()
@@ -137,6 +167,7 @@ internal fun ShortsBlockerKidsApp(
             AppScreen.PinEntry ->
                 PinEntryScreen(
                     verifyPinUseCase = verifyPinUseCase,
+                    runSettingsOperation = settingsWriteUiCoordinator::run,
                     onStateChanged = onStateChanged,
                     onUnlocked = {
                         val shouldDisableProtection =
@@ -144,7 +175,7 @@ internal fun ShortsBlockerKidsApp(
                                 dashboardUiState.setup.isAccessibilityDisclosureAccepted,
                             )
                         if (shouldDisableProtection) {
-                            coroutineScope.launch {
+                            launchSettingsOperation {
                                 onProtectionEnabledChanged(false)
                                 onStateChanged()
                                 coordinator.onProtectionDisableCompleted()
@@ -159,7 +190,7 @@ internal fun ShortsBlockerKidsApp(
                     callbacks =
                         ProtectedAppsCallbacks(
                             onPlatformEnabledChanged = { platformId, enabled ->
-                                coroutineScope.launch {
+                                launchSettingsOperation {
                                     onPlatformEnabledChanged(platformId, enabled)
                                     onStateChanged()
                                 }
@@ -171,7 +202,7 @@ internal fun ShortsBlockerKidsApp(
             AppScreen.AccessibilityDisclosure ->
                 AccessibilityDisclosureScreen(
                     onAccept = {
-                        coroutineScope.launch {
+                        launchSettingsOperation {
                             onAccessibilityDisclosureAccepted()
                             onStateChanged()
                             coordinator.onDisclosureAccepted()
@@ -187,7 +218,7 @@ internal fun ShortsBlockerKidsApp(
                     onOpenAccessibilitySettings = onOpenAccessibilitySettings,
                     onEnabled = {
                         onStateChanged()
-                        coroutineScope.launch {
+                        launchSettingsOperation {
                             protectionActivationUiCoordinator.enableProtection(
                                 coordinator::onAccessibilityEnablementCompleted,
                             )
@@ -205,7 +236,7 @@ internal fun ShortsBlockerKidsApp(
                                 DashboardProtectionCallbacks(
                                     onProtectionChanged = { enabled ->
                                         if (enabled) {
-                                            coroutineScope.launch {
+                                            launchSettingsOperation {
                                                 protectionActivationUiCoordinator.enableProtection()
                                             }
                                         } else {
@@ -213,7 +244,7 @@ internal fun ShortsBlockerKidsApp(
                                         }
                                     },
                                     onPlatformEnabledChanged = { platformId, enabled ->
-                                        coroutineScope.launch {
+                                        launchSettingsOperation {
                                             onPlatformEnabledChanged(platformId, enabled)
                                             onStateChanged()
                                         }
@@ -268,7 +299,7 @@ internal fun ShortsBlockerKidsApp(
             AppScreen.TemporaryAllow ->
                 TemporaryAllowScreen(
                     onDurationSelected = { duration ->
-                        coroutineScope.launch {
+                        launchSettingsOperation {
                             val completion = temporaryAllowFlowController.selectDuration(duration)
                             coordinator.onTemporaryAllowFinished()
                             onStateChanged()

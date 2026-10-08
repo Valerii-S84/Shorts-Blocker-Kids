@@ -26,14 +26,19 @@ class InstallationAuthorization(
         throw IllegalStateException("Unable to allocate installation identity")
     }
 
-    fun authenticate(installId: String, authorizationHeader: String?): Boolean {
+    fun authenticate(
+        installId: String,
+        authorizationHeader: String?,
+    ): Boolean {
         val bearer = authorizationHeader?.takeIf { BEARER_HEADER.matches(it) }?.removePrefix("Bearer ") ?: return false
         val expectedHash = store.installationBearerHash(installId) ?: return false
         return MessageDigest.isEqual(expectedHash.toByteArray(Charsets.US_ASCII), hashBearer(bearer).toByteArray(Charsets.US_ASCII))
     }
 
     private fun hashBearer(bearer: String): String =
-        MessageDigest.getInstance("SHA-256").digest(bearer.toByteArray(Charsets.US_ASCII))
+        MessageDigest
+            .getInstance("SHA-256")
+            .digest(bearer.toByteArray(Charsets.US_ASCII))
             .joinToString("") { "%02x".format(it) }
 
     private companion object {

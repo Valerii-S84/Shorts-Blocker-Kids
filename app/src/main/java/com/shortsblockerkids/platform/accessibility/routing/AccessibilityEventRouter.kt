@@ -30,6 +30,8 @@ class AccessibilityEventRouter(
         recordOutcome = diagnostics::recordBlockingDecision,
         onOverlayFailed = blockingDecisionController::onOverlayDismissed,
         startPlaybackExit = blockOverlayController::exitBlockedPlayback,
+        scheduleRetry = blockOverlayController::scheduleProtectionRetry,
+        shouldRetryProtection = blockOverlayController::isBlockedPackageStillDetected,
     )
 
     fun route(
@@ -169,6 +171,7 @@ class AccessibilityEventRouter(
         when (decision) {
             BlockingDecision.ShowOverlay -> protectionExecutor.protect(packageName)
             BlockingDecision.DismissOverlay -> {
+                protectionExecutor.reset()
                 blockOverlayController.dismissOverlay()
                 diagnostics.recordBlockingDecision(decision.name)
             }

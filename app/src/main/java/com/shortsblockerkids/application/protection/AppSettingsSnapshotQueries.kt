@@ -29,16 +29,18 @@ fun AppSettingsSnapshot.freeTestDaysRemaining(nowMillis: Long): Int? = Entitleme
 
 fun AppSettingsSnapshot.hasBillingEntitlement(nowMillis: Long): Boolean = EntitlementPolicy.hasPaidEntitlement(entitlement, nowMillis)
 
-fun AppSettingsSnapshot.canProtect(nowMillis: Long): Boolean =
+fun AppSettingsSnapshot.canProtect(nowMillis: Long, elapsedRealtimeMillis: Long? = null): Boolean =
     ProtectionEligibilityPolicy.canProtect(
         configuration = protectionConfiguration,
         hasProtectionEntitlement =
             EntitlementPolicy.hasProtectionEntitlement(entitlement, nowMillis),
         nowMillis = nowMillis,
+        elapsedRealtimeMillis = elapsedRealtimeMillis,
     )
 
-fun AppSettingsSnapshot.isTemporarilyAllowed(nowMillis: Long): Boolean =
+fun AppSettingsSnapshot.isTemporarilyAllowed(nowMillis: Long, elapsedRealtimeMillis: Long? = null): Boolean =
     TemporaryAllowPolicy.isActive(
-        protectionConfiguration.temporaryAllowUntilMillis,
+        protectionConfiguration,
         nowMillis,
+        elapsedRealtimeMillis,
     )

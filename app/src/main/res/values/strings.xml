@@ -246,4 +246,5 @@
     <string name="settings_loading">Loading saved settings...</string>
     <string name="settings_unavailable">Saved settings are unavailable. Settings and PIN access are locked until reading succeeds.</string>
     <string name="settings_retry">Retry</string>
+    <string name="settings_operation_failed">Saved settings could not be read or changed. This action could not be confirmed. Please try again.</string>
 </resources>

@@ -38,7 +38,7 @@ class BlockOverlayController(
             isPlaybackClosed = playbackExit::isPlaybackClosed,
             delayedActionScheduler =
                 DelayedActionScheduler { delayMillis, action ->
-                    mainHandler.postDelayed({ action() }, delayMillis)
+                    scheduleProtectionRetry(delayMillis, action)
                 },
             onExitCompleted = {
                 dismissOverlay()
@@ -55,21 +55,21 @@ class BlockOverlayController(
     val isOverlayVisible: Boolean
         get() = overlayView != null
 
-    fun showBlockedOverlay(): Boolean {
+    fun showBlockedOverlay(packageName: String): Boolean {
         if (overlayView != null) {
             return true
         }
 
         return try {
-            addBlockedOverlay()
+            addBlockedOverlay(packageName)
         } catch (_: RuntimeException) {
             // Window/context failures are handled by the router's bounded exit fallback.
             false
         }
     }
 
-    private fun addBlockedOverlay(): Boolean {
-        playbackExit.captureBlockedPackage()
+    private fun addBlockedOverlay(packageName: String): Boolean {
+        if (!playbackExit.captureBlockedPackage(packageName)) return false
         val view = buildOverlayView()
         val params =
             WindowManager
@@ -121,7 +121,7 @@ class BlockOverlayController(
                 runCatching { playbackExit.isPlaybackClosed() }.getOrDefault(false)
             },
             delayedActionScheduler = DelayedActionScheduler { delayMillis, action ->
-                mainHandler.postDelayed({ action() }, delayMillis)
+                scheduleProtectionRetry(delayMillis, action)
             },
             onExitCompleted = { completed(true) },
             onExitFailed = { completed(false) },
@@ -129,6 +129,15 @@ class BlockOverlayController(
         fallbackExitController = fallback
         fallback.exitShorts()
     }
+
+    fun scheduleProtectionRetry(delayMillis: Long, action: () -> Unit) {
+        if (!mainHandler.postDelayed({ action() }, delayMillis)) {
+            throw IllegalStateException("Protection retry could not be scheduled")
+        }
+    }
+
+    fun isBlockedPackageStillDetected(packageName: String): Boolean =
+        playbackExit.isBlockedPackageStillDetected(packageName)
 
     fun dismissOverlay() {
         fallbackExitController?.cancel()
