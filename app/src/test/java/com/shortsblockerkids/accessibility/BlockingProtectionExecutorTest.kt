@@ -79,6 +79,47 @@ class BlockingProtectionExecutorTest {
         assertEquals(1, scenario.fallbacks)
     }
 
+    @Test fun retryGuardFailureKeepsCheckingUntilObservationRecovers() {
+        val scenario = Scenario()
+        scenario.executor.protect("video.app")
+        scenario.complete(false)
+        scenario.guardFailures = 2
+        repeat(2) {
+            scenario.retries.removeFirst().invoke()
+            assertEquals(1, scenario.fallbacks)
+            assertEquals(1, scenario.retries.size)
+        }
+        scenario.retries.removeFirst().invoke()
+        assertEquals(2, scenario.fallbacks)
+        assertEquals(2, scenario.outcomes.count { it == "ProtectionRetryCheckFailed" })
+        scenario.complete(true)
+        assertTrue(scenario.retries.isEmpty())
+    }
+
+    @Test fun recoveredNegativeGuardStopsRetryAfterObservationFailure() {
+        val scenario = Scenario()
+        scenario.executor.protect("video.app")
+        scenario.complete(false)
+        scenario.guardFailures = 1
+        scenario.retries.removeFirst().invoke()
+        scenario.stillBlocked = false
+        scenario.retries.removeFirst().invoke()
+        assertEquals(1, scenario.fallbacks)
+        assertTrue(scenario.retries.isEmpty())
+    }
+
+    @Test fun resetCancelsRetryRearmedAfterObservationFailure() {
+        val scenario = Scenario()
+        scenario.executor.protect("video.app")
+        scenario.complete(false)
+        scenario.guardFailures = 1
+        scenario.retries.removeFirst().invoke()
+        scenario.executor.reset()
+        scenario.retries.removeFirst().invoke()
+        assertEquals(1, scenario.fallbacks)
+        assertTrue(scenario.retries.isEmpty())
+    }
+
     @Test fun resetCancelsScheduledProtectionRetry() {
         val scenario = Scenario()
         scenario.executor.protect("video.app")
@@ -188,6 +229,7 @@ class BlockingProtectionExecutorTest {
         var fallbacks = 0
         var dismissals = 0
         var stillBlocked = true
+        var guardFailures = 0
         val retries = ArrayDeque<() -> Unit>()
         var complete: (Boolean) -> Unit = {}
         val executor = BlockingProtectionExecutor(
@@ -195,7 +237,13 @@ class BlockingProtectionExecutorTest {
             { outcomes += it }, { dismissals++ },
             { _, _ -> error("Overlay failure must use fallback") },
             scheduleRetry = { _, action -> retries.addLast(action) },
-            shouldRetryProtection = { stillBlocked },
+            shouldRetryProtection = {
+                if (guardFailures > 0) {
+                    guardFailures--
+                    throw IllegalStateException("Active window unavailable")
+                }
+                stillBlocked
+            },
         )
     }
 }

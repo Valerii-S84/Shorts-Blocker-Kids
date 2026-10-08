@@ -1,6 +1,32 @@
 АУДИТ КОДУ SHORTS BLOCKER KIDS — АКТУАЛІЗОВАНО
 Первинний аудит: 6 жовтня 2026, Europe/Berlin.
 Повторна перевірка коду: 7 жовтня 2026, Europe/Berlin.
+Вузьке уточнення 8 жовтня 2026: REL-03/04/05/11 та пов'язаний REL-14.
+Решта розділів зберігає попередню дату перевірки. Цей аудит не є звітом
+про повну готовність продукту або завершення всіх його зауважень.
+Execution evidence уточнення 8 жовтня: цільові gates пройдено.
+Android gate: :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
+:app:assembleDebugAndroidTest --offline --console=plain — BUILD SUCCESSFUL;
+578 JVM tests, failures/errors/skipped = 0. Gradle 9.4.1.
+Android lifecycle: ізольований API35 AVD, user RUNNING_UNLOCKED;
+adb -s emulator-5556 shell am instrument -w -r -e class
+com.shortsblockerkids.e2e.RuntimeProtectionLifecycleInstrumentedTest
+com.shortsblockerkids.debug.test/androidx.test.runner.AndroidJUnitRunner
+— OK (3 tests), 40.561 s. Перевірені retained barrier після interrupt
+і unconfirmed exit, elapsed expiry попри future wall deadline та reconnect
+попри past wall deadline. Foreground fixture відновлюється після conservative
+Loading як setup; quiet expiry не генерує нових settings/fixture events.
+Попередні запуски виявили locked AVD та хибні припущення тестів про
+гарантований media exit, foreground після reconnect і dumpsys component ID.
+Причинні корекції обмежено новим тестом; binding перевіряється exact
+ComponentName у AccessibilityManager service list. Повтори схвалив користувач.
+Backend: :billing-backend:test --offline --console=plain — BUILD SUCCESSFUL,
+80 tests, failures/errors/skipped = 0; усі 8 Postgres tests пройшли,
+включно з 3 реальними PostgreSQL 16 regressions. Equal-timestamp HTTP
+expectation та ізоляцію DB fixtures виправлено перед фінальним gate.
+Тимчасовий PostgreSQL container зупинено; production data не змінювалися.
+Gates підтверджують вузькі виправлення REL-03/04/05/11; вони не є гарантією
+media/audio/PiP сторонніх застосунків або загальної production readiness.
 Первинну назву файла збережено.
 Режим: AUDIT. Статичну звірку завершено; runtime/production readiness — Partial.
 
@@ -32,13 +58,19 @@
 K/ = app/src/main/java/com/shortsblockerkids/
 B/ = billing-backend/src/main/kotlin/com/shortsblockerkids/billingbackend/
 
-Не виконувалися builds, lint, unit/instrumentation tests, APK install,
+У первісному audit scope 7 жовтня не виконувалися builds, lint, unit/instrumentation tests, APK install,
 експлуатація, load/profiling, production/Google requests, deploy або Git writes.
 Ці операції не входили до однофайлового audit scope і могли б записати артефакти.
 Секретні файли та фактичні credentials не відкривалися.
-Код, конфігурації та тести не змінювалися.
+Код, конфігурації та тести у первісному audit scope не змінювалися.
+Вузьке виправлення 8 жовтня змінює REL-03/04/11 і додає REL-05 regression.
+Його execution evidence наведено в уточнених пунктах нижче.
 
-2. АКТУАЛЬНИЙ ПІДСУМОК
+2. ІСТОРИЧНИЙ ПІДСУМОК СТАТИЧНОГО АУДИТУ 7 ЖОВТНЯ
+
+Наведені кількості й висновки описують стан на 7 жовтня, до поточного
+виправлення. Актуальні вузькі уточнення — REL-03/04/05/11 та REL-14 нижче;
+цей історичний підсумок не є completion report виправлення 8 жовтня.
 
 Первинні 30 пунктів:
 — ЗАКРИТО: 10 — SEC-01..03; REL-01,06..10,12.
@@ -200,7 +232,8 @@ Debounce/cooldown/PIN grace використовують monotonic values:
 K/platform/accessibility/routing/AccessibilityEventPolicy.kt:24;
 K/accessibility/BlockingDecisionController.kt:60.
 Висновок: wall-clock rollback не подовжує ці intervals.
-Бізнес-дедлайни за wall time залишаються окремим REL-05.
+Persisted temporary-allow deadline також використовує monotonic time;
+його production wiring/lifecycle regression описано в уточненому REL-05.
 
 REL-02. ЧАСТКОВО. Високий. Settings failure recovery.
 Уточнення 8 жовтня 2026: вузький scope — billing entitlement write.
@@ -238,42 +271,42 @@ BillingCoordinatorTest: 16/16, включно з усіма 4 новими regre
 ЧАСТКОВО. Недоведено: реальні DataStore I/O/device failure та ANR/crash;
 повна перевірка решти REL-02 не входила до цього вузького виправлення.
 
-REL-03. ЧАСТКОВО. Високий. Overlay failure може лишатися fail-open.
-Факт: router підключає fallback:
-K/platform/accessibility/routing/AccessibilityEventRouter.kt:27.
-Failed overlay запускає exit fallback; його невдача записує ProtectionFailed:
-K/platform/accessibility/routing/BlockingProtectionExecutor.kt:30.
-Повторний fallback того самого package пригнічується до reset:
-K/platform/accessibility/routing/BlockingProtectionExecutor.kt:35;
-K/platform/accessibility/routing/BlockingProtectionExecutor.kt:48.
-Висновок: додано спробу fallback, але unsuccessful show + exit лишають
-шлях без barrier. Повне закриття fail-open заявляти некоректно.
-Недоведено: частота WindowManager/global-action failures.
+REL-03. Виправлено обрив повторів після exception у retry guard.
+Факт: failed exit планує повтор через 1500 ms. Виняток перевірки
+shouldRetryProtection записує ProtectionRetryCheckFailed і планує нову
+перевірку; він не означає, що protected playback зник.
+Негативна перевірка або зміна generation/reset завершує ланцюжок:
+K/platform/accessibility/routing/BlockingProtectionExecutor.kt, retryLater/reset.
+Regression: BlockingProtectionExecutorTest перевіряє два поспіль exceptions,
+відновлення, негативний результат та reset після rearm без нового event.
+Межа: одночасна недоступність overlay і global actions не гарантує barrier;
+це обмеження платформи не видається за підтверджений media stop.
 
-REL-04. ЧАСТКОВО. Середній; високий за гарантії media stop.
-Факт: successful overlay запускає automatic playback exit:
-K/platform/accessibility/routing/BlockingProtectionExecutor.kt:17;
-K/platform/accessibility/overlay/BlockOverlayController.kt:94.
-BACK/PiP exit перевіряє package/detection; unconfirmed exit лишає overlay:
-K/platform/accessibility/overlay/BlockedPlaybackExit.kt:26;
-K/platform/accessibility/overlay/BlockedPlaybackExit.kt:44;
-K/platform/accessibility/routing/BlockingProtectionExecutor.kt:25.
-Closure перевіряється за accessibility windows/tree:
-K/platform/accessibility/overlay/BlockedPlaybackExit.kt:69.
-Висновок: automatic exit додано, але acknowledgement pause/stop плеєра немає.
-Недоведено: playback/audio/PiP outcome сторонніх версій/OEM.
+REL-04. Виправлено teardown barrier під час onInterrupt.
+Факт: successful overlay запускає automatic playback exit; невдалий exit
+зберігає barrier і повторюється. onInterrupt більше не викликає shutdown
+і не скасовує playback/recheck jobs:
+K/platform/accessibility/AccessibilityServiceRuntime.kt, onInterrupt.
+Destroy/reconnect зберігає окремий cleanup connection.
+Regression: RuntimeProtectionLifecycleInstrumentedTest викликає справжній
+AccessibilityManager.interrupt під час AutomaticPlaybackExitPending.
+Після callback OverlayRetainedExitUnconfirmed barrier залишається видимим.
+Межа: closure підтверджується accessibility observations, а не acknowledgement
+плеєра. Фізичний playback/audio/PiP сторонніх версій/OEM не перевірений.
 
-REL-05. ЧАСТКОВО. Середній. Deadline timer має clock/lifecycle межі.
-Факт: Ready планує deadline:
-K/platform/accessibility/AccessibilityServiceRuntime.kt:127.
-Scheduler чекає wall-clock різницю та перевіряє її після пробудження:
-K/platform/accessibility/TemporaryAllowDeadlineScheduler.kt:18;
-K/platform/accessibility/TemporaryAllowDeadlineScheduler.kt:23;
-K/platform/accessibility/TemporaryAllowDeadlineScheduler.kt:30.
-Висновок: при незмінному clock trigger не потребує нового event.
-Відкат може подовжити реальний дозвіл; переведення вперед не будить уже
-запущений delay. Interrupt cancellation описано в REL-14.
-Недоведено: фактична максимальна expiry latency/OEM scheduling.
+REL-05. Production deadline використовує monotonic time.
+Факт: service передає ElapsedRealtimeProvider runtime; Ready передає
+temporaryAllowElapsedRealtimeDeadlineMillis scheduler, який порівнює
+SystemClock.elapsedRealtime через MonotonicTimeProvider після пробудження:
+K/accessibility/ShortsBlockerAccessibilityService.kt, runtime.
+K/platform/accessibility/AccessibilityServiceRuntime.kt, settings collector.
+K/platform/accessibility/TemporaryAllowDeadlineScheduler.kt, schedule.
+DataStoreSettingsStore перевіряє boot count через AndroidPinLockoutClock;
+дедлайн іншого boot не відновлює дозвіл.
+Regression: RuntimeProtectionLifecycleInstrumentedTest використовує справжні
+DataStore та bound service, суперечливі past/future wall deadlines, interrupt
+та reconnect; expiry повторно сканує без нового settings write/event.
+Недоведено: максимальна latency на фізичних пристроях/OEM scheduling.
 
 REL-06. ЗАКРИТО. Event/root package consistency.
 Факт: mismatch відхиляється до detection:
@@ -325,21 +358,17 @@ K/platform/accessibility/AccessibilityServiceRuntime.kt:175.
 Висновок: первісні duplicate collectors/старий overlay усунуто у цій
 replace/close послідовності. Device lifecycle не відтворювався.
 
-REL-11. ЧАСТКОВО. Середній. RTDN transaction без повного ordering.
-Факт: same-message claim/update тепер в одній SQL transaction:
-B/DatabaseMigrator.kt:111; B/DatabaseMigrator.kt:117;
-B/DatabaseMigrator.kt:141; B/DatabaseMigrator.kt:252.
-File record і marker також persist-яться разом:
-B/EntitlementStore.kt:125.
-Google verification передує transactional claim:
-B/BillingBackendServer.kt:123; B/BillingBackendServer.kt:129.
-Updates безумовно замінюють state/time:
-B/DatabaseMigrator.kt:286; B/EntitlementStore.kt:143.
-Висновок: crash gap між durable update і marker усунуто; паралельні
-duplicates можуть повторити Google work. Для різних messages/replicas
-немає freshness guard: старіший snapshot, завершений пізніше, може
-перезаписати новіший. Same-message dedupe не впорядковує різні messages.
-Недоведено: реальний race і фактична регресія entitlement.
+REL-11. Виправлено equal-timestamp overwrite та помилковий missing result.
+Факт: SQL upsert/update і file-store mutation приймають тільки строго
+новіший verified timestamp. Старіший або рівний timestamp не змінює state.
+RTDN claim, verification/update і durable marker залишаються в transaction;
+zero-row update перевіряє наявність token у тій самій connection:
+існуючий record дає STALE, відсутній — NO_INSTALL_RECORD.
+B/DatabaseMigrator.kt, processRtdn/rejectedRtdnResult/SQL guards.
+B/EntitlementStore.kt, upsert/processRtdn/updateByPurchaseToken.
+Regression: PostgresEntitlementStoreTest та EntitlementStoreTest перевіряють
+older/equal/newer updates, STALE і missing, marker та duplicate verification.
+Межа: timestamp є наявним ordering contract, не sequence number Google.
 
 REL-12. ЗАКРИТО для неатомарного file/development persist.
 Факт: temp створюється поруч; replace використовує ATOMIC_MOVE:
@@ -378,17 +407,11 @@ migration/rebinding. Просте прийняття чужого ID не бул
 Недоведено: наявність таких paid records у deployment і device outcome.
 За їх відсутності цей migration impact не настає.
 
-REL-14. НОВЕ / ВІДКРИТО. Середній. Немає rearm таймерів після onInterrupt.
-Факт: interrupt shutdown-ить router і скасовує deadline/current-window jobs:
-K/platform/accessibility/AccessibilityServiceRuntime.kt:166.
-Settings collector лишається активним; deadline планується при наступному Ready:
-K/platform/accessibility/AccessibilityServiceRuntime.kt:122;
-K/platform/accessibility/AccessibilityServiceRuntime.kt:127.
-Умова: interrupt під час temporary allow/null-root retry, без нового
-connect/Ready/event після нього.
-Висновок: internal expiry/retry trigger втрачено до зовнішнього поновлення.
-Наявність scheduler у source не закриває цей lifecycle path.
-Недоведено: occurrence і callback sequence на Android/OEM.
+REL-14. Уточнено як lifecycle-частину REL-04/05.
+Факт: onInterrupt не завершує connection і зберігає deadline,
+current-window retry та PIN recheck; onDestroy/reconnect виконує cleanup.
+Попереднє твердження про скасування deadline після interrupt застаріло.
+Runtime regression та його фізичні/OEM межі наведені в REL-04/05.
 
 7. НАВАНТАЖЕННЯ І МЕЖІ
 

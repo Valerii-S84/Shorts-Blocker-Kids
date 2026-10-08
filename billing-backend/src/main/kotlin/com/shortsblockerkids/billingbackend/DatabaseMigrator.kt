@@ -148,13 +148,26 @@ class PostgresEntitlementStore(
                                 statement.setLong(7, verified.verifiedAtMillis)
                                 statement.executeUpdate() > 0
                             }
-                        if (updated) RtdnApplyResult.UPDATED else RtdnApplyResult.NO_INSTALL_RECORD
+                        if (updated) {
+                            RtdnApplyResult.UPDATED
+                        } else {
+                            rejectedRtdnResult(connection, purchaseToken)
+                        }
                     }
                 connection.commit()
                 result
             } catch (exception: Exception) {
                 connection.rollback()
                 throw exception
+            }
+        }
+
+    private fun rejectedRtdnResult(connection: Connection, purchaseToken: String): RtdnApplyResult =
+        connection.prepareStatement("SELECT 1 FROM entitlements WHERE purchase_token_hash = ?").use { statement ->
+            statement.queryTimeout = 15
+            statement.setString(1, EntitlementStore.hashPurchaseToken(purchaseToken))
+            statement.executeQuery().use { rows ->
+                if (rows.next()) RtdnApplyResult.STALE else RtdnApplyResult.NO_INSTALL_RECORD
             }
         }
 
@@ -294,7 +307,7 @@ class PostgresEntitlementStore(
                 last_verified_at_millis = EXCLUDED.last_verified_at_millis,
                 app_version = EXCLUDED.app_version,
                 updated_at_millis = EXCLUDED.updated_at_millis
-            WHERE entitlements.last_verified_at_millis <= EXCLUDED.last_verified_at_millis
+            WHERE entitlements.last_verified_at_millis < EXCLUDED.last_verified_at_millis
             """
 
         const val UPDATE_BY_TOKEN_SQL =
@@ -306,7 +319,7 @@ class PostgresEntitlementStore(
                 last_verified_at_millis = ?,
                 updated_at_millis = ?
             WHERE purchase_token_hash = ?
-              AND last_verified_at_millis <= ?
+              AND last_verified_at_millis < ?
             """
     }
 }

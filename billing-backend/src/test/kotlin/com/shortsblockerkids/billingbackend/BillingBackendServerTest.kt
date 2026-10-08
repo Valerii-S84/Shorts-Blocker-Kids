@@ -95,7 +95,7 @@ class BillingBackendServerTest {
     }
 
     @Test
-    fun rtdnRequiresSharedSecretAndIsIdempotent() {
+    fun rtdnRequiresSharedSecretRejectsEqualTimestampAndIsIdempotent() {
         val backend = startBackend()
         post(
             url = "http://127.0.0.1:${backend.port}/billing/play/verify",
@@ -117,7 +117,7 @@ class BillingBackendServerTest {
                 headers = emptyMap(),
                 expectedCode = 400,
             )
-        val updated =
+        val stale =
             post(
                 url = "http://127.0.0.1:${backend.port}/billing/play/rtdn",
                 body = pubSubBody("msg-1", "token-1"),
@@ -131,7 +131,7 @@ class BillingBackendServerTest {
             )
 
         assertTrue(unauthorized.contains("Invalid RTDN source"))
-        assertTrue(updated.contains("\"status\":\"updated\""))
+        assertTrue(stale.contains("\"status\":\"stale\""))
         assertTrue(duplicate.contains("\"status\":\"duplicate\""))
     }
 

@@ -167,13 +167,8 @@ class AccessibilityServiceRuntime(
     }
 
     fun onInterrupt() {
-        if (::eventRouter.isInitialized) {
-            eventRouter.shutdown()
-        }
-        pinEntryRecheckJob?.cancel()
-        currentWindowRecheckScheduler.cancel()
         // Interruption stops accessibility feedback, not the service connection.
-        // Keep expiry armed even if no further event or settings emission arrives.
+        // Keep the barrier, playback exit, and rechecks until confirmed exit or teardown.
     }
 
     fun onDestroy() {

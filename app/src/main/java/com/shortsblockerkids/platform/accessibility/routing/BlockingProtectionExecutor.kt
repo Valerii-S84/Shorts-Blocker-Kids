@@ -60,7 +60,14 @@ class BlockingProtectionExecutor(
         try {
             scheduleRetry(PROTECTION_RETRY_DELAY_MS) {
                 if (request != generation) return@scheduleRetry
-                val stillBlocked = try { shouldRetryProtection(packageName) } catch (_: RuntimeException) { false }
+                val stillBlocked = try {
+                    shouldRetryProtection(packageName)
+                } catch (_: RuntimeException) {
+                    // An unavailable observation does not establish that protection is unnecessary.
+                    recordOutcome("ProtectionRetryCheckFailed")
+                    retryLater(packageName, request)
+                    return@scheduleRetry
+                }
                 if (stillBlocked) protect(packageName)
             }
         } catch (_: RuntimeException) {

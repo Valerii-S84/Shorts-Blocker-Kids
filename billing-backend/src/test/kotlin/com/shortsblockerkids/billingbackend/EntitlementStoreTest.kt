@@ -105,6 +105,56 @@ class EntitlementStoreTest {
     }
 
     @Test
+    fun upsertRejectsOlderAndEqualVerificationWithoutChangingPersistedRecord() {
+        val path = temporaryFolder.newFile("upsert-freshness.json").toPath()
+        val store = EntitlementStore(path)
+        store.upsert(record())
+        val saved = Files.readString(path)
+
+        listOf(4_000L, 5_000L).forEach { timestamp ->
+            store.upsert(record().copy(state = SubscriptionEntitlementState.EXPIRED, lastVerifiedAtMillis = timestamp))
+            assertEquals(saved, Files.readString(path))
+            assertEquals(record(), EntitlementStore(path).findByInstallId("install"))
+        }
+        val newer = record().copy(state = SubscriptionEntitlementState.EXPIRED, lastVerifiedAtMillis = 6_000L)
+        store.upsert(newer)
+        assertEquals(newer, EntitlementStore(path).findByInstallId("install"))
+    }
+
+    @Test
+    fun tokenUpdateRejectsOlderAndEqualVerificationAndAcceptsNewerVerification() {
+        val path = temporaryFolder.newFile("token-freshness.json").toPath()
+        val store = EntitlementStore(path)
+        store.upsert(record())
+        val saved = Files.readString(path)
+
+        listOf(4_000L, 5_000L).forEach { timestamp ->
+            assertFalse(store.updateByPurchaseToken("token", verified().copy(verifiedAtMillis = timestamp)))
+            assertEquals(saved, Files.readString(path))
+            assertEquals(record(), EntitlementStore(path).findByInstallId("install"))
+        }
+        assertTrue(store.updateByPurchaseToken("token", verified()))
+        assertEquals(SubscriptionEntitlementState.EXPIRED, EntitlementStore(path).findByInstallId("install")?.state)
+    }
+
+    @Test
+    fun rtdnRejectsOlderAndEqualVerificationAsStaleAndPersistsMarker() {
+        val path = temporaryFolder.newFile("rtdn-freshness.json").toPath()
+        val store = EntitlementStore(path)
+        store.upsert(record())
+
+        listOf(4_000L, 5_000L).forEach { timestamp ->
+            val messageId = "message-$timestamp"
+            assertEquals(RtdnApplyResult.STALE, store.applyRtdn(messageId, "token", verified().copy(verifiedAtMillis = timestamp)))
+            val reloaded = EntitlementStore(path)
+            assertEquals(record(), reloaded.findByInstallId("install"))
+            assertTrue(reloaded.isRtdnProcessed(messageId))
+            assertEquals(RtdnApplyResult.DUPLICATE, reloaded.applyRtdn(messageId, "token", verified()))
+        }
+        assertEquals(RtdnApplyResult.UPDATED, store.applyRtdn("newer", "token", verified()))
+    }
+
+    @Test
     fun failedReplacementPreservesMemoryDiskAndAuthorizationForEveryMutation() {
         val path = temporaryFolder.newFile("failed-replace.json").toPath()
         val initial = EntitlementStore(path)
@@ -180,7 +230,7 @@ class EntitlementStoreTest {
                 store.createInstallation("new-install", "new-hash")
                 Unit
             },
-            { store.upsert(record().copy(state = SubscriptionEntitlementState.EXPIRED)) },
+            { store.upsert(record().copy(state = SubscriptionEntitlementState.EXPIRED, lastVerifiedAtMillis = 6_000L)) },
             {
                 store.markRtdnProcessed("message")
                 Unit

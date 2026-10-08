@@ -4,11 +4,15 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
+import org.junit.Assume.assumeTrue
 import org.junit.Test
 import java.lang.reflect.Proxy
+import java.nio.file.Path
 import java.sql.Connection
 import java.sql.PreparedStatement
+import java.sql.ResultSet
 import java.sql.SQLException
+import java.util.UUID
 
 class PostgresEntitlementStoreTest {
     @Test
@@ -70,6 +74,94 @@ class PostgresEntitlementStoreTest {
         assertEquals(RtdnApplyResult.DUPLICATE, store(database).applyRtdn("message", "token", verified()))
     }
 
+    @Test
+    fun rejectedUpdateForExistingInstallIsStaleAndCommitsMarker() {
+        val database = TransactionDouble()
+        database.updateCount = 0
+        database.tokenExists = true
+
+        assertEquals(RtdnApplyResult.STALE, store(database).applyRtdn("message", "token", verified()))
+
+        assertTrue(database.committedMarker)
+        assertEquals(0, database.committedUpdates)
+        assertEquals(listOf("begin", "claim", "update", "find-token", "commit", "close"), database.events)
+        assertEquals(RtdnApplyResult.DUPLICATE, store(database).applyRtdn("message", "token", verified()))
+    }
+
+    @Test
+    fun realPostgresUpsertRejectsOlderAndEqualVerification() {
+        val store = realPostgresStore()
+        val initial = record("pg-upsert-${UUID.randomUUID()}")
+        store.upsert(initial)
+
+        listOf(4_000L, 5_000L).forEach { timestamp ->
+            store.upsert(initial.copy(state = SubscriptionEntitlementState.EXPIRED, lastVerifiedAtMillis = timestamp))
+            assertEquals(initial, store.findByInstallId(initial.installId))
+        }
+        val newer = initial.copy(state = SubscriptionEntitlementState.EXPIRED, lastVerifiedAtMillis = 6_000L)
+        store.upsert(newer)
+        assertEquals(newer, store.findByInstallId(initial.installId))
+    }
+
+    @Test
+    fun realPostgresTokenUpdateRejectsOlderAndEqualVerification() {
+        val store = realPostgresStore()
+        val initial = record("pg-token-${UUID.randomUUID()}")
+        store.upsert(initial)
+
+        listOf(4_000L, 5_000L).forEach { timestamp ->
+            assertFalse(store.updateByPurchaseToken(initial.installId, verified().copy(verifiedAtMillis = timestamp)))
+            assertEquals(initial, store.findByInstallId(initial.installId))
+        }
+        assertTrue(store.updateByPurchaseToken(initial.installId, verified()))
+        assertEquals(SubscriptionEntitlementState.EXPIRED, store.findByInstallId(initial.installId)?.state)
+    }
+
+    @Test
+    fun realPostgresRtdnDistinguishesStaleFromMissingAndPersistsMarker() {
+        val store = realPostgresStore()
+        val initial = record("pg-rtdn-${UUID.randomUUID()}")
+        store.upsert(initial)
+
+        listOf(4_000L, 5_000L).forEach { timestamp ->
+            val messageId = "${initial.installId}-$timestamp"
+            assertEquals(
+                RtdnApplyResult.STALE,
+                store.processRtdn(messageId, initial.installId) { verified().copy(verifiedAtMillis = timestamp) },
+            )
+            val reloaded = realPostgresStore()
+            assertEquals(initial, reloaded.findByInstallId(initial.installId))
+            assertTrue(reloaded.isRtdnProcessed(messageId))
+            assertEquals(RtdnApplyResult.DUPLICATE, reloaded.processRtdn(messageId, initial.installId) { error("Duplicate verified") })
+        }
+        assertEquals(RtdnApplyResult.UPDATED, store.applyRtdn("${initial.installId}-newer", initial.installId, verified()))
+        assertEquals(SubscriptionEntitlementState.EXPIRED, store.findByInstallId(initial.installId)?.state)
+        val missingMessageId = "${initial.installId}-missing"
+        assertEquals(RtdnApplyResult.NO_INSTALL_RECORD, store.applyRtdn(missingMessageId, "absent-token", verified()))
+        assertTrue(realPostgresStore().isRtdnProcessed(missingMessageId))
+    }
+
+    private fun realPostgresStore(): PostgresEntitlementStore {
+        val url = System.getenv("SBK_TEST_POSTGRES_URL")
+        assumeTrue("Set SBK_TEST_POSTGRES_URL to an isolated regression database", !url.isNullOrBlank())
+        val database = DatabaseConfig(requireNotNull(url), null, null)
+        DatabaseMigrator(database, Path.of("migrations")).applyMigrations()
+        return PostgresEntitlementStore(database)
+    }
+
+    private fun record(installId: String): EntitlementRecord =
+        EntitlementRecord(
+            installId = installId,
+            packageName = "com.shortsblockerkids",
+            productId = "monthly",
+            purchaseTokenHash = EntitlementStore.hashPurchaseToken(installId),
+            state = SubscriptionEntitlementState.ACTIVE,
+            activeUntilMillis = 10_000L,
+            acknowledged = true,
+            lastVerifiedAtMillis = 5_000L,
+            appVersion = null,
+        )
+
     private fun store(database: TransactionDouble): PostgresEntitlementStore =
         PostgresEntitlementStore(
             database = DatabaseConfig("jdbc:postgresql://unused/test", null, null),
@@ -95,6 +187,7 @@ class PostgresEntitlementStoreTest {
         var failUpdate = false
         var failCommit = false
         var updateCount = 1
+        var tokenExists = false
 
         fun connect(): Connection {
             connectionCount++
@@ -151,6 +244,7 @@ class PostgresEntitlementStoreTest {
                 parameters: Map<Int, Any?>,
             ): Int {
                 assertTrue(sql.contains("UPDATE entitlements"))
+                assertTrue(sql.contains("last_verified_at_millis < ?"))
                 assertTrue(pendingMarker)
                 assertEquals("EXPIRED", parameters[1])
                 assertEquals(null, parameters[2])
@@ -158,6 +252,7 @@ class PostgresEntitlementStoreTest {
                 assertEquals(6_000L, parameters[4])
                 assertEquals(9_000L, parameters[5])
                 assertEquals(EntitlementStore.hashPurchaseToken("token"), parameters[6])
+                assertEquals(6_000L, parameters[7])
                 events += "update"
                 if (failUpdate) throw SQLException("Injected update failure")
                 pendingUpdates += updateCount
@@ -202,9 +297,27 @@ class PostgresEntitlementStoreTest {
                     when (method) {
                         "setString", "setLong", "setBoolean", "setNull" -> bind(method, values)
                         "executeUpdate" -> execute()
+                        "executeQuery" -> query()
+                        "setQueryTimeout" -> {
+                            assertEquals(15, values[0])
+                            null
+                        }
                         "close" -> null
                         else -> error("Unexpected statement method: $method")
                     }
+
+                private fun query(): ResultSet {
+                    assertTrue(sql.contains("SELECT 1 FROM entitlements WHERE purchase_token_hash = ?"))
+                    assertEquals(EntitlementStore.hashPurchaseToken("token"), parameters[1])
+                    events += "find-token"
+                    return proxy(ResultSet::class.java) { method, _ ->
+                        when (method) {
+                            "next" -> tokenExists
+                            "close" -> null
+                            else -> error("Unexpected result set method: $method")
+                        }
+                    }
+                }
 
                 private fun bind(
                     method: String,

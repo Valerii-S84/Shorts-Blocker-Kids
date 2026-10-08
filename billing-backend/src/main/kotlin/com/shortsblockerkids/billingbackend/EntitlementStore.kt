@@ -86,7 +86,7 @@ class EntitlementStore(
     @Synchronized
     override fun upsert(record: EntitlementRecord) {
         val previous = records[record.installId]
-        if (previous != null && record.lastVerifiedAtMillis < previous.lastVerifiedAtMillis) return
+        if (previous != null && record.lastVerifiedAtMillis <= previous.lastVerifiedAtMillis) return
         val nextRecords = records + (record.installId to record)
         persist(entitlements = nextRecords)
         records = nextRecords
@@ -121,7 +121,7 @@ class EntitlementStore(
     ): RtdnApplyResult {
         if (messageId in processedRtdnIds) return RtdnApplyResult.DUPLICATE
         val previous = findByPurchaseTokenHash(hashPurchaseToken(purchaseToken))
-        val stale = previous != null && verified.verifiedAtMillis < previous.lastVerifiedAtMillis
+        val stale = previous != null && verified.verifiedAtMillis <= previous.lastVerifiedAtMillis
         val nextRecords =
             if (previous == null || stale) {
                 records
@@ -152,7 +152,7 @@ class EntitlementStore(
     ): Boolean {
         val hash = hashPurchaseToken(purchaseToken)
         val previous = findByPurchaseTokenHash(hash) ?: return false
-        if (verified.verifiedAtMillis < previous.lastVerifiedAtMillis) return false
+        if (verified.verifiedAtMillis <= previous.lastVerifiedAtMillis) return false
         upsert(previous.withVerification(verified))
         return true
     }
