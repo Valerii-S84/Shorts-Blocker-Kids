@@ -6,5 +6,5 @@ import com.shortsblockerkids.domain.protection.ProtectionConfiguration
 data class AppSettingsSnapshot(
     val protectionConfiguration: ProtectionConfiguration = ProtectionConfiguration(),
     val entitlement: EntitlementSnapshot = EntitlementSnapshot(),
-    val billingEntitlementStateName: String = "UNKNOWN",
+    val billingEntitlementStateName: String = "INACTIVE",
 )

@@ -30,7 +30,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.shortsblockerkids.BuildConfig
 import com.shortsblockerkids.R
 import com.shortsblockerkids.application.port.AccessibilityDiagnosticsPort
 import com.shortsblockerkids.domain.detection.AccessibilityNodeSignal
@@ -104,14 +103,6 @@ fun DetectorPlaygroundScreen(
                 QaRow(
                     stringResource(R.string.debug_subscription_state),
                     uiState.billing.entitlementStateName,
-                )
-                QaRow(
-                    stringResource(R.string.debug_backend),
-                    if (BuildConfig.BILLING_BACKEND_BASE_URL.isBlank()) {
-                        stringResource(R.string.debug_disabled)
-                    } else {
-                        stringResource(R.string.debug_enabled)
-                    },
                 )
                 QaRow(
                     stringResource(R.string.debug_billing_ui),

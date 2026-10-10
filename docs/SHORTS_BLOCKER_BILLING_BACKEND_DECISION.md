@@ -1,5 +1,8 @@
 # Shorts Blocker Kids Billing Backend Decision
 
+Historical decision: the own billing backend and its app integration were
+subsequently removed. Google Play Billing is the current purchase-state source.
+
 Status: Option A selected. Backend verification is required before production rollout.
 
 Date: May 24, 2026

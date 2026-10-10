@@ -41,5 +41,4 @@ copy. If a metrics endpoint is added later, it must return verified real data:
 }
 ```
 
-The website does not connect to the billing backend by default and must not use
-fake install, user, or blocking numbers.
+The website must not use fake install, user, or blocking numbers.

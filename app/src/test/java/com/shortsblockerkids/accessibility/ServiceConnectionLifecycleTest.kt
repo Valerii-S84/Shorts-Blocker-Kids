@@ -19,97 +19,102 @@ import org.junit.Test
 
 class ServiceConnectionLifecycleTest {
     @Test
-    fun replacementCancelsOldCollectorAndClosesRouterBeforeStartingNewConnection() = runBlocking {
-        val lifecycle = ServiceConnectionLifecycle()
-        val settings = MutableStateFlow(0)
-        val observations = mutableListOf<String>()
-        val transitions = mutableListOf<String>()
-        lateinit var oldCollector: Job
-        var oldOverlayVisible = true
+    fun replacementCancelsOldCollectorAndClosesRouterBeforeStartingNewConnection() =
+        runBlocking {
+            val lifecycle = ServiceConnectionLifecycle()
+            val settings = MutableStateFlow(0)
+            val observations = mutableListOf<String>()
+            val transitions = mutableListOf<String>()
+            lateinit var oldCollector: Job
+            var oldOverlayVisible = true
 
-        lifecycle.replace {
-            transitions += "old started"
-            oldCollector = launch { settings.collect { observations += "old:$it" } }
-            val cleanup: () -> Unit = {
-                oldCollector.cancel()
-                oldOverlayVisible = false
-                transitions += "old closed"
-            }
-            cleanup
-        }
-        yield()
-
-        try {
             lifecycle.replace {
-                assertTrue(oldCollector.isCancelled)
-                assertEquals(false, oldOverlayVisible)
-                transitions += "new started"
-                val collector = launch { settings.collect { observations += "new:$it" } }
-                val cleanup: () -> Unit = { collector.cancel() }
-                cleanup
-            }
-            yield()
-            settings.value = 1
-            yield()
-
-            assertEquals(listOf("old started", "old closed", "new started"), transitions)
-            assertEquals(listOf("old:0", "new:0", "new:1"), observations)
-        } finally {
-            lifecycle.close()
-        }
-    }
-
-    @Test
-    fun reconnectAfterInterruptionRearmsInitialScanAndDeadlineWithoutOldCallbacks() = runBlocking {
-        val lifecycle = ServiceConnectionLifecycle()
-        val old = DeferredCallbacks(this)
-        val replacement = DeferredCallbacks(this)
-        lifecycle.replace(old::start)
-        yield()
-        old.cancelCallbacks()
-
-        try {
-            lifecycle.replace(replacement::start)
-            yield()
-            old.wakeAll()
-            yield()
-            assertEquals(listOf(1, 0, 0), old.counts())
-            assertEquals(listOf(1, 0, 0), replacement.counts())
-
-            replacement.wakeAll()
-            yield()
-            assertEquals(listOf(2, 1, 1), replacement.counts())
-            assertEquals(listOf(1, 0, 0), old.counts())
-        } finally {
-            lifecycle.close()
-        }
-    }
-
-    @Test
-    fun closeCancelsLatestConnectionExactlyOnce() = runBlocking {
-        val lifecycle = ServiceConnectionLifecycle()
-        val jobs = mutableListOf<Job>()
-        val cleanupCalls = mutableListOf<Int>()
-        repeat(2) { connection ->
-            lifecycle.replace {
-                val job = launch { awaitCancellation() }
-                jobs += job
+                transitions += "old started"
+                oldCollector = launch { settings.collect { observations += "old:$it" } }
                 val cleanup: () -> Unit = {
-                    cleanupCalls += connection
-                    job.cancel()
+                    oldCollector.cancel()
+                    oldOverlayVisible = false
+                    transitions += "old closed"
                 }
                 cleanup
             }
             yield()
+
+            try {
+                lifecycle.replace {
+                    assertTrue(oldCollector.isCancelled)
+                    assertEquals(false, oldOverlayVisible)
+                    transitions += "new started"
+                    val collector = launch { settings.collect { observations += "new:$it" } }
+                    val cleanup: () -> Unit = { collector.cancel() }
+                    cleanup
+                }
+                yield()
+                settings.value = 1
+                yield()
+
+                assertEquals(listOf("old started", "old closed", "new started"), transitions)
+                assertEquals(listOf("old:0", "new:0", "new:1"), observations)
+            } finally {
+                lifecycle.close()
+            }
         }
-        lifecycle.close()
-        lifecycle.close()
 
-        assertEquals(listOf(0, 1), cleanupCalls)
-        assertTrue(jobs.all { it.isCancelled })
-    }
+    @Test
+    fun reconnectAfterInterruptionRearmsInitialScanAndDeadlineWithoutOldCallbacks() =
+        runBlocking {
+            val lifecycle = ServiceConnectionLifecycle()
+            val old = DeferredCallbacks(this)
+            val replacement = DeferredCallbacks(this)
+            lifecycle.replace(old::start)
+            yield()
+            old.cancelCallbacks()
 
-    private class DeferredCallbacks(private val scope: CoroutineScope) {
+            try {
+                lifecycle.replace(replacement::start)
+                yield()
+                old.wakeAll()
+                yield()
+                assertEquals(listOf(1, 0, 0), old.counts())
+                assertEquals(listOf(1, 0, 0), replacement.counts())
+
+                replacement.wakeAll()
+                yield()
+                assertEquals(listOf(2, 1, 1), replacement.counts())
+                assertEquals(listOf(1, 0, 0), old.counts())
+            } finally {
+                lifecycle.close()
+            }
+        }
+
+    @Test
+    fun closeCancelsLatestConnectionExactlyOnce() =
+        runBlocking {
+            val lifecycle = ServiceConnectionLifecycle()
+            val jobs = mutableListOf<Job>()
+            val cleanupCalls = mutableListOf<Int>()
+            repeat(2) { connection ->
+                lifecycle.replace {
+                    val job = launch { awaitCancellation() }
+                    jobs += job
+                    val cleanup: () -> Unit = {
+                        cleanupCalls += connection
+                        job.cancel()
+                    }
+                    cleanup
+                }
+                yield()
+            }
+            lifecycle.close()
+            lifecycle.close()
+
+            assertEquals(listOf(0, 1), cleanupCalls)
+            assertTrue(jobs.all { it.isCancelled })
+        }
+
+    private class DeferredCallbacks(
+        private val scope: CoroutineScope,
+    ) {
         private var nowMillis = 0L
         private var scans = 0
         private var deadlines = 0
@@ -139,10 +144,11 @@ class ServiceConnectionLifecycleTest {
             scanScheduler.recheckNow()
             scanScheduler.schedule(500L)
             deadlineScheduler.schedule(1_000L)
-            pinJob = scope.launch {
-                pinWake.await()
-                pinChecks++
-            }
+            pinJob =
+                scope.launch {
+                    pinWake.await()
+                    pinChecks++
+                }
             return ::cancelCallbacks
         }
 

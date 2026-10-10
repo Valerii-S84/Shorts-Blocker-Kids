@@ -7,21 +7,19 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.preferencesDataStore
 import com.shortsblockerkids.application.model.AppSettingsSnapshot
+import com.shortsblockerkids.application.port.PinLockoutClock
 import com.shortsblockerkids.application.port.PinStateStore
 import com.shortsblockerkids.application.port.ProtectionActivationOperation
 import com.shortsblockerkids.application.port.ProtectionActivationStore
 import com.shortsblockerkids.application.port.SettingsStatePort
 import com.shortsblockerkids.application.port.TemporaryAllowStore
-import com.shortsblockerkids.application.port.PinLockoutClock
-import com.shortsblockerkids.infrastructure.time.AndroidPinLockoutClock
 import com.shortsblockerkids.domain.entitlement.BillingEntitlementSnapshot
 import com.shortsblockerkids.domain.entitlement.FreeTestPolicy
 import com.shortsblockerkids.domain.protection.ProtectionConfiguration
 import com.shortsblockerkids.domain.protection.ProtectionMode
+import com.shortsblockerkids.infrastructure.time.AndroidPinLockoutClock
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import java.util.UUID
 
 internal const val SETTINGS_STORE_NAME = "shorts_blocker_settings"
 
@@ -44,9 +42,10 @@ class DataStoreSettingsStore(
         deadlineClock = deadlineClock,
     )
 
-    override fun readSettings(): Flow<AppSettingsSnapshot> = readStoredSettings().map {
-        DataStoreSettingsMapper.toSnapshot(it, deadlineClock?.read()?.bootCount)
-    }
+    override fun readSettings(): Flow<AppSettingsSnapshot> =
+        readStoredSettings().map {
+            DataStoreSettingsMapper.toSnapshot(it, deadlineClock?.read()?.bootCount)
+        }
 
     internal fun readStoredSettings(): Flow<StoredAppSettings> = dataStore.data.map(DataStoreSettingsMapper::toStoredAppSettings)
 
@@ -90,42 +89,14 @@ class DataStoreSettingsStore(
         return operation
     }
 
-    suspend fun updateBillingEntitlement(
-        isActive: Boolean,
-        checkedAtMillis: Long = System.currentTimeMillis(),
-    ) {
-        updateBillingEntitlement(
-            BillingEntitlementSnapshot(
-                isActive = isActive,
-                checkedAtMillis = checkedAtMillis,
-            ),
-        )
+    suspend fun updateBillingEntitlement(isActive: Boolean) {
+        updateBillingEntitlement(BillingEntitlementSnapshot(isActive = isActive))
     }
 
     suspend fun updateBillingEntitlement(snapshot: BillingEntitlementSnapshot) {
         editSettings { preferences ->
-            preferences[DataStoreSettingsMapper.billingSubscriptionActiveKey] = snapshot.isActive
-            preferences[DataStoreSettingsMapper.billingEntitlementStateKey] = snapshot.state.name
-            preferences[DataStoreSettingsMapper.billingLastVerifiedAtKey] = snapshot.checkedAtMillis
-            preferences.setNullableLong(
-                DataStoreSettingsMapper.billingActiveUntilMillisKey,
-                snapshot.activeUntilMillis,
-            )
+            preferences[DataStoreSettingsMapper.playSubscriptionActiveKey] = snapshot.isActive
         }
-    }
-
-    suspend fun getOrCreateBillingInstallationId(): String {
-        val current = readStoredSettings().first().billingInstallationId
-        if (!current.isNullOrBlank()) {
-            return current
-        }
-        val created = UUID.randomUUID().toString()
-        editSettings { preferences ->
-            if (preferences[DataStoreSettingsMapper.billingInstallationIdKey].isNullOrBlank()) {
-                preferences[DataStoreSettingsMapper.billingInstallationIdKey] = created
-            }
-        }
-        return readStoredSettings().first().billingInstallationId ?: created
     }
 
     suspend fun setDisclosureAccepted(accepted: Boolean) {
@@ -173,9 +144,8 @@ class DataStoreSettingsStore(
         }
     }
 
-    override suspend fun removeTemporaryAllowIf(shouldRemove: (Long) -> Boolean): Boolean {
-        return removeTemporaryAllowDeadlineIf { wallUntil, _, _ -> wallUntil != null && shouldRemove(wallUntil) }
-    }
+    override suspend fun removeTemporaryAllowIf(shouldRemove: (Long) -> Boolean): Boolean =
+        removeTemporaryAllowDeadlineIf { wallUntil, _, _ -> wallUntil != null && shouldRemove(wallUntil) }
 
     override suspend fun setTemporaryAllowDeadline(
         allowUntilMillis: Long,

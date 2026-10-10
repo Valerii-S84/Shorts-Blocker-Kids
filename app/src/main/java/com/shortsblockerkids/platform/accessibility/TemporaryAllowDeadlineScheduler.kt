@@ -21,16 +21,17 @@ internal class TemporaryAllowDeadlineScheduler(
         deadlineJob?.cancel()
         configuredDeadline = allowUntilMillis
         if (allowUntilMillis == null || paused) return
-        deadlineJob = scope.launch {
-            while (true) {
-                val nowMillis = monotonicTimeProvider.elapsedRealtimeMillis()
-                if (allowUntilMillis <= nowMillis) {
-                    onDeadline()
-                    break
+        deadlineJob =
+            scope.launch {
+                while (true) {
+                    val nowMillis = monotonicTimeProvider.elapsedRealtimeMillis()
+                    if (allowUntilMillis <= nowMillis) {
+                        onDeadline()
+                        break
+                    }
+                    awaitDelay(allowUntilMillis - nowMillis)
                 }
-                awaitDelay(allowUntilMillis - nowMillis)
             }
-        }
     }
 
     fun cancel() {

@@ -1,7 +1,7 @@
 package com.shortsblockerkids.accessibility
 
-import com.shortsblockerkids.domain.detection.DetectionResult
 import com.shortsblockerkids.application.port.MonotonicTimeProvider
+import com.shortsblockerkids.domain.detection.DetectionResult
 
 /** Uses the injected session clock; explicit nowMillis must be monotonic when no clock is supplied. */
 class BlockingDecisionController(

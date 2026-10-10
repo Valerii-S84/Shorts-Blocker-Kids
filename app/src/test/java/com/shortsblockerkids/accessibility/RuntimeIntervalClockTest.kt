@@ -69,7 +69,9 @@ class RuntimeIntervalClockTest {
         }
     }
 
-    private class Clock(var elapsed: Long = 10_000L) : MonotonicTimeProvider {
+    private class Clock(
+        var elapsed: Long = 10_000L,
+    ) : MonotonicTimeProvider {
         override fun elapsedRealtimeMillis(): Long = elapsed
     }
 

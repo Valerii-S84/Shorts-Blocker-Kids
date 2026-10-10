@@ -103,7 +103,6 @@ class EntitlementBoundaryTest {
                 "$SOURCE_ROOT/domain/entitlement/FreeTestPolicy.kt",
                 "$SOURCE_ROOT/domain/entitlement/BillingEntitlementState.kt",
                 "$SOURCE_ROOT/domain/entitlement/BillingEntitlementSnapshot.kt",
-                "$SOURCE_ROOT/domain/entitlement/BillingVerificationPolicy.kt",
                 "$SOURCE_ROOT/application/model/EntitlementState.kt",
             )
     }

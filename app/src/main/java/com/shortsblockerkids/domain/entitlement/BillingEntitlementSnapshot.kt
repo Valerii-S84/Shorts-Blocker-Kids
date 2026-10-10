@@ -2,16 +2,9 @@ package com.shortsblockerkids.domain.entitlement
 
 data class BillingEntitlementSnapshot(
     val state: BillingEntitlementState,
-    val checkedAtMillis: Long,
-    val activeUntilMillis: Long? = null,
 ) {
-    constructor(
-        isActive: Boolean,
-        checkedAtMillis: Long,
-    ) : this(
-        state = if (isActive) BillingEntitlementState.ACTIVE else BillingEntitlementState.EXPIRED,
-        checkedAtMillis = checkedAtMillis,
-        activeUntilMillis = null,
+    constructor(isActive: Boolean) : this(
+        state = if (isActive) BillingEntitlementState.ACTIVE else BillingEntitlementState.INACTIVE,
     )
 
     val isActive: Boolean

@@ -7,6 +7,7 @@ import androidx.datastore.core.okio.OkioStorage
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.PreferencesSerializer
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
@@ -72,7 +73,7 @@ class DataStoreSettingsStoreTest {
     }
 
     @Test
-    fun storeNameAndPreferenceKeysRemainByteCompatible() {
+    fun storeNameAndNonServerPreferenceKeysRemainByteCompatible() {
         assertEquals("shorts_blocker_settings", SETTINGS_STORE_NAME)
         assertEquals(
             listOf(
@@ -83,11 +84,7 @@ class DataStoreSettingsStoreTest {
                 "temporaryAllowUntil",
                 "free_test_started_at",
                 "free_test_duration_days",
-                "billing_installation_id",
-                "billing_entitlement_state",
-                "billing_subscription_active",
-                "billing_last_verified_at",
-                "billing_active_until_millis",
+                "play_subscription_active",
                 "pinHash",
                 "pinSalt",
                 "pinHashVersion",
@@ -102,11 +99,7 @@ class DataStoreSettingsStoreTest {
                 DataStoreSettingsMapper.temporaryAllowUntilKey.name,
                 DataStoreSettingsMapper.freeTestStartedAtKey.name,
                 DataStoreSettingsMapper.freeTestDurationDaysKey.name,
-                DataStoreSettingsMapper.billingInstallationIdKey.name,
-                DataStoreSettingsMapper.billingEntitlementStateKey.name,
-                DataStoreSettingsMapper.billingSubscriptionActiveKey.name,
-                DataStoreSettingsMapper.billingLastVerifiedAtKey.name,
-                DataStoreSettingsMapper.billingActiveUntilMillisKey.name,
+                DataStoreSettingsMapper.playSubscriptionActiveKey.name,
                 PinPreferenceKeys.PIN_HASH.name,
                 PinPreferenceKeys.PIN_SALT.name,
                 PinPreferenceKeys.PIN_HASH_VERSION.name,
@@ -307,16 +300,14 @@ class DataStoreSettingsStoreTest {
             repository.setPlatformEnabled(SupportedPlatform.TIKTOK.id, false)
             repository.updateBillingEntitlement(
                 BillingEntitlementSnapshot(
-                    state = BillingEntitlementState.CANCELED_ACTIVE,
-                    checkedAtMillis = 4_000L,
-                    activeUntilMillis = 8_000L,
+                    state = BillingEntitlementState.ACTIVE,
                 ),
             )
             repository.setTemporaryAllowUntil(9_000L)
-            val removed = repository.removeTemporaryAllowIf { allowUntilMillis ->
-                allowUntilMillis > 10_000L
-            }
-            val installationId = repository.getOrCreateBillingInstallationId()
+            val removed =
+                repository.removeTemporaryAllowIf { allowUntilMillis ->
+                    allowUntilMillis > 10_000L
+                }
 
             val settings = repository.readSettings().first()
             assertFalse(settings.protectionConfiguration.isEnabled)
@@ -324,10 +315,9 @@ class DataStoreSettingsStoreTest {
             assertFalse(
                 settings.protectionConfiguration.isPlatformEnabled(SupportedPlatform.TIKTOK.id),
             )
-            assertEquals(8_000L, settings.entitlement.paidActiveUntilMillis)
+            assertTrue(settings.entitlement.isPaidProtectionAllowed)
             assertEquals(9_000L, settings.protectionConfiguration.temporaryAllowUntilMillis)
             assertFalse(removed)
-            assertTrue(installationId.isNotBlank())
         }
 
     @Test
@@ -340,8 +330,7 @@ class DataStoreSettingsStoreTest {
             repository.completeProtectionActivation {
                 ProtectionActivationOperation.Record(nowMillis = 7_000L)
             }
-            repository.updateBillingEntitlement(isActive = false, checkedAtMillis = 8_000L)
-            repository.getOrCreateBillingInstallationId()
+            repository.updateBillingEntitlement(isActive = false)
             repository.setDisclosureAccepted(false)
             repository.setSelectedMode(ProtectionMode.BLOCK_SHORTS)
             repository.setPlatformEnabled(SupportedPlatform.FACEBOOK_REELS.id, true)
@@ -351,7 +340,7 @@ class DataStoreSettingsStoreTest {
             val settings = repository.readSettings().first()
             assertTrue(settings.protectionConfiguration.isEnabled)
             assertEquals(7_000L, settings.entitlement.freeTestStartedAtMillis)
-            assertEquals(8_000L, settings.entitlement.paidLastVerifiedAtMillis)
+            assertFalse(settings.entitlement.isPaidProtectionAllowed)
             assertTrue(settings.protectionConfiguration.isPlatformEnabled(SupportedPlatform.FACEBOOK_REELS.id))
             assertEquals(null, settings.protectionConfiguration.temporaryAllowUntilMillis)
             assertFalse(removed)
@@ -368,16 +357,14 @@ class DataStoreSettingsStoreTest {
                         ProtectionActivationOperation.AlreadyStarted
                     }
                 },
-                { repository.updateBillingEntitlement(isActive = true, checkedAtMillis = 1_000L) },
+                { repository.updateBillingEntitlement(isActive = true) },
                 {
                     repository.updateBillingEntitlement(
                         BillingEntitlementSnapshot(
-                            state = BillingEntitlementState.EXPIRED,
-                            checkedAtMillis = 1_000L,
+                            state = BillingEntitlementState.INACTIVE,
                         ),
                     )
                 },
-                { repository.getOrCreateBillingInstallationId() },
                 { repository.setDisclosureAccepted(true) },
                 { repository.setSelectedMode(ProtectionMode.BLOCK_SHORTS) },
                 { repository.setPlatformEnabled(SupportedPlatform.YOUTUBE_SHORTS.id, true) },
@@ -407,16 +394,14 @@ class DataStoreSettingsStoreTest {
                         ProtectionActivationOperation.AlreadyStarted
                     }
                 },
-                { repository.updateBillingEntitlement(isActive = true, checkedAtMillis = 1_000L) },
+                { repository.updateBillingEntitlement(isActive = true) },
                 {
                     repository.updateBillingEntitlement(
                         BillingEntitlementSnapshot(
-                            state = BillingEntitlementState.EXPIRED,
-                            checkedAtMillis = 1_000L,
+                            state = BillingEntitlementState.INACTIVE,
                         ),
                     )
                 },
-                { repository.getOrCreateBillingInstallationId() },
                 { repository.setDisclosureAccepted(true) },
                 { repository.setSelectedMode(ProtectionMode.BLOCK_SHORTS) },
                 { repository.setPlatformEnabled(SupportedPlatform.YOUTUBE_SHORTS.id, true) },
@@ -574,141 +559,94 @@ class DataStoreSettingsStoreTest {
     }
 
     @Test
-    fun persistsBillingEntitlementSnapshot() =
+    fun persistsPlayBillingEntitlementWithoutServerTimeLimit() =
         runBlocking {
             val repository = createRepository("billing")
 
-            repository.updateBillingEntitlement(isActive = true, checkedAtMillis = 4_000L)
+            repository.updateBillingEntitlement(isActive = true)
             val activeSettings = repository.readSettings().first()
-            val activeStoredSettings = repository.readStoredSettings().first()
+            assertTrue(repository.readStoredSettings().first().billingSubscriptionActive)
+            assertTrue(activeSettings.hasBillingEntitlement())
 
-            assertTrue(activeStoredSettings.billingSubscriptionActive)
-            assertEquals(4_000L, activeSettings.entitlement.paidLastVerifiedAtMillis)
-            assertTrue(activeSettings.hasBillingEntitlement(nowMillis = 4_000L))
-
-            repository.updateBillingEntitlement(isActive = false, checkedAtMillis = 5_000L)
+            repository.updateBillingEntitlement(isActive = false)
             val inactiveSettings = repository.readSettings().first()
-            val inactiveStoredSettings = repository.readStoredSettings().first()
-
-            assertFalse(inactiveStoredSettings.billingSubscriptionActive)
-            assertEquals(5_000L, inactiveSettings.entitlement.paidLastVerifiedAtMillis)
-            assertFalse(inactiveSettings.hasBillingEntitlement(nowMillis = 5_000L))
+            assertFalse(repository.readStoredSettings().first().billingSubscriptionActive)
+            assertFalse(inactiveSettings.hasBillingEntitlement())
         }
 
     @Test
-    fun defaultBillingEntitlementTimestampUsesCurrentWallClockMillis() =
+    fun legacyDataStoreFileKeepsNonServerDataAfterPlayWriteAndReopen() =
         runBlocking {
-            val repository = createRepository("billing-default-time")
-            val before = System.currentTimeMillis()
+            val dataStore = createDataStore("legacy-play-upgrade")
+            dataStore.edit { preferences ->
+                preferences[booleanPreferencesKey("protectionEnabled")] = false
+                preferences[booleanPreferencesKey("accessibilityDisclosureAccepted")] = true
+                preferences[stringPreferencesKey("selectedMode")] = ProtectionMode.BLOCK_SHORTS.name
+                preferences[stringSetPreferencesKey("enabledPlatformIds")] = setOf(SupportedPlatform.YOUTUBE_SHORTS.id)
+                preferences[longPreferencesKey("temporaryAllowUntil")] = 9_000L
+                preferences[DataStoreSettingsMapper.temporaryAllowElapsedRealtimeDeadlineKey] = 8_000L
+                preferences[DataStoreSettingsMapper.temporaryAllowBootCountKey] = 2
+                preferences[longPreferencesKey("free_test_started_at")] = 1_000L
+                preferences[intPreferencesKey("free_test_duration_days")] = 30
+                preferences[PinPreferenceKeys.PIN_HASH] = "preserved-hash"
+                preferences[PinPreferenceKeys.PIN_SALT] = "preserved-salt"
+                preferences[PinPreferenceKeys.PIN_HASH_VERSION] = PinHashingPort.CURRENT_VERSION
+                preferences[PinPreferenceKeys.FAILED_PIN_ATTEMPTS] = 2
+                preferences[PinPreferenceKeys.PIN_LOCKOUT_UNTIL] = 10_000L
+                preferences[stringPreferencesKey("billing_installation_id")] = "old-install"
+                preferences[stringPreferencesKey("billing_entitlement_state")] = "ACTIVE"
+                preferences[booleanPreferencesKey("billing_subscription_active")] = true
+                preferences[longPreferencesKey("billing_last_verified_at")] = 2_000L
+                preferences[longPreferencesKey("billing_active_until_millis")] = 3_000L
+            }
+            val before =
+                dataStore.data
+                    .first()
+                    .asMap()
+                    .toMap()
+            val repository = DataStoreSettingsStore(dataStore)
+            val beforePlay = repository.readSettings().first()
+            assertFalse(beforePlay.hasBillingEntitlement())
+            assertFalse(beforePlay.protectionConfiguration.isEnabled)
+            assertTrue(beforePlay.protectionConfiguration.isAccessibilityDisclosureAccepted)
+            assertTrue(beforePlay.protectionConfiguration.isPinConfigured)
+            assertEquals(setOf(SupportedPlatform.YOUTUBE_SHORTS.id), beforePlay.protectionConfiguration.enabledPlatformIds)
+            assertEquals(9_000L, beforePlay.protectionConfiguration.temporaryAllowUntilMillis)
+            assertEquals(8_000L, beforePlay.protectionConfiguration.temporaryAllowElapsedRealtimeDeadlineMillis)
+            assertEquals(2, beforePlay.protectionConfiguration.temporaryAllowBootCount)
+            assertEquals(1_000L, beforePlay.entitlement.freeTestStartedAtMillis)
+            assertEquals(30, beforePlay.entitlement.freeTestDurationDays)
 
             repository.updateBillingEntitlement(isActive = true)
-
-            val verifiedAt =
-                requireNotNull(
-                    repository
-                        .readSettings()
-                        .first()
-                        .entitlement
-                        .paidLastVerifiedAtMillis,
-                )
-            val after = System.currentTimeMillis()
-            assertTrue(verifiedAt in before..after)
-        }
-
-    @Test
-    fun inactiveBillingSnapshotClearsPreviouslyStoredActiveUntilTimestamp() =
-        runBlocking {
-            val repository = createRepository("billing-clear-active-until")
-            repository.updateBillingEntitlement(
-                BillingEntitlementSnapshot(
-                    state = BillingEntitlementState.CANCELED_ACTIVE,
-                    checkedAtMillis = 4_000L,
-                    activeUntilMillis = 8_000L,
-                ),
-            )
-
-            repository.updateBillingEntitlement(
-                BillingEntitlementSnapshot(
-                    state = BillingEntitlementState.EXPIRED,
-                    checkedAtMillis = 9_000L,
-                    activeUntilMillis = null,
-                ),
-            )
-
-            val settings = repository.readSettings().first()
-            val storedSettings = repository.readStoredSettings().first()
-            assertFalse(storedSettings.billingSubscriptionActive)
-            assertEquals(null, settings.entitlement.paidActiveUntilMillis)
-            assertFalse(settings.hasBillingEntitlement(nowMillis = 9_000L))
-        }
-
-    @Test
-    fun persistsBackendBillingEntitlementLifecycleState() =
-        runBlocking {
-            val repository = createRepository("billing-state")
-
-            repository.updateBillingEntitlement(
-                BillingEntitlementSnapshot(
-                    state = BillingEntitlementState.CANCELED_ACTIVE,
-                    checkedAtMillis = 4_000L,
-                    activeUntilMillis = 8_000L,
-                ),
-            )
-            val settings = repository.readSettings().first()
-            val storedSettings = repository.readStoredSettings().first()
-
-            assertTrue(storedSettings.billingSubscriptionActive)
-            assertEquals(
-                BillingEntitlementState.CANCELED_ACTIVE,
-                storedSettings.billingEntitlementState,
-            )
-            assertEquals(8_000L, settings.entitlement.paidActiveUntilMillis)
-            assertTrue(settings.hasBillingEntitlement(nowMillis = 4_500L))
-        }
-
-    @Test
-    fun createsStableRandomBillingInstallationId() =
-        runBlocking {
-            val firstRepository = createRepository("billing-install")
-            val firstInstallId = firstRepository.getOrCreateBillingInstallationId()
-            val sameInstallId = firstRepository.getOrCreateBillingInstallationId()
+            val after =
+                dataStore.data
+                    .first()
+                    .asMap()
+                    .toMap()
+            assertEquals(before, after.filterKeys { it != DataStoreSettingsMapper.playSubscriptionActiveKey })
+            assertEquals(true, after[DataStoreSettingsMapper.playSubscriptionActiveKey])
+            assertTrue(repository.readSettings().first().hasBillingEntitlement())
             cancelOpenStores()
 
-            val restartedRepository = createRepository("billing-install")
-            val restartedInstallId = restartedRepository.getOrCreateBillingInstallationId()
-
-            assertTrue(firstInstallId.isNotBlank())
-            assertEquals(firstInstallId, sameInstallId)
-            assertEquals(firstInstallId, restartedInstallId)
-        }
-
-    @Test
-    fun getOrCreateBillingInstallationIdKeepsExistingStoredId() =
-        runBlocking {
-            val dataStore = createDataStore("existing-billing-install")
-            dataStore.edit { preferences ->
-                preferences[stringPreferencesKey("billing_installation_id")] = "existing-install"
-            }
-            val repository = DataStoreSettingsStore(dataStore)
-
-            assertEquals("existing-install", repository.getOrCreateBillingInstallationId())
-            assertEquals("existing-install", repository.readStoredSettings().first().billingInstallationId)
-        }
-
-    @Test
-    fun blankBillingInstallationIdIsReplacedWithStableRandomId() =
-        runBlocking {
-            val dataStore = createDataStore("blank-billing-install")
-            dataStore.edit { preferences ->
-                preferences[stringPreferencesKey("billing_installation_id")] = " "
-            }
-            val repository = DataStoreSettingsStore(dataStore)
-
-            val installId = repository.getOrCreateBillingInstallationId()
-
-            assertTrue(installId.isNotBlank())
-            assertEquals(installId, repository.readStoredSettings().first().billingInstallationId)
-            assertEquals(installId, repository.getOrCreateBillingInstallationId())
+            val reopenedStore = createDataStore("legacy-play-upgrade")
+            val reopened = DataStoreSettingsStore(reopenedStore)
+            val reopenedSettings = reopened.readSettings().first()
+            val reopenedPreferences =
+                reopenedStore.data
+                    .first()
+                    .asMap()
+                    .toMap()
+            assertEquals(after, reopenedPreferences)
+            assertTrue(reopenedSettings.hasBillingEntitlement())
+            assertEquals(beforePlay.protectionConfiguration, reopenedSettings.protectionConfiguration)
+            assertEquals(beforePlay.entitlement.freeTestStartedAtMillis, reopenedSettings.entitlement.freeTestStartedAtMillis)
+            assertEquals(beforePlay.entitlement.freeTestDurationDays, reopenedSettings.entitlement.freeTestDurationDays)
+            val stored = reopened.readStoredSettings().first()
+            assertEquals("preserved-hash", stored.pinHash)
+            assertEquals("preserved-salt", stored.pinSalt)
+            assertEquals(PinHashingPort.CURRENT_VERSION, stored.pinHashVersion)
+            assertEquals(2, stored.failedPinAttempts)
+            assertEquals(10_000L, stored.pinLockoutUntil)
         }
 
     @Test
@@ -1111,9 +1049,8 @@ class DataStoreSettingsStoreTest {
     private class FailingPreferencesDataStore : DataStore<Preferences> {
         override val data: Flow<Preferences> = MutableStateFlow(emptyPreferences())
 
-        override suspend fun updateData(transform: suspend (Preferences) -> Preferences): Preferences {
+        override suspend fun updateData(transform: suspend (Preferences) -> Preferences): Preferences =
             throw IllegalStateException("edit failed")
-        }
     }
 
     private class SuspendingFailingPreferencesDataStore : DataStore<Preferences> {

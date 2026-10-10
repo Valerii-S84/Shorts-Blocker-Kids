@@ -360,14 +360,16 @@ class DetectorBranchHardeningTest {
                     node(viewIdResourceName = if (detectorCase == tiktokCase) "for_you" else "reels"),
                 )
             markers.forEach { marker ->
-                val hidden = detectorCase.detector.detect(
-                    detectorCase.packageName,
-                    AccessibilityTreeSnapshot(base.nodes + marker.copy(isVisibleToUser = false)),
-                )
-                val visible = detectorCase.detector.detect(
-                    detectorCase.packageName,
-                    AccessibilityTreeSnapshot(base.nodes + marker),
-                )
+                val hidden =
+                    detectorCase.detector.detect(
+                        detectorCase.packageName,
+                        AccessibilityTreeSnapshot(base.nodes + marker.copy(isVisibleToUser = false)),
+                    )
+                val visible =
+                    detectorCase.detector.detect(
+                        detectorCase.packageName,
+                        AccessibilityTreeSnapshot(base.nodes + marker),
+                    )
 
                 assertFalse(detectorCase.name, hidden.shouldBlock)
                 assertFalse(detectorCase.name, DetectorSignal.SHORT_VIDEO_IDENTIFIER.id in hidden.matchedSignals)
@@ -391,14 +393,16 @@ class DetectorBranchHardeningTest {
                 node(viewIdResourceName = detectorCase.containerViewId),
                 node(className = VIEW_PAGER_CLASS),
             ).forEach { marker ->
-                val hidden = detectorCase.detector.detect(
-                    detectorCase.packageName,
-                    AccessibilityTreeSnapshot(base.nodes + marker.copy(isVisibleToUser = false)),
-                )
-                val visible = detectorCase.detector.detect(
-                    detectorCase.packageName,
-                    AccessibilityTreeSnapshot(base.nodes + marker),
-                )
+                val hidden =
+                    detectorCase.detector.detect(
+                        detectorCase.packageName,
+                        AccessibilityTreeSnapshot(base.nodes + marker.copy(isVisibleToUser = false)),
+                    )
+                val visible =
+                    detectorCase.detector.detect(
+                        detectorCase.packageName,
+                        AccessibilityTreeSnapshot(base.nodes + marker),
+                    )
 
                 assertFalse(detectorCase.name, hidden.shouldBlock)
                 assertFalse(detectorCase.name, DetectorSignal.REEL_CONTAINER.id in hidden.matchedSignals)
@@ -470,13 +474,14 @@ class DetectorBranchHardeningTest {
             ).forEach { snapshot ->
                 val withHiddenBounds =
                     AccessibilityTreeSnapshot(
-                        snapshot.nodes + node(
-                            isVisibleToUser = false,
-                            left = -10_000,
-                            top = -10_000,
-                            right = 20_000,
-                            bottom = 20_000,
-                        ),
+                        snapshot.nodes +
+                            node(
+                                isVisibleToUser = false,
+                                left = -10_000,
+                                top = -10_000,
+                                right = 20_000,
+                                bottom = 20_000,
+                            ),
                     )
                 assertEquals(
                     detectorCase.name,

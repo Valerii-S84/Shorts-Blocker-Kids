@@ -60,9 +60,17 @@ class ParentalSettingsSessionInstrumentedTest {
     @Test
     fun wrongPinAndCancelledEntryCannotWrite() {
         submitPin("0000")
-        assertTrue("Incorrect PIN result missing", device.wait(Until.hasObject(By.text(
-            activity.resources.getQuantityString(R.plurals.pin_entry_attempts_remaining, 4, 4),
-        )), 5_000L))
+        assertTrue(
+            "Incorrect PIN result missing",
+            device.wait(
+                Until.hasObject(
+                    By.text(
+                        activity.resources.getQuantityString(R.plurals.pin_entry_attempts_remaining, 4, 4),
+                    ),
+                ),
+                5_000L,
+            ),
+        )
         assertFalse(activity.parentalSettingsSession.isAuthorized)
         assertMutationDenied()
         device.pressBack()
@@ -75,17 +83,24 @@ class ParentalSettingsSessionInstrumentedTest {
     fun correctPinAllowsActualPlatformToggle() {
         unlock()
         // Exercise the actual Compose switch callback, then read persistent settings.
-        device.swipe(device.displayWidth / 2, device.displayHeight * 3 / 4,
-            device.displayWidth / 2, device.displayHeight / 3, 40)
+        device.swipe(
+            device.displayWidth / 2,
+            device.displayHeight * 3 / 4,
+            device.displayWidth / 2,
+            device.displayHeight / 3,
+            40,
+        )
         val platform = device.wait(Until.findObject(By.text(activity.getString(R.string.platform_youtube_shorts))), 5_000L)
         assertTrue("YouTube platform row missing", platform != null)
         val labelBounds = requireNotNull(platform).visibleBounds
         // Layout-only Compose rows need not exist in the accessibility hierarchy.
-        val toggle = device.findObjects(By.checkable(true)).singleOrNull {
-            val bounds = it.visibleBounds
-            bounds.left >= labelBounds.right && bounds.top < labelBounds.bottom &&
-                bounds.bottom > labelBounds.top
-        }
+        val toggle =
+            device.findObjects(By.checkable(true)).singleOrNull {
+                val bounds = it.visibleBounds
+                bounds.left >= labelBounds.right &&
+                    bounds.top < labelBounds.bottom &&
+                    bounds.bottom > labelBounds.top
+            }
         assertTrue("YouTube platform toggle missing", toggle != null)
         requireNotNull(toggle).click()
         await("UI platform toggle did not persist") { !platformEnabled() }
@@ -124,8 +139,9 @@ class ParentalSettingsSessionInstrumentedTest {
         assertFalse(platformEnabled())
     }
 
-    private fun launchIntent() = Intent(context, MainActivity::class.java)
-        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    private fun launchIntent() =
+        Intent(context, MainActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
     @Test
     fun temporaryAllowStillRequiresPinAndCancellationDoesNotChangeSettings() {
@@ -151,20 +167,31 @@ class ParentalSettingsSessionInstrumentedTest {
     }
 
     private fun requestTemporaryAllow() {
-        context.startActivity(launchIntent().addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
-            .putExtra(MainActivity.EXTRA_OPEN_TEMPORARY_ALLOW_PIN, true))
+        context.startActivity(
+            launchIntent()
+                .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                .putExtra(MainActivity.EXTRA_OPEN_TEMPORARY_ALLOW_PIN, true),
+        )
         awaitPinEntry()
         instrumentation.waitForIdleSync()
     }
 
-    private fun temporaryAllowUntil() = runBlocking {
-        store.readSettings().first().protectionConfiguration.temporaryAllowUntilMillis
-    }
+    private fun temporaryAllowUntil() =
+        runBlocking {
+            store
+                .readSettings()
+                .first()
+                .protectionConfiguration.temporaryAllowUntilMillis
+        }
 
     private fun awaitPinEntry() {
-        assertTrue("Fresh PIN entry missing", device.wait(
-            Until.hasObject(By.text(activity.getString(R.string.pin_entry_title))), 15_000L,
-        ))
+        assertTrue(
+            "Fresh PIN entry missing",
+            device.wait(
+                Until.hasObject(By.text(activity.getString(R.string.pin_entry_title))),
+                15_000L,
+            ),
+        )
     }
 
     private fun submitPin(pin: String) {
@@ -176,14 +203,19 @@ class ParentalSettingsSessionInstrumentedTest {
     private fun unlock() {
         submitPin("4826")
         await("Correct PIN did not authorize session") { activity.parentalSettingsSession.isAuthorized }
-        assertTrue("Dashboard not shown", device.wait(
-            Until.hasObject(By.text(activity.getString(R.string.dashboard_title))), 10_000L,
-        ))
+        assertTrue(
+            "Dashboard not shown",
+            device.wait(
+                Until.hasObject(By.text(activity.getString(R.string.dashboard_title))),
+                10_000L,
+            ),
+        )
     }
 
-    private fun mutatePlatform() = runBlocking(Dispatchers.Main) {
-        activity.parentalSettingsSession.setPlatformEnabled("youtube_shorts", false)
-    }
+    private fun mutatePlatform() =
+        runBlocking(Dispatchers.Main) {
+            activity.parentalSettingsSession.setPlatformEnabled("youtube_shorts", false)
+        }
 
     private fun assertMutationDenied() {
         try {
@@ -194,11 +226,19 @@ class ParentalSettingsSessionInstrumentedTest {
         }
     }
 
-    private fun platformEnabled() = runBlocking {
-        store.readSettings().first().protectionConfiguration.isPlatformEnabled("youtube_shorts")
-    }
+    private fun platformEnabled() =
+        runBlocking {
+            store
+                .readSettings()
+                .first()
+                .protectionConfiguration
+                .isPlatformEnabled("youtube_shorts")
+        }
 
-    private fun await(message: String, predicate: () -> Boolean) {
+    private fun await(
+        message: String,
+        predicate: () -> Boolean,
+    ) {
         val deadline = SystemClock.elapsedRealtime() + 10_000L
         while (!predicate() && SystemClock.elapsedRealtime() < deadline) SystemClock.sleep(50L)
         assertTrue(message, predicate())

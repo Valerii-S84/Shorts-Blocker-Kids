@@ -53,8 +53,10 @@ class FacebookReelsDetector(
         val matched =
             nodes.any { node ->
                 node.isVisibleToUser &&
-                    (node.contentDescriptionSignals.any { it in ShortVideoTextSignals.reelsIdentifiers } ||
-                        node.viewIdResourceName.containsAnyIgnoringCase("reel", "reels"))
+                    (
+                        node.contentDescriptionSignals.any { it in ShortVideoTextSignals.reelsIdentifiers } ||
+                            node.viewIdResourceName.containsAnyIgnoringCase("reel", "reels")
+                    )
             }
 
         if (matched) {
@@ -68,13 +70,16 @@ class FacebookReelsDetector(
         val matched =
             nodes.any { node ->
                 node.isVisibleToUser &&
-                    (node.viewIdResourceName.containsAnyIgnoringCase(
-                        "reel",
-                        "reels",
-                        "reel_viewer",
-                        "video",
-                        "player",
-                    ) || node.className.containsAnyIgnoringCase("viewpager"))
+                    (
+                        node.viewIdResourceName.containsAnyIgnoringCase(
+                            "reel",
+                            "reels",
+                            "reel_viewer",
+                            "video",
+                            "player",
+                        ) ||
+                            node.className.containsAnyIgnoringCase("viewpager")
+                    )
             }
 
         if (matched) {

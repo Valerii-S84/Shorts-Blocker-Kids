@@ -3,8 +3,8 @@ package com.shortsblockerkids.composition.dashboard
 import com.shortsblockerkids.accessibility.PlatformSupportEntry
 import com.shortsblockerkids.accessibility.PlatformSupportMatrix
 import com.shortsblockerkids.application.model.AppSettingsSnapshot
-import com.shortsblockerkids.application.port.TimeProvider
 import com.shortsblockerkids.application.port.PinLockoutClock
+import com.shortsblockerkids.application.port.TimeProvider
 import com.shortsblockerkids.presentation.billing.BillingUiState
 import com.shortsblockerkids.presentation.dashboard.DashboardBillingInput
 import com.shortsblockerkids.presentation.dashboard.DashboardEntitlementInput
@@ -48,8 +48,6 @@ internal class DashboardUiStateAssembler(
                         freeTestStartedAtMillis = settings.entitlement.freeTestStartedAtMillis,
                         freeTestDurationDays = settings.entitlement.freeTestDurationDays,
                         isPaidProtectionAllowed = settings.entitlement.isPaidProtectionAllowed,
-                        paidLastVerifiedAtMillis = settings.entitlement.paidLastVerifiedAtMillis,
-                        paidActiveUntilMillis = settings.entitlement.paidActiveUntilMillis,
                     ),
                 billing =
                     DashboardBillingInput(

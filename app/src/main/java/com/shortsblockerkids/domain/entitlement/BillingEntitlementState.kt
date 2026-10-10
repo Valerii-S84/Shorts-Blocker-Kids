@@ -1,17 +1,9 @@
 package com.shortsblockerkids.domain.entitlement
 
 enum class BillingEntitlementState {
-    UNKNOWN,
     ACTIVE,
-    CANCELED_ACTIVE,
     PENDING,
-    IN_GRACE,
-    ON_HOLD,
-    EXPIRED,
-    REVOKED,
+    INACTIVE,
 }
 
-fun BillingEntitlementState.allowsPaidProtection(): Boolean =
-    this == BillingEntitlementState.ACTIVE ||
-        this == BillingEntitlementState.CANCELED_ACTIVE ||
-        this == BillingEntitlementState.IN_GRACE
+fun BillingEntitlementState.allowsPaidProtection(): Boolean = this == BillingEntitlementState.ACTIVE

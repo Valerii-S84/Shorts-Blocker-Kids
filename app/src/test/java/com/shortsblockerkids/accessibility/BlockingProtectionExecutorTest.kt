@@ -1,10 +1,10 @@
 package com.shortsblockerkids.accessibility
 
-import com.shortsblockerkids.platform.accessibility.routing.BlockingProtectionExecutor
-import com.shortsblockerkids.platform.accessibility.overlay.DelayedActionScheduler
-import com.shortsblockerkids.platform.accessibility.overlay.PhoneHomeExitController
 import com.shortsblockerkids.domain.detection.Confidence
 import com.shortsblockerkids.domain.detection.DetectionResult
+import com.shortsblockerkids.platform.accessibility.overlay.DelayedActionScheduler
+import com.shortsblockerkids.platform.accessibility.overlay.PhoneHomeExitController
+import com.shortsblockerkids.platform.accessibility.routing.BlockingProtectionExecutor
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -12,11 +12,20 @@ import org.junit.Test
 class BlockingProtectionExecutorTest {
     @Test fun successfulOverlayIsRecordedAfterItIsShown() {
         val events = mutableListOf<String>()
-        val executor = BlockingProtectionExecutor(
-            { events += "shown"; true }, { _, _ -> error("Unexpected fallback") },
-            { events += it }, {},
-            { packageName, completed -> events += "exit:$packageName"; completed(true) },
-        )
+        val executor =
+            BlockingProtectionExecutor(
+                {
+                    events += "shown"
+                    true
+                },
+                { _, _ -> error("Unexpected fallback") },
+                { events += it },
+                {},
+                { packageName, completed ->
+                    events += "exit:$packageName"
+                    completed(true)
+                },
+            )
         executor.protect("video.app")
         assertEquals(
             listOf("shown", "ShowOverlay", "AutomaticPlaybackExitPending", "exit:video.app", "PlaybackExitConfirmed"),
@@ -132,12 +141,15 @@ class BlockingProtectionExecutorTest {
     @Test fun thrownOverlayAndFallbackAreControlledAndRetryable() {
         val outcomes = mutableListOf<String>()
         val retries = ArrayDeque<() -> Unit>()
-        val executor = BlockingProtectionExecutor(
-            { throw IllegalStateException("Window unavailable") },
-            { _, _ -> throw IllegalStateException("Exit unavailable") },
-            { outcomes += it }, {}, { _, _ -> error("Unexpected exit") },
-            scheduleRetry = { _, action -> retries.addLast(action) },
-        )
+        val executor =
+            BlockingProtectionExecutor(
+                { throw IllegalStateException("Window unavailable") },
+                { _, _ -> throw IllegalStateException("Exit unavailable") },
+                { outcomes += it },
+                {},
+                { _, _ -> error("Unexpected exit") },
+                scheduleRetry = { _, action -> retries.addLast(action) },
+            )
         executor.protect("video.app")
         assertEquals("ProtectionFailed", outcomes.last())
         retries.removeFirst().invoke()
@@ -205,21 +217,31 @@ class BlockingProtectionExecutorTest {
         var overlayVisible = false
         var actions = 0
         var closed = false
-        val executor = BlockingProtectionExecutor(
-            showOverlay = { overlayVisible = true; true },
-            startFallback = { _, _ -> error("Unexpected overlay failure") },
-            recordOutcome = { outcomes += it },
-            onOverlayFailed = { error("Successful overlay must be retained") },
-            startPlaybackExit = { _, completed ->
-                PhoneHomeExitController(
-                    exitAction = { actions++; true },
-                    isPlaybackClosed = { closed },
-                    delayedActionScheduler = DelayedActionScheduler { _, action -> scheduled.addLast(action) },
-                    onExitCompleted = { completed(true); overlayVisible = false },
-                    onExitFailed = { completed(false) },
-                ).exitShorts()
-            },
-        )
+        val executor =
+            BlockingProtectionExecutor(
+                showOverlay = {
+                    overlayVisible = true
+                    true
+                },
+                startFallback = { _, _ -> error("Unexpected overlay failure") },
+                recordOutcome = { outcomes += it },
+                onOverlayFailed = { error("Successful overlay must be retained") },
+                startPlaybackExit = { _, completed ->
+                    PhoneHomeExitController(
+                        exitAction = {
+                            actions++
+                            true
+                        },
+                        isPlaybackClosed = { closed },
+                        delayedActionScheduler = DelayedActionScheduler { _, action -> scheduled.addLast(action) },
+                        onExitCompleted = {
+                            completed(true)
+                            overlayVisible = false
+                        },
+                        onExitFailed = { completed(false) },
+                    ).exitShorts()
+                },
+            )
 
         fun tick() = scheduled.removeFirst().invoke()
     }
@@ -232,18 +254,24 @@ class BlockingProtectionExecutorTest {
         var guardFailures = 0
         val retries = ArrayDeque<() -> Unit>()
         var complete: (Boolean) -> Unit = {}
-        val executor = BlockingProtectionExecutor(
-            { false }, { _, callback -> fallbacks++; complete = callback },
-            { outcomes += it }, { dismissals++ },
-            { _, _ -> error("Overlay failure must use fallback") },
-            scheduleRetry = { _, action -> retries.addLast(action) },
-            shouldRetryProtection = {
-                if (guardFailures > 0) {
-                    guardFailures--
-                    throw IllegalStateException("Active window unavailable")
-                }
-                stillBlocked
-            },
-        )
+        val executor =
+            BlockingProtectionExecutor(
+                { false },
+                { _, callback ->
+                    fallbacks++
+                    complete = callback
+                },
+                { outcomes += it },
+                { dismissals++ },
+                { _, _ -> error("Overlay failure must use fallback") },
+                scheduleRetry = { _, action -> retries.addLast(action) },
+                shouldRetryProtection = {
+                    if (guardFailures > 0) {
+                        guardFailures--
+                        throw IllegalStateException("Active window unavailable")
+                    }
+                    stillBlocked
+                },
+            )
     }
 }

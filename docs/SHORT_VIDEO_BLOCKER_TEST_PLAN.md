@@ -319,8 +319,6 @@ Play Console setup:
 - Subscription product configured.
 - Base plan configured.
 - Privacy Policy URL configured as `https://shortsblockerkids.de/privacy`.
-- RTDN webhook configured as
-  `https://billing.shortsblockerkids.de/billing/play/rtdn`.
 - Test card flows available.
 
 App-side tests:
@@ -343,27 +341,7 @@ Subscription lifecycle tests:
 - Grace period.
 - Account hold.
 - Revoked/refunded.
-- Unknown/backend unavailable.
-
-## Backend Verification Tests
-
-Applicable to the production billing scope. The repository now includes a
-`billing-backend` module with Play purchase verification, entitlement status,
-and RTDN endpoints.
-
-Required backend tests:
-
-- `:billing-backend:test` passes.
-- `POST /billing/play/verify` verifies a Play purchase token and stores only
-  billing technical data.
-- `GET /entitlement/status` returns active, canceled-active, grace, on-hold,
-  expired, revoked, and unknown states without exposing purchase tokens.
-- `POST /billing/play/rtdn` rejects production requests without authenticated
-  Pub/Sub push config.
-- RTDN `messageId` handling is idempotent.
-- Backend logs and stored records do not include child data, app usage history,
-  accessibility tree dumps, URLs, video titles, account names, messages,
-  screen recordings, audio, location, contacts, or browsing history.
+- Google Play Billing SDK unavailable.
 
 ## Release Gates
 
@@ -375,8 +353,8 @@ Code gates:
 - `ANDROID_HOME=/path/to/Android/Sdk gradle :app:lintDebug`
 - `ANDROID_HOME=/path/to/Android/Sdk gradle :app:lintRelease`
 - `ANDROID_HOME=/path/to/Android/Sdk gradle :app:assembleDebug`
-- `SBK_BILLING_BACKEND_BASE_URL=https://billing.shortsblockerkids.de ANDROID_HOME=/path/to/Android/Sdk gradle :app:assembleRelease`
-- `SBK_BILLING_BACKEND_BASE_URL=https://billing.shortsblockerkids.de ANDROID_HOME=/path/to/Android/Sdk gradle :app:bundleRelease`
+- `ANDROID_HOME=/path/to/Android/Sdk gradle :app:assembleRelease`
+- `ANDROID_HOME=/path/to/Android/Sdk gradle :app:bundleRelease`
 - `ANDROID_HOME=/path/to/Android/Sdk gradle :app:jacocoDebugUnitTestCoverageVerification`
 - JaCoCo branch coverage must be at least 90.00%; instruction and line coverage
   gates must not be lower than the previous baseline.
@@ -388,8 +366,6 @@ Manual gates:
 - Full Accessibility disclosure video recorded.
 - Real-device QA completed for every supported app.
 - Billing test matrix completed.
-- Backend verification test matrix runs against
-  `https://billing.shortsblockerkids.de` after live DNS/TLS deployment.
 - Privacy permissions audit completed for release merged manifest.
 - No unsupported permissions.
 - No raw Accessibility logs in release.
@@ -416,6 +392,5 @@ The full Short Video Blocker product is test-ready only when:
 - Shared overlay works across all supported apps.
 - Parent PIN and temporary allow work across all supported apps.
 - Billing entitlement is verified.
-- Backend/cloud/analytics/ads remain absent, or a future approved backend passes
-  privacy and entitlement tests before any backend claims.
+- Backend/cloud/analytics/ads remain absent.
 - Play Store readiness checklist is complete.

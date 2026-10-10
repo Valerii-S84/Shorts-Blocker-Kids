@@ -25,8 +25,6 @@ data class DashboardEntitlementInput(
     val freeTestStartedAtMillis: Long?,
     val freeTestDurationDays: Int,
     val isPaidProtectionAllowed: Boolean,
-    val paidLastVerifiedAtMillis: Long?,
-    val paidActiveUntilMillis: Long?,
 )
 
 data class DashboardBillingInput(

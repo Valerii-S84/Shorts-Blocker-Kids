@@ -142,7 +142,7 @@ class GooglePlayBillingGateway(
     ) {
         emit(PlayBillingEvent.PurchaseFlowFinished)
         when (billingResult.responseCode) {
-            BillingClient.BillingResponseCode.OK -> emitPurchases(purchases.orEmpty())
+            BillingClient.BillingResponseCode.OK -> queryPurchases()
             BillingClient.BillingResponseCode.USER_CANCELED -> {
                 emit(PlayBillingEvent.PurchaseCanceled)
                 queryPurchases()

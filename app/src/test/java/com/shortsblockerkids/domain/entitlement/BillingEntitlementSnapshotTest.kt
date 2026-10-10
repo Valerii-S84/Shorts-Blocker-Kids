@@ -7,26 +7,21 @@ import org.junit.Test
 
 class BillingEntitlementSnapshotTest {
     @Test
-    fun legacyBooleanConstructorMapsToActiveOrExpiredStates() {
+    fun booleanConstructorMapsToActiveOrInactiveStates() {
         assertEquals(
             BillingEntitlementState.ACTIVE,
-            BillingEntitlementSnapshot(isActive = true, checkedAtMillis = 1_000L).state,
+            BillingEntitlementSnapshot(isActive = true).state,
         )
         assertEquals(
-            BillingEntitlementState.EXPIRED,
-            BillingEntitlementSnapshot(isActive = false, checkedAtMillis = 1_000L).state,
+            BillingEntitlementState.INACTIVE,
+            BillingEntitlementSnapshot(isActive = false).state,
         )
     }
 
     @Test
     fun paidProtectionStatesAreExplicit() {
         assertTrue(BillingEntitlementState.ACTIVE.allowsPaidProtection())
-        assertTrue(BillingEntitlementState.CANCELED_ACTIVE.allowsPaidProtection())
-        assertTrue(BillingEntitlementState.IN_GRACE.allowsPaidProtection())
         assertFalse(BillingEntitlementState.PENDING.allowsPaidProtection())
-        assertFalse(BillingEntitlementState.ON_HOLD.allowsPaidProtection())
-        assertFalse(BillingEntitlementState.EXPIRED.allowsPaidProtection())
-        assertFalse(BillingEntitlementState.REVOKED.allowsPaidProtection())
-        assertFalse(BillingEntitlementState.UNKNOWN.allowsPaidProtection())
+        assertFalse(BillingEntitlementState.INACTIVE.allowsPaidProtection())
     }
 }

@@ -14,7 +14,6 @@ import com.shortsblockerkids.application.port.PinLockoutTime
 import com.shortsblockerkids.application.port.TimeProvider
 import com.shortsblockerkids.application.protection.canProtect
 import com.shortsblockerkids.application.protection.hasBillingEntitlement
-import com.shortsblockerkids.domain.entitlement.BillingEntitlementState
 import com.shortsblockerkids.domain.protection.ProtectionConfiguration
 import com.shortsblockerkids.domain.protection.ProtectionMode
 import com.shortsblockerkids.infrastructure.security.Pbkdf2PinHasher
@@ -58,7 +57,7 @@ class StorageStateRecoveryTest {
                 ProtectionConfiguration.DEFAULT_ENABLED_PLATFORM_IDS,
                 settings.protectionConfiguration.enabledPlatformIds,
             )
-            assertEquals(BillingEntitlementState.UNKNOWN.name, settings.billingEntitlementStateName)
+            assertEquals("INACTIVE", settings.billingEntitlementStateName)
             assertFalse(settings.protectionConfiguration.isPinConfigured)
             assertFalse(settings.canProtect(nowMillis = 1_000L))
         }
@@ -76,8 +75,8 @@ class StorageStateRecoveryTest {
             val settings = repository.readSettings().first()
 
             assertEquals(ProtectionMode.BLOCK_SHORTS, settings.protectionConfiguration.mode)
-            assertEquals(BillingEntitlementState.UNKNOWN.name, settings.billingEntitlementStateName)
-            assertFalse(settings.hasBillingEntitlement(nowMillis = 1_000L))
+            assertEquals("INACTIVE", settings.billingEntitlementStateName)
+            assertFalse(settings.hasBillingEntitlement())
         }
 
     @Test

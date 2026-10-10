@@ -14,7 +14,9 @@ import kotlinx.coroutines.withTimeout
 sealed interface SettingsReadState {
     data object Loading : SettingsReadState
 
-    data class Ready(val snapshot: AppSettingsSnapshot) : SettingsReadState
+    data class Ready(
+        val snapshot: AppSettingsSnapshot,
+    ) : SettingsReadState
 
     // This snapshot belongs only to this observer session. It is not a successful read,
     // must not unlock settings/PIN UI, and must never be persisted as a fallback.
@@ -36,43 +38,44 @@ class ObserveSettingsUseCase(
         require(recoveryDelayMillis > 0L)
     }
 
-    operator fun invoke(): Flow<SettingsReadState> = channelFlow {
-        send(SettingsReadState.Loading)
-        var lastSuccessfulSnapshot: AppSettingsSnapshot? = null
-        while (true) {
-            for (attempt in 0..retryDelaysMillis.size) {
-                try {
-                    supervisorScope {
-                        val settings = settingsStatePort.readSettings().produceIn(this)
-                        try {
-                            // Only the initial read is timed out. A healthy DataStore can remain
-                            // idle indefinitely between changes without being a storage failure.
-                            val initial = withTimeout(initialReadTimeoutMillis) { settings.receive() }
-                            lastSuccessfulSnapshot = initial
-                            send(SettingsReadState.Ready(initial))
-                            for (snapshot in settings) {
-                                lastSuccessfulSnapshot = snapshot
-                                send(SettingsReadState.Ready(snapshot))
+    operator fun invoke(): Flow<SettingsReadState> =
+        channelFlow {
+            send(SettingsReadState.Loading)
+            var lastSuccessfulSnapshot: AppSettingsSnapshot? = null
+            while (true) {
+                for (attempt in 0..retryDelaysMillis.size) {
+                    try {
+                        supervisorScope {
+                            val settings = settingsStatePort.readSettings().produceIn(this)
+                            try {
+                                // Only the initial read is timed out. A healthy DataStore can remain
+                                // idle indefinitely between changes without being a storage failure.
+                                val initial = withTimeout(initialReadTimeoutMillis) { settings.receive() }
+                                lastSuccessfulSnapshot = initial
+                                send(SettingsReadState.Ready(initial))
+                                for (snapshot in settings) {
+                                    lastSuccessfulSnapshot = snapshot
+                                    send(SettingsReadState.Ready(snapshot))
+                                }
+                            } finally {
+                                settings.cancel()
                             }
-                        } finally {
-                            settings.cancel()
                         }
+                        return@channelFlow
+                    } catch (_: TimeoutCancellationException) {
+                        // This attempt exceeded its initial-read deadline; retry is bounded below.
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (_: Exception) {
+                        // Do not expose storage details or manufacture a successful default snapshot.
                     }
-                    return@channelFlow
-                } catch (_: TimeoutCancellationException) {
-                    // This attempt exceeded its initial-read deadline; retry is bounded below.
-                } catch (cancelled: CancellationException) {
-                    throw cancelled
-                } catch (_: Exception) {
-                    // Do not expose storage details or manufacture a successful default snapshot.
+                    val retryScheduled = attempt < retryDelaysMillis.size
+                    send(SettingsReadState.Unavailable(lastSuccessfulSnapshot, retryScheduled))
+                    if (retryScheduled) delay(retryDelaysMillis[attempt])
                 }
-                val retryScheduled = attempt < retryDelaysMillis.size
-                send(SettingsReadState.Unavailable(lastSuccessfulSnapshot, retryScheduled))
-                if (retryScheduled) delay(retryDelaysMillis[attempt])
+                // Short retries are exhausted. Keep the failure visible and allow explicit UI
+                // retry while the service waits for a slow, cancellable recovery cycle.
+                delay(recoveryDelayMillis)
             }
-            // Short retries are exhausted. Keep the failure visible and allow explicit UI
-            // retry while the service waits for a slow, cancellable recovery cycle.
-            delay(recoveryDelayMillis)
         }
-    }
 }

@@ -2,7 +2,6 @@ import org.gradle.api.tasks.testing.Test
 import org.gradle.testing.jacoco.plugins.JacocoTaskExtension
 import org.gradle.testing.jacoco.tasks.JacocoCoverageVerification
 import org.gradle.testing.jacoco.tasks.JacocoReport
-import java.net.URI
 import java.util.Properties
 
 plugins {
@@ -35,31 +34,6 @@ val isReleaseSigningConfigured =
         releaseKeyPassword,
     ).all { !it.isNullOrBlank() }
 
-fun buildConfigString(value: String): String = "\"${value.replace("\\", "\\\\").replace("\"", "\\\"")}\""
-
-fun isProductionBackendUrl(value: String): Boolean {
-    val uri = runCatching { URI(value.trim()) }.getOrNull() ?: return false
-    return uri.scheme == "https" &&
-        uri.host == "billing.shortsblockerkids.de" &&
-        uri.path.isNullOrBlank() &&
-        uri.rawQuery == null &&
-        uri.rawFragment == null
-}
-
-val billingBackendBaseUrl =
-    providers
-        .environmentVariable("SBK_BILLING_BACKEND_BASE_URL")
-        .orElse(providers.gradleProperty("SBK_BILLING_BACKEND_BASE_URL"))
-        .orElse("")
-        .get()
-val billingClientOnlyTestMode =
-    providers
-        .environmentVariable("SBK_BILLING_CLIENT_ONLY_TEST_MODE")
-        .orElse(providers.gradleProperty("SBK_BILLING_CLIENT_ONLY_TEST_MODE"))
-        .orElse("false")
-        .map { it.equals("true", ignoreCase = true) }
-        .get()
-
 android {
     namespace = "com.shortsblockerkids"
     compileSdk = 36
@@ -72,12 +46,6 @@ android {
         versionName = "0.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        buildConfigField(
-            "String",
-            "BILLING_BACKEND_BASE_URL",
-            buildConfigString(billingBackendBaseUrl),
-        )
-        buildConfigField("boolean", "BILLING_CLIENT_ONLY_TEST_MODE", "false")
     }
 
     buildFeatures {
@@ -102,7 +70,6 @@ android {
             versionNameSuffix = "-debug"
             isDebuggable = true
             buildConfigField("boolean", "ACCESSIBILITY_DEBUG_TOOLS_ENABLED", "true")
-            buildConfigField("boolean", "BILLING_CLIENT_ONLY_TEST_MODE", billingClientOnlyTestMode.toString())
         }
 
         release {
@@ -114,7 +81,6 @@ android {
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
             buildConfigField("boolean", "ACCESSIBILITY_DEBUG_TOOLS_ENABLED", "false")
-            buildConfigField("boolean", "BILLING_CLIENT_ONLY_TEST_MODE", "false")
         }
     }
 
@@ -147,24 +113,6 @@ ktlint {
     filter {
         exclude("**/build/**")
     }
-}
-
-val validateProductionReleaseConfig by tasks.registering {
-    group = "verification"
-    description = "Fails release artifacts unless production billing backend URL is configured."
-
-    doLast {
-        check(billingBackendBaseUrl.isNotBlank()) {
-            "SBK_BILLING_BACKEND_BASE_URL is required for release builds."
-        }
-        check(isProductionBackendUrl(billingBackendBaseUrl)) {
-            "SBK_BILLING_BACKEND_BASE_URL must be https://billing.shortsblockerkids.de for release builds."
-        }
-    }
-}
-
-tasks.matching { it.name in setOf("assembleRelease", "bundleRelease", "packageRelease") }.configureEach {
-    dependsOn(validateProductionReleaseConfig)
 }
 
 jacoco {
@@ -282,7 +230,6 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.google.play.billing.ktx)
-    implementation(libs.kotlinx.serialization.json)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
 

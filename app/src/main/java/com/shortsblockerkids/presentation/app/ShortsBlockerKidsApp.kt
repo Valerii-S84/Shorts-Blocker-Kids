@@ -8,14 +8,14 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.shortsblockerkids.R
@@ -66,9 +66,11 @@ internal fun ShortsBlockerKidsApp(
 ) {
     val coroutineScope = rememberCoroutineScope()
     var settingsOperationFailed by remember { mutableStateOf(false) }
-    val settingsWriteUiCoordinator = remember {
-        SettingsWriteUiCoordinator(onFailure = { settingsOperationFailed = true })
-    }
+    val settingsWriteUiCoordinator =
+        remember {
+            SettingsWriteUiCoordinator(onFailure = { settingsOperationFailed = true })
+        }
+
     fun launchSettingsOperation(operation: suspend () -> Unit) {
         coroutineScope.launch { settingsWriteUiCoordinator.run(operation) }
     }
@@ -304,9 +306,10 @@ internal fun ShortsBlockerKidsApp(
                 TemporaryAllowScreen(
                     onDurationSelected = { duration ->
                         launchSettingsOperation {
-                            val completion = parentalSettingsSession.runAuthorized {
-                                temporaryAllowFlowController.selectDuration(duration)
-                            }
+                            val completion =
+                                parentalSettingsSession.runAuthorized {
+                                    temporaryAllowFlowController.selectDuration(duration)
+                                }
                             coordinator.onTemporaryAllowFinished()
                             onStateChanged()
                             handleTemporaryAllowCompletion(

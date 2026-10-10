@@ -289,7 +289,6 @@ class CoreUiResourceInvariantTest {
                 "debug_blocking_decision",
                 "debug_entitlement",
                 "debug_subscription_state",
-                "debug_backend",
                 "debug_enabled",
                 "debug_billing_ui",
                 "debug_protection_permission",

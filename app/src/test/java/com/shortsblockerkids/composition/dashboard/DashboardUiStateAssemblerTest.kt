@@ -3,7 +3,6 @@ package com.shortsblockerkids.composition.dashboard
 import com.shortsblockerkids.accessibility.PlatformSupportMatrix
 import com.shortsblockerkids.application.model.AppSettingsSnapshot
 import com.shortsblockerkids.application.port.TimeProvider
-import com.shortsblockerkids.domain.entitlement.EntitlementPolicy
 import com.shortsblockerkids.domain.entitlement.EntitlementSnapshot
 import com.shortsblockerkids.domain.entitlement.FreeTestPolicy
 import com.shortsblockerkids.domain.protection.ProtectionConfiguration
@@ -49,9 +48,8 @@ class DashboardUiStateAssemblerTest {
     }
 
     @Test
-    fun repeatedAssemblyReevaluatesPaidOfflineGraceExpiry() {
-        val graceExpiry = NOW_MILLIS + EntitlementPolicy.PAID_OFFLINE_GRACE_MILLIS
-        val timeProvider = MutableTimeProvider(graceExpiry)
+    fun repeatedAssemblyKeepsPlayAccessWithoutServerExpiry() {
+        val timeProvider = MutableTimeProvider(NOW_MILLIS)
         val assembler = DashboardUiStateAssembler(timeProvider)
         val settings =
             eligibleSettings(
@@ -59,7 +57,6 @@ class DashboardUiStateAssemblerTest {
                     EntitlementSnapshot(
                         freeTestStartedAtMillis = null,
                         isPaidProtectionAllowed = true,
-                        paidLastVerifiedAtMillis = NOW_MILLIS,
                     ),
             )
 
@@ -67,11 +64,11 @@ class DashboardUiStateAssemblerTest {
         assertTrue(activeState.protection.canProtect)
         assertTrue(activeState.billing.hasEntitlement)
 
-        timeProvider.nowMillis = graceExpiry + 1L
+        timeProvider.nowMillis = NOW_MILLIS + 100L * ONE_DAY_MILLIS
 
-        val expiredState = assembler.createState(settings)
-        assertFalse(expiredState.protection.canProtect)
-        assertFalse(expiredState.billing.hasEntitlement)
+        val laterState = assembler.createState(settings)
+        assertTrue(laterState.protection.canProtect)
+        assertTrue(laterState.billing.hasEntitlement)
     }
 
     private fun DashboardUiStateAssembler.createState(settings: AppSettingsSnapshot) =

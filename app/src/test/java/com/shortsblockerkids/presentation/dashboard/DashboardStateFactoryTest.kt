@@ -194,8 +194,6 @@ class DashboardStateFactoryTest {
                     entitlement =
                         input.entitlement.copy(
                             isPaidProtectionAllowed = true,
-                            paidLastVerifiedAtMillis = expiryMillis,
-                            paidActiveUntilMillis = expiryMillis + ONE_DAY_MILLIS,
                         ),
                     runtime = input.runtime.copy(nowMillis = expiryMillis),
                 ),
@@ -330,13 +328,11 @@ class DashboardStateFactoryTest {
                     freeTestStartedAtMillis = 0L,
                     freeTestDurationDays = FreeTestPolicy.DEFAULT_DURATION_DAYS,
                     isPaidProtectionAllowed = false,
-                    paidLastVerifiedAtMillis = null,
-                    paidActiveUntilMillis = null,
                 ),
             billing =
                 DashboardBillingInput(
                     uiState = BillingUiState(),
-                    entitlementStateName = "UNKNOWN",
+                    entitlementStateName = "INACTIVE",
                 ),
             platforms =
                 PlatformSupportMatrix.entries.map { entry ->

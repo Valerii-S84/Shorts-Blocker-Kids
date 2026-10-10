@@ -16,7 +16,12 @@ class BlockingProtectionExecutor(
     fun protect(packageName: String) {
         if (fallbackPending) return
         val request = ++generation
-        val shown = try { showOverlay(packageName) } catch (_: RuntimeException) { false }
+        val shown =
+            try {
+                showOverlay(packageName)
+            } catch (_: RuntimeException) {
+                false
+            }
         if (shown) {
             recordOutcome("ShowOverlay")
             fallbackPending = true
@@ -56,18 +61,22 @@ class BlockingProtectionExecutor(
         }
     }
 
-    private fun retryLater(packageName: String, request: Int) {
+    private fun retryLater(
+        packageName: String,
+        request: Int,
+    ) {
         try {
             scheduleRetry(PROTECTION_RETRY_DELAY_MS) {
                 if (request != generation) return@scheduleRetry
-                val stillBlocked = try {
-                    shouldRetryProtection(packageName)
-                } catch (_: RuntimeException) {
-                    // An unavailable observation does not establish that protection is unnecessary.
-                    recordOutcome("ProtectionRetryCheckFailed")
-                    retryLater(packageName, request)
-                    return@scheduleRetry
-                }
+                val stillBlocked =
+                    try {
+                        shouldRetryProtection(packageName)
+                    } catch (_: RuntimeException) {
+                        // An unavailable observation does not establish that protection is unnecessary.
+                        recordOutcome("ProtectionRetryCheckFailed")
+                        retryLater(packageName, request)
+                        return@scheduleRetry
+                    }
                 if (stillBlocked) protect(packageName)
             }
         } catch (_: RuntimeException) {

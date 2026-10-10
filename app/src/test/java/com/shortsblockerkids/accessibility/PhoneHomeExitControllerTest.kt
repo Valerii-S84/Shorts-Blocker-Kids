@@ -146,13 +146,17 @@ class PhoneHomeExitControllerTest {
     fun schedulerFailureIsReportedAndDoesNotPermanentlySuppressNewAttempt() {
         var failures = 0
         var actions = 0
-        val controller = PhoneHomeExitController(
-            exitAction = { actions++; true },
-            isPlaybackClosed = { false },
-            delayedActionScheduler = DelayedActionScheduler { _, _ -> throw IllegalStateException("Looper stopped") },
-            onExitCompleted = { error("Unconfirmed exit") },
-            onExitFailed = { failures++ },
-        )
+        val controller =
+            PhoneHomeExitController(
+                exitAction = {
+                    actions++
+                    true
+                },
+                isPlaybackClosed = { false },
+                delayedActionScheduler = DelayedActionScheduler { _, _ -> throw IllegalStateException("Looper stopped") },
+                onExitCompleted = { error("Unconfirmed exit") },
+                onExitFailed = { failures++ },
+            )
         repeat(2) { controller.exitShorts() }
         assertEquals(2, actions)
         assertEquals(2, failures)

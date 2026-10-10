@@ -149,7 +149,6 @@ class ReleaseCopyInvariantTest {
             )
 
         productionDocs.forEach { text ->
-            assertTrue(text.contains("https://billing.shortsblockerkids.de"))
             assertFalse(text.contains("movashield.de"))
             assertFalse(text.contains("billing.example.com"))
         }
@@ -158,7 +157,6 @@ class ReleaseCopyInvariantTest {
         assertTrue(combinedDocs.contains("https://shortsblockerkids.de"))
         assertTrue(combinedDocs.contains("https://shortsblockerkids.de/privacy"))
         assertTrue(combinedDocs.contains("https://shortsblockerkids.de/support"))
-        assertTrue(combinedDocs.contains("https://billing.shortsblockerkids.de/billing/play/rtdn"))
         assertTrue(combinedDocs.contains("Valerii Serputko"))
         assertTrue(combinedDocs.contains("svalerii535@gmail.com"))
     }
@@ -232,29 +230,26 @@ class ReleaseCopyInvariantTest {
     }
 
     @Test
-    fun billingPrivacyCopyLimitsBackendDataToEntitlementVerification() {
+    fun billingPrivacyCopyUsesGooglePlayAndLocalAccessState() {
         val privacyPolicy = normalizedText(repoFile("docs/SHORTS_BLOCKER_PRIVACY_POLICY_DRAFT.md").readText())
         val inAppPrivacy = normalizedText(defaultPolicyResourceText())
 
-        assertTrue(privacyPolicy.contains("billing technical data"))
-        assertTrue(privacyPolicy.contains("hashed purchase token"))
-        assertTrue(inAppPrivacy.contains("billing backend limited to Google Play entitlement status"))
-        assertTrue(inAppPrivacy.contains("stores hashed purchase tokens"))
+        assertTrue(privacyPolicy.contains("Google Play Billing"))
+        assertTrue(privacyPolicy.contains("local subscription access state"))
+        assertTrue(inAppPrivacy.contains("Subscription purchase status is read from Google Play Billing"))
+        assertTrue(inAppPrivacy.contains("stores local subscription entitlement status"))
     }
 
     @Test
-    fun releaseBuildRequiresConfiguredHttpsBillingBackendUrl() {
+    fun releaseBuildHasNoBillingBackendConfiguration() {
         val buildConfig = repoFile("app/build.gradle.kts").readText()
 
-        assertTrue(buildConfig.contains("validateProductionReleaseConfig"))
-        assertTrue(buildConfig.contains("SBK_BILLING_BACKEND_BASE_URL is required for release builds."))
-        assertTrue(buildConfig.contains("SBK_BILLING_BACKEND_BASE_URL must be https://billing.shortsblockerkids.de"))
-        assertTrue(buildConfig.contains("\"assembleRelease\""))
-        assertTrue(buildConfig.contains("\"bundleRelease\""))
+        assertFalse(buildConfig.contains("SBK_BILLING_BACKEND_BASE_URL"))
+        assertFalse(buildConfig.contains("BILLING_CLIENT_ONLY_TEST_MODE"))
     }
 
     @Test
-    fun billingLayerAlignmentFailsClosedAndKeepsGooglePlayGatewayInfrastructureOnly() {
+    fun billingLayerUsesGooglePlayAndPersistsBeforeAcknowledgement() {
         val useCaseSource =
             repoFile(
                 "app/src/main/java/com/shortsblockerkids/application/billing/" +
@@ -275,13 +270,10 @@ class ReleaseCopyInvariantTest {
                     "GooglePlayBillingGateway.kt",
             ).readText()
 
-        assertTrue(useCaseSource.contains("verificationPolicy.failClosedSnapshot"))
-        assertTrue(
-            useCaseSource.contains("BillingSyncStatus.BACKEND_PURCHASE_VERIFICATION_FAILED"),
-        )
-        assertTrue(
-            useCaseSource.contains("BillingSyncStatus.BACKEND_ENTITLEMENT_REFRESH_FAILED"),
-        )
+        assertTrue(useCaseSource.contains("purchaseSummary.hasPurchasedSubscription"))
+        assertTrue(useCaseSource.contains("purchaseSummary.hasPendingSubscription"))
+        assertTrue(useCaseSource.contains("purchaseSummary.unacknowledgedPurchasedSubscriptionTokens"))
+        assertFalse(useCaseSource.contains("BillingVerification"))
         assertFalse(useCaseSource.contains("BillingMessageCode"))
         assertTrue(coordinatorSource.contains("SyncBillingEntitlementUseCase"))
         assertTrue(coordinatorSource.contains("syncBillingEntitlementUseCase(event.summary)"))
@@ -289,9 +281,9 @@ class ReleaseCopyInvariantTest {
         assertTrue(coordinatorSource.contains("onEntitlementChanged(snapshot)"))
         assertTrue(coordinatorSource.contains("outcome.purchaseTokensToAcknowledge"))
         assertTrue(coordinatorSource.contains("outcome.toBillingUiMessage()"))
-        assertTrue(coordinatorSource.contains("outcome.clearsLoading"))
-        assertTrue(messageMapperSource.contains("BillingMessageCode.VERIFY_WITH_BACKEND_FAILED"))
-        assertTrue(messageMapperSource.contains("BillingMessageCode.REFRESH_BACKEND_FAILED"))
+        assertTrue(messageMapperSource.contains("BillingMessageCode.SUBSCRIPTION_ACTIVE"))
+        assertTrue(messageMapperSource.contains("BillingMessageCode.PURCHASE_PENDING"))
+        assertTrue(messageMapperSource.contains("BillingMessageCode.NO_ACTIVE_SUBSCRIPTION"))
         assertTrue(gatewaySource.contains("PlayBillingConfig.MONTHLY_SUBSCRIPTION_PRODUCT_ID"))
         assertTrue(gatewaySource.contains("?.formattedPrice"))
         assertTrue(
@@ -320,18 +312,6 @@ class ReleaseCopyInvariantTest {
                 gatewaySource.contains(forbiddenSource),
             )
         }
-    }
-
-    @Test
-    fun releaseReadinessDocsRecordBillingBackendAndPermissionBoundaries() {
-        val releaseReadiness = repoFile("docs/SHORTS_BLOCKER_AAB_RELEASE_READINESS.md").readText()
-        val backendRunbook = repoFile("docs/SHORTS_BLOCKER_PLAY_BILLING_BACKEND_RUNBOOK.md").readText()
-
-        assertTrue(releaseReadiness.contains("SBK_BILLING_BACKEND_BASE_URL"))
-        assertTrue(releaseReadiness.contains("Release fail-closed behavior"))
-        assertTrue(backendRunbook.contains("Production Gates"))
-        assertTrue(backendRunbook.contains("Play license tester"))
-        assertTrue(backendRunbook.contains("Do not remove `android.permission.INTERNET`"))
     }
 
     @Test

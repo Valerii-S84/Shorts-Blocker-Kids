@@ -44,7 +44,6 @@ class LocalEntitlementResolverTest {
                     entitlement =
                         activeInput(permissionGranted = true).entitlement.copy(
                             isPaidProtectionAllowed = true,
-                            paidLastVerifiedAtMillis = nowMillis,
                         ),
                 )
 
@@ -69,7 +68,6 @@ class LocalEntitlementResolverTest {
                         EntitlementSnapshot(
                             freeTestStartedAtMillis = 0L,
                             isPaidProtectionAllowed = true,
-                            paidLastVerifiedAtMillis = nowMillis,
                         ),
                 )
 
@@ -88,7 +86,6 @@ class LocalEntitlementResolverTest {
                         EntitlementSnapshot(
                             freeTestStartedAtMillis = 0L,
                             isPaidProtectionAllowed = false,
-                            paidLastVerifiedAtMillis = nowMillis,
                         ),
                 )
 

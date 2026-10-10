@@ -54,8 +54,10 @@ class InstagramReelsDetector(
         val matched =
             nodes.any { node ->
                 node.isVisibleToUser &&
-                    (node.contentDescriptionSignals.any { it in ShortVideoTextSignals.reelsIdentifiers } ||
-                        node.viewIdResourceName.containsAnyIgnoringCase("reel", "reels", "clips"))
+                    (
+                        node.contentDescriptionSignals.any { it in ShortVideoTextSignals.reelsIdentifiers } ||
+                            node.viewIdResourceName.containsAnyIgnoringCase("reel", "reels", "clips")
+                    )
             }
 
         if (matched) {
@@ -69,14 +71,17 @@ class InstagramReelsDetector(
         val matched =
             nodes.any { node ->
                 node.isVisibleToUser &&
-                    (node.viewIdResourceName.containsAnyIgnoringCase(
-                        "clips",
-                        "clips_viewer",
-                        "reel",
-                        "reels",
-                        "reel_viewer",
-                        "viewer",
-                    ) || node.className.containsAnyIgnoringCase("viewpager"))
+                    (
+                        node.viewIdResourceName.containsAnyIgnoringCase(
+                            "clips",
+                            "clips_viewer",
+                            "reel",
+                            "reels",
+                            "reel_viewer",
+                            "viewer",
+                        ) ||
+                            node.className.containsAnyIgnoringCase("viewpager")
+                    )
             }
 
         if (matched) {

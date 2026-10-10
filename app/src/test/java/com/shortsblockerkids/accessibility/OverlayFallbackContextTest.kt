@@ -2,8 +2,8 @@ package com.shortsblockerkids.accessibility
 
 import com.shortsblockerkids.domain.detection.Confidence
 import com.shortsblockerkids.domain.detection.DetectionResult
-import com.shortsblockerkids.platform.accessibility.overlay.canExitAfterOverlayFailure
 import com.shortsblockerkids.platform.accessibility.overlay.canDismissBlockedPictureInPicture
+import com.shortsblockerkids.platform.accessibility.overlay.canExitAfterOverlayFailure
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test

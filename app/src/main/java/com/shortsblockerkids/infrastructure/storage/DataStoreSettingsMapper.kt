@@ -8,10 +8,8 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.shortsblockerkids.application.model.AppSettingsSnapshot
 import com.shortsblockerkids.application.port.PinHashingPort
-import com.shortsblockerkids.domain.entitlement.BillingEntitlementState
 import com.shortsblockerkids.domain.entitlement.EntitlementSnapshot
 import com.shortsblockerkids.domain.entitlement.FreeTestPolicy
-import com.shortsblockerkids.domain.entitlement.allowsPaidProtection
 import com.shortsblockerkids.domain.protection.ProtectionConfiguration
 import com.shortsblockerkids.domain.protection.ProtectionMode
 
@@ -26,11 +24,7 @@ internal object DataStoreSettingsMapper {
     val temporaryAllowBootCountKey = intPreferencesKey("temporaryAllowBootCount")
     val freeTestStartedAtKey = longPreferencesKey("free_test_started_at")
     val freeTestDurationDaysKey = intPreferencesKey("free_test_duration_days")
-    val billingInstallationIdKey = stringPreferencesKey("billing_installation_id")
-    val billingEntitlementStateKey = stringPreferencesKey("billing_entitlement_state")
-    val billingSubscriptionActiveKey = booleanPreferencesKey("billing_subscription_active")
-    val billingLastVerifiedAtKey = longPreferencesKey("billing_last_verified_at")
-    val billingActiveUntilMillisKey = longPreferencesKey("billing_active_until_millis")
+    val playSubscriptionActiveKey = booleanPreferencesKey("play_subscription_active")
 
     fun toStoredAppSettings(preferences: Preferences): StoredAppSettings =
         StoredAppSettings(
@@ -49,15 +43,7 @@ internal object DataStoreSettingsMapper {
             freeTestStartedAt = preferences[freeTestStartedAtKey],
             freeTestDurationDays =
                 preferences[freeTestDurationDaysKey] ?: FreeTestPolicy.DEFAULT_DURATION_DAYS,
-            billingInstallationId = preferences[billingInstallationIdKey],
-            billingEntitlementState =
-                enumValueOrDefault(
-                    preferences[billingEntitlementStateKey],
-                    BillingEntitlementState.UNKNOWN,
-                ),
-            billingSubscriptionActive = preferences[billingSubscriptionActiveKey] ?: false,
-            billingLastVerifiedAt = preferences[billingLastVerifiedAtKey],
-            billingActiveUntilMillis = preferences[billingActiveUntilMillisKey],
+            billingSubscriptionActive = preferences[playSubscriptionActiveKey] ?: false,
             pinHash = preferences[PinPreferenceKeys.PIN_HASH],
             pinSalt = preferences[PinPreferenceKeys.PIN_SALT],
             pinHashVersion =
@@ -66,7 +52,10 @@ internal object DataStoreSettingsMapper {
             pinLockoutUntil = preferences[PinPreferenceKeys.PIN_LOCKOUT_UNTIL],
         )
 
-    fun toSnapshot(settings: StoredAppSettings, currentBootCount: Int? = null): AppSettingsSnapshot =
+    fun toSnapshot(
+        settings: StoredAppSettings,
+        currentBootCount: Int? = null,
+    ): AppSettingsSnapshot =
         AppSettingsSnapshot(
             protectionConfiguration =
                 ProtectionConfiguration(
@@ -75,13 +64,18 @@ internal object DataStoreSettingsMapper {
                         settings.accessibilityDisclosureAccepted,
                     mode = settings.selectedMode,
                     enabledPlatformIds = settings.enabledPlatformIds,
-                    temporaryAllowUntilMillis = settings.temporaryAllowUntil.takeIf {
-                        currentBootCount == null || (settings.temporaryAllowBootCount == currentBootCount &&
-                            settings.temporaryAllowElapsedRealtimeDeadlineMillis != null)
-                    },
-                    temporaryAllowElapsedRealtimeDeadlineMillis = settings.temporaryAllowElapsedRealtimeDeadlineMillis.takeIf {
-                        currentBootCount == null || settings.temporaryAllowBootCount == currentBootCount
-                    },
+                    temporaryAllowUntilMillis =
+                        settings.temporaryAllowUntil.takeIf {
+                            currentBootCount == null ||
+                                (
+                                    settings.temporaryAllowBootCount == currentBootCount &&
+                                        settings.temporaryAllowElapsedRealtimeDeadlineMillis != null
+                                )
+                        },
+                    temporaryAllowElapsedRealtimeDeadlineMillis =
+                        settings.temporaryAllowElapsedRealtimeDeadlineMillis.takeIf {
+                            currentBootCount == null || settings.temporaryAllowBootCount == currentBootCount
+                        },
                     temporaryAllowBootCount = settings.temporaryAllowBootCount,
                     isPinConfigured = settings.isPinCreated,
                 ),
@@ -89,12 +83,9 @@ internal object DataStoreSettingsMapper {
                 EntitlementSnapshot(
                     freeTestStartedAtMillis = settings.freeTestStartedAt,
                     freeTestDurationDays = settings.freeTestDurationDays,
-                    isPaidProtectionAllowed =
-                        settings.billingEntitlementState.allowsPaidProtection(),
-                    paidLastVerifiedAtMillis = settings.billingLastVerifiedAt,
-                    paidActiveUntilMillis = settings.billingActiveUntilMillis,
+                    isPaidProtectionAllowed = settings.billingSubscriptionActive,
                 ),
-            billingEntitlementStateName = settings.billingEntitlementState.name,
+            billingEntitlementStateName = if (settings.billingSubscriptionActive) "ACTIVE" else "INACTIVE",
         )
 
     fun enabledPlatformIds(preferences: Preferences): Set<String> =

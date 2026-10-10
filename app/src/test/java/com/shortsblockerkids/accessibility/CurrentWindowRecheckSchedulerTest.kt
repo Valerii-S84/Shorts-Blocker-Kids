@@ -12,107 +12,115 @@ import org.junit.Test
 
 class CurrentWindowRecheckSchedulerTest {
     @Test
-    fun initialUnavailableRootRetriesWithoutEvent() = runBlocking {
-        val fixture = Fixture(this)
-        fixture.scheduler.recheckNow()
-        yield()
+    fun initialUnavailableRootRetriesWithoutEvent() =
+        runBlocking {
+            val fixture = Fixture(this)
+            fixture.scheduler.recheckNow()
+            yield()
 
-        assertEquals(1, fixture.attempts)
-        assertEquals(listOf(500L), fixture.delays)
+            assertEquals(1, fixture.attempts)
+            assertEquals(listOf(500L), fixture.delays)
 
-        fixture.rootAvailable = true
-        fixture.wake()
-        yield()
-        assertEquals(2, fixture.attempts)
-        assertEquals(listOf(500L), fixture.delays)
-    }
-
-    @Test
-    fun repeatedUnavailableRootRetriesEvery500MillisUntilSuccess() = runBlocking {
-        val fixture = Fixture(this)
-        fixture.scheduler.recheckNow()
-        yield()
-        repeat(3) {
+            fixture.rootAvailable = true
             fixture.wake()
             yield()
-            yield()
+            assertEquals(2, fixture.attempts)
+            assertEquals(listOf(500L), fixture.delays)
         }
 
-        assertEquals(4, fixture.attempts)
-        assertEquals(listOf(500L, 500L, 500L, 500L), fixture.delays)
+    @Test
+    fun repeatedUnavailableRootRetriesEvery500MillisUntilSuccess() =
+        runBlocking {
+            val fixture = Fixture(this)
+            fixture.scheduler.recheckNow()
+            yield()
+            repeat(3) {
+                fixture.wake()
+                yield()
+                yield()
+            }
 
-        fixture.rootAvailable = true
-        fixture.wake()
-        yield()
-        assertEquals(5, fixture.attempts)
-        assertEquals(4, fixture.delays.size)
-    }
+            assertEquals(4, fixture.attempts)
+            assertEquals(listOf(500L, 500L, 500L, 500L), fixture.delays)
+
+            fixture.rootAvailable = true
+            fixture.wake()
+            yield()
+            assertEquals(5, fixture.attempts)
+            assertEquals(4, fixture.delays.size)
+        }
 
     @Test
-    fun successfulImmediateRecheckCancelsPendingRetry() = runBlocking {
-        val fixture = Fixture(this)
-        fixture.scheduler.recheckNow()
-        yield()
+    fun successfulImmediateRecheckCancelsPendingRetry() =
+        runBlocking {
+            val fixture = Fixture(this)
+            fixture.scheduler.recheckNow()
+            yield()
 
-        fixture.rootAvailable = true
-        fixture.scheduler.recheckNow()
-        fixture.wake()
-        yield()
+            fixture.rootAvailable = true
+            fixture.scheduler.recheckNow()
+            fixture.wake()
+            yield()
 
-        assertEquals(2, fixture.attempts)
-        assertEquals(listOf(500L), fixture.delays)
-    }
-
-    @Test
-    fun newerScheduledRequestReplacesPendingCallback() = runBlocking {
-        val fixture = Fixture(this)
-        fixture.rootAvailable = true
-        fixture.scheduler.schedule(400L)
-        yield()
-        val obsoleteWake = fixture.pending.last()
-        fixture.scheduler.schedule(100L)
-        yield()
-
-        obsoleteWake.complete(Unit)
-        yield()
-        assertEquals(0, fixture.attempts)
-        assertEquals(listOf(400L, 100L), fixture.delays)
-
-        fixture.wake()
-        yield()
-        assertEquals(1, fixture.attempts)
-    }
+            assertEquals(2, fixture.attempts)
+            assertEquals(listOf(500L), fixture.delays)
+        }
 
     @Test
-    fun cancelPreventsPendingRetryCallback() = runBlocking {
-        val fixture = Fixture(this)
-        fixture.scheduler.recheckNow()
-        yield()
+    fun newerScheduledRequestReplacesPendingCallback() =
+        runBlocking {
+            val fixture = Fixture(this)
+            fixture.rootAvailable = true
+            fixture.scheduler.schedule(400L)
+            yield()
+            val obsoleteWake = fixture.pending.last()
+            fixture.scheduler.schedule(100L)
+            yield()
 
-        fixture.scheduler.cancel()
-        fixture.wake()
-        yield()
+            obsoleteWake.complete(Unit)
+            yield()
+            assertEquals(0, fixture.attempts)
+            assertEquals(listOf(400L, 100L), fixture.delays)
 
-        assertEquals(1, fixture.attempts)
-        assertEquals(listOf(500L), fixture.delays)
-    }
+            fixture.wake()
+            yield()
+            assertEquals(1, fixture.attempts)
+        }
 
     @Test
-    fun parentScopeCancellationStopsRetry() = runBlocking {
-        val scope = CoroutineScope(coroutineContext + Job(coroutineContext[Job]))
-        val fixture = Fixture(scope)
-        fixture.scheduler.recheckNow()
-        yield()
+    fun cancelPreventsPendingRetryCallback() =
+        runBlocking {
+            val fixture = Fixture(this)
+            fixture.scheduler.recheckNow()
+            yield()
 
-        scope.cancel()
-        fixture.wake()
-        yield()
+            fixture.scheduler.cancel()
+            fixture.wake()
+            yield()
 
-        assertEquals(1, fixture.attempts)
-        assertEquals(listOf(500L), fixture.delays)
-    }
+            assertEquals(1, fixture.attempts)
+            assertEquals(listOf(500L), fixture.delays)
+        }
 
-    private class Fixture(scope: CoroutineScope) {
+    @Test
+    fun parentScopeCancellationStopsRetry() =
+        runBlocking {
+            val scope = CoroutineScope(coroutineContext + Job(coroutineContext[Job]))
+            val fixture = Fixture(scope)
+            fixture.scheduler.recheckNow()
+            yield()
+
+            scope.cancel()
+            fixture.wake()
+            yield()
+
+            assertEquals(1, fixture.attempts)
+            assertEquals(listOf(500L), fixture.delays)
+        }
+
+    private class Fixture(
+        scope: CoroutineScope,
+    ) {
         var rootAvailable = false
         var attempts = 0
         val delays = mutableListOf<Long>()

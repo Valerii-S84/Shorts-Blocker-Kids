@@ -17,7 +17,6 @@ AAB: pending rebuild from reviewed source
 AAB size: pending
 AAB SHA-256: pending
 Source commit: pending
-Backend URL: pending verification in the rebuilt release artifact
 ```
 
 ## Device Matrix
@@ -73,11 +72,8 @@ Unsupported packages must not be claimed as supported:
 | SUB-01 | Subscription active. | Paid protection entitlement is active. | Dashboard status and Play tester evidence. |
 | SUB-02 | Subscription pending. | Paid protection is not unlocked until approval. | Dashboard status and Play tester evidence. |
 | SUB-03 | Subscription canceled but still active. | Access remains active until Play reports expiry. | Dashboard status and Play tester evidence. |
-| SUB-04 | Grace period / account hold. | App reflects Google Play state after refresh. | Dashboard status and backend evidence. |
+| SUB-04 | Grace period / account hold. | App reflects Google Play purchase state after refresh. | Dashboard status and Play tester evidence. |
 | SUB-05 | Subscription expired. | Paid protection locks after active entitlement ends. | Dashboard status and Play tester evidence. |
-| BACK-01 | Backend health. | `GET /health` returns `{"status":"ok"}`. | Command output. |
-| BACK-02 | Backend offline within 72 hours. | Conservative offline entitlement window applies. | Dashboard status and timestamp. |
-| BACK-03 | Backend offline after 72 hours. | Stale backend entitlement no longer unlocks paid protection. | Dashboard status and timestamp. |
 | BILL-01 | Restore purchase. | Active subscription is restored after reinstall or clear data. | Dashboard status and Play tester evidence. |
 
 ## Pass Criteria
@@ -89,7 +85,6 @@ Unsupported packages must not be claimed as supported:
 - Temporary allow works for 5, 10, and 15 minutes.
 - Billing states active, pending, canceled active, grace/account hold where
   available, expired, and restore are recorded.
-- Backend health, RTDN, and offline entitlement behavior are recorded.
 - Privacy Policy, Data Safety, Accessibility declaration, and store listing
   match the exact release under test.
 - No analytics, ads, account, child history, raw Accessibility tree dumps, or
@@ -101,8 +96,6 @@ Local automated evidence recorded in this repository:
 
 - Release build gate and AAB-derived emulator install:
   `docs/SHORTS_BLOCKER_AAB_RELEASE_READINESS.md`
-- Backend local production-like healthcheck:
-  `docs/SHORTS_BLOCKER_PLAY_BILLING_BACKEND_RUNBOOK.md`
 - Real-device YouTube smoke evidence from May 22, 2026:
   `docs/SHORTS_BLOCKER_REAL_DEVICE_SMOKE_REPORT.md`
 
@@ -112,4 +105,3 @@ External evidence still to collect:
 - Real-device TikTok, Instagram, and Facebook detector evidence.
 - Device Admin tamper protection disclosure and disable-warning evidence.
 - Play Billing tester lifecycle evidence.
-- Deployed backend RTDN and durable storage evidence.

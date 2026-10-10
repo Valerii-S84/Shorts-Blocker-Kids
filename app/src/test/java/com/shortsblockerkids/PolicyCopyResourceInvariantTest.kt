@@ -187,7 +187,7 @@ class PolicyCopyResourceInvariantTest {
                 "does not collect or send child data",
                 "raw Accessibility tree dumps",
                 "There is no account system, analytics, or ads",
-                "Google Play billing verification",
+                "Subscriptions use Google Play Billing",
                 "Rules and PIN protection stay locally on this phone",
                 "Protection is ON",
                 "permission is turned off",
@@ -199,7 +199,7 @@ class PolicyCopyResourceInvariantTest {
             setOf(
                 "works locally on this phone",
                 "does not require an account",
-                "billing backend limited to Google Play entitlement status",
+                "Subscription purchase status is read from Google Play Billing and stored locally",
                 "Android Accessibility Service",
                 "YouTube Shorts",
                 "TikTok short-video feed",
@@ -214,8 +214,8 @@ class PolicyCopyResourceInvariantTest {
                 "parent PIN is not stored as plain text",
                 "does not collect or send child data",
                 "raw Accessibility tree dumps",
-                "billing technical data",
-                "stores hashed purchase tokens",
+                "Payment data is processed by Google Play",
+                "stores local subscription entitlement status",
                 "Protection is ON",
                 "blocking stops",
             )

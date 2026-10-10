@@ -1,7 +1,6 @@
 package com.shortsblockerkids.infrastructure.storage
 
 import com.shortsblockerkids.application.model.AppSettingsSnapshot
-import com.shortsblockerkids.domain.entitlement.BillingEntitlementState
 import com.shortsblockerkids.domain.entitlement.FreeTestPolicy
 import com.shortsblockerkids.domain.protection.ProtectionConfiguration
 import com.shortsblockerkids.domain.protection.ProtectionMode
@@ -23,7 +22,7 @@ class StoredAppSettingsTest {
             settings.enabledPlatformIds,
         )
         assertEquals(FreeTestPolicy.DEFAULT_DURATION_DAYS, settings.freeTestDurationDays)
-        assertEquals(BillingEntitlementState.UNKNOWN, settings.billingEntitlementState)
+        assertFalse(settings.billingSubscriptionActive)
         assertEquals(1, settings.pinHashVersion)
         assertEquals(0, settings.failedPinAttempts)
     }
@@ -46,10 +45,7 @@ class StoredAppSettingsTest {
                     accessibilityDisclosureAccepted = true,
                     temporaryAllowUntil = 2_000L,
                     freeTestStartedAt = 1_000L,
-                    billingInstallationId = "installation-secret",
-                    billingEntitlementState = BillingEntitlementState.CANCELED_ACTIVE,
-                    billingLastVerifiedAt = 3_000L,
-                    billingActiveUntilMillis = 4_000L,
+                    billingSubscriptionActive = true,
                     pinHash = "pin-hash",
                     pinSalt = "pin-salt",
                     failedPinAttempts = 5,
@@ -62,12 +58,7 @@ class StoredAppSettingsTest {
         assertEquals(2_000L, snapshot.protectionConfiguration.temporaryAllowUntilMillis)
         assertEquals(1_000L, snapshot.entitlement.freeTestStartedAtMillis)
         assertTrue(snapshot.entitlement.isPaidProtectionAllowed)
-        assertEquals(3_000L, snapshot.entitlement.paidLastVerifiedAtMillis)
-        assertEquals(4_000L, snapshot.entitlement.paidActiveUntilMillis)
-        assertEquals(
-            BillingEntitlementState.CANCELED_ACTIVE.name,
-            snapshot.billingEntitlementStateName,
-        )
+        assertEquals("ACTIVE", snapshot.billingEntitlementStateName)
     }
 
     @Test

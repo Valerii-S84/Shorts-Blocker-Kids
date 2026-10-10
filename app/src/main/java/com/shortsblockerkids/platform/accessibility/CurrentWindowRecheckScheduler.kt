@@ -23,12 +23,13 @@ internal class CurrentWindowRecheckScheduler(
 
     fun schedule(delayMillis: Long) {
         cancel()
-        recheckJob = scope.launch {
-            awaitDelay(delayMillis)
-            // The attempt may schedule its successor; it must not cancel its own coroutine.
-            recheckJob = null
-            recheckNow()
-        }
+        recheckJob =
+            scope.launch {
+                awaitDelay(delayMillis)
+                // The attempt may schedule its successor; it must not cancel its own coroutine.
+                recheckJob = null
+                recheckNow()
+            }
     }
 
     fun cancel() {

@@ -48,7 +48,7 @@ class AppSettingsSnapshotQueriesTest {
     fun snapshotQueriesPreserveEntitlementAndProtectionGates() {
         val snapshot = entitledSnapshot()
 
-        assertTrue(snapshot.hasBillingEntitlement(NOW_MILLIS))
+        assertTrue(snapshot.hasBillingEntitlement())
         assertTrue(snapshot.canProtect(NOW_MILLIS))
         assertFalse(
             snapshot
@@ -57,7 +57,7 @@ class AppSettingsSnapshotQueriesTest {
                         snapshot.protectionConfiguration.copy(isEnabled = false),
                 ).canProtect(NOW_MILLIS),
         )
-        assertFalse(AppSettingsSnapshot().hasBillingEntitlement(NOW_MILLIS))
+        assertFalse(AppSettingsSnapshot().hasBillingEntitlement())
     }
 
     @Test
@@ -83,7 +83,6 @@ class AppSettingsSnapshotQueriesTest {
             entitlement =
                 EntitlementSnapshot(
                     isPaidProtectionAllowed = true,
-                    paidLastVerifiedAtMillis = NOW_MILLIS,
                 ),
         )
 

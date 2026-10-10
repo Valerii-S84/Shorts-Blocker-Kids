@@ -1,8 +1,8 @@
 package com.shortsblockerkids.application.protection
 
+import com.shortsblockerkids.application.port.PinLockoutClock
 import com.shortsblockerkids.application.port.TemporaryAllowStore
 import com.shortsblockerkids.application.port.TimeProvider
-import com.shortsblockerkids.application.port.PinLockoutClock
 
 class ClearExpiredTemporaryAllowUseCase(
     private val timeProvider: TimeProvider,

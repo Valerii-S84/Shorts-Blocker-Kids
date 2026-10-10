@@ -67,28 +67,9 @@ private fun BillingMessageCode.stringRes(): Int =
         BillingMessageCode.RESTORE_PURCHASES_FAILED ->
             R.string.billing_error_restore_purchases
         BillingMessageCode.SUBSCRIPTION_ACTIVE -> R.string.billing_status_subscription_active
-        BillingMessageCode.BACKEND_VERIFICATION_REQUIRED ->
-            R.string.billing_status_backend_verification_required
         BillingMessageCode.PURCHASE_PENDING -> R.string.billing_status_purchase_pending
         BillingMessageCode.NO_ACTIVE_SUBSCRIPTION ->
             R.string.billing_status_no_active_subscription
-        BillingMessageCode.BACKEND_VERIFICATION_NOT_READY ->
-            R.string.billing_status_backend_verification_not_ready
-        BillingMessageCode.VERIFYING_WITH_BACKEND ->
-            R.string.billing_status_verifying_with_backend
-        BillingMessageCode.VERIFY_WITH_BACKEND_FAILED ->
-            R.string.billing_error_verify_with_backend
-        BillingMessageCode.SUBSCRIPTION_CANCELED_ACTIVE ->
-            R.string.billing_status_subscription_canceled_active
-        BillingMessageCode.SUBSCRIPTION_IN_GRACE ->
-            R.string.billing_status_subscription_in_grace
-        BillingMessageCode.PAYMENT_ISSUE -> R.string.billing_status_payment_issue
-        BillingMessageCode.SUBSCRIPTION_REVOKED ->
-            R.string.billing_status_subscription_revoked
-        BillingMessageCode.VERIFICATION_UNAVAILABLE ->
-            R.string.billing_status_verification_unavailable
-        BillingMessageCode.REFRESH_BACKEND_FAILED ->
-            R.string.billing_error_refresh_backend
         BillingMessageCode.ACKNOWLEDGE_PURCHASE_FAILED ->
             R.string.billing_error_acknowledge_purchase
     }

@@ -1,8 +1,6 @@
 package com.shortsblockerkids.domain.entitlement
 
 object EntitlementPolicy {
-    const val PAID_OFFLINE_GRACE_MILLIS = 72L * 60L * 60L * 1_000L
-
     fun freeTestState(
         snapshot: EntitlementSnapshot,
         nowMillis: Long,
@@ -31,23 +29,12 @@ object EntitlementPolicy {
             nowMillis = nowMillis,
         )
 
-    fun hasPaidEntitlement(
-        snapshot: EntitlementSnapshot,
-        nowMillis: Long,
-    ): Boolean {
-        val verifiedAt = snapshot.paidLastVerifiedAtMillis ?: return false
-        if (verifiedAt > nowMillis || !snapshot.isPaidProtectionAllowed) {
-            return false
-        }
-        val offlineGraceUntil = verifiedAt + PAID_OFFLINE_GRACE_MILLIS
-        val activeUntil = snapshot.paidActiveUntilMillis ?: offlineGraceUntil
-        return nowMillis <= activeUntil && nowMillis <= offlineGraceUntil
-    }
+    fun hasPaidEntitlement(snapshot: EntitlementSnapshot): Boolean = snapshot.isPaidProtectionAllowed
 
     fun hasProtectionEntitlement(
         snapshot: EntitlementSnapshot,
         nowMillis: Long,
     ): Boolean =
         freeTestState(snapshot, nowMillis) == FreeTestState.ACTIVE ||
-            hasPaidEntitlement(snapshot, nowMillis)
+            hasPaidEntitlement(snapshot)
 }

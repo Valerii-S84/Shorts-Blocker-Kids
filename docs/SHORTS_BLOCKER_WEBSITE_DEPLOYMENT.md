@@ -15,14 +15,7 @@ https://shortsblockerkids.de/support
 https://shortsblockerkids.de/terms
 ```
 
-Billing backend remains separate:
-
-```text
-https://billing.shortsblockerkids.de
-```
-
-The public website must not expose backend admin, debug, credentials, Play
-Developer API details, or server internals.
+The public website must not expose credentials or server internals.
 
 ## Source
 

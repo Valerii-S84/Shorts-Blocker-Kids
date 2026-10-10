@@ -16,5 +16,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "ShortsBlockerKids"
 include(":app")
-include(":billing-backend")
 include(":test-fixtures:fake-social-apps")

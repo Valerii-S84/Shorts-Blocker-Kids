@@ -27,46 +27,10 @@ class EntitlementPolicyTest {
     }
 
     @Test
-    fun paidEntitlementRequiresAllowedStateAndNonFutureVerification() {
-        val allowed =
-            EntitlementSnapshot(
-                isPaidProtectionAllowed = true,
-                paidLastVerifiedAtMillis = 1_000L,
-            )
-
-        assertTrue(EntitlementPolicy.hasPaidEntitlement(allowed, 1_000L))
-        assertFalse(
-            EntitlementPolicy.hasPaidEntitlement(
-                allowed.copy(isPaidProtectionAllowed = false),
-                1_000L,
-            ),
-        )
-        assertFalse(
-            EntitlementPolicy.hasPaidEntitlement(
-                allowed.copy(paidLastVerifiedAtMillis = 1_001L),
-                1_000L,
-            ),
-        )
-    }
-
-    @Test
-    fun paidEntitlementHonorsActiveUntilAndOfflineGraceWindows() {
-        val verifiedAt = 1_000L
-        val snapshot =
-            EntitlementSnapshot(
-                isPaidProtectionAllowed = true,
-                paidLastVerifiedAtMillis = verifiedAt,
-                paidActiveUntilMillis = verifiedAt + ONE_DAY,
-            )
-
-        assertTrue(EntitlementPolicy.hasPaidEntitlement(snapshot, verifiedAt + ONE_DAY))
-        assertFalse(EntitlementPolicy.hasPaidEntitlement(snapshot, verifiedAt + ONE_DAY + 1L))
-        assertFalse(
-            EntitlementPolicy.hasPaidEntitlement(
-                snapshot.copy(paidActiveUntilMillis = verifiedAt + 7L * ONE_DAY),
-                verifiedAt + EntitlementPolicy.PAID_OFFLINE_GRACE_MILLIS + 1L,
-            ),
-        )
+    fun paidEntitlementFollowsStoredPlayState() {
+        val active = EntitlementSnapshot(isPaidProtectionAllowed = true)
+        assertTrue(EntitlementPolicy.hasPaidEntitlement(active))
+        assertFalse(EntitlementPolicy.hasPaidEntitlement(active.copy(isPaidProtectionAllowed = false)))
     }
 
     private companion object {

@@ -1,6 +1,5 @@
 package com.shortsblockerkids.infrastructure.storage
 
-import com.shortsblockerkids.domain.entitlement.BillingEntitlementState
 import com.shortsblockerkids.domain.entitlement.FreeTestPolicy
 import com.shortsblockerkids.domain.protection.ProtectionConfiguration
 import com.shortsblockerkids.domain.protection.ProtectionMode
@@ -15,11 +14,7 @@ internal data class StoredAppSettings(
     val temporaryAllowBootCount: Int? = null,
     val freeTestStartedAt: Long? = null,
     val freeTestDurationDays: Int = FreeTestPolicy.DEFAULT_DURATION_DAYS,
-    val billingInstallationId: String? = null,
-    val billingEntitlementState: BillingEntitlementState = BillingEntitlementState.UNKNOWN,
     val billingSubscriptionActive: Boolean = false,
-    val billingLastVerifiedAt: Long? = null,
-    val billingActiveUntilMillis: Long? = null,
     val pinHash: String? = null,
     val pinSalt: String? = null,
     val pinHashVersion: Int = 1,

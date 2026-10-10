@@ -69,46 +69,6 @@ jobs:
       - name: Run app static checks
         run: ./gradlew :app:ktlintCheck :app:lintDebug
 
-      - name: Validate release config fails closed
-        run: |
-          set +e
-          env -u SBK_BILLING_BACKEND_BASE_URL ./gradlew :app:validateProductionReleaseConfig
-          status=$?
-          if [ "$status" -eq 0 ]; then
-            echo "Release config validation unexpectedly passed without SBK_BILLING_BACKEND_BASE_URL."
-            exit 1
-          fi
-          echo "Release config validation failed without SBK_BILLING_BACKEND_BASE_URL as expected."
-
-      - name: Validate production release config
-        env:
-          SBK_BILLING_BACKEND_BASE_URL: https://billing.shortsblockerkids.de
-        run: ./gradlew :app:validateProductionReleaseConfig
-
-  billing-backend:
-    name: Billing Backend
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: "17"
-          cache: gradle
-
-      - name: Make Gradle wrapper executable
-        run: chmod u+x ./gradlew
-
-      - name: Test backend
-        run: ./gradlew :billing-backend:test
-
-      - name: Check backend formatting
-        run: ./gradlew :billing-backend:ktlintCheck
-
   security:
     name: Security Hygiene
     runs-on: ubuntu-latest

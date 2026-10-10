@@ -63,13 +63,12 @@ Notes:
 - No SMS permission.
 - No watch history storage.
 - No account system.
-- Billing backend is limited to Google Play subscription verification.
+- Subscription access follows Google Play Billing purchase state.
 - No cloud sync.
 - No analytics.
 - No ads.
 - Google Play Billing is integrated for subscriptions.
-- The app stores local subscription entitlement status and last verification
-  timestamp. The billing backend stores only billing technical entitlement data.
+- The app stores local subscription access state.
 - No language/content analysis.
 - No video/audio analysis.
 - No raw accessibility tree logging in release code paths.

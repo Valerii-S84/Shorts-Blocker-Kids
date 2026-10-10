@@ -30,17 +30,15 @@ AAB: pending rebuild from reviewed source
 AAB size: pending
 AAB SHA-256: pending
 Source commit: pending
-Production billing backend URL: https://billing.shortsblockerkids.de
-RTDN webhook URL: https://billing.shortsblockerkids.de/billing/play/rtdn
 Privacy Policy URL: https://shortsblockerkids.de/privacy
 Support URL: https://shortsblockerkids.de/support
 Publisher / developer name: Valerii Serputko
 Public contact email: svalerii535@gmail.com
 ```
 
-This local AAB was built with
-`SBK_BILLING_BACKEND_BASE_URL=https://billing.shortsblockerkids.de`. Play Console
-upload and Play App Signing acceptance are still not verified.
+The prior local AAB used backend verification and must be rebuilt from the
+current source. Play Console upload and Play App Signing acceptance are still
+not verified.
 
 ## Subscription Product
 
@@ -135,8 +133,6 @@ Confirm these remain true after Play Console setup:
 - no manual license key or code entry activation;
 - no ads;
 - no analytics SDK;
-- billing backend is deployed only for Play purchase verification and RTDN;
 - Privacy Policy URL is `https://shortsblockerkids.de/privacy` and explains Google
-  Play Billing, backend verification at `https://billing.shortsblockerkids.de`, and
-  local entitlement storage;
+  Play Billing and local subscription access state;
 - Data Safety answers match the Billing SDK, permissions, and local data.

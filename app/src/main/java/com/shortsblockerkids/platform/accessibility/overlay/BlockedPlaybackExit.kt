@@ -28,16 +28,18 @@ class BlockedPlaybackExit(
     fun exitIfStillDetected(expectedPackage: String): Boolean {
         if (dismissBlockedPip(expectedPackage)) return true
         val root = service.rootInActiveWindow ?: return false
-        val shouldExit = try {
-            val currentPackage = root.packageName?.toString()
-            currentPackage == expectedPackage && canExitAfterOverlayFailure(
-                expectedPackage,
-                currentPackage,
-                detector.detect(expectedPackage, scanner.scan(root)),
-            )
-        } finally {
-            root.recycle()
-        }
+        val shouldExit =
+            try {
+                val currentPackage = root.packageName?.toString()
+                currentPackage == expectedPackage &&
+                    canExitAfterOverlayFailure(
+                        expectedPackage,
+                        currentPackage,
+                        detector.detect(expectedPackage, scanner.scan(root)),
+                    )
+            } finally {
+                root.recycle()
+            }
         if (!shouldExit) return false
         blockedPackage = expectedPackage
         return exitPlayer()
@@ -57,7 +59,9 @@ class BlockedPlaybackExit(
         val root = service.rootInActiveWindow ?: return false
         return try {
             canExitAfterOverlayFailure(
-                expectedPackage, root.packageName?.toString(), detector.detect(expectedPackage, scanner.scan(root)),
+                expectedPackage,
+                root.packageName?.toString(),
+                detector.detect(expectedPackage, scanner.scan(root)),
             )
         } finally {
             root.recycle()
@@ -69,13 +73,16 @@ class BlockedPlaybackExit(
         val packageName = blockedPackage ?: return false
         if (dismissBlockedPip(packageName)) return true
         val root = service.rootInActiveWindow ?: return false
-        val shouldExit = try {
-            canExitAfterOverlayFailure(
-                packageName, root.packageName?.toString(), detector.detect(packageName, scanner.scan(root)),
-            )
-        } finally {
-            root.recycle()
-        }
+        val shouldExit =
+            try {
+                canExitAfterOverlayFailure(
+                    packageName,
+                    root.packageName?.toString(),
+                    detector.detect(packageName, scanner.scan(root)),
+                )
+            } finally {
+                root.recycle()
+            }
         return if (shouldExit) {
             service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)
         } else {
@@ -117,7 +124,6 @@ class BlockedPlaybackExit(
         }
         return service.windows
     }
-
 }
 
 internal fun canExitAfterOverlayFailure(

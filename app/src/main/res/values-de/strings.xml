@@ -19,13 +19,13 @@
 
     <!-- Accessibility disclosure -->
     <string name="accessibility_disclosure_title">Berechtigung für Bedienungshilfen</string>
-    <string name="accessibility_disclosure_body">Shorts Blocker Kids verwendet den Android-Bedienungshilfedienst, um zu erkennen, wenn geschützte Kurzvideo-Bereiche geöffnet sind, und einen Blockierungsbildschirm anzuzeigen. Geschützt werden YouTube Shorts, der TikTok-Kurzvideo-Feed, Instagram Reels und Facebook Reels. Das regionale TikTok-Paket com.ss.android.ugc.trill und Facebook Lite werden nicht unterstützt.\n\nWenn Kurzvideos blockiert sind, kann der Zugriff mit der Eltern-PIN vorübergehend erlaubt werden. Ohne die Eltern-PIN bleibt der Blockierungsbildschirm aktiv, solange ein geschützter Kurzvideo-Bereich geöffnet ist.\n\nDie App erfasst oder übermittelt keine Daten von Kindern, Aktivitäten in unterstützten Apps, Wiedergabeverläufe, Videotitel, URLs, Kontonamen, Kommentare, Nachrichten, Bildschirmaufnahmen, Audiodaten, Standortdaten, Kontakte, Browserverläufe oder Rohdaten des Bedienungshilfen-Baums. Es gibt kein Kontosystem, keine Analysen und keine Werbung. Das Backend wird ausschließlich zur Überprüfung der Google Play-Abrechnung verwendet. Regeln und PIN-Schutz bleiben lokal auf diesem Smartphone.\n\nDie Blockierung funktioniert, wenn der Schutz EINGESCHALTET und der Android-Bedienungshilfedienst aktiv ist. Wird diese Berechtigung deaktiviert oder die App entfernt, endet die Blockierung.</string>
+    <string name="accessibility_disclosure_body">Shorts Blocker Kids verwendet den Android-Bedienungshilfedienst, um zu erkennen, wenn geschützte Kurzvideo-Bereiche geöffnet sind, und einen Blockierungsbildschirm anzuzeigen. Geschützt werden YouTube Shorts, der TikTok-Kurzvideo-Feed, Instagram Reels und Facebook Reels. Das regionale TikTok-Paket com.ss.android.ugc.trill und Facebook Lite werden nicht unterstützt.\n\nWenn Kurzvideos blockiert sind, kann der Zugriff mit der Eltern-PIN vorübergehend erlaubt werden. Ohne die Eltern-PIN bleibt der Blockierungsbildschirm aktiv, solange ein geschützter Kurzvideo-Bereich geöffnet ist.\n\nDie App erfasst oder übermittelt keine Daten von Kindern, Aktivitäten in unterstützten Apps, Wiedergabeverläufe, Videotitel, URLs, Kontonamen, Kommentare, Nachrichten, Bildschirmaufnahmen, Audiodaten, Standortdaten, Kontakte, Browserverläufe oder Rohdaten des Bedienungshilfen-Baums. Es gibt kein Kontosystem, keine Analysen und keine Werbung. Abonnements verwenden Google Play Billing; der Kaufstatus wird lokal gespeichert. Regeln und PIN-Schutz bleiben lokal auf diesem Smartphone.\n\nDie Blockierung funktioniert, wenn der Schutz EINGESCHALTET und der Android-Bedienungshilfedienst aktiv ist. Wird diese Berechtigung deaktiviert oder die App entfernt, endet die Blockierung.</string>
     <string name="accessibility_disclosure_accept">Zustimmen und fortfahren</string>
 
     <!-- Privacy policy -->
     <string name="privacy_policy_title">Datenschutzerklärung</string>
     <string name="privacy_policy_local_app_title">Lokale App</string>
-    <string name="privacy_policy_local_app_body">Shorts Blocker Kids funktioniert lokal auf diesem Smartphone. Ein Konto ist nicht erforderlich. Die Abonnementprüfung in der Produktivversion kann ein Abrechnungs-Backend verwenden, das ausschließlich den Google Play-Berechtigungsstatus verarbeitet.</string>
+    <string name="privacy_policy_local_app_body">Shorts Blocker Kids funktioniert lokal auf diesem Smartphone. Ein Konto ist nicht erforderlich. Der Kaufstatus von Abonnements wird über Google Play Billing gelesen und lokal gespeichert.</string>
     <string name="privacy_policy_accessibility_service_title">Bedienungshilfedienst</string>
     <string name="privacy_policy_accessibility_service_body">Die App verwendet den Android-Bedienungshilfedienst, um unterstützte Kurzvideo-Bereiche zu erkennen und bei aktiviertem Schutz einen Blockierungsbildschirm anzuzeigen. Geschützt werden YouTube Shorts, der TikTok-Kurzvideo-Feed, Instagram Reels und Facebook Reels. Das regionale TikTok-Paket com.ss.android.ugc.trill und Facebook Lite werden nicht unterstützt.</string>
     <string name="privacy_policy_tamper_protection_title">Manipulationsschutz</string>
@@ -35,7 +35,7 @@
     <string name="privacy_policy_data_collection_title">Datenerfassung</string>
     <string name="privacy_policy_data_collection_body">Die App erfasst oder übermittelt keine Daten von Kindern, Aktivitäten in unterstützten Apps, Wiedergabeverläufe, Videotitel, URLs, Kontonamen, Kommentare, Nachrichten, Bildschirmaufnahmen, Audiodaten, Standortdaten, Kontakte, Browserverläufe oder Rohdaten der Bedienungshilfen-Struktur.</string>
     <string name="privacy_policy_payments_title">Zahlungen</string>
-    <string name="privacy_policy_payments_body">Abonnements werden über Google Play Billing abgewickelt. Zahlungsdaten verarbeitet Google Play gemäß den Google Play-Bedingungen. Diese App speichert den Berechtigungsstatus des Abonnements lokal. Wenn die Backend-Verifizierung aktiviert ist, verwendet sie ausschließlich technische Abrechnungsdaten und speichert gehashte Kauf-Token.</string>
+    <string name="privacy_policy_payments_body">Abonnements werden über Google Play Billing abgewickelt. Zahlungsdaten verarbeitet Google Play gemäß den Google Play-Bedingungen. Diese App speichert den Berechtigungsstatus des Abonnements lokal.</string>
     <string name="privacy_policy_limitations_title">Einschränkungen</string>
     <string name="privacy_policy_limitations_body">Die Blockierung funktioniert, wenn der Schutz EINGESCHALTET und der Android-Bedienungshilfedienst aktiv ist. Wird diese Berechtigung deaktiviert oder die App nach dem Deaktivieren des Manipulationsschutzes entfernt, endet die Blockierung.</string>
 
@@ -145,24 +145,14 @@
     <string name="billing_status_product_unavailable">Das Abonnementprodukt ist noch nicht verfügbar.</string>
     <string name="billing_status_product_loaded">Abonnement von Google Play geladen.</string>
     <string name="billing_status_subscription_active">Abonnement aktiv.</string>
-    <string name="billing_status_backend_verification_required">Für das Abonnement ist eine Backend-Verifizierung erforderlich. Stellen Sie Käufe wieder her oder versuchen Sie es erneut.</string>
     <string name="billing_status_purchase_pending">Kauf ausstehend. Der Schutz wird nach Abschluss der Zahlung freigeschaltet.</string>
     <string name="billing_status_no_active_subscription">Kein aktives Google Play-Abonnement gefunden.</string>
-    <string name="billing_status_backend_verification_not_ready">Die Verifizierung über das Abrechnungs-Backend ist noch nicht verfügbar.</string>
-    <string name="billing_status_verifying_with_backend">Abonnement wird über das sichere Backend verifiziert.</string>
-    <string name="billing_status_subscription_canceled_active">Das Abonnement bleibt bis zum Ende des bezahlten Zeitraums aktiv.</string>
-    <string name="billing_status_subscription_in_grace">Das Abonnement ist während der Google Play-Kulanzfrist aktiv.</string>
-    <string name="billing_status_payment_issue">Zahlungsproblem. Aktualisieren Sie das Abonnement in Google Play.</string>
-    <string name="billing_status_subscription_revoked">Abonnement von Google Play widerrufen.</string>
-    <string name="billing_status_verification_unavailable">Abonnementverifizierung nicht verfügbar.</string>
     <string name="billing_error_unavailable">Abrechnung nicht verfügbar</string>
     <string name="billing_error_open_purchase_flow">Kaufvorgang konnte nicht geöffnet werden</string>
     <string name="billing_error_manage_subscription_unavailable">Die Google Play-Abonnementverwaltung konnte auf diesem Gerät nicht geöffnet werden.</string>
     <string name="billing_error_purchase_failed">Kauf fehlgeschlagen</string>
     <string name="billing_error_load_subscription">Abonnement konnte nicht geladen werden</string>
     <string name="billing_error_restore_purchases">Käufe konnten nicht wiederhergestellt werden</string>
-    <string name="billing_error_verify_with_backend">Abonnement konnte nicht über das Backend verifiziert werden. Stellen Sie Käufe wieder her oder versuchen Sie es erneut.</string>
-    <string name="billing_error_refresh_backend">Abonnement konnte nicht über das Backend aktualisiert werden. Stellen Sie Käufe wieder her oder versuchen Sie es erneut.</string>
     <string name="billing_error_acknowledge_purchase">Kauf konnte nicht bestätigt werden</string>
     <string name="billing_error_with_response_code">%1$s (%2$d).</string>
 
@@ -221,7 +211,6 @@
     <string name="debug_blocking_decision">Blockierungsentscheidung</string>
     <string name="debug_entitlement">Berechtigung</string>
     <string name="debug_subscription_state">Abonnementstatus</string>
-    <string name="debug_backend">Backend</string>
     <string name="debug_enabled">aktiviert</string>
     <string name="debug_billing_ui">Abrechnungsoberfläche</string>
     <string name="debug_protection_permission">Schutzberechtigung</string>

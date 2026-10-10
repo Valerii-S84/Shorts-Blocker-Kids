@@ -1,8 +1,8 @@
 package com.shortsblockerkids.core.tamper
 
+import android.content.ContextWrapper
 import android.content.res.Configuration
 import android.content.res.Resources
-import android.content.ContextWrapper
 import android.util.DisplayMetrics
 import com.shortsblockerkids.R
 import org.junit.Assert.assertEquals

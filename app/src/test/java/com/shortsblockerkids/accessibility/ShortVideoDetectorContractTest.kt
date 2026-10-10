@@ -217,20 +217,21 @@ class ShortVideoDetectorContractTest {
 
     @Test
     fun viewPagerClassFallbackBlocksOnlyWithPlatformShortVideoContext() {
-        platformCases.filterNot { platformCase ->
-            platformCase.detector is YouTubeShortsDetector
-        }.forEach { platformCase ->
-            val result =
-                platformCase.detector.detect(
-                    packageName = platformCase.packageName,
-                    snapshot = viewPagerFallbackSnapshot(platformCase),
-                )
+        platformCases
+            .filterNot { platformCase ->
+                platformCase.detector is YouTubeShortsDetector
+            }.forEach { platformCase ->
+                val result =
+                    platformCase.detector.detect(
+                        packageName = platformCase.packageName,
+                        snapshot = viewPagerFallbackSnapshot(platformCase),
+                    )
 
-            assertEquals(platformCase.name, Confidence.HIGH, result.confidence)
-            assertTrue(platformCase.name, result.shouldBlock)
-            assertTrue(platformCase.name, result.matchedSignals.contains(DetectorSignal.REEL_CONTAINER.id))
-            assertTrue(platformCase.name, result.matchedSignals.contains(DetectorSignal.VERTICAL_FULLSCREEN.id))
-        }
+                assertEquals(platformCase.name, Confidence.HIGH, result.confidence)
+                assertTrue(platformCase.name, result.shouldBlock)
+                assertTrue(platformCase.name, result.matchedSignals.contains(DetectorSignal.REEL_CONTAINER.id))
+                assertTrue(platformCase.name, result.matchedSignals.contains(DetectorSignal.VERTICAL_FULLSCREEN.id))
+            }
     }
 
     @Test

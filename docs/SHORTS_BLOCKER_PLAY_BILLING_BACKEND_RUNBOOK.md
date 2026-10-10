@@ -1,5 +1,9 @@
 # Shorts Blocker Kids Play Billing Backend Runbook
 
+Historical runbook: the repository-local billing backend and its app integration
+were removed. The runtime commands and deployment steps below describe the
+former implementation and are not current release instructions.
+
 Status: Repository production flow prepared for `shortsblockerkids.de`. Android
 release builds now require the canonical HTTPS billing backend URL. Live DNS,
 TLS, Play Console RTDN setup, and license-tester evidence remain pending until

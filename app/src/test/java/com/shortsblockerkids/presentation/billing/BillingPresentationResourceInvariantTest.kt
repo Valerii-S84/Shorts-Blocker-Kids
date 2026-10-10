@@ -168,8 +168,6 @@ class BillingPresentationResourceInvariantTest {
                     "BillingEntitlementState.kt",
                 "app/src/main/java/com/shortsblockerkids/domain/entitlement/" +
                     "BillingEntitlementSnapshot.kt",
-                "app/src/main/java/com/shortsblockerkids/domain/entitlement/" +
-                    "BillingVerificationPolicy.kt",
                 "app/src/main/java/com/shortsblockerkids/application/billing/" +
                     "BillingPurchaseSummary.kt",
                 "app/src/main/java/com/shortsblockerkids/application/billing/" +
@@ -177,11 +175,7 @@ class BillingPresentationResourceInvariantTest {
                 "app/src/main/java/com/shortsblockerkids/application/billing/" +
                     "SyncBillingEntitlementUseCase.kt",
                 "app/src/main/java/com/shortsblockerkids/application/billing/" +
-                    "BillingVerificationPort.kt",
-                "app/src/main/java/com/shortsblockerkids/application/billing/" +
                     "PlayBillingGateway.kt",
-                "app/src/main/java/com/shortsblockerkids/infrastructure/billing/" +
-                    "HttpBillingVerificationAdapter.kt",
                 "app/src/main/java/com/shortsblockerkids/infrastructure/billing/" +
                     "PlayBillingConfig.kt",
                 BILLING_GATEWAY_SOURCE,
@@ -213,7 +207,6 @@ class BillingPresentationResourceInvariantTest {
                 "Purchase pending.",
                 "No active Google Play subscription found.",
                 "Could not restore purchases",
-                "Subscription verification unavailable.",
             )
     }
 }

@@ -5,9 +5,10 @@ object TemporaryAllowPolicy {
         configuration: ProtectionConfiguration,
         nowMillis: Long,
         elapsedRealtimeMillis: Long?,
-    ): Boolean = configuration.temporaryAllowElapsedRealtimeDeadlineMillis?.let { deadline ->
-        elapsedRealtimeMillis != null && deadline > elapsedRealtimeMillis
-    } ?: isActive(configuration.temporaryAllowUntilMillis, nowMillis)
+    ): Boolean =
+        configuration.temporaryAllowElapsedRealtimeDeadlineMillis?.let { deadline ->
+            elapsedRealtimeMillis != null && deadline > elapsedRealtimeMillis
+        } ?: isActive(configuration.temporaryAllowUntilMillis, nowMillis)
 
     fun activeUntil(
         temporaryAllowUntilMillis: Long?,

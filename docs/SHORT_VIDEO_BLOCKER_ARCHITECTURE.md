@@ -182,8 +182,8 @@ pinHash: String?
 pinSalt: String?
 pinHashVersion: Int
 entitlement:
-  source: localFreeTest | playBilling | backendVerified
-  state: active | canceledActive | pending | expired | unpaid | unknown
+  source: localFreeTest | playBilling
+  state: active | pending | inactive
   expiresAt: Timestamp?
   lastVerifiedAt: Timestamp?
 ```
@@ -230,7 +230,7 @@ Overlay lifecycle failure:
 Billing unknown:
 
 - Parent access remains available.
-- Protection entitlement follows the billing/backend plan.
+- Protection entitlement follows Google Play Billing purchase state.
 
 ## No-Regression Rules
 

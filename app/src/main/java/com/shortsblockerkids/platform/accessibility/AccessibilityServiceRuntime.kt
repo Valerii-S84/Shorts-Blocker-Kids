@@ -7,14 +7,14 @@ import com.shortsblockerkids.MainActivity
 import com.shortsblockerkids.accessibility.BlockingDecisionController
 import com.shortsblockerkids.application.model.AccessibilityProtectionState
 import com.shortsblockerkids.application.model.AppSettingsSnapshot
+import com.shortsblockerkids.application.port.MonotonicTimeProvider
 import com.shortsblockerkids.application.port.ProtectionSettingsPort
 import com.shortsblockerkids.application.port.SettingsStatePort
 import com.shortsblockerkids.application.port.TemporaryAllowStore
 import com.shortsblockerkids.application.port.TimeProvider
+import com.shortsblockerkids.application.protection.canProtect
 import com.shortsblockerkids.application.settings.ObserveSettingsUseCase
 import com.shortsblockerkids.application.settings.SettingsReadState
-import com.shortsblockerkids.application.port.MonotonicTimeProvider
-import com.shortsblockerkids.application.protection.canProtect
 import com.shortsblockerkids.domain.detection.SupportedPlatform
 import com.shortsblockerkids.platform.accessibility.detection.ProductionDetectorRegistry
 import com.shortsblockerkids.platform.accessibility.diagnostics.DebugAccessibilityLogger
@@ -92,10 +92,11 @@ class AccessibilityServiceRuntime(
             AccessibilityEventRouter(
                 protectionSettingsPort = protectionSettingsPort,
                 timeProvider = timeProvider,
-                eventPolicy = AccessibilityEventPolicy(
-                    monotonicTimeProvider = intervalClock,
-                    requestRescan = ::scheduleScanRecheck,
-                ),
+                eventPolicy =
+                    AccessibilityEventPolicy(
+                        monotonicTimeProvider = intervalClock,
+                        requestRescan = ::scheduleScanRecheck,
+                    ),
                 treeScanner = AccessibilityTreeScanner(),
                 detectionEngine = ProductionDetectorRegistry.create(),
                 blockingDecisionController = blockingDecisionController,
@@ -118,36 +119,40 @@ class AccessibilityServiceRuntime(
                 diagnostics = diagnostics,
             )
         val connectedRouter = eventRouter
-        val settingsJob = serviceScope.launch {
-            ObserveSettingsUseCase(settingsStatePort)().collect { state ->
-                when (state) {
-                    is SettingsReadState.Ready -> {
-                        latestSettings = state.snapshot
-                        temporaryAllowDeadlineScheduler.schedule(
-                            state.snapshot.protectionConfiguration.temporaryAllowElapsedRealtimeDeadlineMillis,
-                        )
-                        if (!state.snapshot.canProtect(timeProvider.currentTimeMillis(), intervalClock.elapsedRealtimeMillis())) {
-                            currentWindowRecheckScheduler.cancel()
-                            connectedRouter.dismissBlockingState()
-                        } else {
+        val settingsJob =
+            serviceScope.launch {
+                ObserveSettingsUseCase(settingsStatePort)().collect { state ->
+                    when (state) {
+                        is SettingsReadState.Ready -> {
+                            latestSettings = state.snapshot
+                            temporaryAllowDeadlineScheduler.schedule(
+                                state.snapshot.protectionConfiguration.temporaryAllowElapsedRealtimeDeadlineMillis,
+                            )
+                            if (!state.snapshot.canProtect(timeProvider.currentTimeMillis(), intervalClock.elapsedRealtimeMillis())) {
+                                currentWindowRecheckScheduler.cancel()
+                                connectedRouter.dismissBlockingState()
+                            } else {
+                                routeCurrentWindow()
+                            }
+                        }
+                        is SettingsReadState.Unavailable -> {
+                            // Only a successfully read snapshot from this service session survives failure.
+                            diagnostics.recordBlockingDecision(
+                                if (latestSettings == null) {
+                                    "SettingsUnavailableProtectionDegraded"
+                                } else {
+                                    "SettingsUnavailableUsingLastSnapshot"
+                                },
+                            )
+                            routeCurrentWindow()
+                        }
+                        SettingsReadState.Loading -> {
+                            diagnostics.recordBlockingDecision("SettingsLoadingProtectionConservative")
                             routeCurrentWindow()
                         }
                     }
-                    is SettingsReadState.Unavailable -> {
-                        // Only a successfully read snapshot from this service session survives failure.
-                        diagnostics.recordBlockingDecision(
-                            if (latestSettings == null) "SettingsUnavailableProtectionDegraded"
-                            else "SettingsUnavailableUsingLastSnapshot",
-                        )
-                        routeCurrentWindow()
-                    }
-                    SettingsReadState.Loading -> {
-                        diagnostics.recordBlockingDecision("SettingsLoadingProtectionConservative")
-                        routeCurrentWindow()
-                    }
                 }
             }
-        }
         return {
             settingsJob.cancel()
             pinEntryRecheckJob?.cancel()
@@ -231,8 +236,9 @@ internal fun resolveServiceProtectionState(
     val platforms = SupportedPlatform.PROTECTED_PLATFORMS
     return AccessibilityProtectionState(
         isProtectionActive = snapshot?.canProtect(nowMillis, elapsedRealtimeMillis) ?: true,
-        enabledPlatformIds = platforms
-            .filter { snapshot?.protectionConfiguration?.isPlatformEnabled(it.id) ?: true }
-            .mapTo(mutableSetOf()) { it.id },
+        enabledPlatformIds =
+            platforms
+                .filter { snapshot?.protectionConfiguration?.isPlatformEnabled(it.id) ?: true }
+                .mapTo(mutableSetOf()) { it.id },
     )
 }

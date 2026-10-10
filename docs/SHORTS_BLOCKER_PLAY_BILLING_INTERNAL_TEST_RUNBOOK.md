@@ -18,9 +18,7 @@ It covers:
 - required subscription lifecycle tests;
 - evidence to capture before moving toward production rollout.
 
-It covers app-side Billing behavior first. Backend purchase verification and
-Real-time Developer Notifications are now implemented locally and must be
-validated against a deployed backend before production rollout.
+It covers app-side Google Play Billing behavior.
 
 Use `docs/SHORTS_BLOCKER_PLAY_CONSOLE_BILLING_CONFIG.md` as the exact product
 configuration sheet before running this test plan.
@@ -48,8 +46,6 @@ Subscription product ID: shorts_blocker_kids_monthly
 Billing library: com.android.billingclient:billing-ktx:9.0.0
 Product type: subscription
 Price is configured per country in Google Play Console. Planned launch pricing: Europe €2.99/month, Ukraine approx. €0.99/month equivalent.
-Production billing backend URL: https://billing.shortsblockerkids.de
-RTDN webhook URL: https://billing.shortsblockerkids.de/billing/play/rtdn
 Privacy Policy URL: https://shortsblockerkids.de/privacy
 ```
 
@@ -115,10 +111,6 @@ into app logic.
 | BIL-10 | Expired | Let the test subscription expire or use Play test lifecycle controls. | After restore/refresh reports no active purchase, paid protection locks but parent settings access remains available. |
 | BIL-11 | Payment problem | Change the subscription payment method to a failing test instrument. | App shows payment/Billing problem messaging when Play reports a problem; protection does not remain unlocked after active entitlement is gone. |
 | BIL-12 | Non-license sanity | Repeat purchase visibility with a non-license tester internal-test account. | App does not rely on license-tester-only logic; real Play purchase UX is still coherent. |
-| BIL-13 | Backend health | Start the deployed backend and call `GET /health`. | Health endpoint returns `{"status":"ok"}` without logging secrets or child data. |
-| BIL-14 | Backend offline window | With an active backend-verified entitlement, make the backend unreachable and reopen the app within 72 hours. | App uses the conservative offline entitlement window and does not require non-billing data. |
-| BIL-15 | Backend offline expired | Simulate or wait until the conservative backend offline window expires. | Paid protection no longer relies on stale backend verification. |
-| BIL-16 | RTDN lifecycle | Trigger or wait for RTDN updates for cancel, grace/account hold where available, and expiry. | Backend processes each message once and app entitlement reflects Google Play state after refresh. |
 
 ## Evidence To Record
 
@@ -145,14 +137,12 @@ Path: pending
 Size: pending
 SHA-256: pending
 Source commit: pending
-Backend URL embedded by release BuildConfig: pending verification
 Requirement before Play testing: rebuild and validate the signed AAB from the
 reviewed source, record its provenance here, upload that exact AAB to the Play
 internal testing track, then verify Play App Signing acceptance.
 ```
 
-Record the rebuilt AAB path, size, SHA-256, source commit, and embedded backend
-URL here before testing.
+Record the rebuilt AAB path, size, SHA-256, and source commit here before testing.
 
 ## Pass Gate
 
@@ -160,10 +150,7 @@ Billing can move from `Partial` to `Done` only when:
 
 - Play Console product `shorts_blocker_kids_monthly` is active;
 - internal testing AAB is installable from Play;
-- BIL-01 through BIL-16 are recorded;
-- backend verification is deployed and the app build uses
-  `SBK_BILLING_BACKEND_BASE_URL=https://billing.shortsblockerkids.de`;
-- RTDN delivery is configured and verified against the deployed backend;
+- BIL-01 through BIL-12 are recorded;
 - no non-Play payment path is visible in the Play-distributed app;
 - Privacy Policy, Data Safety, and store listing copy still match the shipped
   SDKs, permissions, and payment behavior.

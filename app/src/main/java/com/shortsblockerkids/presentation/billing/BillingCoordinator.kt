@@ -144,14 +144,6 @@ class BillingCoordinator(
     }
 
     private fun processPurchases(event: PlayBillingEvent.PurchasesObserved) {
-        if (syncBillingEntitlementUseCase.willVerifyPurchaseWithBackend(event.summary)) {
-            _uiState.update {
-                it.copy(
-                    isLoading = true,
-                    message = billingVerificationProgressMessage(),
-                )
-            }
-        }
         billingScope.launch {
             applyBillingSyncOutcome(syncBillingEntitlementUseCase(event.summary))
         }
@@ -162,8 +154,8 @@ class BillingCoordinator(
         outcome.purchaseTokensToAcknowledge.forEach(billingGateway::acknowledgePurchase)
         _uiState.update { currentState ->
             currentState.copy(
-                isLoading = if (outcome.clearsLoading) false else currentState.isLoading,
-                message = outcome.toBillingUiMessage() ?: currentState.message,
+                isLoading = false,
+                message = outcome.toBillingUiMessage(),
             )
         }
     }

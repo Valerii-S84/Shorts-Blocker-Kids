@@ -7,8 +7,8 @@ July 17, 2026. External Play Console submission and demo video URL are pending.
 ## Scope
 
 This document covers the AccessibilityService policy package for the current
-Android app. Google Play Billing and a billing-only backend verification module
-are integrated for subscription entitlement, but this document does not cover
+Android app. Google Play Billing is integrated for subscription entitlement,
+but this document does not cover
 Stripe, analytics, ads, profiles, cloud sync, schedules, or device-owner mode.
 
 ## Official Policy Sources Checked
@@ -58,7 +58,7 @@ disclosure that says:
   messages, location, contacts, browsing history, or raw Accessibility tree
   dumps.
 - There is no account system, analytics, or ads in the current app.
-- Backend behavior is limited to Google Play billing verification and RTDN.
+- Subscription access follows Google Play Billing purchase state.
 - Rules and PIN protection stay locally on the phone.
 - Optional Device Admin tamper protection has its own parent-facing disclosure
   and makes uninstall harder while admin is active.
@@ -107,7 +107,7 @@ The app does not collect, transmit, sell, or share child data, supported app
 activity, watch history, video titles, URLs, account names, comments, messages,
 screen recordings, audio, location, contacts, browsing history, or raw
 Accessibility tree dumps. The app has no account system, analytics, or ads.
-Backend behavior is limited to Google Play billing verification and RTDN.
+Subscription access follows Google Play Billing purchase state.
 Settings and PIN hash metadata are stored locally on the device.
 ```
 
@@ -150,8 +150,7 @@ The Privacy Policy should state:
 
 - The app works locally on the phone.
 - The app has no account system.
-- Backend behavior is limited to Google Play subscription verification and
-  entitlement status at `https://billing.shortsblockerkids.de`.
+- Subscription access follows Google Play Billing purchase state.
 - Protection rules are stored on the device.
 - Parent PIN is stored as hash and salt metadata, not plain text.
 - The app uses AccessibilityService to detect supported short-video surfaces
@@ -165,16 +164,14 @@ The Privacy Policy should state:
   dumps.
 - The app does not use analytics or ads in the current release.
 - Google Play Billing may process payment and subscription data under Google
-  Play terms; the app stores local subscription entitlement status and the last
-  verification timestamp. The billing backend stores only billing technical
-  entitlement data and hashed purchase tokens.
+  Play terms; the app stores local subscription access state.
 
 ## Data Safety Notes
 
 For the current app:
 
-- Data collection by this app: billing technical data only when Google Play
-  Billing and backend verification are used. No child data, supported app
+- Data collection by this app: no child data. Google Play Billing processes
+  subscription purchases. No supported app
   activity, video titles, URLs, account names, comments, screen recordings,
   audio, messages, location, contacts, browsing history, or raw Accessibility
   tree dumps.
@@ -183,9 +180,8 @@ For the current app:
   audio, messages, location, contacts, browsing history, or raw Accessibility
   tree dumps.
 - Device storage: local settings and PIN hash metadata stay on the device.
-- Network: `INTERNET` is present for Google Play Billing and production billing
-  backend verification only.
-- Billing: Google Play Billing and billing backend verification are integrated.
+- Network: `INTERNET` is present through Google Play Billing.
+- Billing: Google Play Billing is integrated.
   Revisit Data Safety before any non-billing network flow is added.
 - Device Admin: no child data is collected through Device Admin tamper
   protection. It exists only to make uninstall harder while admin is active.

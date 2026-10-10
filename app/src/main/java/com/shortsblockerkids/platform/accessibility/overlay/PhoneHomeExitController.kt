@@ -66,7 +66,11 @@ class PhoneHomeExitController(
     }
 
     private fun platformResult(action: () -> Boolean): Boolean =
-        try { action() } catch (_: RuntimeException) { false }
+        try {
+            action()
+        } catch (_: RuntimeException) {
+            false
+        }
 
     private fun scheduleCheck(action: () -> Unit) {
         try {

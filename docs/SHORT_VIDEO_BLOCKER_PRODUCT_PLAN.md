@@ -136,28 +136,25 @@ Initial subscription proposal:
 - Restore purchases support.
 - Subscription management through Google Play.
 
-Production backend verification uses `https://billing.shortsblockerkids.de`, but the
-backend must store only billing technical data and must not receive child
-viewing history, short-video events, Accessibility tree dumps, video titles,
+Google Play Billing provides subscription purchase state. The app must not send
+child viewing history, short-video events, Accessibility tree dumps, video titles,
 URLs, messages, screen recordings, audio, location, contacts, or browsing
 history.
 
 ## Implementation Phases
 
 1. Documentation:
-   - Complete product, architecture, detection, billing/backend, testing, and
+   - Complete product, architecture, detection, billing, testing, and
      Play Store readiness plans.
 2. Local Android implementation:
    - Preserve current YouTube blocker logic.
    - Add detector abstraction.
    - Add TikTok, Instagram Reels, and Facebook Reels detectors.
    - Reuse shared overlay, PIN, temporary allow, and local settings.
-3. Backend + billing:
+3. Billing:
    - Maintain the app-side Google Play Billing integration.
    - Verify Play Billing purchase, restore, cancel, expire, pending, and payment
      issue flows with license testers.
-   - Add backend purchase verification if approved for production.
-   - Add Real-time Developer Notifications processing.
 4. Local full verification:
    - Run unit, integration, lint, release build, and real-device app matrix.
    - Verify no child viewing history or unsupported data leaves the device.
@@ -183,7 +180,7 @@ Product acceptance:
 - Privacy Policy and Data Safety match the final app behavior.
 - Billing entitlement is correct for active, canceled-but-active, expired,
   pending, unpaid, and restored subscriptions.
-- Backend, if implemented, receives only billing technical data.
+- No own billing backend is used.
 - No ads are included.
 - No analytics are included unless explicitly approved later and disclosed.
 - No child viewing history is collected.

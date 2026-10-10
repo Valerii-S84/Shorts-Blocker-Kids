@@ -40,7 +40,10 @@ class AccessibilityEventPolicy(
         requestRescan(scanDebounceMs)
     }
 
-    fun isRootPackageConsistent(eventPackage: String, rootPackage: String?): Boolean {
+    fun isRootPackageConsistent(
+        eventPackage: String,
+        rootPackage: String?,
+    ): Boolean {
         if (rootPackage == eventPackage) return true
         requestRescan(scanDebounceMs)
         return false

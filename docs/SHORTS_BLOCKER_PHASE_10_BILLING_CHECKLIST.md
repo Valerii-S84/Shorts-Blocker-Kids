@@ -1,5 +1,8 @@
 # Shorts Blocker Kids — Phase 10 Billing Checklist
 
+Historical checklist: the server-side verification work recorded below was
+removed. Current subscription access follows Google Play Billing purchase state.
+
 Status: Partial. Active production monetization path is Google Play Store + Android App Bundle + Google Play Billing + server-side Play purchase verification. Website APK + Stripe is deferred until the Play Store production track is complete.
 
 ## Execution Lock

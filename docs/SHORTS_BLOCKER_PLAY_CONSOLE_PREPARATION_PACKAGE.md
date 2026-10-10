@@ -26,14 +26,12 @@ Subscription product ID: shorts_blocker_kids_monthly
 Account system: none
 Ads: none
 Analytics: none
-Release AAB status: stale local artifact must not be uploaded; rebuild with SBK_BILLING_BACKEND_BASE_URL=https://billing.shortsblockerkids.de
+Release AAB status: stale local artifact must not be uploaded; rebuild from reviewed source
 Public website URL: https://shortsblockerkids.de
 Privacy Policy URL: https://shortsblockerkids.de/privacy
 Support URL: https://shortsblockerkids.de/support
 Publisher / developer name: Valerii Serputko
 Public contact email: svalerii535@gmail.com
-Production billing backend URL: https://billing.shortsblockerkids.de
-RTDN webhook URL: https://billing.shortsblockerkids.de/billing/play/rtdn
 ```
 
 Current behavior to keep consistent across every Play Console answer:
@@ -55,9 +53,7 @@ Current behavior to keep consistent across every Play Console answer:
 - The app does not collect child activity, watch history, video titles, URLs,
   account names, comments, messages, audio, screen recordings, location,
   contacts, browsing history, or raw Accessibility tree dumps.
-- Network use is limited to Google Play Billing and production billing backend
-  verification/RTDN through `https://billing.shortsblockerkids.de` in production
-  release builds.
+- Subscription purchases and access state use Google Play Billing.
 
 ## Official Sources Checked
 
@@ -147,13 +143,8 @@ Initial Play testing release for Shorts Blocker Kids. Includes parent PIN
 setup, protected app selection for YouTube, TikTok, Instagram, and Facebook,
 Accessibility disclosure and consent, blocking for YouTube Shorts, TikTok
 short-video feed, Instagram Reels, and Facebook Reels, temporary allow options,
-optional Device Admin tamper protection, Google Play Billing integration, and
-production billing backend readiness gates.
+optional Device Admin tamper protection and Google Play Billing integration.
 ```
-
-Do not upload release notes that claim the backend is live until DNS, TLS,
-reverse proxy, and Play RTDN are verified for
-`https://billing.shortsblockerkids.de`.
 
 ## Privacy Policy
 
@@ -178,7 +169,7 @@ Hosting requirements for this package:
 - privacy contact: `svalerii535@gmail.com`;
 - support/contact: use `svalerii535@gmail.com` and publish support information
   at `https://shortsblockerkids.de/support`;
-- text must match the shipped app, Billing SDK, backend behavior, and
+- text must match the shipped app, Billing SDK, and
   AccessibilityService use.
 
 Website readiness:
@@ -218,26 +209,25 @@ the Play-distributed app.
 ## Data Safety Draft Answers
 
 This is a draft for Play Console. Re-check it against the final uploaded AAB,
-merged manifest, SDK list, and deployed backend before submission.
+merged manifest and SDK list before submission.
 
 Overview answers:
 
 | Play Console question | Draft answer |
 |---|---|
-| Does the app collect or share any required user data types? | Yes, for Google Play Billing/backend entitlement verification only. |
+| Does the app collect or share any required user data types? | Re-check the Google Play Billing SDK disclosure against the uploaded AAB. |
 | Is user data shared? | No sale or developer sharing of child data. Verify final Google Play Billing SDK disclosure before submission. |
-| Is all collected user data encrypted in transit? | Yes, only after the app uses HTTPS Google endpoints and the live production backend at `https://billing.shortsblockerkids.de`. Do not submit before HTTPS backend is verified live. |
-| Can users request deletion? | Local app data can be deleted by clearing app data/uninstalling. Server billing entitlement deletion/support requests use the privacy contact, subject to subscription, fraud prevention, RTDN idempotency, and legal retention needs. |
-| Is data collection optional? | Billing/backend verification data is required for paid subscription entitlement. Accessibility detection data is processed locally and is not transmitted off device. |
+| Is all collected user data encrypted in transit? | Check Google Play Billing SDK disclosures against the uploaded AAB. |
+| Can users request deletion? | Local app data can be deleted by clearing app data or uninstalling. |
+| Is data collection optional? | Google Play Billing is used for paid subscription access. Accessibility detection data is processed locally and is not transmitted off device. |
 
-Declare collected data types for production backend builds:
+Check data types against the final Google Play Billing SDK disclosure:
 
 | Data type | Collected? | Shared? | Purpose | Notes |
 |---|---:|---:|---|---|
-| Financial info: purchase history | Yes | No developer sale/sharing | App functionality, payment entitlement, fraud prevention/security | Google Play purchase token/product entitlement is used to verify subscription access. No card, bank, billing address, or payment account data is collected by this app/backend. |
-| Device or other IDs | Yes | No | App functionality, fraud prevention/security | Random app installation ID for entitlement lookup. Not advertising ID, hardware ID, phone number, account name, or child identity. |
+| Financial info: purchase history | Check Billing SDK disclosure | No developer sale/sharing | App functionality, payment entitlement | Google Play processes subscription purchases. The app does not collect card, bank, billing address, or payment account data. |
 
-Do not declare these as collected by the app/backend unless behavior changes:
+Do not declare these as collected by the app unless behavior changes:
 
 - location;
 - personal info;
@@ -261,22 +251,18 @@ Do not declare these as collected by the app/backend unless behavior changes:
 Security/privacy flags:
 
 ```text
-Data encrypted in transit: Yes, once https://billing.shortsblockerkids.de is deployed and verified.
-Data is processed ephemerally: purchase token is used during verification; backend stores hashed purchase token and entitlement records.
-Data is required: Yes for paid entitlement verification.
+Data encrypted in transit: Check Google Play Billing SDK disclosure.
+Data is required: Google Play Billing is used for paid subscription access.
 User account creation: No.
 Ads: No.
 ```
 
-Backend explanation for Play Console:
+Billing explanation for Play Console:
 
 ```text
-Premium entitlement is verified through the production billing backend at
-https://billing.shortsblockerkids.de. The backend verifies Google Play purchase tokens,
-stores entitlement records, hashed purchase tokens, and processed RTDN message
-IDs, and does not receive child activity, Accessibility tree dumps, watch
-history, video titles, URLs, account names, comments, messages, audio, screen
-recordings, location, contacts, or browsing history.
+Subscription access follows Google Play Billing purchase state. The app stores
+local access state and does not send child activity or Accessibility content to
+a billing server.
 ```
 
 ## Accessibility Declaration Draft
@@ -457,12 +443,8 @@ Tester setup instructions:
 
 Before internal release:
 
-- Build release AAB with
-  `SBK_BILLING_BACKEND_BASE_URL=https://billing.shortsblockerkids.de`.
-- Confirm `docs/SHORTS_BLOCKER_FINAL_RC_FREEZE_EVIDENCE.md` records the AAB
-  hash and backend URL origin.
-- Confirm backend `/health`, migrations, backup/restore, RTDN readiness, and
-  rollback evidence are current.
+- Build release AAB from reviewed source.
+- Confirm `docs/SHORTS_BLOCKER_FINAL_RC_FREEZE_EVIDENCE.md` records the AAB hash.
 - Re-check the verified Privacy Policy URL
   `https://shortsblockerkids.de/privacy` before final Play submission.
 - Upload Accessibility demo video and store the URL.
@@ -487,10 +469,6 @@ Internal test execution:
 - Manage subscription opens Google Play.
 - Cancel active subscription remains active until Play reports expiry.
 - Expired subscription locks paid protection after refresh/restore.
-- Backend online entitlement refresh.
-- Backend offline within conservative window.
-- Backend offline after conservative window.
-- RTDN lifecycle event processed once.
 - Accessibility disclosure decline and accept paths.
 - YouTube normal video not blocked.
 - YouTube Shorts blocked.
@@ -507,7 +485,6 @@ Evidence to record:
 - device model and Android version;
 - Play Store version;
 - app version name/code;
-- backend origin;
 - scenario ID;
 - pass/fail;
 - screenshots or screen recordings for policy-sensitive flows.
@@ -530,7 +507,7 @@ Use closed testing when required by the account:
 - Give testers the app access and scenario instructions from this package.
 - Collect feedback by email or Play private feedback.
 - Track real usage across onboarding, Accessibility enablement, blocking,
-  temporary allow, Billing, restore, backend, and RTDN scenarios.
+  temporary allow, Billing, and restore scenarios.
 - Record bugs and fixes.
 - When eligible, apply for production access and summarize:
   - how testers were recruited;
@@ -566,13 +543,11 @@ Minimum Play Console readiness evidence:
   protection;
 - Device Admin disable warning appears when admin is turned off;
 - no duplicate overlay, flicker, or Back/Home loop;
-- Billing/backend scenarios run on the Play-installed internal testing build.
+- Billing scenarios run on the Play-installed internal testing build.
 
 ## Submission Blockers
 
-- A Play-uploaded release AAB with
-  `SBK_BILLING_BACKEND_BASE_URL=https://billing.shortsblockerkids.de` is not yet
-  accepted by Play Console.
+- A Play-uploaded release AAB from current source is not yet accepted by Play Console.
 - Accessibility demo video URL is TBD.
 - Play Console Data Safety form is not submitted.
 - Play Console Accessibility declaration is not submitted.

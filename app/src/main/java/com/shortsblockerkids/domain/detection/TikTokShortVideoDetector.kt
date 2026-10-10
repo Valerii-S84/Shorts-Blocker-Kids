@@ -55,8 +55,10 @@ class TikTokShortVideoDetector(
         val matched =
             nodes.any { node ->
                 node.isVisibleToUser &&
-                    (node.contentDescriptionSignals.any { it in ShortVideoTextSignals.tiktokFeed } ||
-                        node.viewIdResourceName.containsAnyIgnoringCase("for_you", "foryou", "aweme", "feed"))
+                    (
+                        node.contentDescriptionSignals.any { it in ShortVideoTextSignals.tiktokFeed } ||
+                            node.viewIdResourceName.containsAnyIgnoringCase("for_you", "foryou", "aweme", "feed")
+                    )
             }
 
         if (matched) {
@@ -70,13 +72,16 @@ class TikTokShortVideoDetector(
         val matched =
             nodes.any { node ->
                 node.isVisibleToUser &&
-                    (node.viewIdResourceName.containsAnyIgnoringCase(
-                        "aweme",
-                        "feed",
-                        "player",
-                        "video",
-                        "viewpager",
-                    ) || node.className.containsAnyIgnoringCase("viewpager"))
+                    (
+                        node.viewIdResourceName.containsAnyIgnoringCase(
+                            "aweme",
+                            "feed",
+                            "player",
+                            "video",
+                            "viewpager",
+                        ) ||
+                            node.className.containsAnyIgnoringCase("viewpager")
+                    )
             }
 
         if (matched) {

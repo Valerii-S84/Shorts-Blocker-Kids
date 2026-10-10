@@ -91,7 +91,10 @@ class BlockOverlayController(
         }.getOrDefault(false)
     }
 
-    fun exitBlockedPlayback(packageName: String, completed: (Boolean) -> Unit) {
+    fun exitBlockedPlayback(
+        packageName: String,
+        completed: (Boolean) -> Unit,
+    ) {
         if (overlayView == null) {
             completed(false)
             return
@@ -111,33 +114,40 @@ class BlockOverlayController(
         }
     }
 
-    fun exitAfterOverlayFailure(packageName: String, completed: (Boolean) -> Unit) {
+    fun exitAfterOverlayFailure(
+        packageName: String,
+        completed: (Boolean) -> Unit,
+    ) {
         fallbackExitController?.cancel()
-        val fallback = PhoneHomeExitController(
-            exitAction = {
-                runCatching { playbackExit.exitIfStillDetected(packageName) }.getOrDefault(false)
-            },
-            isPlaybackClosed = {
-                runCatching { playbackExit.isPlaybackClosed() }.getOrDefault(false)
-            },
-            delayedActionScheduler = DelayedActionScheduler { delayMillis, action ->
-                scheduleProtectionRetry(delayMillis, action)
-            },
-            onExitCompleted = { completed(true) },
-            onExitFailed = { completed(false) },
-        )
+        val fallback =
+            PhoneHomeExitController(
+                exitAction = {
+                    runCatching { playbackExit.exitIfStillDetected(packageName) }.getOrDefault(false)
+                },
+                isPlaybackClosed = {
+                    runCatching { playbackExit.isPlaybackClosed() }.getOrDefault(false)
+                },
+                delayedActionScheduler =
+                    DelayedActionScheduler { delayMillis, action ->
+                        scheduleProtectionRetry(delayMillis, action)
+                    },
+                onExitCompleted = { completed(true) },
+                onExitFailed = { completed(false) },
+            )
         fallbackExitController = fallback
         fallback.exitShorts()
     }
 
-    fun scheduleProtectionRetry(delayMillis: Long, action: () -> Unit) {
+    fun scheduleProtectionRetry(
+        delayMillis: Long,
+        action: () -> Unit,
+    ) {
         if (!mainHandler.postDelayed({ action() }, delayMillis)) {
             throw IllegalStateException("Protection retry could not be scheduled")
         }
     }
 
-    fun isBlockedPackageStillDetected(packageName: String): Boolean =
-        playbackExit.isBlockedPackageStillDetected(packageName)
+    fun isBlockedPackageStillDetected(packageName: String): Boolean = playbackExit.isBlockedPackageStillDetected(packageName)
 
     fun dismissOverlay() {
         fallbackExitController?.cancel()

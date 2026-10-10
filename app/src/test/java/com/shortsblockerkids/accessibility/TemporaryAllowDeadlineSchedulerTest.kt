@@ -11,112 +11,121 @@ import org.junit.Test
 
 class TemporaryAllowDeadlineSchedulerTest {
     @Test
-    fun deadlineRechecksWindowWithoutAnotherEventOrSettingsEmission() = runBlocking {
-        val fixture = Fixture(this)
-        fixture.scheduler.schedule(2_000L)
-        yield()
-        assertEquals(listOf(1_000L), fixture.delays)
-        assertEquals(0, fixture.rechecks)
+    fun deadlineRechecksWindowWithoutAnotherEventOrSettingsEmission() =
+        runBlocking {
+            val fixture = Fixture(this)
+            fixture.scheduler.schedule(2_000L)
+            yield()
+            assertEquals(listOf(1_000L), fixture.delays)
+            assertEquals(0, fixture.rechecks)
 
-        fixture.nowMillis = 2_000L
-        fixture.wake()
-        yield()
+            fixture.nowMillis = 2_000L
+            fixture.wake()
+            yield()
 
-        assertEquals(1, fixture.rechecks)
-    }
-
-    @Test
-    fun extendingAllowanceCancelsOldDeadlineAndUsesNewDeadline() = runBlocking {
-        val fixture = Fixture(this)
-        fixture.scheduler.schedule(2_000L)
-        yield()
-        val oldWake = fixture.pending.last()
-        fixture.scheduler.schedule(3_000L)
-        yield()
-
-        fixture.nowMillis = 2_000L
-        oldWake.complete(Unit)
-        yield()
-        assertEquals(0, fixture.rechecks)
-        assertEquals(listOf(1_000L, 2_000L), fixture.delays)
-
-        fixture.nowMillis = 3_000L
-        fixture.wake()
-        yield()
-        assertEquals(1, fixture.rechecks)
-    }
+            assertEquals(1, fixture.rechecks)
+        }
 
     @Test
-    fun shorteningAllowanceSchedulesEarlierDeadline() = runBlocking {
-        val fixture = Fixture(this)
-        fixture.scheduler.schedule(3_000L)
-        yield()
-        fixture.scheduler.schedule(1_500L)
-        yield()
-        assertEquals(listOf(2_000L, 500L), fixture.delays)
+    fun extendingAllowanceCancelsOldDeadlineAndUsesNewDeadline() =
+        runBlocking {
+            val fixture = Fixture(this)
+            fixture.scheduler.schedule(2_000L)
+            yield()
+            val oldWake = fixture.pending.last()
+            fixture.scheduler.schedule(3_000L)
+            yield()
 
-        fixture.nowMillis = 1_500L
-        fixture.wake()
-        yield()
-        assertEquals(1, fixture.rechecks)
-    }
+            fixture.nowMillis = 2_000L
+            oldWake.complete(Unit)
+            yield()
+            assertEquals(0, fixture.rechecks)
+            assertEquals(listOf(1_000L, 2_000L), fixture.delays)
 
-    @Test
-    fun removedAllowanceCancelsPendingRecheck() = runBlocking {
-        val fixture = Fixture(this)
-        fixture.scheduler.schedule(2_000L)
-        yield()
-        fixture.scheduler.schedule(null)
-        fixture.nowMillis = 2_000L
-        fixture.wake()
-        yield()
-
-        assertEquals(0, fixture.rechecks)
-        assertEquals(listOf(1_000L), fixture.delays)
-    }
+            fixture.nowMillis = 3_000L
+            fixture.wake()
+            yield()
+            assertEquals(1, fixture.rechecks)
+        }
 
     @Test
-    fun backwardClockChangeRearmsUntilPersistedDeadline() = runBlocking {
-        val fixture = Fixture(this)
-        fixture.scheduler.schedule(2_000L)
-        yield()
-        fixture.nowMillis = 500L
-        fixture.wake()
-        yield()
+    fun shorteningAllowanceSchedulesEarlierDeadline() =
+        runBlocking {
+            val fixture = Fixture(this)
+            fixture.scheduler.schedule(3_000L)
+            yield()
+            fixture.scheduler.schedule(1_500L)
+            yield()
+            assertEquals(listOf(2_000L, 500L), fixture.delays)
 
-        assertEquals(0, fixture.rechecks)
-        assertEquals(listOf(1_000L, 1_500L), fixture.delays)
-
-        fixture.nowMillis = 2_000L
-        fixture.wake()
-        yield()
-        assertEquals(1, fixture.rechecks)
-    }
+            fixture.nowMillis = 1_500L
+            fixture.wake()
+            yield()
+            assertEquals(1, fixture.rechecks)
+        }
 
     @Test
-    fun lifecycleCancellationPreventsDeadlineCallback() = runBlocking {
-        val fixture = Fixture(this)
-        fixture.scheduler.schedule(2_000L)
-        yield()
-        fixture.scheduler.cancel()
-        fixture.nowMillis = 2_000L
-        fixture.wake()
-        yield()
+    fun removedAllowanceCancelsPendingRecheck() =
+        runBlocking {
+            val fixture = Fixture(this)
+            fixture.scheduler.schedule(2_000L)
+            yield()
+            fixture.scheduler.schedule(null)
+            fixture.nowMillis = 2_000L
+            fixture.wake()
+            yield()
 
-        assertEquals(0, fixture.rechecks)
-    }
+            assertEquals(0, fixture.rechecks)
+            assertEquals(listOf(1_000L), fixture.delays)
+        }
 
     @Test
-    fun alreadyExpiredDeadlineRechecksImmediatelyWithoutDelay() = runBlocking {
-        val fixture = Fixture(this)
-        fixture.scheduler.schedule(1_000L)
-        yield()
+    fun backwardClockChangeRearmsUntilPersistedDeadline() =
+        runBlocking {
+            val fixture = Fixture(this)
+            fixture.scheduler.schedule(2_000L)
+            yield()
+            fixture.nowMillis = 500L
+            fixture.wake()
+            yield()
 
-        assertEquals(1, fixture.rechecks)
-        assertEquals(emptyList<Long>(), fixture.delays)
-    }
+            assertEquals(0, fixture.rechecks)
+            assertEquals(listOf(1_000L, 1_500L), fixture.delays)
 
-    private class Fixture(scope: CoroutineScope) {
+            fixture.nowMillis = 2_000L
+            fixture.wake()
+            yield()
+            assertEquals(1, fixture.rechecks)
+        }
+
+    @Test
+    fun lifecycleCancellationPreventsDeadlineCallback() =
+        runBlocking {
+            val fixture = Fixture(this)
+            fixture.scheduler.schedule(2_000L)
+            yield()
+            fixture.scheduler.cancel()
+            fixture.nowMillis = 2_000L
+            fixture.wake()
+            yield()
+
+            assertEquals(0, fixture.rechecks)
+        }
+
+    @Test
+    fun alreadyExpiredDeadlineRechecksImmediatelyWithoutDelay() =
+        runBlocking {
+            val fixture = Fixture(this)
+            fixture.scheduler.schedule(1_000L)
+            yield()
+
+            assertEquals(1, fixture.rechecks)
+            assertEquals(emptyList<Long>(), fixture.delays)
+        }
+
+    private class Fixture(
+        scope: CoroutineScope,
+    ) {
         var nowMillis = 1_000L
         var rechecks = 0
         val delays = mutableListOf<Long>()

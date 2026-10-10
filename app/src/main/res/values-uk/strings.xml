@@ -19,13 +19,13 @@
 
     <!-- Accessibility disclosure -->
     <string name="accessibility_disclosure_title">Дозвіл служби спеціальних можливостей</string>
-    <string name="accessibility_disclosure_body">Shorts Blocker Kids використовує службу спеціальних можливостей Android, щоб визначати, коли відкрито захищені розділи з короткими відео, і показувати екран блокування коротких відео. Захищені розділи: YouTube Shorts, стрічка коротких відео TikTok, Instagram Reels і Facebook Reels. Регіональний пакет TikTok com.ss.android.ugc.trill і Facebook Lite не підтримуються.\n\nКоли короткі відео заблоковано, доступ можна тимчасово дозволити за допомогою батьківського PIN-коду. Без батьківського PIN-коду екран блокування коротких відео залишається активним, доки відкрито захищений розділ із короткими відео.\n\nЗастосунок не збирає й не надсилає дані про дитину, відомості про активність у підтримуваних застосунках, історію переглядів, назви відео, URL-адреси, імена облікових записів, коментарі, повідомлення, записи екрана, аудіо, дані про місцезнаходження, контакти, історію браузера або необроблені дампи дерева служби спеціальних можливостей. Немає системи облікових записів, аналітики чи реклами. Серверна частина використовується лише для перевірки оплати через Google Play. Правила й захист PIN-кодом зберігаються локально на цьому телефоні.\n\nБлокування працює, коли захист УВІМКНЕНО й служба спеціальних можливостей Android активна. Якщо вимкнути цей дозвіл або видалити застосунок, блокування припиниться.</string>
+    <string name="accessibility_disclosure_body">Shorts Blocker Kids використовує службу спеціальних можливостей Android, щоб визначати, коли відкрито захищені розділи з короткими відео, і показувати екран блокування коротких відео. Захищені розділи: YouTube Shorts, стрічка коротких відео TikTok, Instagram Reels і Facebook Reels. Регіональний пакет TikTok com.ss.android.ugc.trill і Facebook Lite не підтримуються.\n\nКоли короткі відео заблоковано, доступ можна тимчасово дозволити за допомогою батьківського PIN-коду. Без батьківського PIN-коду екран блокування коротких відео залишається активним, доки відкрито захищений розділ із короткими відео.\n\nЗастосунок не збирає й не надсилає дані про дитину, відомості про активність у підтримуваних застосунках, історію переглядів, назви відео, URL-адреси, імена облікових записів, коментарі, повідомлення, записи екрана, аудіо, дані про місцезнаходження, контакти, історію браузера або необроблені дампи дерева служби спеціальних можливостей. Немає системи облікових записів, аналітики чи реклами. Підписки використовують Google Play Billing, а стан покупки зберігається локально. Правила й захист PIN-кодом зберігаються локально на цьому телефоні.\n\nБлокування працює, коли захист УВІМКНЕНО й служба спеціальних можливостей Android активна. Якщо вимкнути цей дозвіл або видалити застосунок, блокування припиниться.</string>
     <string name="accessibility_disclosure_accept">Погоджуюся й продовжую</string>
 
     <!-- Privacy policy -->
     <string name="privacy_policy_title">Політика конфіденційності</string>
     <string name="privacy_policy_local_app_title">Локальний застосунок</string>
-    <string name="privacy_policy_local_app_body">Shorts Blocker Kids працює локально на цьому телефоні. Обліковий запис не потрібен. Перевірка підписки в продукційній версії може використовувати серверну частину, обмежену перевіркою статусу права доступу Google Play.</string>
+    <string name="privacy_policy_local_app_body">Shorts Blocker Kids працює локально на цьому телефоні. Обліковий запис не потрібен. Стан покупки підписки зчитується через Google Play Billing і зберігається локально.</string>
     <string name="privacy_policy_accessibility_service_title">Служба спеціальних можливостей</string>
     <string name="privacy_policy_accessibility_service_body">Застосунок використовує службу спеціальних можливостей Android, щоб виявляти підтримувані розділи з короткими відео й показувати екран блокування коротких відео, коли захист увімкнено. Захищені розділи: YouTube Shorts, стрічка коротких відео TikTok, Instagram Reels і Facebook Reels. Регіональний пакет TikTok com.ss.android.ugc.trill і Facebook Lite не підтримуються.</string>
     <string name="privacy_policy_tamper_protection_title">Захист від втручання</string>
@@ -35,7 +35,7 @@
     <string name="privacy_policy_data_collection_title">Збирання даних</string>
     <string name="privacy_policy_data_collection_body">Застосунок не збирає й не надсилає дані про дитину, відомості про активність у підтримуваних застосунках, історію переглядів, назви відео, URL-адреси, імена облікових записів, коментарі, повідомлення, записи екрана, аудіо, дані про місцезнаходження, контакти, історію браузера або необроблені дампи дерева служби спеціальних можливостей.</string>
     <string name="privacy_policy_payments_title">Платежі</string>
-    <string name="privacy_policy_payments_body">Підписки оформлюються через Google Play Billing. Платіжні дані обробляє Google Play відповідно до умов Google Play. Цей застосунок зберігає локальний статус права доступу за підпискою. Коли серверну перевірку ввімкнено, вона використовує лише технічні платіжні дані й зберігає хешовані токени покупок.</string>
+    <string name="privacy_policy_payments_body">Підписки оформлюються через Google Play Billing. Платіжні дані обробляє Google Play відповідно до умов Google Play. Цей застосунок зберігає локальний статус права доступу за підпискою.</string>
     <string name="privacy_policy_limitations_title">Обмеження</string>
     <string name="privacy_policy_limitations_body">Блокування працює, коли захист УВІМКНЕНО й служба спеціальних можливостей Android активна. Якщо вимкнути цей дозвіл або видалити застосунок після вимкнення захисту від втручання, блокування припиниться.</string>
 
@@ -153,24 +153,14 @@
     <string name="billing_status_product_unavailable">Продукт підписки ще недоступний.</string>
     <string name="billing_status_product_loaded">Підписку завантажено з Google Play.</string>
     <string name="billing_status_subscription_active">Підписка активна.</string>
-    <string name="billing_status_backend_verification_required">Підписка потребує перевірки на сервері. Відновіть покупки або повторіть спробу.</string>
     <string name="billing_status_purchase_pending">Покупка очікує обробки. Захист буде розблоковано після завершення оплати.</string>
     <string name="billing_status_no_active_subscription">Активну підписку Google Play не знайдено.</string>
-    <string name="billing_status_backend_verification_not_ready">Серверна перевірка платежів ще не готова.</string>
-    <string name="billing_status_verifying_with_backend">Підписка перевіряється на захищеному сервері.</string>
-    <string name="billing_status_subscription_canceled_active">Підписка активна до завершення оплаченого періоду.</string>
-    <string name="billing_status_subscription_in_grace">Підписка активна протягом пільгового періоду Google Play.</string>
-    <string name="billing_status_payment_issue">Проблема з оплатою. Оновіть підписку в Google Play.</string>
-    <string name="billing_status_subscription_revoked">Google Play відкликав підписку.</string>
-    <string name="billing_status_verification_unavailable">Перевірка підписки недоступна.</string>
     <string name="billing_error_unavailable">Оплата недоступна</string>
     <string name="billing_error_open_purchase_flow">Не вдалося відкрити оформлення покупки</string>
     <string name="billing_error_manage_subscription_unavailable">Не вдалося відкрити керування підпискою Google Play на цьому пристрої.</string>
     <string name="billing_error_purchase_failed">Не вдалося здійснити покупку</string>
     <string name="billing_error_load_subscription">Не вдалося завантажити підписку</string>
     <string name="billing_error_restore_purchases">Не вдалося відновити покупки</string>
-    <string name="billing_error_verify_with_backend">Не вдалося перевірити підписку на сервері. Відновіть покупки або повторіть спробу.</string>
-    <string name="billing_error_refresh_backend">Не вдалося оновити підписку на сервері. Відновіть покупки або повторіть спробу.</string>
     <string name="billing_error_acknowledge_purchase">Не вдалося підтвердити покупку</string>
     <string name="billing_error_with_response_code">%1$s (%2$d).</string>
 
@@ -229,7 +219,6 @@
     <string name="debug_blocking_decision">Рішення про блокування</string>
     <string name="debug_entitlement">Право доступу</string>
     <string name="debug_subscription_state">Стан підписки</string>
-    <string name="debug_backend">Сервер</string>
     <string name="debug_enabled">увімкнено</string>
     <string name="debug_billing_ui">Інтерфейс оплати</string>
     <string name="debug_protection_permission">Дозвіл захисту</string>

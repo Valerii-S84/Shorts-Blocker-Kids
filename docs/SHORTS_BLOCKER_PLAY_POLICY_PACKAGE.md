@@ -27,9 +27,7 @@ This package is for the current Shorts Blocker Kids build:
   is active. It is disclosed separately, does not replace Accessibility Service,
   and does not block Settings or perform hidden system actions.
 - No account system.
-- Billing backend only for Google Play purchase verification and RTDN.
-- Production backend origin: `https://billing.shortsblockerkids.de`.
-- RTDN webhook URL: `https://billing.shortsblockerkids.de/billing/play/rtdn`.
+- Subscription access follows Google Play Billing purchase state.
 - No analytics.
 - No ads.
 - No watch history storage.
@@ -40,12 +38,9 @@ This package is for the current Shorts Blocker Kids build:
   path before launching purchase.
 - The Billing SDK adds `com.android.vending.BILLING`,
   `android.permission.INTERNET`, and
-  `android.permission.ACCESS_NETWORK_STATE`; production-configured builds may
-  also use network access for billing backend verification. The app has no
+  `android.permission.ACCESS_NETWORK_STATE`. The app has no
   analytics, ads, or account network flow.
-- The app stores local subscription entitlement status and last verification
-  timestamp. The backend stores only billing technical entitlement records and
-  hashed purchase tokens.
+- The app stores local subscription access state.
 - Privacy Policy text is available in the app from the dashboard.
 
 ## Official Policy Sources Checked
@@ -163,17 +158,15 @@ not obvious in the recording.
 
 Current answer direction for the app:
 
-- Data collection: yes for billing technical data only when Google Play Billing
-  and backend verification are used. No child data or supported app activity is
-  collected.
+- Data collection: Google Play Billing processes subscription purchases. No
+  child data or supported app activity is collected by the app.
 - Data sharing: no sale or sharing of user data by the app. Google Play Billing
   processes payments under Google Play terms.
 - Location: not collected.
 - Personal info: not collected.
 - Financial info: payment data is processed by Google Play; this app does not
   collect payment card data, order IDs, billing addresses, or payment account
-  details. Subscription entitlement state and purchase token verification are
-  used only for app functionality.
+  details. Local subscription access state is used for app functionality.
 - Health and fitness: not collected.
 - Messages: not collected.
 - Photos and videos: not collected.
@@ -184,15 +177,10 @@ Current answer direction for the app:
 - Web browsing: not collected.
 - App activity: no supported app activity, watch history, video titles, URLs,
   comments, messages, or browsing history collected.
-- Device or other IDs: declare a random app installation ID if backend
-  verification is enabled. It is not a hardware ID, advertising ID, account
-  name, phone number, or child identifier.
 - Diagnostics: no analytics or crash SDK is currently integrated.
 - Account creation: no account system.
 - Data deletion: no account data exists on a server. Local settings and PIN
   metadata can be removed by clearing app data or uninstalling the app.
-  Billing entitlement records are retained only as needed for subscription
-  verification, fraud prevention, RTDN idempotency, and entitlement support.
 
 Revisit this section before release if crash reporting, analytics, support
 forms, or any non-billing app network flow is added.
@@ -237,9 +225,8 @@ Shorts Blocker Kids is a parental digital wellbeing app that helps parents
 block supported short-video surfaces on a child's Android phone.
 
 The app works locally on the device for protection behavior. It does not
-require an account. For production subscription verification, the app may use a
-billing backend limited to Google Play purchase verification and entitlement
-status at https://billing.shortsblockerkids.de.
+require an account. Subscription access follows Google Play Billing purchase
+state.
 
 Shorts Blocker Kids uses Android AccessibilityService to detect when supported
 short-video surfaces are open: YouTube Shorts, TikTok short-video feed,
@@ -262,9 +249,7 @@ The current app has no analytics, no ads, no account system, and no cloud sync.
 
 Subscriptions are handled through Google Play Billing. Google Play may process
 payment and subscription data under Google Play terms. This app stores local
-subscription entitlement status and the last verification timestamp. If backend
-verification is enabled, the backend stores only billing technical entitlement
-records, processed RTDN message IDs, and a hashed purchase token.
+subscription access state locally.
 
 Blocking works only when Protection is ON and Android Accessibility Service is
 active. If that permission is turned off or the app is removed, blocking stops.
@@ -314,7 +299,7 @@ What the app does:
 
 Privacy:
 - no account;
-- billing backend only for Google Play subscription verification;
+- Google Play Billing for subscription access;
 - no analytics;
 - no ads;
 - no watch history storage;
@@ -361,8 +346,6 @@ To test:
 - Use the same public privacy/support contact: `svalerii535@gmail.com`.
 - Play Console developer / publisher name for the current personal developer
   release: `Valerii Serputko`.
-- RTDN webhook URL in Play Console:
-  `https://billing.shortsblockerkids.de/billing/play/rtdn`.
 - Play Console Data Safety form submission.
 - Play Console Accessibility declaration submission.
 - Demo video recording and URL.

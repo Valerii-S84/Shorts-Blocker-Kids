@@ -21,7 +21,10 @@ class ParentalSettingsSession(
         isAuthorized = false
     }
 
-    suspend fun createPin(pin: String, confirmation: String): PinValidationResult {
+    suspend fun createPin(
+        pin: String,
+        confirmation: String,
+    ): PinValidationResult {
         val attemptGeneration = generation
         val result = createPin.invoke(pin, confirmation)
         if (result == PinValidationResult.Valid && attemptGeneration == generation) {
@@ -39,7 +42,10 @@ class ParentalSettingsSession(
         return result
     }
 
-    suspend fun setPlatformEnabled(platformId: String, enabled: Boolean) {
+    suspend fun setPlatformEnabled(
+        platformId: String,
+        enabled: Boolean,
+    ) {
         runAuthorized { writePlatform(platformId, enabled) }
     }
 

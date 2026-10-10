@@ -6,34 +6,27 @@ import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Button
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.Button
-import androidx.compose.foundation.layout.Column
-import androidx.compose.ui.res.stringResource
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
-import com.shortsblockerkids.application.billing.BillingSyncConfiguration
+import androidx.compose.ui.res.stringResource
 import com.shortsblockerkids.application.billing.SyncBillingEntitlementUseCase
 import com.shortsblockerkids.application.model.AppSettingsSnapshot
 import com.shortsblockerkids.application.pin.CreatePinUseCase
 import com.shortsblockerkids.application.pin.VerifyPinUseCase
-import com.shortsblockerkids.presentation.app.ParentalSettingsSession
 import com.shortsblockerkids.application.port.AccessibilityServiceStatusPort
-import com.shortsblockerkids.application.settings.ObserveSettingsUseCase
-import com.shortsblockerkids.application.settings.SettingsReadState
-import com.shortsblockerkids.application.port.SettingsStatePort
-import com.shortsblockerkids.application.port.TimeProvider
 import com.shortsblockerkids.application.protection.RecordSuccessfulProtectionActivationUseCase
 import com.shortsblockerkids.application.protection.SetTemporaryAllowUseCase
+import com.shortsblockerkids.application.settings.ObserveSettingsUseCase
+import com.shortsblockerkids.application.settings.SettingsReadState
 import com.shortsblockerkids.composition.dashboard.DashboardUiStateAssembler
 import com.shortsblockerkids.infrastructure.billing.GooglePlayBillingGateway
-import com.shortsblockerkids.infrastructure.billing.AndroidBillingInstallationStore
-import com.shortsblockerkids.infrastructure.billing.HttpBillingVerificationAdapter
-import com.shortsblockerkids.infrastructure.billing.PlayBillingConfig
 import com.shortsblockerkids.infrastructure.security.Pbkdf2PinHasher
 import com.shortsblockerkids.infrastructure.storage.DataStoreSettingsStore
 import com.shortsblockerkids.infrastructure.time.AndroidPinLockoutClock
@@ -42,16 +35,16 @@ import com.shortsblockerkids.platform.accessibility.diagnostics.accessibilityDia
 import com.shortsblockerkids.platform.accessibility.status.AccessibilityServiceStatus
 import com.shortsblockerkids.platform.locale.AppLanguage
 import com.shortsblockerkids.platform.tamper.TamperProtectionStatus
+import com.shortsblockerkids.presentation.app.ParentalSettingsSession
 import com.shortsblockerkids.presentation.app.ShortsBlockerKidsApp
 import com.shortsblockerkids.presentation.billing.BillingCoordinator
 import com.shortsblockerkids.presentation.language.LanguagePicker
 import com.shortsblockerkids.ui.theme.ShortsBlockerKidsTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -89,11 +82,12 @@ class MainActivity : ComponentActivity() {
                 lockoutClock = AndroidPinLockoutClock(this),
             )
         val dashboardUiStateAssembler = DashboardUiStateAssembler(timeProvider, deadlineClock = AndroidPinLockoutClock(this))
-        parentalSettingsSession = ParentalSettingsSession(
-            createPin = createPinUseCase::invoke,
-            verifyPin = verifyPinUseCase::invoke,
-            writePlatform = settingsStore::setPlatformEnabled,
-        )
+        parentalSettingsSession =
+            ParentalSettingsSession(
+                createPin = createPinUseCase::invoke,
+                verifyPin = verifyPinUseCase::invoke,
+                writePlatform = settingsStore::setPlatformEnabled,
+            )
         val protectionActivationUseCase =
             RecordSuccessfulProtectionActivationUseCase(
                 timeProvider = timeProvider,
@@ -118,10 +112,15 @@ class MainActivity : ComponentActivity() {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     if (settingsReadState.value !is SettingsReadState.Ready) {
                         Column {
-                            Text(stringResource(
-                                if (settingsReadState.value is SettingsReadState.Loading)
-                                    R.string.settings_loading else R.string.settings_unavailable,
-                            ))
+                            Text(
+                                stringResource(
+                                    if (settingsReadState.value is SettingsReadState.Loading) {
+                                        R.string.settings_loading
+                                    } else {
+                                        R.string.settings_unavailable
+                                    },
+                                ),
+                            )
                             val failure = settingsReadState.value as? SettingsReadState.Unavailable
                             if (failure != null && !failure.retryScheduled) {
                                 Button(onClick = ::observeSettings) {
@@ -219,52 +218,26 @@ class MainActivity : ComponentActivity() {
     private fun observeSettings() {
         settingsJob?.cancel()
         settingsReadState.value = SettingsReadState.Loading
-        settingsJob = activityScope.launch {
-            var installationId: String? = null
-            val initialStatePort = object : SettingsStatePort {
-                override fun readSettings() = settingsStore.readSettings().map { snapshot ->
-                    if (!::billingCoordinator.isInitialized && installationId == null) {
-                        installationId = settingsStore.getOrCreateBillingInstallationId()
-                    }
-                    snapshot
-                }
-            }
-            ObserveSettingsUseCase(initialStatePort)().collect { state ->
-                if (state is SettingsReadState.Ready) {
-                    if (!::billingCoordinator.isInitialized) {
-                        initializeBilling(checkNotNull(installationId), SystemTimeProvider())
-                        if (lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)) {
-                            billingCoordinator.start()
+        settingsJob =
+            activityScope.launch {
+                ObserveSettingsUseCase(settingsStore)().collect { state ->
+                    if (state is SettingsReadState.Ready) {
+                        if (!::billingCoordinator.isInitialized) {
+                            initializeBilling()
+                            if (lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)) {
+                                billingCoordinator.start()
+                            }
                         }
+                        settingsState.value = state.snapshot
                     }
-                    settingsState.value = state.snapshot
+                    // Removing the app content also removes any PIN/settings navigation on failure.
+                    settingsReadState.value = state
                 }
-                // Removing the app content also removes any PIN/settings navigation on failure.
-                settingsReadState.value = state
             }
-        }
     }
 
-    private fun initializeBilling(installationId: String, timeProvider: TimeProvider) {
-        val syncBillingEntitlementUseCase =
-            SyncBillingEntitlementUseCase(
-                billingVerificationPort =
-                    HttpBillingVerificationAdapter.fromBaseUrl(
-                        BuildConfig.BILLING_BACKEND_BASE_URL,
-                        AndroidBillingInstallationStore(applicationContext.noBackupFilesDir),
-                    ),
-                timeProvider = timeProvider,
-                configuration =
-                    BillingSyncConfiguration(
-                        installId =
-                            installationId,
-                        packageName = applicationContext.packageName,
-                        productId = PlayBillingConfig.MONTHLY_SUBSCRIPTION_PRODUCT_ID,
-                        appVersion = BuildConfig.VERSION_NAME,
-                        clientOnlyModeRequested = BuildConfig.BILLING_CLIENT_ONLY_TEST_MODE,
-                        internalTestingBuild = BuildConfig.DEBUG,
-                    ),
-            )
+    private fun initializeBilling() {
+        val syncBillingEntitlementUseCase = SyncBillingEntitlementUseCase()
         billingCoordinator =
             BillingCoordinator(
                 billingGateway = GooglePlayBillingGateway(this),

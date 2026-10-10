@@ -24,15 +24,16 @@ class AccessibilityEventRouter(
     private val blockOverlayController: BlockOverlayController,
     private val diagnostics: AccessibilityDiagnosticsPort,
 ) {
-    private val protectionExecutor = BlockingProtectionExecutor(
-        showOverlay = blockOverlayController::showBlockedOverlay,
-        startFallback = blockOverlayController::exitAfterOverlayFailure,
-        recordOutcome = diagnostics::recordBlockingDecision,
-        onOverlayFailed = blockingDecisionController::onOverlayDismissed,
-        startPlaybackExit = blockOverlayController::exitBlockedPlayback,
-        scheduleRetry = blockOverlayController::scheduleProtectionRetry,
-        shouldRetryProtection = blockOverlayController::isBlockedPackageStillDetected,
-    )
+    private val protectionExecutor =
+        BlockingProtectionExecutor(
+            showOverlay = blockOverlayController::showBlockedOverlay,
+            startFallback = blockOverlayController::exitAfterOverlayFailure,
+            recordOutcome = diagnostics::recordBlockingDecision,
+            onOverlayFailed = blockingDecisionController::onOverlayDismissed,
+            startPlaybackExit = blockOverlayController::exitBlockedPlayback,
+            scheduleRetry = blockOverlayController::scheduleProtectionRetry,
+            shouldRetryProtection = blockOverlayController::isBlockedPackageStillDetected,
+        )
 
     fun route(
         event: AccessibilityEvent,
@@ -167,7 +168,10 @@ class AccessibilityEventRouter(
         diagnostics.clearDetectorResult()
     }
 
-    private fun handleDecision(decision: BlockingDecision, packageName: String) {
+    private fun handleDecision(
+        decision: BlockingDecision,
+        packageName: String,
+    ) {
         when (decision) {
             BlockingDecision.ShowOverlay -> protectionExecutor.protect(packageName)
             BlockingDecision.DismissOverlay -> {

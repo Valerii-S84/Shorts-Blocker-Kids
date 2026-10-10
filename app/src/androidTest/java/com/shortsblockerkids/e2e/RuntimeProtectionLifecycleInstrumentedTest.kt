@@ -38,9 +38,10 @@ class RuntimeProtectionLifecycleInstrumentedTest {
 
     @Before
     fun prepare() {
-        automation.serviceInfo = automation.serviceInfo.apply {
-            flags = flags or AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
-        }
+        automation.serviceInfo =
+            automation.serviceInfo.apply {
+                flags = flags or AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
+            }
         disableService()
         shell("input keyevent KEYCODE_HOME")
         assertTrue("YouTube fixture must be installed", shell("pm path $FIXTURE_PACKAGE").contains("package:"))
@@ -93,7 +94,10 @@ class RuntimeProtectionLifecycleInstrumentedTest {
         assertElapsedExpiry(wallOffsetMillis = -86_400_000L, reconnect = true)
     }
 
-    private fun assertElapsedExpiry(wallOffsetMillis: Long, reconnect: Boolean) {
+    private fun assertElapsedExpiry(
+        wallOffsetMillis: Long,
+        reconnect: Boolean,
+    ) {
         val clock = AndroidPinLockoutClock(context).read()
         val deadline = clock.elapsedRealtimeMillis + 15_000L
         runBlocking {
@@ -149,22 +153,27 @@ class RuntimeProtectionLifecycleInstrumentedTest {
         }
     }
 
-    private fun isServiceBound(): Boolean = context.getSystemService(AccessibilityManager::class.java)
-        .getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_ALL_MASK)
-        .any { serviceInfo ->
-            val info = serviceInfo.resolveInfo.serviceInfo
-            ComponentName(info.packageName, info.name).flattenToString() == component
-        }
+    private fun isServiceBound(): Boolean =
+        context
+            .getSystemService(AccessibilityManager::class.java)
+            .getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_ALL_MASK)
+            .any { serviceInfo ->
+                val info = serviceInfo.resolveInfo.serviceInfo
+                ComponentName(info.packageName, info.name).flattenToString() == component
+            }
 
     private fun launchShorts() {
         shell("am force-stop $FIXTURE_PACKAGE")
         shell("am start -W -n $FIXTURE_PACKAGE/com.shortsblockerkids.fixtureapps.FakeSocialActivity --es screen shorts")
     }
 
-    private fun overlayVisible(): Boolean =
-        automation.windows.any { it.type == AccessibilityWindowInfo.TYPE_ACCESSIBILITY_OVERLAY }
+    private fun overlayVisible(): Boolean = automation.windows.any { it.type == AccessibilityWindowInfo.TYPE_ACCESSIBILITY_OVERLAY }
 
-    private fun await(message: String, timeoutMillis: Long = 8_000L, condition: () -> Boolean) {
+    private fun await(
+        message: String,
+        timeoutMillis: Long = 8_000L,
+        condition: () -> Boolean,
+    ) {
         val deadline = SystemClock.uptimeMillis() + timeoutMillis
         while (SystemClock.uptimeMillis() < deadline) {
             if (condition()) return
@@ -173,9 +182,10 @@ class RuntimeProtectionLifecycleInstrumentedTest {
         assertTrue(message, condition())
     }
 
-    private fun shell(command: String): String = automation.executeShellCommand(command).use { descriptor ->
-        FileInputStream(descriptor.fileDescriptor).bufferedReader().use { it.readText() }
-    }
+    private fun shell(command: String): String =
+        automation.executeShellCommand(command).use { descriptor ->
+            FileInputStream(descriptor.fileDescriptor).bufferedReader().use { it.readText() }
+        }
 
     private companion object {
         const val FIXTURE_PACKAGE = "com.shortsblockerkids.fixture.youtube"

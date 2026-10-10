@@ -1,5 +1,8 @@
 # Short Video Blocker Billing And Backend Plan
 
+Historical plan: the own billing backend and its app integration were
+subsequently removed. Google Play Billing is the current purchase-state source.
+
 Status: Partial. App-side Google Play Billing and a repository-local backend
 verification baseline are implemented. Backend deployment, RTDN configuration,
 and Play tester lifecycle evidence remain pending.

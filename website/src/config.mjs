@@ -1,7 +1,6 @@
 export const siteConfig = {
   appName: "Shorts Blocker Kids",
   canonicalDomain: "https://shortsblockerkids.de",
-  billingBackendUrl: "https://billing.shortsblockerkids.de",
   publisher: "Valerii Serputko",
   contactEmail: "svalerii535@gmail.com",
   lastUpdated: "July 17, 2026",

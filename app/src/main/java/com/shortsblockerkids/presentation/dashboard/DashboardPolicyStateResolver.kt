@@ -22,7 +22,7 @@ internal object DashboardPolicyStateResolver {
             entitlement = entitlement,
             freeTestState = EntitlementPolicy.freeTestState(entitlement, input.runtime.nowMillis),
             hasBillingEntitlement =
-                EntitlementPolicy.hasPaidEntitlement(entitlement, input.runtime.nowMillis),
+                EntitlementPolicy.hasPaidEntitlement(entitlement),
             entitlementState =
                 LocalEntitlementResolver.resolve(
                     LocalEntitlementInput(
@@ -68,8 +68,6 @@ internal object DashboardPolicyStateResolver {
             freeTestStartedAtMillis = freeTestStartedAtMillis,
             freeTestDurationDays = freeTestDurationDays,
             isPaidProtectionAllowed = isPaidProtectionAllowed,
-            paidLastVerifiedAtMillis = paidLastVerifiedAtMillis,
-            paidActiveUntilMillis = paidActiveUntilMillis,
         )
 }
 

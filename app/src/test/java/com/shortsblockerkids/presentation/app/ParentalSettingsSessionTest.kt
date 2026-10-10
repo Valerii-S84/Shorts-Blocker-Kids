@@ -34,104 +34,130 @@ class ParentalSettingsSessionTest {
     }
 
     @Test
-    fun directMutationWithoutPinCannotWrite() = runBlocking {
-        assertDenied(session())
-    }
+    fun directMutationWithoutPinCannotWrite() =
+        runBlocking {
+            assertDenied(session())
+        }
 
     @Test
-    fun correctPinAllowsPlatformMutation() = runBlocking {
-        val session = session()
-        assertEquals(PinVerificationResult.Success, session.verifyPin("4826"))
-        session.setPlatformEnabled("youtube_shorts", false)
-        assertEquals(1, writes)
-    }
+    fun correctPinAllowsPlatformMutation() =
+        runBlocking {
+            val session = session()
+            assertEquals(PinVerificationResult.Success, session.verifyPin("4826"))
+            session.setPlatformEnabled("youtube_shorts", false)
+            assertEquals(1, writes)
+        }
 
     @Test
-    fun wrongPinCannotWrite() = runBlocking {
-        val session = session()
-        assertTrue(session.verifyPin("0000") is PinVerificationResult.Failure)
-        assertDenied(session)
-    }
-
-    @Test
-    fun invalidOrUnconfiguredOrLockedVerificationCannotAuthorize() = runBlocking {
-        listOf(
-            PinVerificationResult.InvalidInput,
-            PinVerificationResult.NotConfigured,
-            PinVerificationResult.Locked(100L, 100L),
-        ).forEach { result ->
-            val session = session { result }
-            session.verifyPin("4826")
+    fun wrongPinCannotWrite() =
+        runBlocking {
+            val session = session()
+            assertTrue(session.verifyPin("0000") is PinVerificationResult.Failure)
             assertDenied(session)
         }
-    }
 
     @Test
-    fun backgroundRevokesPermissionUntilFreshPin() = runBlocking {
-        val session = session()
-        session.verifyPin("4826")
-        session.lock()
-        assertDenied(session)
-        session.verifyPin("4826")
-        session.setPlatformEnabled("youtube_shorts", false)
-        assertEquals(1, writes)
-    }
+    fun invalidOrUnconfiguredOrLockedVerificationCannotAuthorize() =
+        runBlocking {
+            listOf(
+                PinVerificationResult.InvalidInput,
+                PinVerificationResult.NotConfigured,
+                PinVerificationResult.Locked(100L, 100L),
+            ).forEach { result ->
+                val session = session { result }
+                session.verifyPin("4826")
+                assertDenied(session)
+            }
+        }
 
     @Test
-    fun newActivitySessionCannotInheritAuthorization() = runBlocking {
-        session().verifyPin("4826")
-        assertDenied(session())
-    }
+    fun backgroundRevokesPermissionUntilFreshPin() =
+        runBlocking {
+            val session = session()
+            session.verifyPin("4826")
+            session.lock()
+            assertDenied(session)
+            session.verifyPin("4826")
+            session.setPlatformEnabled("youtube_shorts", false)
+            assertEquals(1, writes)
+        }
 
     @Test
-    fun pendingVerificationCannotUnlockAfterBackground() = runBlocking {
-        val started = CompletableDeferred<Unit>()
-        val result = CompletableDeferred<PinVerificationResult>()
-        val session = session { started.complete(Unit); result.await() }
-        val attempt = async { session.verifyPin("4826") }
-        started.await()
-        session.lock()
-        result.complete(PinVerificationResult.Success)
-        assertEquals(PinVerificationResult.InvalidInput, attempt.await())
-        assertDenied(session)
-    }
+    fun newActivitySessionCannotInheritAuthorization() =
+        runBlocking {
+            session().verifyPin("4826")
+            assertDenied(session())
+        }
 
     @Test
-    fun cancelledVerificationCannotAuthorize() = runBlocking {
-        val started = CompletableDeferred<Unit>()
-        val result = CompletableDeferred<PinVerificationResult>()
-        val session = session { started.complete(Unit); result.await() }
-        val attempt = async { session.verifyPin("4826") }
-        started.await()
-        attempt.cancelAndJoin()
-        assertDenied(session)
-    }
+    fun pendingVerificationCannotUnlockAfterBackground() =
+        runBlocking {
+            val started = CompletableDeferred<Unit>()
+            val result = CompletableDeferred<PinVerificationResult>()
+            val session =
+                session {
+                    started.complete(Unit)
+                    result.await()
+                }
+            val attempt = async { session.verifyPin("4826") }
+            started.await()
+            session.lock()
+            result.complete(PinVerificationResult.Success)
+            assertEquals(PinVerificationResult.InvalidInput, attempt.await())
+            assertDenied(session)
+        }
 
     @Test
-    fun verificationStorageFailureCannotAuthorize() = runBlocking {
-        val session = session { throw IllegalStateException("Storage failure") }
-        try { session.verifyPin("4826") } catch (_: IllegalStateException) { }
-        assertDenied(session)
-    }
+    fun cancelledVerificationCannotAuthorize() =
+        runBlocking {
+            val started = CompletableDeferred<Unit>()
+            val result = CompletableDeferred<PinVerificationResult>()
+            val session =
+                session {
+                    started.complete(Unit)
+                    result.await()
+                }
+            val attempt = async { session.verifyPin("4826") }
+            started.await()
+            attempt.cancelAndJoin()
+            assertDenied(session)
+        }
 
     @Test
-    fun successfulPinCreationKeepsOnboardingAuthorized() = runBlocking {
-        val session = session()
-        assertEquals(PinValidationResult.Valid, session.createPin("4826", "4826"))
-        session.setPlatformEnabled("youtube_shorts", false)
-        assertEquals(1, writes)
-    }
+    fun verificationStorageFailureCannotAuthorize() =
+        runBlocking {
+            val session = session { throw IllegalStateException("Storage failure") }
+            try {
+                session.verifyPin("4826")
+            } catch (_: IllegalStateException) {
+            }
+            assertDenied(session)
+        }
 
     @Test
-    fun savedNavigationCannotGrantMutationPermission() = runBlocking {
-        val navigation = ShortsBlockerKidsCoordinator(
-            AppScreen.Dashboard, true, false, false,
-        )
-        assertTrue(navigation.isUnlocked)
-        val session = session()
-        assertDenied(session)
-        navigation.onParentSessionLocked()
-        assertFalse(navigation.isUnlocked)
-        assertEquals(AppScreen.PinEntry, navigation.currentScreen)
-    }
+    fun successfulPinCreationKeepsOnboardingAuthorized() =
+        runBlocking {
+            val session = session()
+            assertEquals(PinValidationResult.Valid, session.createPin("4826", "4826"))
+            session.setPlatformEnabled("youtube_shorts", false)
+            assertEquals(1, writes)
+        }
+
+    @Test
+    fun savedNavigationCannotGrantMutationPermission() =
+        runBlocking {
+            val navigation =
+                ShortsBlockerKidsCoordinator(
+                    AppScreen.Dashboard,
+                    true,
+                    false,
+                    false,
+                )
+            assertTrue(navigation.isUnlocked)
+            val session = session()
+            assertDenied(session)
+            navigation.onParentSessionLocked()
+            assertFalse(navigation.isUnlocked)
+            assertEquals(AppScreen.PinEntry, navigation.currentScreen)
+        }
 }

@@ -31,9 +31,7 @@ phone. Current app-side support is:
 | Facebook Lite `com.facebook.lite` | not supported |
 
 The app works locally on the device for protection behavior. It does not
-require an account. For production subscription verification, the app may use a
-billing backend limited to Google Play purchase verification and entitlement
-status at `https://billing.shortsblockerkids.de`.
+require an account. Subscription access uses Google Play Billing purchase state.
 
 ## Accessibility Service
 
@@ -83,35 +81,18 @@ Google Play Billing adds `android.permission.INTERNET` and
 `android.permission.ACCESS_NETWORK_STATE` through the Billing SDK. The app does
 not use analytics, ads, account, or cloud sync network flow.
 
-Google Play Billing and production backend subscription verification may send
-only billing technical data needed to verify and maintain subscription access.
-The production backend base URL configured for release builds is
-`https://billing.shortsblockerkids.de`.
-
-- random app installation ID;
-- app package name and app version;
-- Google Play subscription product ID;
-- Google Play purchase token;
-- entitlement verification timestamp and status;
-- active-until time where available;
-- processed Real-time Developer Notification message IDs for idempotency.
-
-The billing backend stores entitlement state, verification timestamps,
-processed RTDN message IDs, and a hashed purchase token. It must not receive
-child data, supported app activity, watch history, video titles, URLs,
-comments, account names, messages, screen recordings, audio, location,
-contacts, browsing history, or raw Accessibility tree dumps.
+Google Play Billing processes subscription purchases. The app reads Google Play
+purchase state and stores local subscription access state. It passes purchase
+tokens to Google Play for acknowledgment. It does not send child data or
+supported app activity to a billing server.
 
 ## Payments
 
 Subscriptions are handled through Google Play Billing. Google Play may process
 payment and subscription data under Google Play terms.
 
-Shorts Blocker Kids stores local subscription entitlement status and the last
-verification timestamp. If backend verification is enabled, the backend stores
-minimal billing entitlement records, processed RTDN message IDs, and a hashed
-purchase token. The app and backend do not store payment card data, billing
-addresses, or payment account details.
+Shorts Blocker Kids stores local subscription access state. The app does not
+store payment card data, billing addresses, or payment account details.
 
 ## Limitations
 
@@ -123,10 +104,6 @@ active, but if Accessibility permission is turned off, blocking stops.
 
 To remove local app data, disable Device Admin tamper protection if it is active,
 then uninstall Shorts Blocker Kids or clear the app data in Android settings.
-
-Billing entitlement records are retained only as needed for subscription
-verification, fraud prevention, Real-time Developer Notification idempotency,
-support, accounting, and legal retention needs.
 
 Support emails may be retained for as long as needed to handle the request and
 maintain support history.

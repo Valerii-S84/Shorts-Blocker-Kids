@@ -19,7 +19,7 @@ object LocalEntitlementResolver {
     fun resolve(input: LocalEntitlementInput): EntitlementState {
         val freeTestState = EntitlementPolicy.freeTestState(input.entitlement, input.nowMillis)
         val hasPaidEntitlement =
-            EntitlementPolicy.hasPaidEntitlement(input.entitlement, input.nowMillis)
+            EntitlementPolicy.hasPaidEntitlement(input.entitlement)
         if (freeTestState == FreeTestState.EXPIRED && !hasPaidEntitlement) {
             return EntitlementState.PROTECTION_LOCKED
         }
