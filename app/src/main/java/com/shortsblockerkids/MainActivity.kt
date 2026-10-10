@@ -21,6 +21,7 @@ import com.shortsblockerkids.application.billing.SyncBillingEntitlementUseCase
 import com.shortsblockerkids.application.model.AppSettingsSnapshot
 import com.shortsblockerkids.application.pin.CreatePinUseCase
 import com.shortsblockerkids.application.pin.VerifyPinUseCase
+import com.shortsblockerkids.presentation.app.ParentalSettingsSession
 import com.shortsblockerkids.application.port.AccessibilityServiceStatusPort
 import com.shortsblockerkids.application.settings.ObserveSettingsUseCase
 import com.shortsblockerkids.application.settings.SettingsReadState
@@ -59,6 +60,8 @@ class MainActivity : ComponentActivity() {
     }
 
     private lateinit var settingsStore: DataStoreSettingsStore
+    internal lateinit var parentalSettingsSession: ParentalSettingsSession
+        private set
     private lateinit var billingCoordinator: BillingCoordinator
     private val activityScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val settingsState = mutableStateOf<AppSettingsSnapshot?>(null)
@@ -86,6 +89,11 @@ class MainActivity : ComponentActivity() {
                 lockoutClock = AndroidPinLockoutClock(this),
             )
         val dashboardUiStateAssembler = DashboardUiStateAssembler(timeProvider, deadlineClock = AndroidPinLockoutClock(this))
+        parentalSettingsSession = ParentalSettingsSession(
+            createPin = createPinUseCase::invoke,
+            verifyPin = verifyPinUseCase::invoke,
+            writePlatform = settingsStore::setPlatformEnabled,
+        )
         val protectionActivationUseCase =
             RecordSuccessfulProtectionActivationUseCase(
                 timeProvider = timeProvider,
@@ -142,16 +150,14 @@ class MainActivity : ComponentActivity() {
                         },
                         isTemporaryAllowRequested = temporaryAllowRequestState.value,
                         accessibilityDiagnosticsPort = accessibilityDiagnostics,
-                        createPinUseCase = createPinUseCase,
-                        verifyPinUseCase = verifyPinUseCase,
+                        parentalSettingsSession = parentalSettingsSession,
                         recordSuccessfulProtectionActivationUseCase = protectionActivationUseCase,
                         setTemporaryAllowUseCase = setTemporaryAllowUseCase,
                         isDetectorQaVisible = BuildConfig.ACCESSIBILITY_DEBUG_TOOLS_ENABLED,
                         onProtectionEnabledChanged = { enabled ->
-                            settingsStore.setProtectionEnabled(enabled)
-                        },
-                        onPlatformEnabledChanged = { platformId, enabled ->
-                            settingsStore.setPlatformEnabled(platformId, enabled)
+                            parentalSettingsSession.runAuthorized {
+                                settingsStore.setProtectionEnabled(enabled)
+                            }
                         },
                         onAccessibilityDisclosureAccepted = {
                             settingsStore.acceptAccessibilityDisclosure()
@@ -195,6 +201,11 @@ class MainActivity : ComponentActivity() {
         if (::billingCoordinator.isInitialized) {
             billingCoordinator.start()
         }
+    }
+
+    override fun onPause() {
+        parentalSettingsSession.lock()
+        super.onPause()
     }
 
     override fun onDestroy() {

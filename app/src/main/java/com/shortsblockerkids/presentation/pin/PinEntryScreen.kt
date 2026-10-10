@@ -30,13 +30,12 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.shortsblockerkids.R
 import com.shortsblockerkids.application.pin.PinVerificationResult
-import com.shortsblockerkids.application.pin.VerifyPinUseCase
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
 @Composable
 fun PinEntryScreen(
-    verifyPinUseCase: VerifyPinUseCase,
+    verifyPinUseCase: suspend (String) -> PinVerificationResult,
     onStateChanged: () -> Unit,
     onUnlocked: () -> Unit,
     runSettingsOperation: suspend (suspend () -> Unit) -> Boolean,

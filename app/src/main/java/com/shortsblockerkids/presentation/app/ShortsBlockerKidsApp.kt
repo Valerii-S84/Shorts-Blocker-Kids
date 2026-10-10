@@ -19,8 +19,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.shortsblockerkids.R
-import com.shortsblockerkids.application.pin.CreatePinUseCase
-import com.shortsblockerkids.application.pin.VerifyPinUseCase
 import com.shortsblockerkids.application.port.AccessibilityDiagnosticsPort
 import com.shortsblockerkids.application.protection.RecordSuccessfulProtectionActivationUseCase
 import com.shortsblockerkids.application.protection.SetTemporaryAllowUseCase
@@ -51,12 +49,10 @@ internal fun ShortsBlockerKidsApp(
     isTemporaryAllowRequested: Boolean,
     isDetectorQaVisible: Boolean,
     accessibilityDiagnosticsPort: AccessibilityDiagnosticsPort,
-    createPinUseCase: CreatePinUseCase,
-    verifyPinUseCase: VerifyPinUseCase,
+    parentalSettingsSession: ParentalSettingsSession,
     recordSuccessfulProtectionActivationUseCase: RecordSuccessfulProtectionActivationUseCase,
     setTemporaryAllowUseCase: SetTemporaryAllowUseCase,
     onProtectionEnabledChanged: suspend (Boolean) -> Unit,
-    onPlatformEnabledChanged: suspend (String, Boolean) -> Unit,
     onAccessibilityDisclosureAccepted: suspend () -> Unit,
     onSubscribe: () -> Unit,
     onRestorePurchases: () -> Unit,
@@ -92,7 +88,7 @@ internal fun ShortsBlockerKidsApp(
                     save = {
                         listOf(
                             it.currentScreen.name,
-                            it.isUnlocked,
+                            false,
                             it.pendingTemporaryAllow,
                             it.pendingProtectionDisable,
                         )
@@ -100,7 +96,7 @@ internal fun ShortsBlockerKidsApp(
                     restore = {
                         ShortsBlockerKidsCoordinator(
                             currentScreen = AppScreen.valueOf(it[0] as String),
-                            isUnlocked = it[1] as Boolean,
+                            isUnlocked = false,
                             pendingTemporaryAllow = it[2] as Boolean,
                             pendingProtectionDisable = it[3] as Boolean,
                         )
@@ -118,11 +114,18 @@ internal fun ShortsBlockerKidsApp(
         coordinator.onPinConfigurationObserved(dashboardUiState.setup.isPinConfigured)
     }
 
+    LaunchedEffect(dashboardUiState.setup.isPinConfigured, parentalSettingsSession.isAuthorized) {
+        if (dashboardUiState.setup.isPinConfigured && !parentalSettingsSession.isAuthorized) {
+            coordinator.onParentSessionLocked()
+        }
+    }
+
     LaunchedEffect(isTemporaryAllowRequested, dashboardUiState.setup.isPinConfigured) {
         if (
             isTemporaryAllowRequested &&
             coordinator.onTemporaryAllowRequested(dashboardUiState.setup.isPinConfigured)
         ) {
+            parentalSettingsSession.lock()
             onTemporaryAllowRequestConsumed()
         }
     }
@@ -156,7 +159,7 @@ internal fun ShortsBlockerKidsApp(
 
             AppScreen.PinSetup ->
                 PinSetupScreen(
-                    createPinUseCase = createPinUseCase,
+                    createPinUseCase = parentalSettingsSession::createPin,
                     runSettingsOperation = settingsWriteUiCoordinator::run,
                     onPinCreated = {
                         onStateChanged()
@@ -166,7 +169,7 @@ internal fun ShortsBlockerKidsApp(
 
             AppScreen.PinEntry ->
                 PinEntryScreen(
-                    verifyPinUseCase = verifyPinUseCase,
+                    verifyPinUseCase = parentalSettingsSession::verifyPin,
                     runSettingsOperation = settingsWriteUiCoordinator::run,
                     onStateChanged = onStateChanged,
                     onUnlocked = {
@@ -191,7 +194,7 @@ internal fun ShortsBlockerKidsApp(
                         ProtectedAppsCallbacks(
                             onPlatformEnabledChanged = { platformId, enabled ->
                                 launchSettingsOperation {
-                                    onPlatformEnabledChanged(platformId, enabled)
+                                    parentalSettingsSession.setPlatformEnabled(platformId, enabled)
                                     onStateChanged()
                                 }
                             },
@@ -240,12 +243,13 @@ internal fun ShortsBlockerKidsApp(
                                                 protectionActivationUiCoordinator.enableProtection()
                                             }
                                         } else {
+                                            parentalSettingsSession.lock()
                                             coordinator.onProtectionDisableRequested()
                                         }
                                     },
                                     onPlatformEnabledChanged = { platformId, enabled ->
                                         launchSettingsOperation {
-                                            onPlatformEnabledChanged(platformId, enabled)
+                                            parentalSettingsSession.setPlatformEnabled(platformId, enabled)
                                             onStateChanged()
                                         }
                                     },
@@ -300,7 +304,9 @@ internal fun ShortsBlockerKidsApp(
                 TemporaryAllowScreen(
                     onDurationSelected = { duration ->
                         launchSettingsOperation {
-                            val completion = temporaryAllowFlowController.selectDuration(duration)
+                            val completion = parentalSettingsSession.runAuthorized {
+                                temporaryAllowFlowController.selectDuration(duration)
+                            }
                             coordinator.onTemporaryAllowFinished()
                             onStateChanged()
                             handleTemporaryAllowCompletion(

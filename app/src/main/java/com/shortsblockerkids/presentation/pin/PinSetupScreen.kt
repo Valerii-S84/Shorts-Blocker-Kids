@@ -26,14 +26,13 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.shortsblockerkids.R
-import com.shortsblockerkids.application.pin.CreatePinUseCase
 import com.shortsblockerkids.domain.pin.PinValidationReason
 import com.shortsblockerkids.domain.pin.PinValidationResult
 import kotlinx.coroutines.launch
 
 @Composable
 fun PinSetupScreen(
-    createPinUseCase: CreatePinUseCase,
+    createPinUseCase: suspend (String, String) -> PinValidationResult,
     onPinCreated: () -> Unit,
     runSettingsOperation: suspend (suspend () -> Unit) -> Boolean,
     modifier: Modifier = Modifier,

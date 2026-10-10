@@ -47,6 +47,11 @@ class ShortsBlockerKidsCoordinator internal constructor(
         currentScreen = AppScreen.PinSetup
     }
 
+    fun onParentSessionLocked() {
+        isUnlocked = false
+        currentScreen = AppScreen.PinEntry
+    }
+
     fun onPinCreated() {
         isUnlocked = true
         currentScreen = AccessibilityPermissionFlow.destinationAfterPinCreated()
