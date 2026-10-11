@@ -115,3 +115,7 @@ Privacy contact: svalerii535@gmail.com
 Support contact: svalerii535@gmail.com
 
 Developer / publisher: Valerii Serputko
+
+## Repository Publication Responsibility
+
+The public route is generated from website/src/pages/privacy.mjs with date/contact configuration in website/src/config.mjs. This Markdown preserves the reviewed app-scope text and existing test dependency; changes to data handling or public policy need a separately authorized synchronized website/app review. Effective date above remains the existing policy date, not a new publication claim. See [Play Policy](SHORTS_BLOCKER_PLAY_POLICY_PACKAGE.md) for declaration/Data Safety drafts and [Deployment Evidence](SHORTS_BLOCKER_PRODUCTION_DEPLOYMENT_2026-05-31.md) for historical URLs.

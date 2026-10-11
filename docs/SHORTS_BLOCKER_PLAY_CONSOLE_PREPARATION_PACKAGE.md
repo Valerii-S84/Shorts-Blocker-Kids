@@ -1,9 +1,12 @@
 # Shorts Blocker Kids Play Console Preparation Package
 
-Status: Prepared locally for `shortsblockerkids.de`. Public HTTPS Privacy,
-Support, Terms, root, and backend health URLs were verified on July 17, 2026.
-External Play Console entry, Accessibility demo video URL, and Play Console
-submission remain pending.
+Status: Prepared locally for `shortsblockerkids.de`. Public HTTPS checks of the
+Privacy, Support, Terms and root URLs on July 17, 2026 are historical evidence
+recorded in the [dated deployment record](SHORTS_BLOCKER_PRODUCTION_DEPLOYMENT_2026-05-31.md),
+not a current live verification. Before submission, verify the current signed AAB
+and public URLs using [AAB release readiness](SHORTS_BLOCKER_AAB_RELEASE_READINESS.md)
+and the [website deployment checks](../website/README.md). External Play Console
+entry, Accessibility demo video URL and Play Console submission remain pending.
 
 Date: July 17, 2026
 
@@ -148,191 +151,15 @@ optional Device Admin tamper protection and Google Play Billing integration.
 
 ## Privacy Policy
 
-Local source file:
-
-```text
-docs/SHORTS_BLOCKER_PRIVACY_POLICY_DRAFT.md
-```
-
-Play Console field:
-
-```text
-Privacy Policy URL: https://shortsblockerkids.de/privacy
-Support URL: https://shortsblockerkids.de/support
-```
-
-Hosting requirements for this package:
-
-- public HTTPS URL;
-- no login, geofence, PDF-only access, or blocked crawlers;
-- developer/publisher name: `Valerii Serputko`;
-- privacy contact: `svalerii535@gmail.com`;
-- support/contact: use `svalerii535@gmail.com` and publish support information
-  at `https://shortsblockerkids.de/support`;
-- text must match the shipped app, Billing SDK, and
-  AccessibilityService use.
-
-Website readiness:
-
-- website source is implemented under `website/`;
-- local website build and smoke command:
-  `cd website && npm run check && npm run build && npm run smoke`;
-- deployment instructions:
-  `docs/SHORTS_BLOCKER_WEBSITE_DEPLOYMENT.md`;
-- live HTTPS Privacy Policy page: verified on July 17, 2026;
-- support page: verified on July 17, 2026;
-- root page: verified on July 17, 2026.
-
-Required live URLs before Play submission:
-
-```text
-https://shortsblockerkids.de
-https://shortsblockerkids.de/privacy
-https://shortsblockerkids.de/support
-```
-
-Live URL verification on July 17, 2026:
-
-```text
-https://shortsblockerkids.de/         200
-https://shortsblockerkids.de/privacy  200
-https://shortsblockerkids.de/support  200
-https://shortsblockerkids.de/terms    200
-https://billing.shortsblockerkids.de/health  200 {"status":"ok"}
-```
-
-The website CTA must stay `Coming soon on Google Play` until a live Google Play
-or testing URL is available. Do not add fake reviews, fake user counts, direct
-APK download as the primary install path, or website/Stripe payment CTAs for
-the Play-distributed app.
+Current privacy text: [Privacy Draft](SHORTS_BLOCKER_PRIVACY_POLICY_DRAFT.md); website source website/src/pages/privacy.mjs. Canonical https://shortsblockerkids.de/privacy and https://shortsblockerkids.de/support. Publisher Valerii Serputko, contact svalerii535@gmail.com. [Website README](../website/README.md) owns hosting instructions; [Deployment Evidence](SHORTS_BLOCKER_PRODUCTION_DEPLOYMENT_2026-05-31.md) contains dated observations, not a fresh live check.
 
 ## Data Safety Draft Answers
 
-This is a draft for Play Console. Re-check it against the final uploaded AAB,
-merged manifest and SDK list before submission.
-
-Overview answers:
-
-| Play Console question | Draft answer |
-|---|---|
-| Does the app collect or share any required user data types? | Re-check the Google Play Billing SDK disclosure against the uploaded AAB. |
-| Is user data shared? | No sale or developer sharing of child data. Verify final Google Play Billing SDK disclosure before submission. |
-| Is all collected user data encrypted in transit? | Check Google Play Billing SDK disclosures against the uploaded AAB. |
-| Can users request deletion? | Local app data can be deleted by clearing app data or uninstalling. |
-| Is data collection optional? | Google Play Billing is used for paid subscription access. Accessibility detection data is processed locally and is not transmitted off device. |
-
-Check data types against the final Google Play Billing SDK disclosure:
-
-| Data type | Collected? | Shared? | Purpose | Notes |
-|---|---:|---:|---|---|
-| Financial info: purchase history | Check Billing SDK disclosure | No developer sale/sharing | App functionality, payment entitlement | Google Play processes subscription purchases. The app does not collect card, bank, billing address, or payment account data. |
-
-Do not declare these as collected by the app unless behavior changes:
-
-- location;
-- personal info;
-- health and fitness;
-- messages;
-- photos or videos;
-- audio files or recordings;
-- files and docs;
-- calendar;
-- contacts;
-- web browsing;
-- supported app activity;
-- watch history;
-- video titles;
-- URLs;
-- account names;
-- comments;
-- raw Accessibility tree dumps;
-- crash logs, diagnostics, or analytics.
-
-Security/privacy flags:
-
-```text
-Data encrypted in transit: Check Google Play Billing SDK disclosure.
-Data is required: Google Play Billing is used for paid subscription access.
-User account creation: No.
-Ads: No.
-```
-
-Billing explanation for Play Console:
-
-```text
-Subscription access follows Google Play Billing purchase state. The app stores
-local access state and does not send child activity or Accessibility content to
-a billing server.
-```
+Use the authoritative [Data Safety Draft](SHORTS_BLOCKER_PLAY_POLICY_PACKAGE.md#data-safety-draft). Check it against the final uploaded AAB, merged manifest, SDK/version disclosures and current Console questions before submission. Local protection settings and paid-access state are stored on-device; no own server receives child/app activity. Google Play processes purchases under its rules. No current form submission or policy acceptance is proved here.
 
 ## Accessibility Declaration Draft
 
-AccessibilityService status:
-
-```text
-Do not set isAccessibilityTool=true. Shorts Blocker Kids is a parental digital
-wellbeing app, not a disability support tool.
-```
-
-Use case:
-
-```text
-App functionality.
-```
-
-Core feature that requires AccessibilityService:
-
-```text
-Shorts Blocker Kids uses Android AccessibilityService to detect supported
-short-video surfaces on a child's Android phone when Protection is enabled.
-The protected surfaces are YouTube Shorts, TikTok short-video feed, Instagram
-Reels, and Facebook Reels. When a supported short-video surface is detected,
-the app shows a blocking overlay. A parent PIN can temporarily allow access.
-```
-
-Why AccessibilityService is needed:
-
-```text
-Android does not provide a normal app API that tells Shorts Blocker Kids when
-these short-video surfaces are open inside other apps. AccessibilityService is
-used locally only while supported packages are active so the app can inspect UI
-state, detect protected short-video surfaces, and show the blocking overlay.
-```
-
-Personal or sensitive data collected/shared using AccessibilityService:
-
-```text
-No. AccessibilityService processing stays local on the device. Shorts Blocker
-Kids does not collect or share child data, supported app activity, watch
-history, video titles, URLs, account names, comments, messages, audio, screen
-recordings, location, contacts, browsing history, or raw Accessibility tree
-dumps.
-```
-
-Demo video URL:
-
-```text
-TBD hosted video URL
-```
-
-Demo video must show:
-
-1. app launch;
-2. parent PIN setup;
-3. protected app selection for YouTube, TikTok, Instagram, and Facebook;
-4. full Accessibility disclosure;
-5. decline path where Android Accessibility settings do not open;
-6. affirmative consent path;
-7. enabling `Shorts Blocker Kids Protection` in Android Accessibility settings;
-8. green dashboard checklist after enablement;
-9. normal YouTube video not blocked;
-10. YouTube Shorts blocked;
-11. TikTok short-video feed blocked;
-12. Instagram Reels blocked;
-13. Facebook Reels blocked;
-14. exit to phone home;
-15. PIN temporary allow flow;
-16. optional Device Admin tamper protection disclosure and Android confirmation.
+Use the [Play Accessibility Declaration Draft and Demo Script](SHORTS_BLOCKER_PLAY_POLICY_PACKAGE.md). Consent must precede settings enablement, decline must not open settings, all four protected packages need accurate scope and real-device evidence, and Device Admin has separate optional disclosure/confirmation. No declaration/demo submission was completed here.
 
 ## Content Rating Notes
 
@@ -384,6 +211,10 @@ Important Play Console risk:
 - Keep screenshots and store copy parent-facing. Do not make the listing look
   like a child entertainment app.
 
+Final target age selection remains pending owner/legal review of the actual
+audience, applicable Families obligations and SDK/data disclosures. The 18+
+answer above is a draft, not an approved final form answer.
+
 Target audience form dependencies:
 
 - Ads declaration: No.
@@ -401,7 +232,7 @@ No account is required.
 To review the app:
 1. Install Shorts Blocker Kids from the Play testing track.
 2. Open the app.
-3. Create any 4-digit parent PIN.
+3. Create a non-weak 4–6 digit parent PIN with matching confirmation.
 4. Select protected apps: YouTube, TikTok, Instagram, and Facebook.
 5. Read the Accessibility disclosure.
 6. Tap Not now once to verify Android Accessibility settings do not open.
@@ -444,7 +275,7 @@ Tester setup instructions:
 Before internal release:
 
 - Build release AAB from reviewed source.
-- Confirm `docs/SHORTS_BLOCKER_FINAL_RC_FREEZE_EVIDENCE.md` records the AAB hash.
+- Confirm `docs/SHORTS_BLOCKER_AAB_RELEASE_READINESS.md` records the AAB hash.
 - Re-check the verified Privacy Policy URL
   `https://shortsblockerkids.de/privacy` before final Play submission.
 - Upload Accessibility demo video and store the URL.
@@ -556,3 +387,7 @@ Minimum Play Console readiness evidence:
 - Internal testing Play install/Billing evidence is pending.
 - Closed testing is pending if required by the developer account.
 - Full real-device QA matrix is pending.
+
+## Artifact And Rollout Ownership
+
+[AAB Readiness](SHORTS_BLOCKER_AAB_RELEASE_READINESS.md) owns fresh provenance, technical/coverage gates and staged rollout; [Device QA](SHORTS_BLOCKER_REAL_DEVICE_QA_CHECKLIST.md) owns the full matrix and dated smoke limitations; [Billing Config](SHORTS_BLOCKER_PLAY_CONSOLE_BILLING_CONFIG.md) and [Billing Testing](SHORTS_BLOCKER_PLAY_BILLING_INTERNAL_TEST_RUNBOOK.md) own product/setup and BIL-01…BIL-12. Existing target-audience 18+ and content-rating directions are drafts, not approved answers; check the actual account/current Console, including Families and closed-testing conditions, before submission. Historical Roadmap durations/backend gates do not replace that check.

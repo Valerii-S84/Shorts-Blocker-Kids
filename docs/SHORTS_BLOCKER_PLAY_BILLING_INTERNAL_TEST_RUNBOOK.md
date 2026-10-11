@@ -101,7 +101,7 @@ into app logic.
 |---|---|---|---|
 | BIL-01 | Product details load | Open dashboard after installing the internal test build. | Subscription row shows Google Play product availability, price, monthly auto-renewal terms, manage/cancel text, and an enabled subscribe button. |
 | BIL-02 | Billing unavailable | Test on a device/account where Play Billing cannot load the product, or before product activation. | App shows a recoverable Billing unavailable/product unavailable state and does not crash. |
-| BIL-03 | Purchase approved | Tap `Subscribe with Google Play` and use a test payment method that approves. | Purchase completes, app acknowledges it, subscription becomes active, and protection can run after free-test expiry. |
+| BIL-03 | Purchase approved | Tap `Subscribe with Google Play` and use a test payment method that approves. | Purchase completes; local access is persisted before acknowledgement, then subscription/protection can become active after free-test expiry. Exercise persistence failure: show recovery and do not acknowledge before save succeeds. |
 | BIL-04 | Purchase canceled | Start purchase and cancel the Play purchase sheet. | No paid entitlement is granted; dashboard remains usable; restore remains available. |
 | BIL-05 | Pending declines | Use a delayed test instrument that declines after a few minutes. Restart app before completion. | Pending state does not unlock paid protection; after decline, no paid entitlement is active. |
 | BIL-06 | Pending approves | Use a delayed test instrument that approves after a few minutes. | Pending state does not unlock immediately; after approval and refresh, paid entitlement becomes active. |
@@ -109,7 +109,7 @@ into app logic.
 | BIL-08 | Manage subscription | With active subscription, tap `Manage subscription`. | Google Play subscription management opens for this product. |
 | BIL-09 | Cancel but still active | Cancel the test subscription in Google Play before paid-through end. | App continues to treat subscription as active while Play still reports the purchase as active. |
 | BIL-10 | Expired | Let the test subscription expire or use Play test lifecycle controls. | After restore/refresh reports no active purchase, paid protection locks but parent settings access remains available. |
-| BIL-11 | Payment problem | Change the subscription payment method to a failing test instrument. | App shows payment/Billing problem messaging when Play reports a problem; protection does not remain unlocked after active entitlement is gone. |
+| BIL-11 | Payment problem | Change the subscription payment method to a failing test instrument. | Record SDK messaging and actual successful refresh state; when Play reports no active purchase, local paid access is cleared. A failed query alone is not proof of expiry and does not clear cached access. |
 | BIL-12 | Non-license sanity | Repeat purchase visibility with a non-license tester internal-test account. | App does not rely on license-tester-only logic; real Play purchase UX is still coherent. |
 
 ## Evidence To Record
@@ -131,18 +131,7 @@ For every required scenario, record:
 
 ## Current Artifact
 
-```text
-Status: Rebuild required; the local artifact predates reviewed app-source changes.
-Path: pending
-Size: pending
-SHA-256: pending
-Source commit: pending
-Requirement before Play testing: rebuild and validate the signed AAB from the
-reviewed source, record its provenance here, upload that exact AAB to the Play
-internal testing track, then verify Play App Signing acceptance.
-```
-
-Record the rebuilt AAB path, size, SHA-256, and source commit here before testing.
+See [AAB Readiness](SHORTS_BLOCKER_AAB_RELEASE_READINESS.md) for the authoritative fresh-artifact provenance record. The old AAB predates reviewed source and must not be uploaded. Before testing, record the new signed AAB hash/source/version and confirm Play App Signing acceptance. No rebuild/upload was performed by documentation preparation.
 
 ## Pass Gate
 
@@ -154,3 +143,9 @@ Billing can move from `Partial` to `Done` only when:
 - no non-Play payment path is visible in the Play-distributed app;
 - Privacy Policy, Data Safety, and store listing copy still match the shipped
   SDKs, permissions, and payment behavior.
+
+## Current Contract And Required Variants
+
+Follow [Billing Integration](SHORTS_BLOCKER_PLAY_BILLING_BACKEND_RUNBOOK.md). Under BIL-02, test offline/disconnection/product unavailability both with and without prior paid access; record recoverable UI and retained local cache. There is no 72-hour timer or server verification. Under BIL-03, verify persist-before-ack, save failure and acknowledgement-error recovery. Under BIL-09/10/11, record cancellation through paid period, expiry, refund/revocation and grace/account-hold observations where Play test controls support them, then refresh/restore. Do not claim instantaneous server/RTDN propagation. Pending never grants new paid access; a separate active free test may still enable protection.
+
+This is 12 scenario IDs, BIL-01 through BIL-12, with variants—not a BIL-16 suite. Existing SDK version/configuration facts must be checked against the exact release and Play product before execution. Prices remain planned Console configuration, not a verified live offer. Local free test does not auto-enroll a Play subscription. Record parent-settings/recovery accessibility after expiry and SDK errors, with exact UI text and redacted evidence. No real purchase results are claimed by this preparation.

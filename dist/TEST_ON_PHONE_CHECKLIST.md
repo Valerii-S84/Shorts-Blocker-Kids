@@ -1,6 +1,14 @@
 # Shorts Blocker Kids Phone Test Checklist
 
-Use this checklist on a real Android phone with YouTube installed.
+## Historical Bundle Scope
+
+This accompanies the dated debug bundle in BUILD_INFO.txt. Below are historical feature expectations, not verified results or the current Play release checklist. No-payment/subscription-coming-soon copy is not a current app requirement. Match the actual APK before use; never substitute current-source permissions/date/checksum into its metadata.
+
+Use [Device QA](../docs/SHORTS_BLOCKER_REAL_DEVICE_QA_CHECKLIST.md) for current four-platform/Billing/Device Admin/emulator/final-release acceptance.
+
+## Historical Checklist
+
+Use these original checks only for a matching historical build with YouTube installed.
 
 - [ ] 1. Clean install the APK.
 - [ ] 2. First launch shows the welcome screen.

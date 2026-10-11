@@ -22,23 +22,7 @@ internal test runbook stay aligned.
 
 ## App Artifact To Upload
 
-```text
-Package name: com.shortsblockerkids
-Version name: 0.1.0
-Version code: 1
-AAB: pending rebuild from reviewed source
-AAB size: pending
-AAB SHA-256: pending
-Source commit: pending
-Privacy Policy URL: https://shortsblockerkids.de/privacy
-Support URL: https://shortsblockerkids.de/support
-Publisher / developer name: Valerii Serputko
-Public contact email: svalerii535@gmail.com
-```
-
-The prior local AAB used backend verification and must be rebuilt from the
-current source. Play Console upload and Play App Signing acceptance are still
-not verified.
+Use [AAB Readiness](SHORTS_BLOCKER_AAB_RELEASE_READINESS.md) for source commit, fresh signed AAB/version/hash and Play acceptance. Package com.shortsblockerkids; current source versionName 0.1.0, versionCode 1. No artifact/upload is verified here. Canonical Privacy: https://shortsblockerkids.de/privacy; Support: https://shortsblockerkids.de/support; Publisher Valerii Serputko, svalerii535@gmail.com.
 
 ## Subscription Product
 
@@ -59,35 +43,22 @@ If Play Console requires a different product ID, update:
 
 - `PlayBillingConfig.MONTHLY_SUBSCRIPTION_PRODUCT_ID`;
 - `PlayBillingConfigTest`;
-- `docs/SHORTS_BLOCKER_PHASE_10_BILLING_CHECKLIST.md`;
+- `docs/SHORTS_BLOCKER_PLAY_BILLING_BACKEND_RUNBOOK.md`;
 - `docs/SHORTS_BLOCKER_PLAY_BILLING_INTERNAL_TEST_RUNBOOK.md`;
 - this config sheet.
 
 ## Subscription Description Draft
 
-```text
-Monthly access to Shorts Blocker Kids protection. The app helps parents block
-YouTube Shorts on a child's Android phone using a parent PIN and Android
-Accessibility Service. Normal YouTube videos remain available.
-```
-
-Do not mention website payment, Stripe, license keys, hidden uninstall blocking,
-or guarantees of absolute protection.
+Monthly access to supported short-video protection, using parent PIN and Android AccessibilityService. Current app-side support includes YouTube Shorts and primary TikTok/Instagram/Facebook detectors. Keep the real-device QA caveat until those surfaces are verified; do not claim all videos/apps or normal-screen blocking.
 
 ## Benefits Draft
 
-Use short Play Console benefits that match the app:
+- Supported short-video surface protection, subject to the documented platform/device scope.
+- Parent PIN and 5/10/15 minute temporary allow.
+- Local protection settings.
+- Google Play monthly subscription management.
 
-```text
-Block YouTube Shorts
-Parent PIN controls
-Temporary allow options
-Local-only protection settings
-Google Play subscription management
-```
-
-Avoid benefits that imply child tracking, cloud monitoring, analytics, browser
-history collection, or system-level anti-uninstall behavior.
+No child tracking, analytics/cloud monitoring or absolute anti-uninstall promises.
 
 ## Base Plan
 
@@ -120,7 +91,7 @@ Track: Internal testing
 Release artifact: app-release.aab
 Test source: Google Play install only
 Billing test runbook: docs/SHORTS_BLOCKER_PLAY_BILLING_INTERNAL_TEST_RUNBOOK.md
-Required scenarios: BIL-01 through BIL-16
+Required scenarios: BIL-01 through BIL-12
 ```
 
 Do not approve Billing for production release until the runbook evidence is recorded.
@@ -136,3 +107,7 @@ Confirm these remain true after Play Console setup:
 - Privacy Policy URL is `https://shortsblockerkids.de/privacy` and explains Google
   Play Billing and local subscription access state;
 - Data Safety answers match the Billing SDK, permissions, and local data.
+
+## Verification Status
+
+Product ID shorts_blocker_kids_monthly matches PlayBillingConfig in source; base-plan ID monthly, launch regions/prices and product activation are planned configuration until entered/verified in Console. The gateway currently uses the first available offer/pricing phase; keep v1 without additional offers or get explicit scope for matching UI/code/tests first. BIL-01…BIL-12 must be recorded before Billing is approved for release.

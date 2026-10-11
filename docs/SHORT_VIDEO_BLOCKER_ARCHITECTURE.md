@@ -1,252 +1,73 @@
 # Short Video Blocker Architecture
 
-Status: Active app-side architecture. The local detector registry now includes
-YouTube Shorts, TikTok primary package, Instagram Reels, and Facebook Reels.
-Backend/cloud/analytics integrations remain out of scope.
+Status: Current repository architecture. Device, Play and live deployment acceptance are separate evidence gates.
 
-## Architecture Goals
+## Ownership And Dependencies
 
-- Preserve current working YouTube Shorts blocker behavior.
-- Add support for multiple short-video platforms through detector abstraction.
-- Reuse one overlay, one parent PIN flow, one temporary allow model, and one
-  local settings model.
-- Keep package scanning narrow.
-- Keep release logging sanitized.
-- Avoid backend, billing, analytics, or network dependencies until their
-  implementation phase is explicitly approved.
+| Layer | Responsibility |
+|---|---|
+| `domain` | Pure detection, PIN, free-test, entitlement and protection policies. |
+| `application` | Use cases, plain models and storage/clock/Accessibility/Billing ports. |
+| `infrastructure` | Preferences DataStore, PIN hashing, Android clocks and Play SDK adapters. |
+| `platform` | Accessibility runtime, routing/scanning, overlay and Android navigation. |
+| `presentation` | Compose screens, UI models and coordinators calling use cases. |
+| `composition` | Wires concrete implementations to application and UI contracts. |
 
-## Current YouTube Logic Preservation Plan
+`app` is the production Gradle module; `test-fixtures:fake-social-apps` is test-only. Domain/application policy stays independent of Android, SDK and DataStore implementation types. Infrastructure must not own presentation policy. Existing compatibility components are not places for new business logic. Layer guards: `app/src/test/java/com/shortsblockerkids/architecture/LayerDependencyTest.kt`.
 
-The existing YouTube blocker logic is the baseline and must not be rewritten as
-part of multi-app planning.
+## Protection And Local Free Test
 
-Preservation rules:
+`ProtectionActivationPolicy` starts the free test only when Accessibility is enabled, protection is enabled, disclosure accepted, PIN configured and the test not already started. `RecordSuccessfulProtectionActivationUseCase` uses a clock/status port and the atomic storage activation operation; the original start is recorded once. App opening, PIN creation or disclosure acceptance alone does not start it.
 
-- Keep current YouTube detector behavior intact until replacement tests prove
-  parity or improvement.
-- Add abstraction around the current detector instead of moving core matching
-  rules without tests.
-- Keep current YouTube package handling for `com.google.android.youtube`.
-- Keep release builds free of raw Accessibility tree logs.
-- Keep current overlay behavior as the shared overlay foundation.
-- Add regression tests before changing detector thresholds, signals, debounce,
-  overlay cooldown, or temporary allow behavior.
+`FreeTestPolicy.DEFAULT_DURATION_DAYS` is 20. Active means `start <= now < expiry`; exact expiry is inactive. This local free test is not a Play introductory offer or automatic purchase.
 
-## Target Component Model
+`ProtectionEligibilityPolicy.canProtect` requires protection enabled, accepted disclosure, `BLOCK_SHORTS`, at least one enabled platform, free-test or paid access, configured PIN and no active temporary allow. Accessibility permission is an additional runtime prerequisite; disabling it stops blocking.
 
-Target modules:
+## Parent PIN
 
-```text
-accessibility/
-  ShortsBlockerAccessibilityService
-  AccessibilityEventRouter
-  SupportedAppPolicy
-  ShortVideoDetectorRegistry
-  ShortVideoDetector
-  PlatformDetectionResult
-  AccessibilityTreeScanner
-  BlockOverlayController
-  BlockingDecisionController
+- Input is 4–6 digits with matching confirmation. `0000`, `1111`, `1234`, `123456` are rejected.
+- `Pbkdf2PinHasher`: PBKDF2-HMAC-SHA256, 120,000 iterations, 256-bit output, fresh 16-byte salt, Base64 metadata and constant-time byte comparison.
+- Plaintext PIN is never persisted. Preserve atomic verification/attempt state through PinStateStore.
+- Failure 5 locks for 30 seconds; failure 6 for 60 seconds; failure 7+ for 5 minutes. Preserve active-lockout rejection, success reset and corrupt-metadata behavior in regression tests.
+- `pinHashVersion` is metadata; do not introduce a new algorithm migration/dispatch implicitly.
 
-detectors/
-  YouTubeShortsDetector
-  TikTokShortVideoDetector
-  InstagramReelsDetector
-  FacebookReelsDetector
+## Temporary Allow
 
-feature/blocking/
-  shared blocker overlay
-  temporary allow controller
+Only 5, 10 and 15 minutes are supported, using the shared parent PIN across enabled platforms. Cancel grants nothing. Active allow makes blocking ineligible.
 
-feature/pin/
-  parent PIN setup and entry
+Current configuration stores wall-clock and elapsed-realtime deadlines plus boot metadata. `TemporaryAllowPolicy` prefers an elapsed deadline when present: an available elapsed clock and `deadline > elapsedNow` are required. Without it, wall-clock fallback is active only for `until > now`. Expired timing is cleared through the use-case/store boundary. Preserve restart/reboot/rollback behavior; do not revert to the historical wall-clock-only model.
 
-core/storage/
-  local protection settings
-  supported-app enablement
-  entitlement cache
-```
+## Detection And Shared Overlay
 
-The current package structure may stay as-is. The important design requirement
-is the boundary between platform-specific detection and shared blocking
-behavior.
+| Platform ID | Production package | Protected surface |
+|---|---|
+| `youtube_shorts` | `com.google.android.youtube` | Shorts; preserve normal videos and non-target screens. |
+| `tiktok` | `com.zhiliaoapp.musically` | Detected short-video feed; no blanket whole-app blocking. |
+| `instagram_reels` | `com.instagram.android` | Reels; preserve normal feed, stories, profiles and messages. |
+| `facebook_reels` | `com.facebook.katana` | Reels; preserve ordinary non-target screens. |
 
-## Detector Abstraction
+`com.ss.android.ugc.trill` and `com.facebook.lite` are unsupported. Fixture aliases are debug-only. Block only a positive short-video result with HIGH confidence; LOW/MEDIUM do not block.
 
-Target detector interface:
+One branded overlay serves all platforms. It must dismiss when eligibility is lost, the target surface/package is left or the service stops. Exit returns to phone home. PIN entry/temporary allow must not duplicate or trap the overlay. [Detection Strategy](SHORT_VIDEO_BLOCKER_DETECTION_STRATEGY.md) owns per-platform signals, scanner bounds and rescan scheduling.
 
-```text
-ShortVideoDetector:
-  packageNames: Set<String>
-  platform: ShortVideoPlatform
-  detect(snapshot, eventContext): PlatformDetectionResult
-```
+## DataStore And Billing
 
-Result fields:
+`DataStoreSettingsStore` uses Preferences DataStore and maps stored settings to application/domain snapshots. Keep protection/platform choices, disclosure, PIN hash/attempt metadata, free-test and temporary-allow timing, and local paid-access state. This preparation changes no keys/schema/data/resources.
 
-- platform.
-- package name.
-- confidence: none, low, medium, high.
-- matched signals.
-- blocker reason.
-- safe debug summary.
+`GooglePlayBillingGateway` queries purchases of `shorts_blocker_kids_monthly`. `SyncBillingEntitlementUseCase` maps purchased/pending/none to ACTIVE/PENDING/INACTIVE. `BillingCoordinator` persists before acknowledgement. DataStore stores the resulting active-access flag; transient UI Billing states are not a server lifecycle database.
 
-Only high-confidence results should trigger the blocking overlay by default.
-Medium-confidence results may be used for debug QA and detector calibration but
-must not block in production unless explicitly approved.
+The own backend and Stripe are removed. Current release has no server verification, RTDN, Developer API credentials, backend URL or 72-hour server-grace requirement. A failed SDK query is not proof of expiry. See [Billing Integration](SHORTS_BLOCKER_PLAY_BILLING_BACKEND_RUNBOOK.md) for cached state/recovery limits and [Billing Testing](SHORTS_BLOCKER_PLAY_BILLING_INTERNAL_TEST_RUNBOOK.md) for Play evidence.
 
-## Platform-Specific Detectors
+## Privacy And Optional Tamper Protection
 
-YouTube Shorts detector:
+Protection processing is local. Do not store/transmit child activity, watch history, video titles, URLs, account names, comments/messages, raw trees, screenshots, audio, location, contacts or browsing history. Release diagnostics stay sanitized/debug tools disabled. Billing/network permissions from the existing SDK do not authorize analytics/cloud/child-data flows.
 
-- Existing detector becomes the first implementation of `ShortVideoDetector`.
-- Current fixture-based tests remain regression baseline.
+Optional Device Admin makes uninstall harder while active; it does not replace Accessibility or block Settings. No wipe, lock, password reset, hidden settings or other-app management. Consent/Android confirmation remain explicit, with `<uses-policies />` adding no destructive admin policies.
 
-TikTok detector:
+## Failure Modes And Evidence
 
-- Detects primary TikTok app package `com.zhiliaoapp.musically`.
-- Uses feed-specific detection from UI structure, stable labels, and action rail
-  signals.
-- Does not enable app-level TikTok blocking.
-- Does not enable regional package `com.ss.android.ugc.trill` without separate
-  QA and code change.
+Disabled Accessibility stops blocking. Third-party UI changes require fixture/device calibration, not broader scanning or weaker confidence. Unsupported packages are not supported claims. Billing unavailable/pending/storage failure need recoverable parent-facing handling. No absolute anti-bypass promise.
 
-Instagram Reels detector:
+[Device QA](SHORTS_BLOCKER_REAL_DEVICE_QA_CHECKLIST.md) separates fake-app automation from real app/device evidence; TikTok/Reels detector/unit coverage is not production certification. [Migration objectives](SHORTS_BLOCKER_CLEAN_ARCHITECTURE_MIGRATION_PLAN.md) retain 16 approved slices without certifying full completion.
 
-- Detects Instagram package `com.instagram.android`.
-- Matches Reels tab, Reels viewer, reel containers, player controls, and
-  package-specific view IDs where stable.
-
-Facebook Reels detector:
-
-- Detects Facebook package `com.facebook.katana`.
-- Matches Reels surfaces, viewer labels, player controls, and package-specific
-  view IDs where stable.
-- Does not enable Facebook Lite without separate QA and code change.
-
-## Shared Overlay
-
-One overlay must serve all platforms.
-
-Overlay inputs:
-
-- platform name.
-- detected blocked surface.
-- parent PIN action.
-- exit action.
-- current temporary allow state.
-
-Overlay requirements:
-
-- Full-screen blocking overlay.
-- Clear product branding.
-- `Exit to phone home`.
-- `Enter PIN`.
-- No platform-specific copy unless it clarifies which surface was blocked.
-- No imitation of Android system warnings.
-- Dismiss when protection is disabled, temporary allow starts, app leaves the
-  blocked surface, or AccessibilityService stops.
-
-## Shared PIN And Temporary Allow
-
-PIN:
-
-- One parent PIN for all supported apps.
-- PIN hash and salt stored locally.
-- PIN required for disabling protection.
-- PIN required for temporary allow from overlay.
-
-Temporary allow:
-
-- Durations: 5, 10, 15 minutes.
-- Applies globally to short-video blocking unless a later approved product
-  decision adds per-platform allow.
-- Stored locally.
-- Automatically expires.
-- Must not start billing entitlement or analytics events.
-
-## Storage Model
-
-Planned local settings:
-
-```text
-protectionEnabled: Boolean
-accessibilityDisclosureAccepted: Boolean
-supportedPlatforms:
-  youtubeShortsEnabled: Boolean
-  tiktokEnabled: Boolean
-  instagramReelsEnabled: Boolean
-  facebookReelsEnabled: Boolean
-temporaryAllowUntil: Timestamp?
-pinHash: String?
-pinSalt: String?
-pinHashVersion: Int
-entitlement:
-  source: localFreeTest | playBilling
-  state: active | pending | inactive
-  expiresAt: Timestamp?
-  lastVerifiedAt: Timestamp?
-```
-
-Storage rules:
-
-- Store only settings, entitlement state, PIN hash metadata, and temporary allow
-  timestamps.
-- Do not store watch history.
-- Do not store URLs, video titles, account names, comments, captions, messages,
-  raw Accessibility trees, screenshots, audio, location, contacts, or browsing
-  history.
-
-## Failure Modes
-
-AccessibilityService disabled:
-
-- Dashboard shows protection inactive.
-- Blocking stops.
-- Parent is instructed to enable AccessibilityService again.
-
-Detector false negative:
-
-- Short-video surface may not be blocked.
-- QA fixtures and real-device calibration must be updated.
-
-Detector false positive:
-
-- Non-short-video surface may be blocked.
-- Production threshold must stay conservative.
-
-Third-party UI change:
-
-- Detector may lose signals.
-- Use remote config only if explicitly approved later; default product has no
-  remote config.
-
-Overlay lifecycle failure:
-
-- Overlay must dismiss on service interrupt/destroy.
-- Overlay must avoid flicker loops.
-- Overlay must not trap parent access to PIN or settings.
-
-Billing unknown:
-
-- Parent access remains available.
-- Protection entitlement follows Google Play Billing purchase state.
-
-## No-Regression Rules
-
-- Do not weaken current YouTube high-confidence detection without tests.
-- Do not broaden package scanning without policy and privacy updates.
-- Do not add `INTERNET` permission until backend/billing phase explicitly
-  requires it.
-- Do not add analytics SDKs during detector implementation.
-- Do not add ads.
-- Do not mark `isAccessibilityTool=true` unless the product is truly
-  repositioned as an accessibility tool for people with disabilities.
-- Do not claim platform support in UI, store listing, Privacy Policy, or Play
-  declaration until that platform is implemented and verified.
-- Every new supported app requires:
-  - detector unit tests;
-  - real-device QA;
-  - disclosure update;
-  - privacy review;
-  - Play declaration update if AccessibilityService use changes.
+Consolidated contracts from the product plans, Roadmap and migration invariants. Historical backend conditions are superseded by the present Play/use-case/store path.

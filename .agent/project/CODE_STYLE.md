@@ -13,23 +13,23 @@ fallback: if a language or framework is introduced later, follow the existing lo
 ## Kotlin / Android
 
 - Use the existing package root `com.shortsblockerkids`.
-- Keep Android framework entrypoints thin; place detector, storage, and security behavior in focused classes under the existing feature/core/accessibility packages.
+- Keep Android framework entrypoints thin; place detector, storage, and security behavior in focused classes under current domain/application/infrastructure/platform/presentation/composition ownership.
 - Keep user-facing strings in `app/src/main/res/values/strings.xml` when they are reused or belong to Android system declarations.
 - Accessibility logging must stay sanitized and debug-only; release builds must not log raw accessibility trees or private YouTube UI text.
 - Prefer immutable values and small data classes for detector results and settings state.
-- Do not add backend, account, cloud, analytics, ads, billing, language analysis, video analysis, or broad parental-control behavior unless explicitly scoped.
+- Google Play Billing is existing behavior. Add no own backend, alternate payments, account, cloud, analytics, ads, language/video analysis or broader parental-control behavior without explicit scope.
 
 ## Gradle Kotlin DSL
 
-- Keep the single-module structure unless a task explicitly requires module changes.
+- Keep production `app` and the existing test-only `test-fixtures:fake-social-apps` module; add no modules without explicit scope.
 - Do not update dependency versions or add plugins without explicit scope.
 - Keep Android SDK settings aligned with `app/build.gradle.kts` unless the task explicitly changes platform support.
 
 ## Android XML
 
 - Keep manifest permissions minimal.
-- Do not add `INTERNET` permission unless explicitly justified by the task.
-- Keep AccessibilityService package filtering narrow to YouTube unless the task explicitly expands supported apps.
+- Existing Play Billing contributes Billing/network permissions. Add no permissions or non-Billing network flows without explicit scope.
+- Keep production Accessibility filtering to the four declared packages: YouTube, primary TikTok, Instagram and Facebook. Fixture aliases are debug-only; expansion needs explicit scope and QA.
 
 ## Markdown
 

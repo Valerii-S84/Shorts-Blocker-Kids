@@ -59,7 +59,7 @@ Current status:
 
 - YouTube Shorts detection exists in the app today.
 - Existing YouTube detector and fixtures are the regression baseline.
-- Do not rewrite current YouTube logic during planning.
+- Preserve current YouTube positive/false-positive regression behavior when changing detection.
 
 Target package:
 
@@ -219,7 +219,7 @@ Risks:
 
 ## Confidence Model
 
-Suggested confidence rules:
+Confidence contract (production blocks HIGH only):
 
 - High: multiple platform-specific signals match and surface is clearly a
   target short-video feed/viewer.
@@ -272,3 +272,31 @@ Mitigations:
 - Do not make absolute claims that blocking can never be bypassed.
 - Tell parents that protection depends on Android AccessibilityService and
   supported app UI behavior.
+
+## Pending Maintenance Loop
+
+The Roadmap's maintenance loop is an unclosed workflow requirement. Establish a
+regular weekly smoke/review cycle covering the latest supported target-app
+versions, target detection and non-target regressions, and subscription
+entitlement using the [Billing QA runbook](SHORTS_BLOCKER_PLAY_BILLING_INTERNAL_TEST_RUNBOOK.md).
+Review support reports and retain sanitized reproduction steps, affected
+app/device/build versions and the observed false-positive or false-negative
+behavior. This cadence is pending, not evidence of an executed maintenance cycle.
+
+For each detection-rule change, record its reason and check the affected target,
+non-target, ambiguous, localized and transition fixtures, followed by relevant
+real-device regression checks. Triage reported regressions promptly, reproduce
+them and prepare an approved app-update hotfix when needed. Before publishing,
+complete the [device QA](SHORTS_BLOCKER_REAL_DEVICE_QA_CHECKLIST.md) and
+[AAB release gates](SHORTS_BLOCKER_AAB_RELEASE_READINESS.md); retain the conservative
+confidence policy and zero-blocking acceptance on core non-target screens.
+
+## Scanner And Deferred Rescan Contract
+
+AccessibilityTreeScanner bounds traversal at depth 12 and 180 nodes. AccessibilityEventPolicy has a 500 ms scan debounce. Production XML listens for window state/content, scroll and windows-changed events with a 120 ms notification timeout and four-platform package filtering; fixture aliases stay debug-only.
+
+A final relevant event inside debounce requests a scan for the remaining interval. Further events keep the original deferred deadline rather than postponing it. Unavailable root requests a follow-up. The service has one cancellable job, rereads the current active window, retains no old AccessibilityEvent/node and cancels pending work on interrupt/destroy. Confidence and protection eligibility do not change.
+
+Retained regression cases: lastContentChangeInsideDebounceRequestsScanWithoutAnotherEvent, continuousContentChangesDoNotPostponeDeferredScanDeadline, unavailableRootRequestsFollowUpAfterWindowTransition, plus irrelevant-event rejection. The 2026-09-14 historical report records seven policy tests and 450 JVM tests; these are not new results. Coroutine/window-manager integration was compiled/linted then, not device-tested. The original installed-app incident was not independently attributed to this defect.
+
+Keep sanitized target/non-target/ambiguous/localized/transition fixtures. Capture device/OEM, Android/app version, locale, enabled platforms and false-positive/negative evidence without private content. See [Device QA](SHORTS_BLOCKER_REAL_DEVICE_QA_CHECKLIST.md). Consolidated from the retained event-rescan report.
