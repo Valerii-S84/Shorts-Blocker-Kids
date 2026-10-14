@@ -151,7 +151,7 @@ stops.
 
 ## Current Product And Documentation
 
-One parent PIN controls selected platforms. The local free test defaults to 20 days and starts once after successful protection activation: Accessibility enabled, protection enabled, disclosure accepted and PIN configured. App launch/PIN setup alone do not start it. After expiry, Google Play paid access is required. Temporary allow supports 5, 10 and 15 minutes. This local free test is separate from Play offers.
+One parent PIN controls selected platforms. The local free test defaults to 20 days and starts once after successful protection activation: Accessibility enabled, protection enabled, disclosure accepted and PIN configured. App launch/PIN setup alone do not start it. After expiry, Google Play paid access is required. Temporary allow supports 15, 30 and 60 minutes. This local free test is separate from Play offers.
 
 Current storage is Preferences DataStore; pure policies/use cases are separated from infrastructure, platform and presentation, with composition wiring adapters. The own backend is removed. Play purchases determine local access; server verification, Stripe and a server offline-grace timer are not current requirements.
 

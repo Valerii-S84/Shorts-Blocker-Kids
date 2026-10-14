@@ -16,9 +16,9 @@ class TemporaryAllowFlowControllerTest {
             val temporaryAllowStore = RecordingTemporaryAllowStore()
             val controller = createController(timeProvider, temporaryAllowStore)
 
-            val completion = controller.selectDuration(TemporaryAllowDuration.FIVE_MINUTES)
+            val completion = controller.selectDuration(TemporaryAllowDuration.FIFTEEN_MINUTES)
 
-            assertEquals(listOf(301_000L), temporaryAllowStore.storedExpiries)
+            assertEquals(listOf(901_000L), temporaryAllowStore.storedExpiries)
             assertEquals(1, timeProvider.readCount)
             assertEquals(TemporaryAllowCompletion.ReturnToForegroundApp, completion)
         }

@@ -54,7 +54,7 @@ Monthly access to supported short-video protection, using parent PIN and Android
 ## Benefits Draft
 
 - Supported short-video surface protection, subject to the documented platform/device scope.
-- Parent PIN and 5/10/15 minute temporary allow.
+- Parent PIN and 15/30/60 minute temporary allow.
 - Local protection settings.
 - Google Play monthly subscription management.
 

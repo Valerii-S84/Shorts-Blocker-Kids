@@ -210,7 +210,7 @@ Run these at least once per device:
 - Reopen blocked app after Home: expected blocked screen blocks again.
 - Enter wrong PIN: temporary allow is not granted.
 - Enter correct PIN: temporary allow choices appear.
-- Choose 5 minute temporary allow: blocked surfaces are allowed until expiry.
+- Choose 15 minute temporary allow: blocked surfaces are allowed until expiry.
 - After temporary allow expiry: blocked surfaces block again.
 - Disable global Protection: supported short-video screens do not block.
 - Re-enable global Protection: supported short-video screens block again.
@@ -274,9 +274,9 @@ Unsupported packages must not be claimed as supported:
 | OVR-02 | Exit to phone home. | Overlay clears and launcher opens. | Recording. |
 | PIN-01 | Wrong PIN. | Temporary allow is not granted. | Recording. |
 | PIN-02 | Correct PIN. | Temporary allow choices appear. | Recording. |
-| TMP-01 | Temporary allow 5 minutes. | Supported short-video surfaces are allowed until expiry. | Recording and timestamp. |
-| TMP-02 | Temporary allow 10 minutes. | Supported short-video surfaces are allowed until expiry. | Recording and timestamp. |
-| TMP-03 | Temporary allow 15 minutes. | Supported short-video surfaces are allowed until expiry. | Recording and timestamp. |
+| TMP-01 | Temporary allow 15 minutes. | Supported short-video surfaces are allowed until expiry. | Recording and timestamp. |
+| TMP-02 | Temporary allow 30 minutes. | Supported short-video surfaces are allowed until expiry. | Recording and timestamp. |
+| TMP-03 | Temporary allow 60 minutes. | Supported short-video surfaces are allowed until expiry. | Recording and timestamp. |
 | SUB-01 | Subscription active. | Paid protection entitlement is active. | Dashboard status and Play tester evidence. |
 | SUB-02 | Subscription pending. | Paid protection is not unlocked until approval. | Dashboard status and Play tester evidence. |
 | SUB-03 | Subscription canceled but still active. | Access remains active until Play reports expiry. | Dashboard status and Play tester evidence. |
@@ -325,7 +325,7 @@ PIN and temporary allow tests:
 - Correct PIN unlocks parent action.
 - Wrong PIN increments rate limit.
 - Lockout expires.
-- Temporary allow stores 5, 10, and 15 minute durations.
+- Temporary allow stores 15, 30, and 60 minute durations.
 - Temporary allow expiry resumes protection.
 
 Storage tests:
@@ -483,7 +483,7 @@ Covered by the Android instrumentation `UiAutomation` suite:
 
 Accept disclosure before enabling service; declining must not open Android settings. Enable and return to the app, check status, then disable Accessibility and verify blocking stops/warning is honest; re-enable and retest. Non-allowlisted apps are not scanned/blocked. All four production packages have positive and normal-screen negative evidence.
 
-Check one branded overlay without flicker/duplicates, exit to phone home, leaving the supported surface/app, protection OFF with PIN, allow expiry and permission/service loss. Repeat portrait, landscape, smallest screen and scrolling when height is insufficient. Wrong PIN grants nothing; 5/10/15 minute choices work; app/phone restart, update and clock rollback preserve the intended timing. Verify last-event-inside-debounce and unavailable-root transitions do not miss the final surface; service shutdown cancels pending scans.
+Check one branded overlay without flicker/duplicates, exit to phone home, leaving the supported surface/app, protection OFF with PIN, allow expiry and permission/service loss. Repeat portrait, landscape, smallest screen and scrolling when height is insufficient. Wrong PIN grants nothing; 15/30/60 minute choices work; app/phone restart, update and clock rollback preserve the intended timing. Verify last-event-inside-debounce and unavailable-root transitions do not miss the final surface; service shutdown cancels pending scans.
 
 Launcher stays visible; no system-service impersonation, Device Owner requirement, hidden Settings/uninstall blocking or absolute anti-bypass claim. Optional Device Admin needs separate disclosure/Android confirmation; inspect disable warning and recovery before uninstall. Verify release diagnostics have no raw trees/private UI data and debug tools are absent. Manifest/permission checks are in [AAB Readiness](SHORTS_BLOCKER_AAB_RELEASE_READINESS.md).
 

@@ -5,6 +5,7 @@ import android.app.LocaleManager
 import android.app.UiAutomation
 import android.content.ComponentName
 import android.content.res.Configuration
+import android.graphics.Rect
 import android.os.Build
 import android.os.Bundle
 import android.os.LocaleList
@@ -194,7 +195,7 @@ class ShortVideoBlockerEmulatorE2eTest {
         enterPin(PARENT_PIN)
         tapText(resourceText(R.string.pin_entry_submit))
         waitForText(resourceText(R.string.temporary_allow_title))
-        tapText(quantityText(R.plurals.temporary_allow_duration_minutes, 5))
+        tapText(quantityText(R.plurals.temporary_allow_duration_minutes, 15))
         assertNoOverlay()
 
         launchFixture(FixturePlatform.YOUTUBE, "shorts")
@@ -365,7 +366,7 @@ class ShortVideoBlockerEmulatorE2eTest {
         enterPin(PARENT_PIN)
         tapText(resourceText(R.string.pin_entry_submit))
         waitForText(resourceText(R.string.temporary_allow_title))
-        tapText(quantityText(R.plurals.temporary_allow_duration_minutes, 5))
+        tapText(quantityText(R.plurals.temporary_allow_duration_minutes, 15))
         assertNoOverlay()
 
         launchFixture(FixturePlatform.YOUTUBE, "shorts")
@@ -423,6 +424,7 @@ class ShortVideoBlockerEmulatorE2eTest {
             )
             settingsStore.acceptAccessibilityDisclosure()
             settingsStore.setSelectedMode(ProtectionMode.BLOCK_SHORTS)
+            settingsStore.setPlatformEnabled("youtube_shorts", true)
             settingsStore.setTemporaryAllowUntil(null)
             settingsStore.setProtectionEnabled(true)
             completeProtectionActivationForTest(System.currentTimeMillis())
@@ -566,9 +568,15 @@ class ShortVideoBlockerEmulatorE2eTest {
     }
 
     private fun tapText(text: String) {
-        val node = waitForNode(timeoutMs = 5_000L) { it.hasExactTextOrDescription(text) }
+        val node =
+            waitForNode(timeoutMs = 8_000L) {
+                it.hasExactTextOrDescription(text) && it.isVisibleToUser && it.isEnabled
+            }
         if (node != null) {
-            assertTrue("Unable to click UI text: $text", clickNode(node))
+            assertTrue(
+                "Unable to click UI text: $text; targets=${clickTargetSnapshot(text)}",
+                clickNode(node),
+            )
             SystemClock.sleep(700L)
             return
         }
@@ -754,6 +762,14 @@ class ShortVideoBlockerEmulatorE2eTest {
         visit(this)
         return matches
     }
+
+    private fun clickTargetSnapshot(text: String): String =
+        findNodes { it.hasExactTextOrDescription(text) }.joinToString { target ->
+            val bounds = Rect()
+            target.getBoundsInScreen(bounds)
+            "class=${target.className}, window=${target.window?.type}, bounds=$bounds, " +
+                "visible=${target.isVisibleToUser}, enabled=${target.isEnabled}, clickable=${target.isClickable}"
+        }
 
     private fun clickNode(node: AccessibilityNodeInfo): Boolean {
         var current: AccessibilityNodeInfo? = node

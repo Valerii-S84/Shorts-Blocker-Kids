@@ -33,7 +33,7 @@ Status: Current repository architecture. Device, Play and live deployment accept
 
 ## Temporary Allow
 
-Only 5, 10 and 15 minutes are supported, using the shared parent PIN across enabled platforms. Cancel grants nothing. Active allow makes blocking ineligible.
+Only 15, 30 and 60 minutes are supported, using the shared parent PIN across enabled platforms. Cancel grants nothing. Active allow makes blocking ineligible.
 
 Current configuration stores wall-clock and elapsed-realtime deadlines plus boot metadata. `TemporaryAllowPolicy` prefers an elapsed deadline when present: an available elapsed clock and `deadline > elapsedNow` are required. Without it, wall-clock fallback is active only for `until > now`. Expired timing is cleared through the use-case/store boundary. Preserve restart/reboot/rollback behavior; do not revert to the historical wall-clock-only model.
 

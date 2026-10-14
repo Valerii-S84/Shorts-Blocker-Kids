@@ -41,7 +41,7 @@ Every row is **not certified by this preparation**. Evidence locations/expectati
 
 - Exactly 20-day default local free test, full activation prerequisites, one start and exact expiry.
 - 4–6 digit PIN, weak-value exclusions, PBKDF2 parameters, constant-time comparison, lockout schedule, corrupt metadata and atomic mutation.
-- 5/10/15 minute allow, cancel/no grant, physical expiry cleanup and clock-rollback safety; retain current monotonic/boot-aware timing.
+- 15/30/60 minute allow, cancel/no grant, physical expiry cleanup and clock-rollback safety; retain current monotonic/boot-aware timing.
 - Four production packages, HIGH-only blocking, debug-only fixture aliases and sanitized diagnostics; moves do not change detector weights/exclusions.
 - Overlay dismissal, PIN grace, scanner bounds, rescan/cooldown scheduling and lifecycle cancellation.
 - Current Play purchase-state/local-access policy, persistence before acknowledgement, pending denial and free-test precedence.

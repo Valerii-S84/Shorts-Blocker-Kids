@@ -157,12 +157,33 @@ class ParentalSettingsSessionInstrumentedTest {
 
     @Test
     fun correctPinStillAllowsTemporaryAllowance() {
+        assertTemporaryAllowance(15)
+    }
+
+    @Test
+    fun correctPinAllowsThirtyMinuteTemporaryAllowance() {
+        assertTemporaryAllowance(30)
+    }
+
+    @Test
+    fun correctPinAllowsSixtyMinuteTemporaryAllowance() {
+        assertTemporaryAllowance(60)
+    }
+
+    private fun assertTemporaryAllowance(durationMinutes: Int) {
         requestTemporaryAllow()
         submitPin("4826")
         assertTrue(device.wait(Until.hasObject(By.text(activity.getString(R.string.temporary_allow_title))), 10_000L))
-        val duration = activity.resources.getQuantityString(R.plurals.temporary_allow_duration_minutes, 5, 5)
+        listOf(15, 30, 60).forEach { minutes ->
+            val label = activity.resources.getQuantityString(R.plurals.temporary_allow_duration_minutes, minutes, minutes)
+            assertTrue(device.hasObject(By.text(label)))
+        }
+        val duration = activity.resources.getQuantityString(R.plurals.temporary_allow_duration_minutes, durationMinutes, durationMinutes)
+        val earliestExpiry = System.currentTimeMillis() + durationMinutes * 60_000L
         requireNotNull(device.findObject(By.text(duration))).click()
         await("Temporary allowance did not persist") { temporaryAllowUntil() != null }
+        val latestExpiry = System.currentTimeMillis() + durationMinutes * 60_000L
+        assertTrue(requireNotNull(temporaryAllowUntil()) in earliestExpiry..latestExpiry)
         assertTrue(platformEnabled())
     }
 

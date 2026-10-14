@@ -22,7 +22,7 @@ This package is for the current Shorts Blocker Kids build:
   app is active.
 - Blocking overlay appears when a supported short-video surface is detected and
   protection is enabled.
-- Parent PIN can temporarily allow access for 5, 10, or 15 minutes.
+- Parent PIN can temporarily allow access for 15, 30, or 60 minutes.
 - Optional Device Admin tamper protection can make uninstall harder while admin
   is active. It is disclosed separately, does not replace Accessibility Service,
   and does not block Settings or perform hidden system actions.
@@ -145,8 +145,8 @@ designed as a disability support tool and should not set isAccessibilityTool=tru
 17. Open a supported short-video surface again.
 18. Tap `Enter PIN`.
 19. Enter the parent PIN.
-20. Select 5 minutes and show temporary allow behavior.
-21. Repeat or briefly show the 10 and 15 minute options.
+20. Select 15 minutes and show temporary allow behavior.
+21. Repeat or briefly show the 30 and 60 minute options.
 22. Open the Device Admin tamper protection screen, show the separate
     disclosure, and show the Android Device Admin confirmation screen.
 23. End by showing the dashboard status and the honest limitation text.

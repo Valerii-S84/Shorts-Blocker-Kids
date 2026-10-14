@@ -247,7 +247,7 @@ To review the app:
 13. Tap Exit to phone home.
 14. Open a protected short-video surface again, tap Enter PIN, enter the PIN
     created in step 3,
-    and choose a 5, 10, or 15 minute temporary allow option.
+    and choose a 15, 30, or 60 minute temporary allow option.
 15. Optionally open Tamper Protection, read the separate disclosure, and enable
     Device Admin from the Android confirmation screen.
 
@@ -306,7 +306,7 @@ Internal test execution:
 - TikTok short-video feed blocked.
 - Instagram Reels blocked.
 - Facebook Reels blocked.
-- Parent PIN temporary allow 5, 10, and 15 minutes.
+- Parent PIN temporary allow 15, 30, and 60 minutes.
 - Optional Device Admin tamper protection disclosure and enable flow.
 
 Evidence to record:
