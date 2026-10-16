@@ -30,10 +30,13 @@ class AccessibilityEventRouter(
             startFallback = blockOverlayController::exitAfterOverlayFailure,
             recordOutcome = diagnostics::recordBlockingDecision,
             onOverlayFailed = blockingDecisionController::onOverlayDismissed,
-            startPlaybackExit = blockOverlayController::exitBlockedPlayback,
             scheduleRetry = blockOverlayController::scheduleProtectionRetry,
             shouldRetryProtection = blockOverlayController::isBlockedPackageStillDetected,
         )
+
+    init {
+        blockOverlayController.onProtectionEpisodeCanceled = protectionExecutor::reset
+    }
 
     fun route(
         event: AccessibilityEvent,
@@ -41,6 +44,14 @@ class AccessibilityEventRouter(
     ) {
         val packageName = event.packageName?.toString()
         val nowMillis = timeProvider.currentTimeMillis()
+        val blockedPlatform = detectionEngine.platformForPackage(blockOverlayController.blockedPackageName)
+        if (blockedPlatform != null) {
+            val blockedProtection = protectionSettingsPort.protectionState(nowMillis)
+            blockOverlayController.updateProtectionEligibility(
+                blockedProtection.isProtectionActive && blockedProtection.isPlatformEnabled(blockedPlatform.id),
+            )
+        }
+        blockOverlayController.reconcileVisibleOverlay()
         val platform = detectionEngine.platformForPackage(packageName)
         if (platform == null) {
             if (

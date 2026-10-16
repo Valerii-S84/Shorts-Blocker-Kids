@@ -1,9 +1,9 @@
 # Shorts Blocker Kids Play Policy Package
 
-Status: Partial. Repository-side policy package and static website source are
-prepared for `shortsblockerkids.de`; live Privacy Policy URL verification
-passed on July 17, 2026. External Play Console submission and demo video URL
-are pending.
+Status: FAIL for publication. Repository-side policy material is prepared; the July 17, 2026
+Privacy URL observation is historical evidence, not current live verification.
+Current candidate checks, owner-approved form answers, Play submission and the
+Accessibility demo video URL remain pending. No video is recorded in this phase.
 
 Current Play Console submission source:
 
@@ -44,6 +44,14 @@ This package is for the current Shorts Blocker Kids build:
 - Privacy Policy text is available in the app from the dashboard.
 
 ## Official Policy Sources Checked
+
+Rechecked on 2026-10-15: [AccessibilityService declaration and video guidance](https://support.google.com/googleplay/android-developer/answer/10964491?hl=en), [Data safety requirements](https://support.google.com/googleplay/android-developer/answer/10787469?hl=en), [target audience](https://support.google.com/googleplay/android-developer/answer/9867159?hl=en), [Families policies](https://support.google.com/googleplay/android-developer/answer/9893335?hl=en) and [content rating requirements](https://support.google.com/googleplay/android-developer/answer/9859655?hl=en). This is a documentation check, not Google approval of the app or declarations.
+
+[Review preparation](https://support.google.com/googleplay/android-developer/answer/9859455?hl=en-en) also requires instructions for restricted app areas and an active, app-specific Privacy Policy URL linked in the app and listing where required. Recheck access behind the PIN/paywall and current public URLs; the historical hosting observation does not prove present availability. **Local preparation: FAIL. Overall publication readiness: FAIL.** The reserved final frozen-source phase started 2026-10-15T22:53:35Z (16 October in Europe/Berlin). No automatic retry or source change followed. Ktlint failed; fresh unit XML is **594 / 1 / 0 / 0** (tests/failures/errors/skipped). Debug/release builds and both lint variants completed. Coverage verification/report did not execute after the failing unit prerequisite; no new achieved ratios are claimed. The entire 32-test instrumentation task started once without a filter, but terminated with only **13 completed XML tests / 0 failures / 0 errors / 0 skipped**, leaving **19 without results**. This is incomplete, never a whole-suite pass. Both Pevisor reviews remain unavailable and unfulfilled. Provenance is in [AAB Readiness](SHORTS_BLOCKER_AAB_RELEASE_READINESS.md); policy forms and demo remain preparation material.
+
+For this non-accessibility-tool app, keep a separate in-app disclosure explaining Accessibility access/use and require affirmative consent. The declaration video must show app launch, the complete disclosure (slowly scroll if necessary), consent and permission granting, refusal and a later repeated request, and a core Accessibility feature. Add captions/voice-over when the behavior is unclear. Existing service metadata text cannot replace the in-app disclosure. Keep the recording pending until the verified candidate is available.
+
+Data Safety must include applicable third-party SDK handling; local-only detection does not settle Billing SDK answers. Google exempts apps exclusively on the internal testing track from the Data safety section, while closed/open/production tracks require the form. Final answers remain the owner's responsibility after checking the exact shipped SDKs, permissions and transfers. Target age groups must reflect the actual intended audience; including children invokes Families requirements. Do not infer an 18+ answer or an IARC rating from parent configuration alone.
 
 - Google Play AccessibilityService API policy:
   <https://support.google.com/googleplay/android-developer/answer/10964491>
@@ -128,7 +136,7 @@ designed as a disability support tool and should not set isAccessibilityTool=tru
 1. Open Shorts Blocker Kids from the launcher.
 2. Create a parent PIN.
 3. Select protected apps: YouTube, TikTok, Instagram, and Facebook.
-4. Show the full Accessibility disclosure.
+4. Show the full Accessibility disclosure, slowly scrolling if required.
 5. Tap `Not now` and show that Android Accessibility settings do not open.
 6. Open setup again and show the disclosure again.
 7. Tap `I agree and continue`.
@@ -140,8 +148,8 @@ designed as a disability support tool and should not set isAccessibilityTool=tru
 13. Open TikTok short-video feed and show that the blocking overlay appears.
 14. Open Instagram Reels and show that the blocking overlay appears.
 15. Open Facebook Reels and show that the blocking overlay appears.
-16. Tap `Exit to phone home` and show that the device returns to the home
-    screen.
+16. Tap the current localized close-video action and show the verified intended
+    exit and overlay dismissal. Confirm the exact label against the final build.
 17. Open a supported short-video surface again.
 18. Tap `Enter PIN`.
 19. Enter the parent PIN.
@@ -215,3 +223,5 @@ Use [Console Package — App Access](SHORTS_BLOCKER_PLAY_CONSOLE_PREPARATION_PAC
 Before Android Accessibility settings, show the prominent purpose/data-use disclosure for the supported four-platform scope. Require affirmative I agree and continue; Not now/decline keeps the user in-app and does not open settings. Explain local UI inspection and blocking without private messages/history/screen recording. Device Admin consent/Android confirmation is separate and optional; it does not replace Accessibility or grant destructive device policies.
 
 Data Safety above remains a draft. Recheck final SDK disclosures, merged permissions and the actual Console wording; local-only protection does not by itself prove every third-party Billing disclosure answer. Dated URL evidence is not current policy/hosting approval. Accessibility declaration/demo, screenshots/feature graphic, target audience/content rating and testing submissions remain external evidence gates. Details consolidated from Accessibility Policy Readiness and Play Store Readiness; retained sources do not authorize backend/Stripe work.
+
+A 2026-10-15 live Privacy URL check could not access the route through the available web tool. Current public availability remains unverified; this is not evidence of a website outage. No production website change or URL retry was performed.

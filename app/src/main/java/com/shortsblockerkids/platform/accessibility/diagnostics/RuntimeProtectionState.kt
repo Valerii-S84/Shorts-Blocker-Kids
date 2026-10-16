@@ -39,12 +39,16 @@ private object RuntimeProtectionState : AccessibilityDiagnosticsPort {
     @Volatile
     private var lastBlockingDecision: String? = null
 
+    @Volatile
+    private var readyTemporaryAllowDeadline: Long? = null
+
     fun configure(
         debugLogger: DebugAccessibilityLogger,
         debugSnapshotStore: DetectorDebugSnapshotStore,
     ) {
         this.debugLogger = debugLogger
         this.debugSnapshotStore = debugSnapshotStore
+        readyTemporaryAllowDeadline = null
     }
 
     override fun logIgnoredEvent(
@@ -107,6 +111,15 @@ private object RuntimeProtectionState : AccessibilityDiagnosticsPort {
 
         return lastBlockingDecision ?: "none"
     }
+
+    override fun recordReadyTemporaryAllowDeadline(deadlineMillis: Long?) {
+        if (BuildConfig.ACCESSIBILITY_DEBUG_TOOLS_ENABLED) {
+            readyTemporaryAllowDeadline = deadlineMillis
+        }
+    }
+
+    override fun readyTemporaryAllowDeadlineMillis(): Long? =
+        if (BuildConfig.ACCESSIBILITY_DEBUG_TOOLS_ENABLED) readyTemporaryAllowDeadline else null
 
     override fun lastDetectorResultText(): String? {
         if (!BuildConfig.ACCESSIBILITY_DEBUG_TOOLS_ENABLED) {

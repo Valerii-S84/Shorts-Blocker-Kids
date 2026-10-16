@@ -15,6 +15,24 @@ import org.junit.Test
 
 class VerifyPinUseCaseTest {
     @Test
+    fun elapsedOnlyLockoutWithoutBootMetadataRestartsBoundedDelayWithoutHashing() =
+        runBlocking {
+            val fixture =
+                fixture(
+                    attemptState = PinAttemptState(failedAttempts = 5, lockoutElapsedRealtimeUntil = 99_000L),
+                )
+            val result = fixture.useCase("4826") as PinVerificationResult.Locked
+            assertEquals(30_000L, result.remainingMillis)
+            assertEquals(31_000L, result.untilMillis)
+            assertEquals(
+                PinAttemptState(5, lockoutUntil = 31_000L, lockoutElapsedRealtimeUntil = 31_000L, lockoutBootCount = 1),
+                fixture.stateStore.attemptState,
+            )
+            assertEquals(0, fixture.pinHasher.hashInputs.size)
+            fixture.assertSingleBoundaryCall()
+        }
+
+    @Test
     fun matchingPinReturnsSuccessAndResetsAttemptState() =
         runBlocking {
             val fixture = fixture(attemptState = PinAttemptState(failedAttempts = 3))

@@ -1,6 +1,6 @@
 # Shorts Blocker Kids Real-Device QA Checklist
 
-Status: Ready for manual real-device execution.
+Status: FAIL / incomplete current-candidate verification. This checklist defines acceptance; scenario descriptions and historical reports are not current pass results.
 
 ## Scope
 
@@ -524,6 +524,57 @@ On May 28, Facebook Reels did not block in an owner smoke run; code-level detect
 The 2026-09-14 event-rescan report proved a code-level scheduling defect/fix with unit tests. It did not independently confirm the original installed-app incident or exercise coroutine/window-manager behavior on a device. Do not claim those integrations passed based on compilation/lint.
 
 ## Evidence Status And Consolidation
+
+### Current Remediation Acceptance (2026-10-16 local)
+
+**Local preparation: FAIL. Overall publication readiness: FAIL.** The reserved final frozen-source phase started 2026-10-15T22:53:35Z (16 October in Europe/Berlin). No automatic retry or source change followed. Ktlint failed; fresh unit XML is **594 / 1 / 0 / 0** (tests/failures/errors/skipped). Debug/release builds and both lint variants completed. Coverage verification/report did not execute after the failing unit prerequisite; no new achieved ratios are claimed. The entire 32-test instrumentation task started once without a filter, but terminated with only **13 completed XML tests / 0 failures / 0 errors / 0 skipped**, leaving **19 without results**. This is incomplete, never a whole-suite pass. Both Pevisor reviews remain unavailable and unfulfilled.
+
+Completed XML suites: LocaleMatrix 3/0/0/0, ParentalSettings 9/0/0/0 and Runtime past-wall method 1/0/0/0. Other two Runtime and all 17 E2E results are missing after UiAutomation disconnect/process death. Unit failure is the dashboard elapsed-clock regression at line 35; source diagnosis identifies missing elapsed argument in DashboardStateFactory, pending owner approval. Style fails Runtime lines 89/90/114/115; both lint lanes pass. Fresh coverage is blocked; old branch 89.86961% is historical, required 95% unchanged.
+
+| Previous failing scenario | Evidence, correction and remaining uncertainty |
+|---|---|
+| Interrupt/automatic exit | The old assertion required automatic exit while the overlay was visible. Under the expressly approved stable-overlay contract, successful blocking waits for user action; only failed overlay display uses bounded fallback. The revised interrupt test checks the stable barrier and same fixture. Its final-run result is missing. |
+| Ukrainian PIN | Successful overlay display immediately initiated HOME, racing a PIN tap; the old helper retained nodes and eagerly scanned diagnostics. Stable overlay and bounded node reacquisition address this common static race. Exclusive timing of this old failure was not proven; its final-run result is missing. |
+| German PIN | Same established common race and causal correction as Ukrainian PIN. The localized assertion remains. Exclusive per-method timing is unproven; final result missing. |
+| Cancel PIN / repeat block | Same common automatic-navigation/node race. PIN cancellation resets the blocking episode; assertions retain actual PIN navigation and same-fixture reentry. Final result missing. |
+| Past-wall deadline | Corrected original-APK diagnostic failed 151 ms before the elapsed deadline with matching stored elapsed/boot metadata, but SettingsLoadingProtectionConservative then SettingsUnavailableProtectionDegraded and launcher active. This proves a conservative loading/unavailable barrier, not a clock mismatch. Underlying readiness failure remains unresolved. This method passed in the final phase; natural allowance completion is still unverified. |
+| Future-wall deadline | Original expiry-recheck failure remains without an exclusive proven cause. First diagnostic failed earlier in quiet-window setup with a fixture ANR in the same run. Corrected original-APK diagnostic passed. Clock predicate, deadline and assertions were not weakened. Final-run result missing. |
+
+The 15 October actual YouTube splash/permission/ANR observations below are historical and do not verify this final source. Valid real-app Protection, ordinary screens/short video, Exit and reentry remain unexecuted. Real TikTok, Instagram and Facebook are unavailable. Accelerated clocks do not prove natural 15/30/60-minute expiry. Device Admin consent/disable, rotation/truncation/small-screen behavior and the full actual-device matrix remain unverified. Artifact and exact evidence: [AAB Readiness](SHORTS_BLOCKER_AAB_RELEASE_READINESS.md).
+
+### Historical Remediation Acceptance (2026-10-15 daytime)
+
+Baseline reproduction: 1 test / 1 failure / 0 errors / 0 skipped; `exitBackAndHomeInteractionsRecoverWithoutDuplicateOverlay` reported `Blocking overlay was still visible` before exit-code changes. That named scenario passed in that historical full run, while six other device scenarios failed.
+
+Historical unit XML: **568 tests / 0 failures / 0 errors / 0 skipped**. Both Android lint variants pass. Historical full fixture instrumentation, with no class filter: **32 tests / 6 failures / 0 errors / 0 skipped** in 13 minutes 25 seconds. AutomaticProtectionWiring has 20 passing executable tests replacing two source-text tests; BlockingProtectionExecutor has 20 passing tests and PhoneHomeExitController 13. Whole local acceptance still fails branch coverage: 896 covered / 101 missed = 89.86961% versus unchanged 95%. Instructions 95.50660% and lines 98.81003% pass.
+
+| Instrumented suite | Tests | Failures | Errors | Skipped |
+|---|---:|---:|---:|---:|
+| LocaleMatrixInstrumentedTest | 3 | 0 | 0 | 0 |
+| ParentalSettingsSessionInstrumentedTest | 9 | 0 | 0 | 0 |
+| RuntimeProtectionLifecycleInstrumentedTest | 3 | 3 | 0 | 0 |
+| ShortVideoBlockerEmulatorE2eTest | 17 | 3 | 0 | 0 |
+
+- `RuntimeProtectionLifecycleInstrumentedTest.interruptRetainsBarrierWhileAutomaticExitIsUnconfirmed`: Automatic exit did not start.
+- `RuntimeProtectionLifecycleInstrumentedTest.elapsedDeadlineSurvivesReconnectDespitePastWallDeadline`: Allowance ended before elapsed deadline.
+- `RuntimeProtectionLifecycleInstrumentedTest.elapsedDeadlineExpiresAfterInterruptDespiteFutureWallDeadline`: Expiry failed to recheck the quiet active window.
+- `ShortVideoBlockerEmulatorE2eTest.ukrainianLocaleOverlayAndPinSmoke`: Unable to click UI text: Ввести PIN-код.
+- `ShortVideoBlockerEmulatorE2eTest.germanLocaleOverlayAndPinSmoke`: Unable to click UI text: PIN eingeben.
+- `ShortVideoBlockerEmulatorE2eTest.cancelingPinDuringAutomaticExitAllowsSameShortToBlockAgain`: Unable to click UI text: Enter PIN.
+
+The nine passing ParentalSettingsSession cases cover unauthorized writes, wrong/cancelled PIN, authorized platform mutation, background/recreation revocation and 15/30/60-minute grant paths. They do not establish natural-duration expiry. LocaleMatrix passes resource resolution, formatting and plurals; German/Ukrainian overlay PIN-click scenarios fail. All three runtime lifecycle/deadline scenarios fail. Causes are unproven; do not reclassify them as harmless fixture failures or weaken assertions. See AAB Readiness for exact paths and counters.
+
+Before fixture instrumentation, the observed unresponsive YouTube was force-stopped and the device returned Home; both commands succeeded. No data/account change occurred. The task installed the existing five fixture apps; fixtures do not prove real social-app UI. No test retry or source edit occurred during this frozen-source phase.
+
+For every remaining device criterion, record the actual observed scope; these fixture results do not close all of the following requirements: disclosure refusal/re-trigger/affirmative consent before Settings; service disable/re-enable and honest dashboard status; each platform/global toggle; PIN creation/wrong PIN/lockout/cancel/background/reopen; 15/30/60-minute allow with natural expiry, restart and system-clock changes; 20-day activation/one-time start/expiry; storage recovery; separate optional Device Admin consent/disable; en/uk/de formatting, small screen and rotation. Label injected clocks/shortened deadlines as accelerated tests and record natural device expiry separately.
+
+Available emulator: Android 15 / API 35, Google `sdk_gphone64_x86_64`, 320 × 640 at density 160. Real YouTube 19.17.42 is installed; real TikTok, Instagram and Facebook are unavailable. No actual social-app acceptance run is recorded for this candidate, including the installed YouTube. Fixtures do not establish those UI results. Record unavailable devices/app versions and every unexecuted row rather than treating code support as a real-app pass. No video is recorded in this remediation phase.
+
+The 13:34:41–13:35:44 UTC availability check launched actual YouTube 19.17.42 (versionCode 1545868784); startup reached an Android notification-permission dialog above Home/Shorts tabs. No permission/account decision was made. Accessibility services were not enabled at that observation. The earlier lookup of release package `com.shortsblockerkids` cannot establish whether the distinct debug package was installed and is not used as absence evidence.
+
+The separately authorized own-APK installation subsequently completed successfully at 13:37:40 UTC. Correct package `com.shortsblockerkids.debug` reports `0.1.0-debug` / code 1, minSdk 26 / targetSdk 36. Installed APK evidence: 14,522,630 bytes, modified 2026-10-15 13:29:54 UTC, SHA-256 `0FC3419E049BCACF2FA56F8F1227ECE7BEFDD2DD31AA7D9FB3F69AE5E7091151`. During the correct debug-launcher attempt at 13:40:06 UTC, the screenshot showed the system dialog `YouTube isn't responding` with Close app / Wait, rather than the blocker setup UI. No restart, further wait, account action or ANR-cause diagnosis was performed.
+
+Valid Protection/Accessibility setup, unobstructed YouTube Home, normal video, actual Shorts blocking, close-video exit and re-entry blocking all remain unexecuted. The YouTube ANR is an observed barrier; its cause is unknown and it is not classified as a Shorts Blocker Kids failure. Real TikTok, Instagram and Facebook remain unavailable. Generated screenshots under `app/build/rc-verification-20261015/`: `real-youtube-initial.png`, `real-youtube-after-startup.png`, `fresh-debug-initial.png`. These are availability/setup evidence, not post-fix behavior passes. No video or raw UI dump was recorded; the device is free.
 
 All matrices/scenarios above require dated pass/fail and redacted screenshots/recordings, observed status/confidence and exact artifact/device/app metadata. Blank, TBD and Pending entries are not passes. Do not store child history, private messages, raw tree dumps, full purchase tokens or account credentials in evidence.
 

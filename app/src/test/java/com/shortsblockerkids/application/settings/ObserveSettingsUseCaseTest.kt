@@ -3,15 +3,19 @@ package com.shortsblockerkids.application.settings
 import com.shortsblockerkids.application.model.AppSettingsSnapshot
 import com.shortsblockerkids.application.port.SettingsStatePort
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.produceIn
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.yield
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -19,6 +23,54 @@ import org.junit.Test
 import java.io.IOException
 
 class ObserveSettingsUseCaseTest {
+    @Test(expected = IllegalArgumentException::class)
+    fun zeroInitialReadTimeoutIsRejected() {
+        ObserveSettingsUseCase(SettingsStatePort { flow { emit(AppSettingsSnapshot()) } }, initialReadTimeoutMillis = 0L)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun zeroRetryDelayIsRejected() {
+        ObserveSettingsUseCase(SettingsStatePort { flow { emit(AppSettingsSnapshot()) } }, retryDelaysMillis = listOf(1L, 0L))
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun zeroRecoveryDelayIsRejected() {
+        ObserveSettingsUseCase(SettingsStatePort { flow { emit(AppSettingsSnapshot()) } }, recoveryDelayMillis = 0L)
+    }
+
+    @Test
+    @OptIn(FlowPreview::class)
+    fun slowConsumerReceivesEverySnapshotInOrderWithoutStorageFailure() =
+        runBlocking {
+            withTimeout(5_000L) {
+                val first = AppSettingsSnapshot()
+                val second = first.copy(billingEntitlementStateName = "ACTIVE")
+                val firstEmitted = CompletableDeferred<Unit>()
+                val source =
+                    ObserveSettingsUseCase(
+                        SettingsStatePort {
+                            flow {
+                                emit(first)
+                                firstEmitted.complete(Unit)
+                                emit(second)
+                            }
+                        },
+                    )
+                val states = source().buffer(0).produceIn(this)
+                try {
+                    assertEquals(SettingsReadState.Loading, states.receive())
+                    firstEmitted.await()
+                    yield()
+                    assertEquals(SettingsReadState.Ready(first), states.receive())
+                    yield()
+                    assertEquals(SettingsReadState.Ready(second), states.receive())
+                    assertTrue(states.receiveCatching().isClosed)
+                } finally {
+                    states.cancel()
+                }
+            }
+        }
+
     @Test
     fun transientInitialFailureRecoversWithoutSuccessfulDefaults() =
         runBlocking {

@@ -6,10 +6,66 @@ import com.shortsblockerkids.domain.protection.ProtectionConfiguration
 import com.shortsblockerkids.domain.protection.ProtectionMode
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class StoredAppSettingsTest {
+    @Test
+    fun sameBootRetainsBothPersistedAllowanceDeadlines() {
+        val snapshot =
+            DataStoreSettingsMapper.toSnapshot(
+                storedAllowance(),
+                currentBootCount = 7,
+            )
+
+        assertEquals(2_000L, snapshot.protectionConfiguration.temporaryAllowUntilMillis)
+        assertEquals(5_000L, snapshot.protectionConfiguration.temporaryAllowElapsedRealtimeDeadlineMillis)
+        assertEquals(7, snapshot.protectionConfiguration.temporaryAllowBootCount)
+    }
+
+    @Test
+    fun changedBootDiscardsBothOldAllowanceDeadlines() {
+        val protection =
+            DataStoreSettingsMapper.toSnapshot(storedAllowance(), currentBootCount = 8).protectionConfiguration
+
+        assertNull(protection.temporaryAllowUntilMillis)
+        assertNull(protection.temporaryAllowElapsedRealtimeDeadlineMillis)
+    }
+
+    @Test
+    fun absentStoredBootCannotRestoreAllowanceOnKnownBoot() {
+        val protection =
+            DataStoreSettingsMapper
+                .toSnapshot(
+                    storedAllowance().copy(temporaryAllowBootCount = null),
+                    currentBootCount = 7,
+                ).protectionConfiguration
+
+        assertNull(protection.temporaryAllowUntilMillis)
+        assertNull(protection.temporaryAllowElapsedRealtimeDeadlineMillis)
+    }
+
+    @Test
+    fun knownBootWithoutElapsedDeadlineDoesNotRestoreWallOnlyAllowance() {
+        val protection =
+            DataStoreSettingsMapper
+                .toSnapshot(
+                    storedAllowance().copy(temporaryAllowElapsedRealtimeDeadlineMillis = null),
+                    currentBootCount = 7,
+                ).protectionConfiguration
+
+        assertNull(protection.temporaryAllowUntilMillis)
+        assertNull(protection.temporaryAllowElapsedRealtimeDeadlineMillis)
+    }
+
+    private fun storedAllowance(): StoredAppSettings =
+        StoredAppSettings(
+            temporaryAllowUntil = 2_000L,
+            temporaryAllowElapsedRealtimeDeadlineMillis = 5_000L,
+            temporaryAllowBootCount = 7,
+        )
+
     @Test
     fun storageRecordKeepsExistingDefaults() {
         val settings = StoredAppSettings()

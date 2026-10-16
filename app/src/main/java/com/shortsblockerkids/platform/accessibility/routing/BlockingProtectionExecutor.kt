@@ -6,15 +6,17 @@ class BlockingProtectionExecutor(
     private val startFallback: (String, (Boolean) -> Unit) -> Unit,
     private val recordOutcome: (String) -> Unit,
     private val onOverlayFailed: () -> Unit,
-    private val startPlaybackExit: (String, (Boolean) -> Unit) -> Unit,
     private val scheduleRetry: (Long, () -> Unit) -> Unit = { _, _ -> },
     private val shouldRetryProtection: (String) -> Boolean = { true },
 ) {
     private var fallbackPending = false
+    private var overlayPresented = false
     private var generation = 0
+    private var protectionAttempts = 0
 
     fun protect(packageName: String) {
-        if (fallbackPending) return
+        if (fallbackPending || overlayPresented || protectionAttempts >= MAX_PROTECTION_ATTEMPTS) return
+        protectionAttempts++
         val request = ++generation
         val shown =
             try {
@@ -23,38 +25,28 @@ class BlockingProtectionExecutor(
                 false
             }
         if (shown) {
+            overlayPresented = true
             recordOutcome("ShowOverlay")
-            fallbackPending = true
-            recordOutcome("AutomaticPlaybackExitPending")
-            startExit(startPlaybackExit, packageName, request, overlayShown = true)
             return
         }
         fallbackPending = true
         recordOutcome("OverlayFailedFallbackPending")
-        startExit(startFallback, packageName, request, overlayShown = false)
+        startExit(packageName, request)
     }
 
     private fun startExit(
-        start: (String, (Boolean) -> Unit) -> Unit,
         packageName: String,
         request: Int,
-        overlayShown: Boolean,
     ) {
         val completed: (Boolean) -> Unit = callback@{ success ->
             if (request != generation || !fallbackPending) return@callback
             fallbackPending = false
-            if (!overlayShown) onOverlayFailed()
-            recordOutcome(
-                if (overlayShown) {
-                    if (success) "PlaybackExitConfirmed" else "OverlayRetainedExitUnconfirmed"
-                } else {
-                    if (success) "FallbackExecuted" else "ProtectionFailed"
-                },
-            )
+            onOverlayFailed()
+            recordOutcome(if (success) "FallbackExecuted" else "ProtectionFailed")
             if (!success) retryLater(packageName, request)
         }
         try {
-            start(packageName, completed)
+            startFallback(packageName, completed)
         } catch (_: RuntimeException) {
             // Platform/window failures are a failed attempt, never an accepted exit.
             completed(false)
@@ -65,6 +57,10 @@ class BlockingProtectionExecutor(
         packageName: String,
         request: Int,
     ) {
+        if (protectionAttempts >= MAX_PROTECTION_ATTEMPTS) {
+            recordOutcome("ProtectionRetryExhausted")
+            return
+        }
         try {
             scheduleRetry(PROTECTION_RETRY_DELAY_MS) {
                 if (request != generation) return@scheduleRetry
@@ -74,6 +70,7 @@ class BlockingProtectionExecutor(
                     } catch (_: RuntimeException) {
                         // An unavailable observation does not establish that protection is unnecessary.
                         recordOutcome("ProtectionRetryCheckFailed")
+                        protectionAttempts++
                         retryLater(packageName, request)
                         return@scheduleRetry
                     }
@@ -87,9 +84,12 @@ class BlockingProtectionExecutor(
     fun reset() {
         generation++
         fallbackPending = false
+        overlayPresented = false
+        protectionAttempts = 0
     }
 
     companion object {
         const val PROTECTION_RETRY_DELAY_MS = 1_500L
+        const val MAX_PROTECTION_ATTEMPTS = 4
     }
 }

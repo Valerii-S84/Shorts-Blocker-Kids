@@ -52,6 +52,7 @@ object DashboardStateFactory {
                     configuration = policy.configuration,
                     hasProtectionEntitlement = hasProtectionEntitlement,
                     nowMillis = input.runtime.nowMillis,
+                    elapsedRealtimeMillis = input.runtime.elapsedRealtimeMillis,
                 )
         return DashboardProtectionUiModel(
             isEnabled = input.protection.isEnabled,

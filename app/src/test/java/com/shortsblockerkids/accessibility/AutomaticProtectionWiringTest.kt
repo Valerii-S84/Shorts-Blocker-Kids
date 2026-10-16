@@ -1,48 +1,147 @@
 package com.shortsblockerkids.accessibility
 
+import com.shortsblockerkids.platform.accessibility.overlay.BlockedSurfaceDepartureObserver
+import com.shortsblockerkids.platform.accessibility.overlay.ObservedPlaybackWindow
+import com.shortsblockerkids.platform.accessibility.overlay.hasLeftBlockedSurface
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.io.File
 
-/** Guards Android wiring that the JVM behavior tests cannot instantiate. */
+/** Exercises the production window policy; device tests cover Android service wiring. */
 class AutomaticProtectionWiringTest {
     @Test
-    fun rootPackageGatePrecedesDebugRequestsAndTreeDetection() {
-        val router = source("routing/AccessibilityEventRouter.kt")
-        val gate = router.indexOf("if (!eventPolicy.isRootPackageConsistent(supportedPackageName, root.packageName?.toString()))")
-        val debug = router.indexOf("diagnostics.consumeDebugOverlayRequest()")
-        val scan = router.indexOf("treeScanner.scan(root)")
-        assertTrue(gate >= 0 && gate < debug && debug < scan)
-        assertTrue(router.substring(gate, debug).contains("return"))
-        assertTrue(router.indexOf("protectionState.isPlatformEnabled(platform.id)") < gate)
+    fun departureRequiresTwoMatchingMaterialObservations() {
+        val observer = observer()
+        val windows = listOf(window("launcher.app"))
+        assertFalse(observer.observe(windows))
+        assertTrue(observer.observe(windows))
     }
 
     @Test
-    fun successfulOverlayWiresGuardedExitAndOnlyConfirmedClosureDismisses() {
-        val router = source("routing/AccessibilityEventRouter.kt")
-        assertTrue(router.contains("startPlaybackExit = blockOverlayController::exitBlockedPlayback"))
-        val overlay = source("overlay/BlockOverlayController.kt")
-        val automaticExit = overlay.substringAfter("fun exitBlockedPlayback(").substringBefore("fun exitAfterOverlayFailure(")
-        assertTrue(automaticExit.contains("exitAfterOverlayFailure(packageName)"))
-        val success = automaticExit.substringAfter("if (closed) {").substringBefore("} else {")
-        val failure = automaticExit.substringAfter("} else {")
-        assertTrue(success.contains("dismissOverlay()"))
-        assertTrue(!failure.contains("dismissOverlay()"))
-        assertTrue(failure.contains("pinButton?.isEnabled = true"))
-        val boundedExit = overlay.substringAfter("fun exitAfterOverlayFailure(").substringBefore("fun dismissOverlay(")
-        assertTrue(boundedExit.contains("PhoneHomeExitController("))
-        assertTrue(boundedExit.contains("playbackExit.exitIfStillDetected(packageName)"))
-        assertTrue(boundedExit.contains("playbackExit.isPlaybackClosed()"))
-        assertTrue(overlay.substringAfter("fun dismissOverlay(").contains("fallbackExitController?.cancel()"))
+    fun changingIrrelevantTreeMetadataDoesNotPreventDepartureConfirmation() {
+        val observer = observer()
+        assertFalse(observer.observe(listOf(window("video.app").copy(treeSignature = 100))))
+        assertTrue(observer.observe(listOf(window("video.app").copy(treeSignature = 200))))
     }
 
-    private fun source(relativePath: String): String {
-        var candidate: File? = File(requireNotNull(System.getProperty("user.dir")))
-        while (candidate != null) {
-            val file = File(candidate, "app/src/main/java/com/shortsblockerkids/platform/accessibility/$relativePath")
-            if (file.isFile) return file.readText()
-            candidate = candidate.parentFile
-        }
-        error("Repository source not found: $relativePath")
+    @Test
+    fun unavailableObservationResetsPendingConfirmation() {
+        val observer = observer()
+        val windows = listOf(window("launcher.app"))
+        assertFalse(observer.observe(windows))
+        assertFalse(observer.observe(listOf(window("video.app").copy(shouldBlock = null))))
+        assertFalse(observer.observe(windows))
+        assertTrue(observer.observe(windows))
     }
+
+    @Test
+    fun protectedObservationResetsPendingConfirmation() {
+        val observer = observer()
+        val windows = listOf(window("launcher.app"))
+        assertFalse(observer.observe(windows))
+        assertFalse(observer.observe(listOf(window("video.app").copy(shouldBlock = true))))
+        assertFalse(observer.observe(windows))
+        assertTrue(observer.observe(windows))
+    }
+
+    @Test
+    fun changingWindowIdentityCannotConfirmDeparture() {
+        val observer = observer()
+        assertFalse(observer.observe(listOf(window("launcher.app"))))
+        assertFalse(observer.observe(listOf(window("launcher.app").copy(windowId = 2))))
+        assertTrue(observer.observe(listOf(window("launcher.app").copy(windowId = 2))))
+    }
+
+    @Test
+    fun newCapturedEpisodeDiscardsPriorConfirmation() {
+        val observer = observer()
+        val windows = listOf(window("launcher.app"))
+        assertFalse(observer.observe(windows))
+        observer.capture("second.video.app")
+        assertFalse(observer.observe(windows))
+        assertTrue(observer.observe(windows))
+    }
+
+    @Test
+    fun noCapturedEpisodeCannotReleaseEvenWhenProtectionIsDisabled() {
+        assertFalse(BlockedSurfaceDepartureObserver().observe(emptyList(), isTargetEligible = false))
+    }
+
+    @Test
+    fun disablingCapturedTargetReleasesPriorPictureInPictureBarrier() {
+        val observer = observer()
+        val windows = listOf(window("video.app").copy(isPictureInPicture = true, shouldBlock = true))
+        assertFalse(observer.observe(windows))
+        assertTrue(observer.observe(windows, isTargetEligible = false))
+    }
+
+    @Test
+    fun positiveLauncherApplicationConfirmsDeparture() {
+        assertTrue(hasLeftBlockedSurface("video.app", listOf(window("launcher.app"))))
+    }
+
+    @Test
+    fun completeNormalScreenInSamePackageCanReleasePriorDetection() {
+        assertTrue(hasLeftBlockedSurface("video.app", listOf(window("video.app"))))
+    }
+
+    @Test
+    fun absentWindowsDoNotConfirmDeparture() {
+        assertFalse(hasLeftBlockedSurface("video.app", emptyList()))
+    }
+
+    @Test
+    fun uncapturedPackageDoesNotConfirmDeparture() {
+        assertFalse(hasLeftBlockedSurface(null, listOf(window("launcher.app"))))
+        assertFalse(hasLeftBlockedSurface("", listOf(window("launcher.app"))))
+    }
+
+    @Test
+    fun unreadablePackageDoesNotConfirmDeparture() {
+        assertFalse(hasLeftBlockedSurface("video.app", listOf(window(null))))
+        assertFalse(hasLeftBlockedSurface("video.app", listOf(window(""))))
+    }
+
+    @Test
+    fun partialOrUnavailableTreeDoesNotConfirmDeparture() {
+        assertFalse(hasLeftBlockedSurface("video.app", listOf(window("video.app").copy(shouldBlock = null))))
+    }
+
+    @Test
+    fun noKnownActiveApplicationDoesNotConfirmDeparture() {
+        assertFalse(hasLeftBlockedSurface("video.app", listOf(window("launcher.app").copy(isActive = false))))
+    }
+
+    @Test
+    fun protectedSurfaceRetainsBarrier() {
+        assertFalse(hasLeftBlockedSurface("video.app", listOf(window("video.app").copy(shouldBlock = true))))
+    }
+
+    @Test
+    fun blockedPictureInPictureRetainsBarrierOverLauncher() {
+        val pip = window("video.app").copy(windowId = 2, isActive = false, isPictureInPicture = true)
+        assertFalse(hasLeftBlockedSurface("video.app", listOf(window("launcher.app"), pip)))
+    }
+
+    @Test
+    fun protectedSplitScreenWindowRetainsBarrierOverAnotherApplication() {
+        val split = window("video.app").copy(windowId = 2, isActive = false, shouldBlock = true)
+        assertFalse(hasLeftBlockedSurface("video.app", listOf(window("other.app"), split)))
+    }
+
+    @Test
+    fun unavailableSplitScreenWindowRetainsBarrier() {
+        val split = window("video.app").copy(windowId = 2, isActive = false, shouldBlock = null)
+        assertFalse(hasLeftBlockedSurface("video.app", listOf(window("other.app"), split)))
+    }
+
+    @Test
+    fun newProtectedPackageCannotBeReleasedByOldPackageDeparture() {
+        assertFalse(hasLeftBlockedSurface("video.app", listOf(window("second.video.app").copy(shouldBlock = true))))
+    }
+
+    private fun window(packageName: String?): ObservedPlaybackWindow =
+        ObservedPlaybackWindow(windowId = 1, packageName = packageName, isActive = true)
+
+    private fun observer(): BlockedSurfaceDepartureObserver = BlockedSurfaceDepartureObserver().apply { capture("video.app") }
 }

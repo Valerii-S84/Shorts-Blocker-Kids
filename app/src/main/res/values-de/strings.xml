@@ -124,7 +124,6 @@
     <string name="dashboard_privacy_policy">Datenschutzerklärung</string>
     <string name="dashboard_review_tamper_protection">Manipulationsschutz ansehen</string>
     <string name="dashboard_enable_tamper_protection">Manipulationsschutz aktivieren</string>
-    <string name="dashboard_local_qa">Lokale Qualitätssicherung</string>
     <string name="dashboard_google_play_subscription">Google Play-Abonnement</string>
     <string name="dashboard_manage_subscription">Abonnement verwalten</string>
     <string name="dashboard_subscribe_google_play">Über Google Play abonnieren</string>
@@ -168,7 +167,6 @@
     <string name="status_not_started">nicht gestartet</string>
     <string name="status_free_test_active">Kostenloser Test aktiv</string>
     <string name="status_free_test_expired">Kostenloser Test abgelaufen</string>
-    <string name="status_subscription_active">Abonnement aktiv</string>
     <string name="status_protection_permission_missing">Schutzberechtigung fehlt</string>
     <string name="status_protection_active">Schutz aktiv</string>
     <string name="status_protection_locked">Schutz gesperrt</string>

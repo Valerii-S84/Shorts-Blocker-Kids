@@ -35,6 +35,10 @@ interface AccessibilityDiagnosticsPort {
 
     fun lastBlockingDecisionText(): String?
 
+    fun recordReadyTemporaryAllowDeadline(deadlineMillis: Long?) = Unit
+
+    fun readyTemporaryAllowDeadlineMillis(): Long? = null
+
     fun lastDetectorResultText(): String?
 
     fun lastDebugSnapshotText(): String?

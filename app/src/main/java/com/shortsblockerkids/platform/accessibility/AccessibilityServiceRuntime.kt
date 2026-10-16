@@ -134,8 +134,12 @@ class AccessibilityServiceRuntime(
                             } else {
                                 routeCurrentWindow()
                             }
+                            diagnostics.recordReadyTemporaryAllowDeadline(
+                                state.snapshot.protectionConfiguration.temporaryAllowElapsedRealtimeDeadlineMillis,
+                            )
                         }
                         is SettingsReadState.Unavailable -> {
+                            diagnostics.recordReadyTemporaryAllowDeadline(null)
                             // Only a successfully read snapshot from this service session survives failure.
                             diagnostics.recordBlockingDecision(
                                 if (latestSettings == null) {
@@ -147,6 +151,7 @@ class AccessibilityServiceRuntime(
                             routeCurrentWindow()
                         }
                         SettingsReadState.Loading -> {
+                            diagnostics.recordReadyTemporaryAllowDeadline(null)
                             diagnostics.recordBlockingDecision("SettingsLoadingProtectionConservative")
                             routeCurrentWindow()
                         }

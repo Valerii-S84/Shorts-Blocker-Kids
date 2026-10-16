@@ -10,10 +10,13 @@ class PhoneHomeExitController(
     private var generation = 0
     private var exiting = false
 
+    val isExitInProgress: Boolean
+        get() = exiting
+
     fun exitShorts() {
         if (exiting) return
         exiting = true
-        attemptExit(generation, 0)
+        attemptExit(++generation, 0)
     }
 
     fun cancel() {
@@ -26,7 +29,7 @@ class PhoneHomeExitController(
         attempt: Int,
     ) {
         if (request != generation) return
-        if (!platformResult(exitAction)) {
+        if (!platformResult(exitAction) && !platformResult(isPlaybackClosed)) {
             scheduleCheck {
                 if (request == generation) retry(request, attempt)
             }
@@ -62,6 +65,7 @@ class PhoneHomeExitController(
 
     private fun finish(callback: () -> Unit) {
         exiting = false
+        generation++
         callback()
     }
 

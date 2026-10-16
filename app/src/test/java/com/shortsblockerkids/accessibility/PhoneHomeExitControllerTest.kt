@@ -1,11 +1,28 @@
 package com.shortsblockerkids.accessibility
 
+import com.shortsblockerkids.platform.accessibility.overlay.BlockedSurfaceDepartureObserver
 import com.shortsblockerkids.platform.accessibility.overlay.DelayedActionScheduler
+import com.shortsblockerkids.platform.accessibility.overlay.ObservedPlaybackWindow
 import com.shortsblockerkids.platform.accessibility.overlay.PhoneHomeExitController
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class PhoneHomeExitControllerTest {
+    @Test
+    fun observedDepartureCompletesWhenAnotherNavigationActionIsUnnecessary() {
+        val scenario = ExitScenario()
+        scenario.actionAccepted = false
+        scenario.closed = true
+        scenario.controller.exitShorts()
+        assertEquals(true, scenario.controller.isExitInProgress)
+        scenario.tick()
+        scenario.tick()
+        assertEquals(1, scenario.completed)
+        assertEquals(0, scenario.failed)
+        assertEquals(1, scenario.actions)
+        assertEquals(false, scenario.controller.isExitInProgress)
+    }
+
     @Test
     fun waitsForTwoConfirmedClosedObservationsBeforeDismissing() {
         val scenario = ExitScenario()
@@ -78,6 +95,32 @@ class PhoneHomeExitControllerTest {
         scenario.controller.cancel()
         scenario.tick()
         assertEquals(0, scenario.completed)
+    }
+
+    @Test
+    fun stableWindowDepartureCanCancelPendingExitWithoutRunningItsStaleCheck() {
+        val scenario = ExitScenario()
+        val departure = BlockedSurfaceDepartureObserver()
+        departure.capture("com.google.android.youtube")
+        val launcher =
+            ObservedPlaybackWindow(
+                windowId = 1,
+                packageName = "com.android.launcher",
+                isActive = true,
+                shouldBlock = false,
+            )
+        scenario.controller.exitShorts()
+
+        assertEquals(true, scenario.controller.isExitInProgress)
+        assertEquals(false, departure.observe(listOf(launcher)))
+        assertEquals(true, departure.observe(listOf(launcher)))
+        scenario.controller.cancel()
+        scenario.tick()
+
+        assertEquals(false, scenario.controller.isExitInProgress)
+        assertEquals(1, scenario.actions)
+        assertEquals(0, scenario.completed)
+        assertEquals(0, scenario.failed)
     }
 
     @Test

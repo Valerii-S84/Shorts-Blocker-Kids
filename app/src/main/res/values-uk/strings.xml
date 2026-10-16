@@ -132,7 +132,6 @@
     <string name="dashboard_privacy_policy">Політика конфіденційності</string>
     <string name="dashboard_review_tamper_protection">Переглянути захист від втручання</string>
     <string name="dashboard_enable_tamper_protection">Увімкнути захист від втручання</string>
-    <string name="dashboard_local_qa">Локальна перевірка якості</string>
     <string name="dashboard_google_play_subscription">Підписка Google Play</string>
     <string name="dashboard_manage_subscription">Керувати підпискою</string>
     <string name="dashboard_subscribe_google_play">Оформити підписку через Google Play</string>
@@ -176,7 +175,6 @@
     <string name="status_not_started">не розпочато</string>
     <string name="status_free_test_active">Безкоштовний пробний період активний</string>
     <string name="status_free_test_expired">Безкоштовний пробний період завершився</string>
-    <string name="status_subscription_active">Підписка активна</string>
     <string name="status_protection_permission_missing">Немає дозволу захисту</string>
     <string name="status_protection_active">Захист активний</string>
     <string name="status_protection_locked">Захист заблоковано</string>

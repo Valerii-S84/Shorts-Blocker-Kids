@@ -1,6 +1,7 @@
 package com.shortsblockerkids.presentation.app
 
 import com.shortsblockerkids.application.pin.PinVerificationResult
+import com.shortsblockerkids.domain.pin.PinValidationReason
 import com.shortsblockerkids.domain.pin.PinValidationResult
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
@@ -15,11 +16,12 @@ class ParentalSettingsSessionTest {
     private var writes = 0
 
     private fun session(
+        create: suspend (String, String) -> PinValidationResult = { _, _ -> PinValidationResult.Valid },
         verify: suspend (String) -> PinVerificationResult = {
             if (it == "4826") PinVerificationResult.Success else PinVerificationResult.Failure(4)
         },
     ) = ParentalSettingsSession(
-        createPin = { _, _ -> PinValidationResult.Valid },
+        createPin = create,
         verifyPin = verify,
         writePlatform = { _, _ -> writes += 1 },
     )
@@ -32,6 +34,35 @@ class ParentalSettingsSessionTest {
             assertEquals(0, writes)
         }
     }
+
+    @Test
+    fun invalidPinCreationCannotAuthorizeSettingsWrite() =
+        runBlocking {
+            val invalid = PinValidationResult.Invalid(PinValidationReason.CONFIRMATION_MISMATCH)
+            val session = session(create = { _, _ -> invalid })
+            assertEquals(invalid, session.createPin("4826", "6392"))
+            assertDenied(session)
+        }
+
+    @Test
+    fun pendingPinCreationCannotAuthorizeAfterBackground() =
+        runBlocking {
+            val started = CompletableDeferred<Unit>()
+            val result = CompletableDeferred<PinValidationResult>()
+            val session =
+                session(
+                    create = { _, _ ->
+                        started.complete(Unit)
+                        result.await()
+                    },
+                )
+            val attempt = async { session.createPin("4826", "4826") }
+            started.await()
+            session.lock()
+            result.complete(PinValidationResult.Valid)
+            assertEquals(PinValidationResult.Valid, attempt.await())
+            assertDenied(session)
+        }
 
     @Test
     fun directMutationWithoutPinCannotWrite() =

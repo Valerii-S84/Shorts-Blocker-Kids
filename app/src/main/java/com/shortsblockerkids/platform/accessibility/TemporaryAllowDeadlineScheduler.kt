@@ -14,13 +14,10 @@ internal class TemporaryAllowDeadlineScheduler(
     private val awaitDelay: suspend (Long) -> Unit = { delay(it) },
 ) {
     private var deadlineJob: Job? = null
-    private var configuredDeadline: Long? = null
-    private var paused = false
 
     fun schedule(allowUntilMillis: Long?) {
         deadlineJob?.cancel()
-        configuredDeadline = allowUntilMillis
-        if (allowUntilMillis == null || paused) return
+        if (allowUntilMillis == null) return
         deadlineJob =
             scope.launch {
                 while (true) {
@@ -37,18 +34,5 @@ internal class TemporaryAllowDeadlineScheduler(
     fun cancel() {
         deadlineJob?.cancel()
         deadlineJob = null
-        configuredDeadline = null
-    }
-
-    fun pause() {
-        paused = true
-        deadlineJob?.cancel()
-        deadlineJob = null
-    }
-
-    fun resume() {
-        if (!paused) return
-        paused = false
-        schedule(configuredDeadline)
     }
 }

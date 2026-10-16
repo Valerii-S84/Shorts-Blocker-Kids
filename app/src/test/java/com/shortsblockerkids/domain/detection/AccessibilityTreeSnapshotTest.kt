@@ -7,6 +7,27 @@ import org.junit.Test
 
 class AccessibilityTreeSnapshotTest {
     @Test
+    fun geometryExtremaFollowAllVisibleNodesRegardlessOfTraversalOrder() {
+        val snapshot =
+            AccessibilityTreeSnapshot(
+                listOf(
+                    node(left = 300, top = 500, right = 500, bottom = 700),
+                    node(left = 350, top = 600, right = 450, bottom = 650),
+                    node(left = 200, top = 400, right = 1_300, bottom = 2_600),
+                ),
+            )
+
+        assertEquals(1_100, snapshot.maxWidth)
+        assertEquals(2_200, snapshot.maxHeight)
+        assertEquals(200, snapshot.screenLeft)
+        assertEquals(400, snapshot.screenTop)
+        assertEquals(1_300, snapshot.screenRight)
+        assertEquals(2_600, snapshot.screenBottom)
+        assertEquals(1_100, snapshot.screenWidth)
+        assertEquals(2_200, snapshot.screenHeight)
+    }
+
+    @Test
     fun emptySnapshotUsesZeroDimensionsAndEmptyDebugSummary() {
         val snapshot = AccessibilityTreeSnapshot.Empty
 

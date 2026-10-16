@@ -2,6 +2,8 @@ package com.shortsblockerkids.composition.dashboard
 
 import com.shortsblockerkids.accessibility.PlatformSupportMatrix
 import com.shortsblockerkids.application.model.AppSettingsSnapshot
+import com.shortsblockerkids.application.port.PinLockoutClock
+import com.shortsblockerkids.application.port.PinLockoutTime
 import com.shortsblockerkids.application.port.TimeProvider
 import com.shortsblockerkids.domain.entitlement.EntitlementSnapshot
 import com.shortsblockerkids.domain.entitlement.FreeTestPolicy
@@ -12,6 +14,29 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class DashboardUiStateAssemblerTest {
+    @Test
+    fun injectedElapsedClockControlsDashboardAllowanceDespitePastWallDeadline() {
+        var elapsedMillis = 1_999L
+        val assembler =
+            DashboardUiStateAssembler(
+                timeProvider = MutableTimeProvider(NOW_MILLIS),
+                deadlineClock = PinLockoutClock { PinLockoutTime(elapsedMillis, 7) },
+            )
+        val settings =
+            eligibleSettings(
+                protection =
+                    eligibleProtection().copy(
+                        temporaryAllowUntilMillis = NOW_MILLIS - 1L,
+                        temporaryAllowElapsedRealtimeDeadlineMillis = 2_000L,
+                        temporaryAllowBootCount = 7,
+                    ),
+            )
+
+        assertFalse(assembler.createState(settings).protection.canProtect)
+        elapsedMillis = 2_000L
+        assertTrue(assembler.createState(settings).protection.canProtect)
+    }
+
     @Test
     fun repeatedAssemblyReevaluatesFreeTestExpiry() {
         val expiryMillis = FreeTestPolicy.DEFAULT_DURATION_DAYS * ONE_DAY_MILLIS

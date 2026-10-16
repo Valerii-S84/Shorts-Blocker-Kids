@@ -124,7 +124,6 @@
     <string name="dashboard_privacy_policy">Privacy Policy</string>
     <string name="dashboard_review_tamper_protection">Review Tamper Protection</string>
     <string name="dashboard_enable_tamper_protection">Enable Tamper Protection</string>
-    <string name="dashboard_local_qa">Local QA</string>
     <string name="dashboard_google_play_subscription">Google Play subscription</string>
     <string name="dashboard_manage_subscription">Manage subscription</string>
     <string name="dashboard_subscribe_google_play">Subscribe with Google Play</string>
@@ -168,7 +167,6 @@
     <string name="status_not_started">not started</string>
     <string name="status_free_test_active">Free test active</string>
     <string name="status_free_test_expired">Free test expired</string>
-    <string name="status_subscription_active">Subscription active</string>
     <string name="status_protection_permission_missing">Protection permission missing</string>
     <string name="status_protection_active">Protection active</string>
     <string name="status_protection_locked">Protection locked</string>

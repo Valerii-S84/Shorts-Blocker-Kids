@@ -55,6 +55,7 @@ class ShortVideoBlockerEmulatorE2eTest {
             pinHasher = Pbkdf2PinHasher(),
         )
     private var originalApplicationLocales: LocaleList? = null
+    private var lastOverlayCacheClearSucceeded: Boolean? = null
 
     @Before
     fun setUp() {
@@ -146,11 +147,12 @@ class ShortVideoBlockerEmulatorE2eTest {
             launchFixture(FixturePlatform.YOUTUBE, "shorts")
             assertOverlayVisible()
             assertEquals(1, overlayTitleCount())
+            assertEquals(FixturePlatform.YOUTUBE.packageName, currentPackageName())
         }
     }
 
     @Test
-    fun normalToShortKeepsOverlayStableUntilExplicitExit() {
+    fun normalToShortAndBackReleasesPriorOverlayAndReblocks() {
         launchFixture(FixturePlatform.YOUTUBE, "normal_video")
         assertNoOverlay()
 
@@ -159,8 +161,10 @@ class ShortVideoBlockerEmulatorE2eTest {
         assertLastDetectorPackage(FixturePlatform.YOUTUBE, "confidence=HIGH")
 
         launchFixture(FixturePlatform.YOUTUBE, "normal_video")
+        assertNoOverlay(timeoutMs = 4_000L)
+
+        tapText("SHORTS")
         assertOverlayVisible()
-        assertLastDetectorPackage(FixturePlatform.YOUTUBE, "confidence=HIGH")
 
         tapText(resourceText(R.string.blocking_overlay_exit_shorts))
         assertNoOverlay(timeoutMs = 4_000L)
@@ -274,6 +278,30 @@ class ShortVideoBlockerEmulatorE2eTest {
         launchFixture(FixturePlatform.YOUTUBE, "shorts")
         assertOverlayVisible()
         assertEquals(1, overlayTitleCount())
+
+        pressHome()
+        assertNoOverlay(timeoutMs = 4_000L)
+        launchFixture(FixturePlatform.YOUTUBE, "normal_video")
+        assertNoOverlay()
+        tapText("SHORTS")
+        assertOverlayVisible()
+        assertEquals(1, overlayTitleCount())
+    }
+
+    @Test
+    fun cancelingPinFromStableOverlayAllowsSameShortToBlockAgain() {
+        launchFixture(FixturePlatform.YOUTUBE, "shorts")
+        assertOverlayVisible()
+        tapText(resourceText(R.string.blocking_overlay_enter_pin))
+        assertTrue(
+            "PIN activity did not become active",
+            waitUntil(timeoutMs = 5_000L) { currentPackageName() == targetContext.packageName },
+        )
+        waitForText(resourceText(R.string.pin_entry_title), timeoutMs = PIN_ACTIVITY_TIMEOUT_MS)
+        pressBack()
+        launchFixture(FixturePlatform.YOUTUBE, "shorts")
+        assertOverlayVisible()
+        assertEquals(1, overlayTitleCount())
     }
 
     @Test
@@ -285,14 +313,30 @@ class ShortVideoBlockerEmulatorE2eTest {
 
         launchFixture(FixturePlatform.YOUTUBE, "shorts")
         assertNoOverlay()
+        assertEquals(FixturePlatform.YOUTUBE.packageName, currentPackageName())
 
+        accessibilityDiagnostics.clearDetectorResult()
         runBlocking {
             settingsStore.setProtectionEnabled(true)
             completeProtectionActivationForTest(System.currentTimeMillis())
         }
-        launchFixture(FixturePlatform.YOUTUBE, "shorts")
 
-        assertOverlayVisible()
+        var fallbackExecuted = false
+        val protectionRestored =
+            waitUntil(timeoutMs = 8_000L) {
+                if (accessibilityDiagnostics.lastBlockingDecisionText() == "FallbackExecuted") {
+                    fallbackExecuted = true
+                }
+                val currentPackage = currentPackageName()
+                isOverlayVisible() ||
+                    (fallbackExecuted && currentPackage != null && currentPackage != FixturePlatform.YOUTUBE.packageName)
+            }
+        assertTrue(
+            "Protection did not resume after global toggle; " +
+                "decision=${accessibilityDiagnostics.lastBlockingDecisionText()} package=${currentPackageName()}",
+            protectionRestored,
+        )
+        if (isOverlayVisible()) assertEquals(1, overlayTitleCount())
     }
 
     @Test
@@ -353,6 +397,7 @@ class ShortVideoBlockerEmulatorE2eTest {
             "$languageTags overlay did not use the expected localized title",
             hasText(expectedOverlayTitle),
         )
+        assertEquals(FixturePlatform.YOUTUBE.packageName, currentPackageName())
 
         tapText(resourceText(R.string.blocking_overlay_enter_pin))
         waitForText(
@@ -568,22 +613,16 @@ class ShortVideoBlockerEmulatorE2eTest {
     }
 
     private fun tapText(text: String) {
-        val node =
-            waitForNode(timeoutMs = 8_000L) {
-                it.hasExactTextOrDescription(text) && it.isVisibleToUser && it.isEnabled
+        val clicked =
+            waitUntil(timeoutMs = 8_000L) {
+                val node =
+                    findNodes {
+                        it.hasExactTextOrDescription(text) && it.isVisibleToUser && it.isEnabled
+                    }.firstOrNull()
+                node != null && node.refresh() && clickNode(node)
             }
-        if (node != null) {
-            assertTrue(
-                "Unable to click UI text: $text; targets=${clickTargetSnapshot(text)}",
-                clickNode(node),
-            )
-            SystemClock.sleep(700L)
-            return
-        }
-        when (text) {
-            resourceText(R.string.blocking_overlay_enter_pin) -> tapOverlayEnterPin()
-            resourceText(R.string.blocking_overlay_exit_shorts) -> tapOverlayExit()
-            else -> assertNotNull("Missing UI text: $text", node)
+        if (!clicked) {
+            throw AssertionError("Unable to click UI text: $text; targets=${clickTargetSnapshot(text)}")
         }
         SystemClock.sleep(700L)
     }
@@ -629,7 +668,18 @@ class ShortVideoBlockerEmulatorE2eTest {
 
     private fun assertNoOverlay(timeoutMs: Long = 2_500L) {
         val disappeared = waitUntil(timeoutMs = timeoutMs) { !isOverlayVisible() }
-        assertTrue("Blocking overlay was still visible", disappeared)
+        val failureDetails =
+            if (disappeared) {
+                ""
+            } else {
+                val overlayWindows = accessibilityOverlayWindowCount()
+                val titlePresent = hasText(resourceText(R.string.blocking_overlay_title))
+                val dumpsysOverlay = shell("dumpsys accessibility").contains("TYPE_ACCESSIBILITY_OVERLAY")
+                " windows=$overlayWindows cacheCleared=$lastOverlayCacheClearSucceeded " +
+                    "titlePresent=$titlePresent dumpsysOverlay=$dumpsysOverlay " +
+                    "package=${currentPackageName()} decision=${accessibilityDiagnostics.lastBlockingDecisionText()}"
+            }
+        assertTrue("Blocking overlay was still visible$failureDetails", disappeared)
     }
 
     private fun assertOverlayRemainsHidden(timeoutMs: Long = 2_500L) {
@@ -673,10 +723,14 @@ class ShortVideoBlockerEmulatorE2eTest {
                 it.hasExactTextOrDescription(resourceText(R.string.blocking_overlay_title))
             }.size
 
-    private fun accessibilityOverlayWindowCount(): Int =
-        uiAutomation.windows.count { window ->
+    private fun accessibilityOverlayWindowCount(): Int {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            lastOverlayCacheClearSucceeded = uiAutomation.clearCache()
+        }
+        return uiAutomation.windows.count { window ->
             window.type == AccessibilityWindowInfo.TYPE_ACCESSIBILITY_OVERLAY
         }
+    }
 
     private fun currentPackageName(): String? = uiAutomation.rootInActiveWindow?.packageName?.toString()
 
@@ -688,16 +742,6 @@ class ShortVideoBlockerEmulatorE2eTest {
     private fun pressBack() {
         shell("input keyevent KEYCODE_BACK")
         SystemClock.sleep(700L)
-    }
-
-    private fun tapOverlayEnterPin() {
-        shell("input tap 540 1580")
-        SystemClock.sleep(900L)
-    }
-
-    private fun tapOverlayExit() {
-        shell("input tap 540 1400")
-        SystemClock.sleep(1_200L)
     }
 
     private fun hasText(text: String): Boolean = findNodes { it.hasExactTextOrDescription(text) }.isNotEmpty()

@@ -69,7 +69,7 @@ Do not commit keystores or `keystore.properties`.
 
 Current release decisions:
 
-- `versionName = 0.1.0` and `versionCode = 1` are intentionally kept for the first controlled release candidate line.
+- `versionName = 1.0.0` and `versionCode = 1` identify the first Google Play release.
 - `release` builds use R8 minification and resource shrinking.
 - Google Play publishing remains out of scope for this repository state.
 

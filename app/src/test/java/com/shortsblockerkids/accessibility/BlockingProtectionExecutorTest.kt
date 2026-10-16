@@ -1,15 +1,64 @@
 package com.shortsblockerkids.accessibility
 
-import com.shortsblockerkids.domain.detection.Confidence
-import com.shortsblockerkids.domain.detection.DetectionResult
-import com.shortsblockerkids.platform.accessibility.overlay.DelayedActionScheduler
-import com.shortsblockerkids.platform.accessibility.overlay.PhoneHomeExitController
 import com.shortsblockerkids.platform.accessibility.routing.BlockingProtectionExecutor
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class BlockingProtectionExecutorTest {
+    @Test fun canceledParentNavigationAllowsSamePackageProtectionAgain() {
+        val scenario = StableScenario()
+        scenario.executor.protect("video.app")
+        assertEquals(listOf("video.app"), scenario.shownPackages)
+        scenario.executor.reset()
+        scenario.executor.protect("video.app")
+        assertEquals(listOf("video.app", "video.app"), scenario.shownPackages)
+        assertEquals(2, scenario.outcomes.count { it == "ShowOverlay" })
+    }
+
+    @Test fun duplicateFallbackCompletionCannotChangeSettledOutcomeOrScheduleRetry() {
+        val scenario = Scenario()
+        scenario.executor.protect("video.app")
+        val completion = scenario.complete
+        completion(true)
+        val settledOutcomes = scenario.outcomes.toList()
+        completion(false)
+        assertEquals(settledOutcomes, scenario.outcomes)
+        assertEquals(1, scenario.dismissals)
+        assertTrue(scenario.retries.isEmpty())
+    }
+
+    @Test fun repeatedFailuresAndNewEventsShareOneFiniteProtectionBudget() {
+        val scenario = Scenario()
+        scenario.executor.protect("video.app")
+        repeat(BlockingProtectionExecutor.MAX_PROTECTION_ATTEMPTS) { attempt ->
+            scenario.complete(false)
+            if (attempt + 1 < BlockingProtectionExecutor.MAX_PROTECTION_ATTEMPTS) {
+                scenario.retries.removeFirst().invoke()
+            }
+        }
+        repeat(5) { scenario.executor.protect("video.app") }
+        assertEquals(BlockingProtectionExecutor.MAX_PROTECTION_ATTEMPTS, scenario.fallbacks)
+        assertTrue(scenario.retries.isEmpty())
+        assertEquals("ProtectionRetryExhausted", scenario.outcomes.last())
+        scenario.executor.reset()
+        scenario.executor.protect("video.app")
+        assertEquals(BlockingProtectionExecutor.MAX_PROTECTION_ATTEMPTS + 1, scenario.fallbacks)
+    }
+
+    @Test fun permanentlyUnavailableRetryObservationExhaustsSharedBudget() {
+        val scenario = Scenario()
+        scenario.executor.protect("video.app")
+        scenario.guardFailures = 100
+        scenario.complete(false)
+        repeat(BlockingProtectionExecutor.MAX_PROTECTION_ATTEMPTS - 1) {
+            scenario.retries.removeFirst().invoke()
+        }
+        assertTrue(scenario.retries.isEmpty())
+        assertEquals(1, scenario.fallbacks)
+        assertEquals("ProtectionRetryExhausted", scenario.outcomes.last())
+    }
+
     @Test fun successfulOverlayIsRecordedAfterItIsShown() {
         val events = mutableListOf<String>()
         val executor =
@@ -21,14 +70,10 @@ class BlockingProtectionExecutorTest {
                 { _, _ -> error("Unexpected fallback") },
                 { events += it },
                 {},
-                { packageName, completed ->
-                    events += "exit:$packageName"
-                    completed(true)
-                },
             )
         executor.protect("video.app")
         assertEquals(
-            listOf("shown", "ShowOverlay", "AutomaticPlaybackExitPending", "exit:video.app", "PlaybackExitConfirmed"),
+            listOf("shown", "ShowOverlay"),
             events,
         )
     }
@@ -147,7 +192,6 @@ class BlockingProtectionExecutorTest {
                 { _, _ -> throw IllegalStateException("Exit unavailable") },
                 { outcomes += it },
                 {},
-                { _, _ -> error("Unexpected exit") },
                 scheduleRetry = { _, action -> retries.addLast(action) },
             )
         executor.protect("video.app")
@@ -156,94 +200,71 @@ class BlockingProtectionExecutorTest {
         assertEquals(2, outcomes.count { it == "ProtectionFailed" })
     }
 
-    @Test fun automaticExitWaitsForTwoClosedObservationsWithoutButtonClick() {
-        val scenario = AutomaticScenario()
-        scenario.closed = true
+    @Test fun successfulOverlaySchedulesNoAutomaticNavigation() {
+        val scenario = StableScenario()
         scenario.executor.protect("video.app")
-        assertEquals(1, scenario.actions)
-        assertTrue(scenario.overlayVisible)
-        scenario.tick()
-        assertTrue(scenario.overlayVisible)
-        scenario.tick()
-        assertEquals(false, scenario.overlayVisible)
-        assertEquals("PlaybackExitConfirmed", scenario.outcomes.last())
+        assertEquals(listOf("video.app"), scenario.shownPackages)
+        assertEquals(listOf("ShowOverlay"), scenario.outcomes)
+        assertEquals(0, scenario.fallbacks)
+        assertTrue(scenario.scheduled.isEmpty())
     }
 
-    @Test fun automaticExitFailureIsBoundedAndRetainsOverlay() {
-        val scenario = AutomaticScenario()
-        scenario.executor.protect("video.app")
-        repeat(PhoneHomeExitController.MAX_EXIT_ATTEMPTS) { scenario.tick() }
-        assertEquals(PhoneHomeExitController.MAX_EXIT_ATTEMPTS, scenario.actions)
-        assertTrue(scenario.overlayVisible)
-        assertEquals("OverlayRetainedExitUnconfirmed", scenario.outcomes.last())
-        assertTrue("PlaybackExitConfirmed" !in scenario.outcomes)
+    @Test fun stableOverlayDoesNotConsumeFallbackBudgetOnRepeatedEvents() {
+        val scenario = StableScenario()
+        repeat(BlockingProtectionExecutor.MAX_PROTECTION_ATTEMPTS + 3) { scenario.executor.protect("video.app") }
+        assertEquals(listOf("video.app"), scenario.shownPackages)
+        assertEquals(0, scenario.fallbacks)
+        assertEquals(listOf("ShowOverlay"), scenario.outcomes)
     }
 
-    @Test fun vanishedMarkersAndUnsupportedPackageDoNotReleaseUnconfirmedBarrier() {
-        val controller = BlockingDecisionController()
-        val scenario = AutomaticScenario()
-        val high = DetectionResult(true, Confidence.HIGH, emptyList())
-        assertEquals(BlockingDecision.ShowOverlay, controller.evaluate(true, true, high, 1_000L))
-        scenario.executor.protect("video.app")
-        repeat(PhoneHomeExitController.MAX_EXIT_ATTEMPTS) { scenario.tick() }
-        assertEquals(BlockingDecision.Ignore, controller.evaluate(true, true, DetectionResult.None, 3_000L))
-        assertTrue(controller.shouldIgnoreUnsupportedPackageEvent(3_000L))
-        assertTrue(scenario.overlayVisible)
-        assertTrue("PlaybackExitConfirmed" !in scenario.outcomes)
-    }
-
-    @Test fun pendingAutomaticExitCannotStartDuplicateAttempts() {
-        val scenario = AutomaticScenario()
-        repeat(3) { scenario.executor.protect("video.app") }
-        assertEquals(1, scenario.actions)
-        assertEquals(1, scenario.outcomes.count { it == "ShowOverlay" })
-    }
-
-    @Test fun resetDiscardsStaleAutomaticExitOutcome() {
-        val scenario = AutomaticScenario()
-        scenario.closed = true
+    @Test fun observedDepartureAllowsFreshOverlayForSamePackage() {
+        val scenario = StableScenario()
         scenario.executor.protect("video.app")
         scenario.executor.reset()
-        scenario.tick()
-        scenario.tick()
-        assertTrue("PlaybackExitConfirmed" !in scenario.outcomes)
-        scenario.executor.protect("other.app")
-        assertEquals(2, scenario.actions)
+        scenario.executor.protect("video.app")
+        assertEquals(listOf("video.app", "video.app"), scenario.shownPackages)
+        assertEquals(0, scenario.fallbacks)
     }
 
-    private class AutomaticScenario {
+    @Test fun anotherPackageCannotCreateDuplicateOverlayBeforeCurrentDismissal() {
+        val scenario = StableScenario()
+        scenario.executor.protect("video.app")
+        scenario.executor.protect("other.app")
+        assertEquals(listOf("video.app"), scenario.shownPackages)
+        scenario.executor.reset()
+        scenario.executor.protect("other.app")
+        assertEquals(listOf("video.app", "other.app"), scenario.shownPackages)
+        assertEquals(0, scenario.fallbacks)
+    }
+
+    @Test fun successfulOverlayAfterFailureInvalidatesOldScheduledRetry() {
+        val scenario = Scenario()
+        scenario.executor.protect("video.app")
+        scenario.complete(false)
+        scenario.overlayAvailable = true
+        scenario.executor.protect("video.app")
+        scenario.retries.removeFirst().invoke()
+        assertEquals(1, scenario.fallbacks)
+        assertEquals("ShowOverlay", scenario.outcomes.last())
+        assertTrue(scenario.retries.isEmpty())
+    }
+
+    private class StableScenario {
         val outcomes = mutableListOf<String>()
         val scheduled = ArrayDeque<() -> Unit>()
-        var overlayVisible = false
-        var actions = 0
-        var closed = false
+        val shownPackages = mutableListOf<String>()
+        var fallbacks = 0
         val executor =
             BlockingProtectionExecutor(
                 showOverlay = {
-                    overlayVisible = true
+                    shownPackages += it
                     true
                 },
-                startFallback = { _, _ -> error("Unexpected overlay failure") },
+                startFallback = { _, _ -> fallbacks++ },
                 recordOutcome = { outcomes += it },
                 onOverlayFailed = { error("Successful overlay must be retained") },
-                startPlaybackExit = { _, completed ->
-                    PhoneHomeExitController(
-                        exitAction = {
-                            actions++
-                            true
-                        },
-                        isPlaybackClosed = { closed },
-                        delayedActionScheduler = DelayedActionScheduler { _, action -> scheduled.addLast(action) },
-                        onExitCompleted = {
-                            completed(true)
-                            overlayVisible = false
-                        },
-                        onExitFailed = { completed(false) },
-                    ).exitShorts()
-                },
+                scheduleRetry = { _, action -> scheduled.addLast(action) },
             )
-
-        fun tick() = scheduled.removeFirst().invoke()
     }
 
     private class Scenario {
@@ -252,18 +273,18 @@ class BlockingProtectionExecutorTest {
         var dismissals = 0
         var stillBlocked = true
         var guardFailures = 0
+        var overlayAvailable = false
         val retries = ArrayDeque<() -> Unit>()
         var complete: (Boolean) -> Unit = {}
         val executor =
             BlockingProtectionExecutor(
-                { false },
+                { overlayAvailable },
                 { _, callback ->
                     fallbacks++
                     complete = callback
                 },
                 { outcomes += it },
                 { dismissals++ },
-                { _, _ -> error("Overlay failure must use fallback") },
                 scheduleRetry = { _, action -> retries.addLast(action) },
                 shouldRetryProtection = {
                     if (guardFailures > 0) {

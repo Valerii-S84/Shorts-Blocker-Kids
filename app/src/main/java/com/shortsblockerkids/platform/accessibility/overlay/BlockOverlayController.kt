@@ -11,12 +11,15 @@ import android.os.Looper
 import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
+import android.view.accessibility.AccessibilityEvent
 import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import com.shortsblockerkids.BuildConfig
 import com.shortsblockerkids.R
+import com.shortsblockerkids.platform.accessibility.diagnostics.DebugAccessibilityLogger
 import com.shortsblockerkids.platform.locale.AppLanguage
 import kotlin.math.roundToInt
 
@@ -30,6 +33,7 @@ class BlockOverlayController(
     private val windowManager = service.getSystemService(WindowManager::class.java)
     private val mainHandler = Handler(Looper.getMainLooper())
     private val playbackExit = BlockedPlaybackExit(service)
+    private val debugLogger = DebugAccessibilityLogger()
     private var exitButton: Button? = null
     private var pinButton: Button? = null
     private val exitController =
@@ -51,6 +55,12 @@ class BlockOverlayController(
         )
     private var overlayView: View? = null
     private var fallbackExitController: PhoneHomeExitController? = null
+    private var overlayObservationGeneration = 0
+
+    internal var onProtectionEpisodeCanceled: () -> Unit = {}
+
+    val blockedPackageName: String?
+        get() = playbackExit.blockedPackageName
 
     val isOverlayVisible: Boolean
         get() = overlayView != null
@@ -87,31 +97,9 @@ class BlockOverlayController(
         return runCatching {
             windowManager.addView(view, params)
             overlayView = view
+            scheduleOverlayObservation(++overlayObservationGeneration)
             true
         }.getOrDefault(false)
-    }
-
-    fun exitBlockedPlayback(
-        packageName: String,
-        completed: (Boolean) -> Unit,
-    ) {
-        if (overlayView == null) {
-            completed(false)
-            return
-        }
-        exitButton?.isEnabled = false
-        pinButton?.isEnabled = false
-        // Keep the barrier until the bounded, package-guarded exit is confirmed.
-        exitAfterOverlayFailure(packageName) { closed ->
-            completed(closed)
-            if (closed) {
-                dismissOverlay()
-                onShortsCloseCompleted()
-            } else {
-                exitButton?.isEnabled = true
-                pinButton?.isEnabled = true
-            }
-        }
     }
 
     fun exitAfterOverlayFailure(
@@ -131,8 +119,14 @@ class BlockOverlayController(
                     DelayedActionScheduler { delayMillis, action ->
                         scheduleProtectionRetry(delayMillis, action)
                     },
-                onExitCompleted = { completed(true) },
-                onExitFailed = { completed(false) },
+                onExitCompleted = {
+                    fallbackExitController = null
+                    completed(true)
+                },
+                onExitFailed = {
+                    fallbackExitController = null
+                    completed(false)
+                },
             )
         fallbackExitController = fallback
         fallback.exitShorts()
@@ -149,7 +143,51 @@ class BlockOverlayController(
 
     fun isBlockedPackageStillDetected(packageName: String): Boolean = playbackExit.isBlockedPackageStillDetected(packageName)
 
+    fun reconcileVisibleOverlay() {
+        if (!isOverlayVisible) return
+        if (fallbackExitController != null) {
+            if (BuildConfig.ACCESSIBILITY_DEBUG_TOOLS_ENABLED) {
+                debugLogger.logIgnoredEvent(
+                    packageName = blockedPackageName,
+                    eventType = AccessibilityEvent.TYPE_WINDOWS_CHANGED,
+                    reason =
+                        "exit-reconcile skipped fallback=${fallbackExitController != null} " +
+                            "exitInProgress=${exitController.isExitInProgress}",
+                )
+            }
+            return
+        }
+        if (runCatching { playbackExit.isPlaybackClosed() }.getOrDefault(false)) {
+            dismissOverlay()
+            onShortsCloseCompleted()
+        }
+    }
+
+    fun updateProtectionEligibility(isTargetEligible: Boolean) {
+        if (
+            isOverlayVisible &&
+            !isTargetEligible &&
+            playbackExit.shouldDismissForProtectionState(isTargetEligible)
+        ) {
+            dismissOverlay()
+            onShortsCloseCompleted()
+        }
+    }
+
+    private fun scheduleOverlayObservation(request: Int) {
+        mainHandler.postDelayed(
+            {
+                if (request == overlayObservationGeneration && isOverlayVisible) {
+                    reconcileVisibleOverlay()
+                    if (request == overlayObservationGeneration && isOverlayVisible) scheduleOverlayObservation(request)
+                }
+            },
+            PhoneHomeExitController.EXIT_CHECK_DELAY_MS,
+        )
+    }
+
     fun dismissOverlay() {
+        overlayObservationGeneration++
         fallbackExitController?.cancel()
         fallbackExitController = null
         exitController.cancel()
@@ -161,6 +199,7 @@ class BlockOverlayController(
             return
         }
 
+        onProtectionEpisodeCanceled()
         runCatching {
             windowManager.removeViewImmediate(view)
         }
@@ -287,6 +326,9 @@ class BlockOverlayController(
     private fun localizedString(resourceId: Int): String = AppLanguage.localizedContext(service).getString(resourceId)
 
     private fun requestPlayerExit() {
+        fallbackExitController?.cancel()
+        fallbackExitController = null
+        onProtectionEpisodeCanceled()
         exitButton?.isEnabled = false
         pinButton?.isEnabled = false
         exitController.exitShorts()

@@ -1,6 +1,6 @@
 # Shorts Blocker Kids Play Console Preparation Package
 
-Status: Prepared locally for `shortsblockerkids.de`. Public HTTPS checks of the
+Status: FAIL / incomplete local preparation for `shortsblockerkids.de`. Public HTTPS checks of the
 Privacy, Support, Terms and root URLs on July 17, 2026 are historical evidence
 recorded in the [dated deployment record](SHORTS_BLOCKER_PRODUCTION_DEPLOYMENT_2026-05-31.md),
 not a current live verification. Before submission, verify the current signed AAB
@@ -9,6 +9,10 @@ and the [website deployment checks](../website/README.md). External Play Console
 entry, Accessibility demo video URL and Play Console submission remain pending.
 
 Date: July 17, 2026
+
+Policy/documentation recheck: 2026-10-15. The date above identifies the historical package; it does not date a new artifact, live URL check or Console submission. Fresh candidate provenance and local acceptance remain pending in [AAB Readiness](SHORTS_BLOCKER_AAB_RELEASE_READINESS.md).
+
+**Local preparation: FAIL. Overall publication readiness: FAIL.** The reserved final frozen-source phase started 2026-10-15T22:53:35Z (16 October in Europe/Berlin). No automatic retry or source change followed. Ktlint failed; fresh unit XML is **594 / 1 / 0 / 0** (tests/failures/errors/skipped). Debug/release builds and both lint variants completed. Coverage verification/report did not execute after the failing unit prerequisite; no new achieved ratios are claimed. The entire 32-test instrumentation task started once without a filter, but terminated with only **13 completed XML tests / 0 failures / 0 errors / 0 skipped**, leaving **19 without results**. This is incomplete, never a whole-suite pass. Both Pevisor reviews remain unavailable and unfulfilled. Artifact and gaps: [AAB Readiness](SHORTS_BLOCKER_AAB_RELEASE_READINESS.md). Audience, IARC, Data Safety and form answers remain owner decisions. No upload, Console submission, account action, transaction or publication occurred.
 
 ## Current App Facts
 
@@ -184,7 +188,7 @@ from the questionnaire responses.
 
 ## Target Audience Notes
 
-Recommended draft target audience answer:
+Unapproved historical draft target audience answer:
 
 ```text
 Target audience: parents and guardians, 18+.
@@ -214,6 +218,8 @@ Important Play Console risk:
 Final target age selection remains pending owner/legal review of the actual
 audience, applicable Families obligations and SDK/data disclosures. The 18+
 answer above is a draft, not an approved final form answer.
+
+The [current target-audience guidance](https://support.google.com/googleplay/android-developer/answer/9867159?hl=en) requires an accurate audience declaration, and Google reviews the app and its presentation. If any declared age group includes children, [Families requirements](https://support.google.com/googleplay/android-developer/answer/9893335?hl=en) apply. The owner must resolve the real audience and presentation before submission. Complete the [content-rating questionnaire](https://support.google.com/googleplay/android-developer/answer/9859655?hl=en) accurately; this document does not choose its answers or resulting rating.
 
 Target audience form dependencies:
 
@@ -323,8 +329,7 @@ Evidence to record:
 ## Closed Testing Checklist If Required
 
 Closed testing is required if Play Console requires production access for a
-newly created personal developer account. As of the official Play Console help
-checked on May 29, 2026, personal developer accounts created after
+newly created personal developer account. The [official account-testing requirements](https://support.google.com/googleplay/android-developer/answer/14151465?hl=en), rechecked on 2026-10-15, state that personal developer accounts created after
 November 13, 2023 must run a closed test with at least 12 opted-in testers for
 14 continuous days before applying for production access.
 
@@ -334,6 +339,7 @@ Use closed testing when required by the account:
 - Upload the same validated AAB or a newer validated AAB.
 - Create a closed testing track.
 - Add at least 12 testers; use 15-20 to reduce dropout risk.
+- Confirm the actual account's Console requirements and production-access eligibility; local source review does not establish account eligibility.
 - Confirm every tester opts in and stays opted in for 14 continuous days.
 - Give testers the app access and scenario instructions from this package.
 - Collect feedback by email or Play private feedback.

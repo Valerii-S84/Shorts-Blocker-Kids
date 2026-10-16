@@ -1,6 +1,6 @@
 # Shorts Blocker Kids Play Billing Internal Test Runbook
 
-Status: Prepared. External Play Console execution is pending.
+Status: FAIL / incomplete overall release preparation. Billing runbook prepared; external Play execution pending.
 
 Date: May 24, 2026
 Artifact status updated: July 17, 2026
@@ -145,6 +145,14 @@ Billing can move from `Partial` to `Done` only when:
   SDKs, permissions, and payment behavior.
 
 ## Current Contract And Required Variants
+
+### Local Source And Unit Evidence (2026-10-16 local)
+
+`SyncBillingEntitlementUseCaseTest` executes the use case for PURCHASED (including PURCHASED plus PENDING), already-acknowledged purchases, PENDING without a paid grant/ack and an empty successful query. `BillingCoordinatorTest` executes persistence before acknowledgement, a suspended persistence operation, failed writes without acknowledgement followed by restore recovery, cancellation and SDK/UI failure states. These are behavioral tests with recorded snapshots/tokens/messages; their presence is not a fresh pass result.
+
+The inspected implementation preserves this ordering: `BillingCoordinator` awaits entitlement persistence before invoking acknowledgement; failure returns with `ENTITLEMENT_SAVE_FAILED`. `MainActivity.onResume()` calls coordinator `start()`. A ready gateway then queries product details and purchases; successful setup also queries them. A failed purchase query emits an operation failure instead of an empty successful purchase summary. The stored paid flag has no expiry timestamp or 72-hour timer. Verify device/SDK recovery and account changes with actual Play evidence; this source trace does not certify those flows.
+
+Current unit XML: SyncBillingEntitlementUseCaseTest **4/0/0/0**, BillingCoordinatorTest **11/0/0/0**. These are local PURCHASED/PENDING/absence, persistence-before-acknowledge, storage failure, query/restore/recovery and foreground-resync evidence only. **Local preparation: FAIL. Overall publication readiness: FAIL.** The reserved final frozen-source phase started 2026-10-15T22:53:35Z (16 October in Europe/Berlin). No automatic retry or source change followed. Ktlint failed; fresh unit XML is **594 / 1 / 0 / 0** (tests/failures/errors/skipped). Debug/release builds and both lint variants completed. Coverage verification/report did not execute after the failing unit prerequisite; no new achieved ratios are claimed. The entire 32-test instrumentation task started once without a filter, but terminated with only **13 completed XML tests / 0 failures / 0 errors / 0 skipped**, leaving **19 without results**. This is incomplete, never a whole-suite pass. Both Pevisor reviews remain unavailable and unfulfilled. AAB Readiness identifies the fresh artifact; no Play acceptance is implied. All BIL-01 through BIL-12 Play-installed purchase/refund/account and lifecycle scenarios remain pending tester evidence. No backend, RTDN, database or 72-hour grace was restored. No real transaction or account action occurred.
 
 Follow [Billing Integration](SHORTS_BLOCKER_PLAY_BILLING_BACKEND_RUNBOOK.md). Under BIL-02, test offline/disconnection/product unavailability both with and without prior paid access; record recoverable UI and retained local cache. There is no 72-hour timer or server verification. Under BIL-03, verify persist-before-ack, save failure and acknowledgement-error recovery. Under BIL-09/10/11, record cancellation through paid period, expiry, refund/revocation and grace/account-hold observations where Play test controls support them, then refresh/restore. Do not claim instantaneous server/RTDN propagation. Pending never grants new paid access; a separate active free test may still enable protection.
 

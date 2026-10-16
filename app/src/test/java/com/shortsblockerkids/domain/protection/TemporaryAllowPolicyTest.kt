@@ -7,6 +7,38 @@ import org.junit.Test
 
 class TemporaryAllowPolicyTest {
     @Test
+    fun monotonicDeadlineOverridesWallClockAndExpiresAtItsBoundary() {
+        val configuration =
+            ProtectionConfiguration(
+                temporaryAllowUntilMillis = 500L,
+                temporaryAllowElapsedRealtimeDeadlineMillis = 2_000L,
+            )
+
+        assertTrue(TemporaryAllowPolicy.isActive(configuration, 10_000L, 1_999L))
+        assertFalse(TemporaryAllowPolicy.isActive(configuration, 100L, 2_000L))
+        assertFalse(TemporaryAllowPolicy.isActive(configuration, 100L, 2_001L))
+    }
+
+    @Test
+    fun unavailableElapsedClockDoesNotGrantPersistedMonotonicAllowance() {
+        val configuration =
+            ProtectionConfiguration(
+                temporaryAllowUntilMillis = 10_000L,
+                temporaryAllowElapsedRealtimeDeadlineMillis = 2_000L,
+            )
+
+        assertFalse(TemporaryAllowPolicy.isActive(configuration, 1_000L, null))
+    }
+
+    @Test
+    fun configurationWithoutMonotonicDeadlineUsesWallClockBoundary() {
+        val configuration = ProtectionConfiguration(temporaryAllowUntilMillis = 2_000L)
+
+        assertTrue(TemporaryAllowPolicy.isActive(configuration, 1_999L, 50_000L))
+        assertFalse(TemporaryAllowPolicy.isActive(configuration, 2_000L, 1L))
+    }
+
+    @Test
     fun activeUntilKeepsOnlyFutureTemporaryAllowExpiry() {
         assertEquals(1_001L, TemporaryAllowPolicy.activeUntil(1_001L, nowMillis = 1_000L))
         assertEquals(null, TemporaryAllowPolicy.activeUntil(1_000L, nowMillis = 1_000L))
