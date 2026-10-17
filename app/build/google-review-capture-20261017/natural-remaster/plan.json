@@ -1,0 +1,36 @@
+{
+  "version": 2,
+  "model": "gpt-4o-mini-tts",
+  "voice": "cedar",
+  "speed": 1.04,
+  "languages": [
+    "en",
+    "uk"
+  ],
+  "scripts": {
+    "en": "Shorts Blocker Kids helps parents block short-video feeds on a child's phone. Here is how setup and protection work.\n\nFirst, create a parent PIN and choose the apps to protect. This demonstration uses YouTube.\n\nBefore asking for Android permission, the app explains why it needs the Accessibility service. It detects supported short-video screens and displays a blocking overlay.\n\nThe explanation also describes how data is handled. Detection runs locally on this phone. The app does not collect or send watch history, messages, video titles, or screen recordings. Protection settings and the parent PIN stay on the device.\n\nThe full disclosure is visible as we scroll. The parent can read everything before deciding whether to continue. Blocking requires both protection and the Accessibility service to be enabled.\n\nConsent is optional. Selecting Not now returns to the dashboard. The service is still disabled, so blocking is not active.\n\nFrom the dashboard, the parent can reopen the explanation, review it, and choose I agree and continue.\n\nNext, in Android's Accessibility settings, turn on Shorts Blocker Kids Protection. Read the system warning and tap Allow to confirm. The switch now shows On.\n\nWith the service enabled, a regular YouTube video still plays. The personal content below the player is hidden in this recording.\n\nOpening Shorts brings up the blocking screen. Temporary access requires the parent PIN. This recording demonstrates YouTube; the other supported apps are not shown.",
+    "uk": "Shorts Blocker Kids допомагає батькам блокувати стрічки коротких відео на телефоні дитини. Покажемо, як налаштувати застосунок і як працює захист.\n\nСпочатку створюємо батьківський пін-код та обираємо застосунки для захисту. У цьому прикладі це YouTube.\n\nПеред запитом дозволу застосунок пояснює, навіщо йому служба спеціальних можливостей Android. Вона допомагає розпізнавати екрани коротких відео та показувати поверх них екран блокування.\n\nТут також пояснено, як обробляються дані. Розпізнавання відбувається локально, на цьому телефоні. Застосунок не збирає й не передає історію переглядів, повідомлення, назви відео або записи екрана. Налаштування захисту та батьківський пін-код зберігаються на пристрої.\n\nПрокручуємо повний текст пояснення. Блокування працює лише тоді, коли ввімкнено і захист, і службу спеціальних можливостей.\n\nВід згоди можна відмовитися. Натискаємо «Не зараз» і повертаємося на головний екран. Службу ще не ввімкнено, тому блокування не працює.\n\nЗ головного екрана знову відкриваємо пояснення, переглядаємо його та обираємо «Погоджуюсь і продовжую».\n\nДалі в налаштуваннях спеціальних можливостей Android вмикаємо службу Shorts Blocker Kids. Читаємо системне попередження та натискаємо «Дозволити». Перемикач показує, що службу ввімкнено.\n\nТепер звичайне відео на YouTube відтворюється без блокування. Особистий вміст під програвачем у цьому записі приховано.\n\nКоли відкриваємо Shorts, з'являється екран блокування. Для тимчасового доступу потрібен батьківський пін-код. Тут показано роботу з YouTube; інші підтримувані застосунки в цьому відео не демонструються."
+  },
+  "instructions": {
+    "en": "Read this complete product demonstration script in natural conversational English, as if calmly showing a phone app to one colleague. Use a comfortable flowing everyday pace around 150 words per minute, clear articulation and light, varied conversational intonation. Keep sentences connected, with brief breaths and short pauses at paragraph boundaries. Use normal speaking volume. Avoid drawn-out syllables, exaggerated emphasis, sales pitch, solemn narration, whispering, singing, and artificial excitement. Speak the exact text only.",
+    "uk": "Прочитай цей цілісний сценарій демонстрації застосунку природною українською мовою, ніби доброзичливо показуєш телефон одному співрозмовнику. Звичайний розмовний темп, приблизно 135–145 слів за хвилину, чітка українська вимова, легка жива інтонація. Пов'язуй речення в послідовну розповідь, роби короткі природні вдихи та невеликі паузи між абзацами. Не розтягуй склади, не шепочи, не співай, не читай урочисто чи рекламно. Англійські назви продуктів вимовляй зрозуміло. Читай лише наведений текст."
+  },
+  "editing": {
+    "source_root": "app/build/google-review-capture-20261017",
+    "real_motion_speed": 1,
+    "remove_static_waits": true,
+    "preserve_full_disclosure": true,
+    "private_pin_excluded": true
+  },
+  "generation_policy": {
+    "single_continuous_take_per_language": true,
+    "reuse_exact_matching_receipt": true,
+    "no_automatic_api_retries": true
+  },
+  "quality": {
+    "audio_review": "Full final audio with gpt-audio-1.5; automated listening, never described as human listening",
+    "transcription": "Full audio with word timestamps to synchronize captions and scenes",
+    "technical": "Decode, loudness, peak, silence, streams, durations",
+    "visual": "Review all edited scenes and transitions"
+  }
+}

@@ -1,0 +1,266 @@
+{
+  "prepared_date": "2026-10-17",
+  "status": "LOCAL REMASTER EXPORTED - automated audio assessment; hosting and Play submission pending",
+  "missing_recorded_scenes": [],
+  "application_id": "com.shortsblockerkids",
+  "version_name": "1.0.0",
+  "version_code": 1,
+  "device": {
+    "model": "Samsung Galaxy A10 SM-A105FN",
+    "android": "11",
+    "native_capture": "720x1520"
+  },
+  "recording": {
+    "actual_phone": true,
+    "app_interface_language": "English",
+    "explanatory_caption_languages": [
+      "English",
+      "Ukrainian"
+    ],
+    "language_note": "Both videos use the same English app, Android and YouTube recordings; explanatory captions are English in EN and Ukrainian in UK.",
+    "audio": "Continuous OpenAI narration per language; AAC mono 48000Hz. AI speech is disclosed in the picture.",
+    "scope": "Montage of actual physical-phone recordings: app opening; full in-app AccessibilityService disclosure, decline, reopening and affirmative consent; Android Accessibility permission activation; ordinary YouTube playback; and YouTube Shorts protection. Other social apps are not demonstrated.",
+    "privacy": "Private parent PIN entry is excluded. Personal lower-area YouTube content is masked; private Shorts feed transitions are omitted and identified by captions.",
+    "narration": {
+      "provider": "OpenAI",
+      "model": "gpt-4o-mini-tts",
+      "voice": "cedar",
+      "languages": [
+        "en",
+        "uk"
+      ],
+      "synthesis_speed": 1.04,
+      "continuous_takes_per_language": 1,
+      "delivery": "Conversational script, short pauses, no scene-dependent acceleration"
+    }
+  },
+  "reused_screenshots": {
+    "06-accessibility-disclosure-top.png": "app/build/phone-qa-20261016/release-disclosure.png",
+    "07-accessibility-disclosure-actions.png": "app/build/phone-qa-20261016/disclosure-actions.png",
+    "note": "Actual earlier physical-phone captures of the same release. The recorded in-app disclosure and consent sequence is included in both final review videos."
+  },
+  "videos": [
+    {
+      "file": "video/accessibility-review-en.mp4",
+      "language": "en",
+      "language_metadata": {
+        "app": "English",
+        "android": "English",
+        "youtube": "English",
+        "captions": "English"
+      },
+      "duration_seconds": 85.833333,
+      "codec_name": "h264",
+      "width": 720,
+      "height": 1680,
+      "pix_fmt": "yuv420p",
+      "frame_rate": 30.0,
+      "audio_streams": 1,
+      "audio_codec_name": "aac",
+      "audio_sample_rate_hz": 48000,
+      "audio_channels": 1,
+      "narration_language": "en"
+    },
+    {
+      "file": "video/accessibility-review-uk.mp4",
+      "language": "uk",
+      "language_metadata": {
+        "app": "English",
+        "android": "English",
+        "youtube": "English",
+        "captions": "Ukrainian"
+      },
+      "duration_seconds": 112.7,
+      "codec_name": "h264",
+      "width": 720,
+      "height": 1680,
+      "pix_fmt": "yuv420p",
+      "frame_rate": 30.0,
+      "audio_streams": 1,
+      "audio_codec_name": "aac",
+      "audio_sample_rate_hz": 48000,
+      "audio_channels": 1,
+      "narration_language": "uk"
+    }
+  ],
+  "phone_screenshots": [
+    {
+      "file": "screenshots/01-parent-pin.png",
+      "width": 720,
+      "height": 1440,
+      "mode": "RGB"
+    },
+    {
+      "file": "screenshots/02-protection-dashboard.png",
+      "width": 720,
+      "height": 1440,
+      "mode": "RGB"
+    },
+    {
+      "file": "screenshots/03-shorts-blocked.png",
+      "width": 720,
+      "height": 1440,
+      "mode": "RGB"
+    },
+    {
+      "file": "screenshots/04-temporary-allow-options.png",
+      "width": 720,
+      "height": 1440,
+      "mode": "RGB"
+    },
+    {
+      "file": "screenshots/05-optional-tamper-protection.png",
+      "width": 720,
+      "height": 1440,
+      "mode": "RGB"
+    },
+    {
+      "file": "screenshots/06-accessibility-disclosure-top.png",
+      "width": 720,
+      "height": 1440,
+      "mode": "RGB"
+    },
+    {
+      "file": "screenshots/07-accessibility-disclosure-actions.png",
+      "width": 720,
+      "height": 1440,
+      "mode": "RGB"
+    }
+  ],
+  "release_aab_sha256": "9D330C386C687DE9D17F42E1A26938C815216948572737266DC17F4D3363CD88",
+  "not_completed": [
+    "Video hosting / anonymous URL playback check",
+    "Play Console fields and owner declarations",
+    "Google Play submission / approval",
+    "Google Play Billing test"
+  ],
+  "public_urls_checked": {
+    "https://shortsblockerkids.de/privacy": 200,
+    "https://shortsblockerkids.de/support": 200
+  },
+  "files": [
+    {
+      "file": "READ-ME-FIRST.txt",
+      "bytes": 5764,
+      "sha256": "A73C8572950B256ADBFE3491995F0D7DDBF428FD9785686B5276CA09A030B026"
+    },
+    {
+      "file": "release/app-release.aab",
+      "bytes": 3749623,
+      "sha256": "9D330C386C687DE9D17F42E1A26938C815216948572737266DC17F4D3363CD88"
+    },
+    {
+      "file": "screenshots/01-parent-pin.png",
+      "bytes": 15147,
+      "sha256": "F42BCAA84D14E05056AD62FB77C0BB67A47A4D3064D3E96D3B25726D968CE3CA"
+    },
+    {
+      "file": "screenshots/02-protection-dashboard.png",
+      "bytes": 127781,
+      "sha256": "2C9D0B1F72682CFB3BA9B0728611F7761F8BB82800F8F968F0CE518044F4B7FF"
+    },
+    {
+      "file": "screenshots/03-shorts-blocked.png",
+      "bytes": 43230,
+      "sha256": "CF9D8D8963F36642A8A21DEC13F68CECA6707347E96CDC2E4B3426E7FFDADF45"
+    },
+    {
+      "file": "screenshots/04-temporary-allow-options.png",
+      "bytes": 39071,
+      "sha256": "A42E3FF8AA3F49AED4174A17FA8CA7D1BB60D87ABAFC0C3D0EDE62D90F13FF87"
+    },
+    {
+      "file": "screenshots/05-optional-tamper-protection.png",
+      "bytes": 116538,
+      "sha256": "CE2E146E0C507683CA61449C7F9B1B4054633F5467B6F3824DAB34963C667F7C"
+    },
+    {
+      "file": "screenshots/06-accessibility-disclosure-top.png",
+      "bytes": 161473,
+      "sha256": "1DA77E364A101FC6542340CAB10A32B7A1BB7827D618070363DC9332F53734C5"
+    },
+    {
+      "file": "screenshots/07-accessibility-disclosure-actions.png",
+      "bytes": 141663,
+      "sha256": "693D35E53DC1BD0863D213E188D43853C7786CEC33BE6F7433A3AD33E9749CBF"
+    },
+    {
+      "file": "store-assets/app-icon-512.png",
+      "bytes": 231516,
+      "sha256": "EECA1398110238166BE6C4EE123998E31BC4A5275FBDE7FDA9C70AD14C99DDBB"
+    },
+    {
+      "file": "store-assets/feature-graphic-1024x500.png",
+      "bytes": 117462,
+      "sha256": "CA0266C182EE1A5A14D1BFE20A84497ED5A375FCDC2678846203EBF9EFEB00E7"
+    },
+    {
+      "file": "texts/accessibility-declaration-en.txt",
+      "bytes": 2433,
+      "sha256": "3FE1DA4A541662200F45E78F8D656A9341CB587A1FD4FB4357222C71841F584A"
+    },
+    {
+      "file": "texts/app-access-en.txt",
+      "bytes": 2708,
+      "sha256": "A95BA78B9CC65ED971FA1F977329391C7AED69F28A536CA70C606BA19620D8D5"
+    },
+    {
+      "file": "texts/owner-confirmations.txt",
+      "bytes": 2870,
+      "sha256": "609993CE10A5BDD062624ECA47750E90217C8F2DCD72FD9C0D283C78F54CC87D"
+    },
+    {
+      "file": "texts/release-notes-en.txt",
+      "bytes": 323,
+      "sha256": "32BD323BBEEE56887EEE63FAB45821DB7439F6CC1CBDE76DCD9A2EA3F939FEEF"
+    },
+    {
+      "file": "texts/sources.json",
+      "bytes": 3796,
+      "sha256": "C2B78682FB752CF401998480C53432CDAAE6A0ACB7315244F0C45822FC90BA28"
+    },
+    {
+      "file": "texts/store-listing-en.txt",
+      "bytes": 2234,
+      "sha256": "7D33F622D57A610D0D063CADD235CD090F265EB8BF9D49F10E5B4373F50E9D32"
+    },
+    {
+      "file": "texts/video-upload-instructions.txt",
+      "bytes": 3537,
+      "sha256": "D7CE60D4963F71DE27C7219F20BD0A397252A2449646FB7F9EFC7C488E604D6F"
+    },
+    {
+      "file": "video/accessibility-review-en.mp4",
+      "bytes": 6274518,
+      "sha256": "F427F96F554CD3348A9CD25AEDDD9AE53AC516316A4C81ADFB5D0B366C797335"
+    },
+    {
+      "file": "video/accessibility-review-en.srt",
+      "bytes": 2524,
+      "sha256": "4038EE27EF509065AE18B2CE120A7446F834C9C14E59DADA7D607B70AE789A4F"
+    },
+    {
+      "file": "video/accessibility-review-uk.mp4",
+      "bytes": 7321523,
+      "sha256": "073897547C06D86C25DB65D3404F3D5FE7705CB91091440F98B664DB6070D54A"
+    },
+    {
+      "file": "video/accessibility-review-uk.srt",
+      "bytes": 4067,
+      "sha256": "AC281FB38E56F02A8819B87D3E641C8925439B7F5F57F43EF81F2F2479BFF344"
+    },
+    {
+      "file": "video/video-quality-report.json",
+      "bytes": 3096,
+      "sha256": "8BA21CE4A1BFBCFFD0A27ABF60B342E4BC77A84FCDCA309942C2EEC2CA7810BE"
+    }
+  ],
+  "video_verification": {
+    "render": "PASS for both",
+    "decode": "PASS for both",
+    "visual_review": "Chronological contact sheets at 2.5-second intervals and selected transition frames; the corrected PIN chapter was rechecked in both final exports. Other encoded picture pieces were unchanged and checked for identical edit parameters during the final rebuild. This was not continuous video playback.",
+    "chapter_count_per_video": 10,
+    "audio_review": "Automated full narration listening; no human listening claimed",
+    "report": "video/video-quality-report.json"
+  }
+}

@@ -1,0 +1,37 @@
+ACCESSIBILITY DECLARATION DEMO VIDEO
+Prepared 2026-10-17.
+
+CURRENT STATUS: LOCAL REMASTER EXPORTED. EN 85.83 seconds; UK 112.70 seconds. Full decoding, levels and caption timing passed. Chronological frames were inspected at 2.5-second intervals and at key transitions. Complete narration tracks received automated audio listening assessment; no human listening is claimed. Hosting, anonymous link access and Play submission are not completed. Google approval is not obtained.
+
+FILES
+Primary: video/accessibility-review-en.mp4 — English narration and synchronized captions.
+Additional: video/accessibility-review-uk.mp4 — Ukrainian narration and synchronized captions.
+Actual English phone UI in both. H.264 720x1680 30fps yuv420p; AAC mono 48kHz. OpenAI gpt-4o-mini-tts, cedar, synthesis speed 1.04, one continuous take per language. Idle waits were edited; recorded gestures play at normal speed. No scene-dependent speech acceleration. AI narration is disclosed in the picture. Matching SRT files are included.
+Measured integrated loudness: EN -16.53 LUFS, UK -16.58 LUFS. True peaks: EN -1.46 dBTP, UK -1.47 dBTP. No silent gap longer than 1.4s at -45dB. See video/video-quality-report.json for exact verification limits.
+
+RECORDED CONTENT
+Actual phone recordings show the app opening; the complete in-app AccessibilityService disclosure, decline, reopening and affirmative consent; Android Accessibility permission activation; ordinary YouTube playback; and YouTube Shorts blocking. Private PIN entry is excluded. Personal video content is masked and private feed transitions are omitted with explanatory captions. Other supported social apps are not demonstrated.
+
+HOSTING RECOMMENDATION
+Google prefers a YouTube link and also supports a Google Drive link to an MP4 or another common video format. For YouTube, Unlisted is a practical recommendation, not a claim that Google mandates that visibility mode for Accessibility declarations. Ensure that the reviewer can play the video without requesting access.
+
+Suggested title:
+Shorts Blocker Kids 1.0.0 - AccessibilityService review demo
+
+Suggested description:
+Review demonstration of the in-app Accessibility disclosure, refusal and consent flow, Android permission activation, ordinary YouTube playback, and YouTube Shorts protection in Shorts Blocker Kids. The app is a parent-facing digital wellbeing tool, not a disability support tool. This recording demonstrates YouTube; other supported app selections are not demonstrated here.
+
+The owner must select truthful YouTube audience and account settings. Do not choose an audience designation automatically based only on the word Kids in the app name.
+
+ACCESS CHECK — TO BE COMPLETED AFTER HOSTING
+1. Copy the final video URL.
+2. Open it in a signed-out/incognito browser.
+3. Verify it plays without login, access requests, expiry or owner intervention and that the image and captions are readable.
+4. Place the verified URL in the Accessibility declaration's video field. Keep it available during review.
+5. Record the final URL and check date in the submission handoff. Do not leave a placeholder in the submitted form.
+
+A store-listing preview video is a separate asset with its own Play requirements. Accessibility declaration hosting guidance does not establish eligibility for the store preview field.
+
+OFFICIAL REFERENCES
+https://support.google.com/googleplay/android-developer/answer/10964491?hl=en
+https://support.google.com/googleplay/android-developer/answer/11150561?hl=en

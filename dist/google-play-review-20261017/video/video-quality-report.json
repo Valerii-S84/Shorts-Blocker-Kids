@@ -1,0 +1,71 @@
+{
+  "prepared_date": "2026-10-17",
+  "purpose": "Locally remastered Google Play Accessibility demonstration",
+  "generation": {
+    "provider": "OpenAI",
+    "model": "gpt-4o-mini-tts",
+    "voice": "cedar",
+    "speed": 1.04,
+    "continuous_takes_per_language": 1,
+    "scene_dependent_audio_time_stretch": false
+  },
+  "visual_review": {
+    "result": "PASS",
+    "method": "Chronological contact sheets at 2.5-second intervals and selected transition frames; the corrected PIN chapter was rechecked in both final exports. Other encoded picture pieces were unchanged and checked for identical edit parameters during the final rebuild. This was not continuous video playback.",
+    "sha256": {
+      "en": "f427f96f554cd3348a9cd25aeddd9ae53ac516316a4c81adfb5d0b366c797335",
+      "uk": "073897547c06d86c25db65d3404f3d5fe7705cb91091440f98b664db6070d54a"
+    },
+    "checked": [
+      "Opening and parent PIN screen",
+      "Protected-app selection",
+      "Full Accessibility disclosure including scrolling",
+      "Decline and return to the app",
+      "Reopen disclosure and agree",
+      "Android warning and service enabled",
+      "Regular YouTube video with private content masked",
+      "Blocked Shorts screen",
+      "Captions below the recorded phone interface"
+    ],
+    "last_corrected_scene_evidence": "pin-correction.jpg",
+    "limitations": [
+      "Only YouTube behavior is demonstrated.",
+      "Complete narration was assessed automatically; no human listening is claimed.",
+      "No Google Play submission or approval."
+    ]
+  },
+  "videos": [
+    {
+      "language": "en",
+      "file": "accessibility-review-en.mp4",
+      "duration_seconds": 85.833333,
+      "sha256": "f427f96f554cd3348a9cd25aeddd9ae53ac516316a4c81adfb5d0b366c797335",
+      "full_decode": "PASS",
+      "integrated_loudness_lufs": -16.53,
+      "true_peak_dbtp": -1.46,
+      "silent_gaps_over_1_4_seconds": [],
+      "caption_cues": 28,
+      "caption_timing": "PASS",
+      "motion_speed": 1.0
+    },
+    {
+      "language": "uk",
+      "file": "accessibility-review-uk.mp4",
+      "duration_seconds": 112.7,
+      "sha256": "073897547c06d86c25db65d3404f3d5fe7705cb91091440f98b664db6070d54a",
+      "full_decode": "PASS",
+      "integrated_loudness_lufs": -16.58,
+      "true_peak_dbtp": -1.47,
+      "silent_gaps_over_1_4_seconds": [],
+      "caption_cues": 32,
+      "caption_timing": "PASS",
+      "motion_speed": 1.0
+    }
+  ],
+  "limitations": [
+    "Audio listening assessment was automated over each complete narration track before final loudness normalization. No human listening is claimed.",
+    "Visual inspection used the chronological sequence at 2.5-second intervals plus key transition frames, not continuous video playback.",
+    "Google Play hosting, submission and approval have not been performed."
+  ],
+  "transcript_note": "Full ASR was used for alignment, not as proof of naturalness. The English final scope clause lacks ASR timestamps and is stated in the visible footer instead of untimed subtitles."
+}

@@ -1,0 +1,19 @@
+Shorts Blocker Kids helps parents block short-video feeds on a child's phone. Here is how setup and protection work.
+
+First, create a parent PIN and choose the apps to protect. This demonstration uses YouTube.
+
+Before asking for Android permission, the app explains why it needs the Accessibility service. It detects supported short-video screens and displays a blocking overlay.
+
+The explanation also describes how data is handled. Detection runs locally on this phone. The app does not collect or send watch history, messages, video titles, or screen recordings. Protection settings and the parent PIN stay on the device.
+
+The full disclosure is visible as we scroll. The parent can read everything before deciding whether to continue. Blocking requires both protection and the Accessibility service to be enabled.
+
+Consent is optional. Selecting Not now returns to the dashboard. The service is still disabled, so blocking is not active.
+
+From the dashboard, the parent can reopen the explanation, review it, and choose I agree and continue.
+
+Next, in Android's Accessibility settings, turn on Shorts Blocker Kids Protection. Read the system warning and tap Allow to confirm. The switch now shows On.
+
+With the service enabled, a regular YouTube video still plays. The personal content below the player is hidden in this recording.
+
+Opening Shorts brings up the blocking screen. Temporary access requires the parent PIN. This recording demonstrates YouTube; the other supported apps are not shown.
