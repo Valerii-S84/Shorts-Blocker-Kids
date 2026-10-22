@@ -1,6 +1,6 @@
 import { spawn, spawnSync } from "node:child_process";
 import { promises as fs } from "node:fs";
-import http from "node:http";
+import { startPreviewServer } from "./preview-server.mjs";
 import net from "node:net";
 import os from "node:os";
 import path from "node:path";
@@ -11,13 +11,16 @@ const distDir = path.join(rootDir, "dist");
 const previewDir = path.join(rootDir, "preview");
 const screenshotSuffix = parseScreenshotSuffix();
 
-const screenshots = [
+const screenshots = (process.argv.includes("--demo-only") ? [
+  { path: "/#demo", fileName: screenshotName("demo-desktop.png"), width: 1440, height: 1100, mobile: false },
+  { path: "/#demo", fileName: screenshotName("demo-mobile.png"), width: 390, height: 1200, mobile: true },
+] : [
   { path: "/", fileName: screenshotName("home-desktop.png"), width: 1440, height: 1200, mobile: false },
   { path: "/", fileName: screenshotName("home-tablet.png"), width: 820, height: 1200, mobile: true },
   { path: "/", fileName: screenshotName("home-mobile.png"), width: 390, height: 1200, mobile: true },
   { path: "/privacy", fileName: screenshotName("privacy-desktop.png"), width: 1440, height: 1200, mobile: false },
   { path: "/support", fileName: screenshotName("support-desktop.png"), width: 1440, height: 1200, mobile: false },
-];
+]).filter((screenshot) => !process.argv.includes("--mobile-only") || screenshot.mobile);
 
 let chromeError = "";
 
@@ -87,52 +90,7 @@ function parseScreenshotSuffix() {
 }
 
 async function startServer() {
-  const server = http.createServer(async (request, response) => {
-    try {
-      const filePath = routeToFilePath(request.url ?? "/");
-      const content = await fs.readFile(filePath);
-      response.writeHead(200, { "Content-Type": contentType(filePath) });
-      response.end(content);
-    } catch {
-      response.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
-      response.end("Not found");
-    }
-  });
-
-  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
-  const address = server.address();
-  const port = typeof address === "object" && address ? address.port : 0;
-  return {
-    origin: `http://127.0.0.1:${port}`,
-    close: () => server.close(),
-  };
-}
-
-function routeToFilePath(route) {
-  const cleanRoute = route.split("?")[0].replace(/\/+$/, "") || "/";
-  if (cleanRoute === "/") {
-    return path.join(distDir, "index.html");
-  }
-  if (path.extname(cleanRoute)) {
-    return path.join(distDir, cleanRoute.slice(1));
-  }
-  return path.join(distDir, cleanRoute.slice(1), "index.html");
-}
-
-function contentType(filePath) {
-  if (filePath.endsWith(".css")) {
-    return "text/css; charset=utf-8";
-  }
-  if (filePath.endsWith(".js")) {
-    return "application/javascript; charset=utf-8";
-  }
-  if (filePath.endsWith(".png")) {
-    return "image/png";
-  }
-  if (filePath.endsWith(".webmanifest")) {
-    return "application/manifest+json; charset=utf-8";
-  }
-  return "text/html; charset=utf-8";
+  return startPreviewServer();
 }
 
 async function findFreePort() {
@@ -282,13 +240,59 @@ async function captureScreenshot(client, origin, screenshot) {
   });
 
   const loadEvent = client.waitFor("Page.loadEventFired", 10000);
-  await client.send("Page.navigate", { url: `${origin}${screenshot.path}` });
+  const destination = new URL(screenshot.path, origin);
+  destination.searchParams.set("preview", screenshot.fileName);
+  await client.send("Page.navigate", { url: destination.href });
   await loadEvent;
   await client.send("Runtime.evaluate", {
     expression: "document.fonts ? document.fonts.ready.then(() => true) : true",
     awaitPromise: true,
   });
+  if (screenshot.path === "/#demo") {
+    await client.send("Runtime.evaluate", {
+      expression: 'document.querySelector("#demo").scrollIntoView({ behavior: "instant", block: "start" })',
+    });
+  }
   await delay(250);
+
+  if (screenshot.path === "/#demo" && !screenshot.mobile) {
+    const playback = await client.send("Runtime.evaluate", {
+      expression: `(async () => {
+        const video = document.querySelector("#demo video");
+        video.muted = true;
+        await video.play();
+        await new Promise(resolve => setTimeout(resolve, 500));
+        if (video.currentTime <= 0 || video.error) throw new Error("Demo playback did not advance");
+        video.pause();
+        await new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => reject(new Error("Demo seek timed out")), 5000);
+          video.addEventListener("seeked", () => { clearTimeout(timeout); resolve(); }, { once: true });
+          video.currentTime = 10;
+        });
+        if (Math.abs(video.currentTime - 10) > 0.1) throw new Error("Demo seeking failed");
+        const result = { playback: "PASS", seeking: "PASS", duration: video.duration,
+          width: video.videoWidth, height: video.videoHeight };
+        video.muted = false;
+        video.load();
+        return result;
+      })()`,
+      awaitPromise: true,
+      returnByValue: true,
+      timeout: 15000,
+    });
+    if (playback.exceptionDetails) {
+      throw new Error(JSON.stringify(playback.exceptionDetails));
+    }
+    console.log(`Demo browser verification: ${JSON.stringify(playback.result.value)}`);
+  }
+
+  const layout = await client.send("Runtime.evaluate", {
+    expression: "({ viewport: innerWidth, page: document.documentElement.scrollWidth })",
+    returnByValue: true,
+  });
+  if (layout.result.value.page > layout.result.value.viewport) {
+    throw new Error(`Horizontal overflow on ${screenshot.fileName}`);
+  }
 
   const result = await client.send("Page.captureScreenshot", {
     format: "png",

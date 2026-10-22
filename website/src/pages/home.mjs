@@ -285,12 +285,18 @@ function demoSection() {
   <div class="container video-grid">
     <div>
       ${sectionEyebrow("Demo")}
-      <h2>Demo video coming soon.</h2>
-      <p>A short walkthrough will show setup, the parent PIN, Accessibility permission, and the blocking screen.</p>
+      <h2>See Shorts Blocker Kids in action.</h2>
+      <p>Watch the real Android walkthrough: parent setup, Accessibility permission, regular YouTube playback, and Shorts blocking.</p>
+      <p id="demo-description" class="muted small">1 min 26 sec · English narration and on-screen captions. This walkthrough demonstrates YouTube.</p>
+      <p><a href="${siteConfig.demoVideoUrl}">Open the demo video</a></p>
     </div>
-    <div class="video-placeholder" role="img" aria-label="Demo video coming soon">
-      <div class="play-mark"></div>
-      <span>Demo video coming soon</span>
+    <div class="demo-player">
+      <video controls playsinline preload="none" width="720" height="1680"
+        poster="/assets/demo/poster-en.jpg" aria-label="Shorts Blocker Kids Android walkthrough"
+        aria-describedby="demo-description">
+        <source src="${siteConfig.demoVideoUrl}" type="video/mp4">
+        <p>Your browser does not support embedded video. <a href="${siteConfig.demoVideoUrl}">Open the demo video</a>.</p>
+      </video>
     </div>
   </div>
 </section>`;

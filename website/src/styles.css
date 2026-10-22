@@ -636,6 +636,27 @@ th {
   color: var(--muted);
 }
 
+.demo-player {
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
+
+.demo-player video {
+  display: block;
+  width: min(100%, 320px);
+  height: auto;
+  aspect-ratio: 3 / 7;
+  background: #132338;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--soft-shadow);
+}
+
+#demo {
+  scroll-margin-top: 160px;
+}
+
 .video-placeholder {
   display: grid;
   min-height: 300px;

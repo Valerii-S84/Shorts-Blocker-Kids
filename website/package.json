@@ -7,6 +7,7 @@
     "check": "node scripts/check.mjs",
     "build": "node scripts/build.mjs",
     "screenshots": "node scripts/capture-screenshots.mjs",
+    "preview": "node scripts/preview-server.mjs",
     "smoke": "npm run build --silent && node scripts/smoke-test.mjs"
   }
 }

@@ -8,7 +8,7 @@ export const siteConfig = {
   betaTestingUrl: "",
   releaseState: "coming-soon",
   metricsEndpoint: "",
-  demoVideoUrl: "",
+  demoVideoUrl: "/assets/demo/accessibility-review-en.mp4",
 };
 
 export const protectedPlatforms = [
